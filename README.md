@@ -55,3 +55,44 @@ yarn test:e2e
 ```sh
 yarn lint
 ```
+
+# 命名風格
+
+## **資料夾命名規則**
+
+- 頂層目錄命名 (使用 camelCase)
+- 業務邏輯子目錄 (使用 PascalCase)
+- 組件目錄 (使用 PascalCase)
+- 視圖目錄 (使用 camelCase)
+
+## **檔案命名規則詳解**
+
+1. 模型檔案 (Models)
+
+命名風格：PascalCase + 單數
+原因：代表類或構造函數，符合OOP原則
+範例：MainDish.js, Order.js
+
+2. Vue組件檔案 (Components)
+
+命名風格：PascalCase
+原因：Vue官方建議，與元件註冊名稱一致
+範例：CartItem.vue, MenuList.vue
+
+3. 視圖檔案 (Views)
+
+命名風格：PascalCase
+原因：實際上也是Vue組件，遵循相同規則
+範例：Dashboard.vue, MenuPage.vue
+
+4. 工具函數檔案
+
+命名風格：camelCase
+原因：包含普通函數，符合JavaScript慣例
+範例：priceCalculator.js, dateFormatter.js
+
+5. Store檔案
+
+命名風格：camelCase
+原因：主要導出物件或函數，符合模組命名慣例
+範例：cartStore.js, userStore.js
