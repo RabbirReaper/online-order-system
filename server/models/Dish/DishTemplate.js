@@ -1,0 +1,20 @@
+import mongoose from 'mongoose';
+
+// DishTemplate 模型
+const DishTemplateSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  basePrice: { type: Number, required: true },
+  optionCategories: [{
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'OptionCategory' },
+    order: { type: Number, default: 0 }
+  }],
+  image: {
+    url: { type: String, required: true },    // 圖片的實際連結，例如 R2 上的公網地址
+    key: { type: String, required: true },    // 儲存在 R2 的 object key（等同於檔名，可用於刪除）
+    alt: { type: String }                     // 可選：給前端 img alt 屬性
+  },
+  description: { type: String },
+  tags: [{ type: String }]
+});
+
+export default mongoose.model("DishTemplate", DishTemplateSchema)
