@@ -7,7 +7,8 @@ const AdminSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'password cannot be blank']
+    required: [true, 'password cannot be blank'],
+    select: false
   },
   role: {
     type: String,
