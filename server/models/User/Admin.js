@@ -14,13 +14,6 @@ const AdminSchema = new mongoose.Schema({
     enum: ['boss', 'brain_admin', 'store_admin'],
     required: true
   },
-  managedStore: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Store',
-    required: function () {
-      return this.role === 'store_admin';
-    }
-  },
   manage: [
     {
       store: {
