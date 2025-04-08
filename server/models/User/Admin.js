@@ -43,7 +43,7 @@ const AdminSchema = new mongoose.Schema({
       manage_staff: 員工權限管理
     */
   }],
-  active: {
+  isActive: {
     type: Boolean,
     default: true
   }, // 帳號是否啟用
