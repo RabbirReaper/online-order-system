@@ -203,7 +203,7 @@ flowchart TB
     MenuA1 -- 資料提供 --> n2
     n2 --> MenuPage & n3
     CheckOutPage -- 提交訂單 --> n4
-    n4 L_n4_n1_0@-- 根據販售的餐點減少庫存 --> n1
+    n4 -- 根據販售的餐點減少庫存 --> n1
     n5 --- n3
     n5 --> n6 & n7
     n7 --> n1
