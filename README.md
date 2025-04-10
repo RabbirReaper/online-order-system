@@ -124,15 +124,6 @@ flowchart TB
         s2
         StoreAreaA1["StoreAreaA1"]
   end
- subgraph PermissionLogic["權限管理邏輯"]
-        AllStores["AllStores"]
-        StoreCheck["StoreCheck"]
-        brand_admin["brand_admin"]
-        HasPermission["HasPermission"]
-        PermissionCheck["PermissionCheck"]
-        store_admin["store_admin"]
-        ExecuteActions["ExecuteActions"]
-  end
  subgraph StoreAreaA1["店鋪A1區域"]
         StoreA1["店鋪A1"]
         MenuA1["菜單A1"]
@@ -172,10 +163,6 @@ flowchart TB
     brand_A_database -- 資料提供 --> MenuA1 & MenuA2
     StoreA2 --> MenuA2
     StoreA1 -- 資料提供 --> NetpageA1
-    brand_admin -- 檢查 manage 陣列內的 store --> StoreCheck
-    StoreCheck -- 若 store 存在則擁有權限 --> HasPermission
-    store_admin -- 檢查 manage 陣列內的 store & permission --> PermissionCheck
-    PermissionCheck -- "確認 P1-P4 權限" --> ExecuteActions
     Promotion -- 包含 --- ExCoupon & DiscountCoupon
     brand_A_database --> Promotion
     NetpageA1 --- MenuPage & CustomerCountPage & ShoppingCartPage
