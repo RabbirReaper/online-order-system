@@ -172,10 +172,7 @@ flowchart TB
     n5 --- n3
     n5 --> n6 & n7
     n7 --> n1
-    style s1 fill:#E6E6FA,stroke:#9370DB,stroke-width:2px
-    style s2 fill:#FFE4E1,stroke:#ff7070,stroke-width:2px
     style s3 fill:#E0FFE0,stroke:#50b050,stroke-width:2px
-    style PermissionLogic fill:#FFEFD5,stroke:#DAA520,stroke-width:2px
     style StoreAreaA1 fill:#B0F0FD,stroke:#1E90FF,stroke-width:4px
     style Boss fill:#f9f,stroke:#333,stroke-width:2px
     style brand_A_database fill:#90EE90,stroke:#006400
