@@ -107,16 +107,6 @@ config:
   layout: elk
 ---
 flowchart TB
- subgraph s1["原本架構"]
-    direction TB
-        O_StoreAdmin["StoreAdmin"]
-        O_Admin["Admin"]
-        O_Store["Store"]
-        O_Menu["Menu"]
-        O_Dish["Dish"]
-        O_Option["OptionCategory"]
-        O_Choice["Options"]
-  end
  subgraph s2["權限類型"]
         P1["P1: 登入前台點餐系統<br>庫存管理"]
         P2["P2: 查看後台資料<br>記帳"]
@@ -215,6 +205,22 @@ flowchart TB
     style Boss fill:#f9f,stroke:#333,stroke-width:2px
     style brand_A_database fill:#90EE90,stroke:#006400
     style n4 fill:#AA00FF,color:white,stroke:#333
+```
+
+```mermaid
+---
+config:
+  theme: default
+  look: neo
+  layout: elk
+---
+flowchart TB
+ subgraph s2["權限類型"]
+        P1["P1: 登入前台點餐系統<br>庫存管理"]
+        P2["P2: 查看後台資料<br>記帳"]
+        P3["P3: 編輯後臺資料"]
+        P4["P4: 員工權限管理"]
+  end
 ```
 
 # 資料庫ER圖
