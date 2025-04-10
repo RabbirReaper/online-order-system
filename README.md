@@ -99,7 +99,7 @@ yarn lint
 
 # 程式流程圖
 
-[![主要架構](https://www.mermaidchart.com/raw/27fed6af-d53f-4aac-95fa-b7f1c31d8808?theme=light&version=v0.1&format=svg)
+![主要架構](https://www.mermaidchart.com/raw/27fed6af-d53f-4aac-95fa-b7f1c31d8808?theme=light&version=v0.1&format=svg)
 
 ```mermaid
 ---
