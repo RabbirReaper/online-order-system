@@ -107,12 +107,6 @@ config:
   layout: elk
 ---
 flowchart TB
- subgraph s2["權限類型"]
-        P1["P1: 登入前台點餐系統<br>庫存管理"]
-        P2["P2: 查看後台資料<br>記帳"]
-        P3["P3: 編輯後臺資料"]
-        P4["P4: 員工權限管理"]
-  end
  subgraph s3["新架構"]
         brand_CEO_A["品牌總管理員 A"]
         Boss["Boss"]
@@ -221,6 +215,19 @@ flowchart TB
         P3["P3: 編輯後臺資料"]
         P4["P4: 員工權限管理"]
   end
+  subgraph PermissionLogic["權限管理邏輯"]
+        AllStores["AllStores"]
+        StoreCheck["StoreCheck"]
+        brand_admin["brand_admin"]
+        HasPermission["HasPermission"]
+        PermissionCheck["PermissionCheck"]
+        store_admin["store_admin"]
+        ExecuteActions["ExecuteActions"]
+  end
+  brand_admin -- 檢查 manage 陣列內的 store --> StoreCheck
+  StoreCheck -- 若 store 存在則擁有權限 --> HasPermission
+  store_admin -- 檢查 manage 陣列內的 store & permission --> PermissionCheck
+  PermissionCheck -- "確認 P1-P4 權限" --> ExecuteActions
 ```
 
 # 資料庫ER圖
