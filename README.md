@@ -99,7 +99,7 @@ yarn lint
 
 # 程式流程圖
 
-![系統架構圖](./public/system-flow-chart2.svg)
+![系統架構圖](./public/system-flow-chart3.svg)
 
 ```mermaid
 ---
