@@ -215,7 +215,6 @@ flowchart TB
     style Boss fill:#f9f,stroke:#333,stroke-width:2px
     style brand_A_database fill:#90EE90,stroke:#006400
     style n4 fill:#AA00FF,color:white,stroke:#333
-    L_n4_n1_0@{ animation: fast }
 ```
 
 # 資料庫ER圖
