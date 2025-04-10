@@ -97,6 +97,129 @@ yarn lint
 原因：主要導出物件或函數，符合模組命名慣例
 範例：cartStore.js, userStore.js
 
+# 程式流程圖
+
+```mermaid
+---
+config:
+  theme: default
+  look: neo
+  layout: elk
+---
+flowchart TB
+ subgraph s1["原本架構"]
+    direction TB
+        O_StoreAdmin["StoreAdmin"]
+        O_Admin["Admin"]
+        O_Store["Store"]
+        O_Menu["Menu"]
+        O_Dish["Dish"]
+        O_Option["OptionCategory"]
+        O_Choice["Options"]
+  end
+ subgraph s2["權限類型"]
+        P1["P1: 登入前台點餐系統<br>庫存管理"]
+        P2["P2: 查看後台資料<br>記帳"]
+        P3["P3: 編輯後臺資料"]
+        P4["P4: 員工權限管理"]
+  end
+ subgraph s3["新架構"]
+        brand_CEO_A["品牌總管理員 A"]
+        Boss["Boss"]
+        brand_CEO_B["品牌總管理員 B"]
+        brand_A_database["主資料庫"]
+        Dishs_A["菜品"]
+        CategoryOptionsA["類別選項"]
+        OptionsA["選項"]
+        StoreA2["店鋪A2"]
+        AdminAssignment["管理員分配"]
+        StoreAdminA1["店鋪管理員A1"]
+        StoreAdminA2["店鋪管理員A2"]
+        StoreAdminA3["店鋪管理員A3"]
+        MenuA2["菜單A2"]
+        s2
+        StoreAreaA1["StoreAreaA1"]
+  end
+ subgraph PermissionLogic["權限管理邏輯"]
+        AllStores["AllStores"]
+        StoreCheck["StoreCheck"]
+        brand_admin["brand_admin"]
+        HasPermission["HasPermission"]
+        PermissionCheck["PermissionCheck"]
+        store_admin["store_admin"]
+        ExecuteActions["ExecuteActions"]
+  end
+ subgraph StoreAreaA1["店鋪A1區域"]
+        StoreA1["店鋪A1"]
+        MenuA1["菜單A1"]
+        NetpageA1["前端網頁"]
+        Promotion["促銷系統"]
+        ExCoupon["兌換券"]
+        DiscountCoupon["折價券"]
+        MenuPage["菜單頁面"]
+        CustomerCountPage["客人帳戶相關頁面"]
+        ShoppingCartPage["購物車頁面"]
+        CheckOutPage["客人結帳確認頁面"]
+        n1["庫存與銷售控制"]
+        n2["資料耦合"]
+        n3["點餐頁面"]
+        n4["完成頁面"]
+        n5["店員前端頁面"]
+        n6["訂單查看頁面"]
+        n7["庫存增減頁面<br>餐點啟用/停賣頁面"]
+  end
+    O_Admin --> O_StoreAdmin & O_Store
+    O_StoreAdmin --> O_Store
+    O_Store --> O_Menu
+    O_Menu --> O_Dish
+    O_Dish --> O_Option
+    O_Option --> O_Choice
+    Boss --> brand_CEO_A & brand_CEO_B
+    brand_CEO_A --> brand_A_database & AdminAssignment
+    brand_CEO_A -.-> StoreA1 & StoreA2
+    brand_A_database -- 包含 --- Dishs_A & CategoryOptionsA & OptionsA
+    CategoryOptionsA -- 連接 --> OptionsA
+    Dishs_A -- 連接 --> CategoryOptionsA
+    AdminAssignment --> StoreAdminA1 & StoreAdminA2 & StoreAdminA3
+    StoreAdminA1 -- 擁有權限P1,P2,P3 --> StoreA1
+    StoreAdminA2 -- 擁有權限P1,P2 --> StoreA1
+    StoreAdminA3 -- 擁有權限P1,P2,P3,P4 --> StoreA2
+    StoreA1 --> MenuA1 & n1 & n5
+    brand_A_database -- 資料提供 --> MenuA1 & MenuA2
+    StoreA2 --> MenuA2
+    StoreA1 -- 資料提供 --> NetpageA1
+    brand_admin -- 檢查 manage 陣列內的 store --> StoreCheck
+    StoreCheck -- 若 store 存在則擁有權限 --> HasPermission
+    store_admin -- 檢查 manage 陣列內的 store & permission --> PermissionCheck
+    PermissionCheck -- "確認 P1-P4 權限" --> ExecuteActions
+    Promotion -- 包含 --- ExCoupon & DiscountCoupon
+    brand_A_database --> Promotion
+    NetpageA1 --- MenuPage & CustomerCountPage & ShoppingCartPage
+    Promotion --> ShoppingCartPage
+    Promotion -- 提供客人的Coupon --> CustomerCountPage
+    ShoppingCartPage --> CheckOutPage
+    brand_A_database -- 提供客人個資 --> CustomerCountPage
+    n1 -- 資料提供 --> n2
+    MenuA1 -- 資料提供 --> n2
+    n2 --> MenuPage & n3
+    CheckOutPage -- 提交訂單 --> n4
+    n4 L_n4_n1_0@-- 根據販售的餐點減少庫存 --> n1
+    n5 --- n3
+    n5 --> n6 & n7
+    n7 --> n1
+    style s1 fill:#E6E6FA,stroke:#9370DB,stroke-width:2px
+    style s2 fill:#FFE4E1,stroke:#ff7070,stroke-width:2px
+    style s3 fill:#E0FFE0,stroke:#50b050,stroke-width:2px
+    style PermissionLogic fill:#FFEFD5,stroke:#DAA520,stroke-width:2px
+    style StoreAreaA1 fill:#B0F0FD,stroke:#1E90FF,stroke-width:4px
+    style Boss fill:#f9f,stroke:#333,stroke-width:2px
+    style brand_A_database fill:#90EE90,stroke:#006400
+    style n4 fill:#AA00FF,color:white,stroke:#333
+    L_n4_n1_0@{ animation: fast }
+```
+
+# 資料庫ER圖
+
 ```mermaid
 ---
 config:
