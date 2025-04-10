@@ -143,12 +143,6 @@ flowchart TB
         n6["訂單查看頁面"]
         n7["庫存增減頁面<br>餐點啟用/停賣頁面"]
   end
-    O_Admin --> O_StoreAdmin & O_Store
-    O_StoreAdmin --> O_Store
-    O_Store --> O_Menu
-    O_Menu --> O_Dish
-    O_Dish --> O_Option
-    O_Option --> O_Choice
     Boss --> brand_CEO_A & brand_CEO_B
     brand_CEO_A --> brand_A_database & AdminAssignment
     brand_CEO_A -.-> StoreA1 & StoreA2
