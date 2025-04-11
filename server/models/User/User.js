@@ -25,24 +25,6 @@ const userSchema = new mongoose.Schema({
     address: { type: String, required: true }, // 街道地址
     isDefault: { type: Boolean, default: false } // 是否為預設地址
   }], // 地址列表
-  orderHistory: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order'
-  }], // 訂單歷史
-  preferences: {
-    notifications: {
-      email: { type: Boolean, default: true }, // 是否接收電子郵件通知
-      sms: { type: Boolean, default: true }, // 是否接收簡訊通知
-      promotions: { type: Boolean, default: true } // 是否接收促銷信息
-    },
-    dietary: {
-      vegetarian: { type: Boolean, default: false }, // 是否為素食者
-      vegan: { type: Boolean, default: false }, // 是否為全素食者
-      glutenFree: { type: Boolean, default: false }, // 是否無麩質飲食
-      allergies: [{ type: String }] // 過敏源列表
-    }
-  }, // 個人偏好設定
-
   // 點數系統整合
   brandPoints: [{
     brand: {
