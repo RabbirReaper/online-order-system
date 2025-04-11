@@ -138,6 +138,8 @@ config:
   theme: default
 ---
 erDiagram
+    %% 調整排列順序和方向以減少重疊
+
     %% 核心業務實體
     Brand {
         ObjectId _id
@@ -314,21 +316,7 @@ erDiagram
         Date updatedAt
     }
 
-    PointTransaction {
-        ObjectId _id
-        ObjectId user
-        ObjectId brand
-        String type
-        Number points
-        Number balance
-        String source
-        String sourceModel
-        ObjectId sourceId
-        ObjectId order
-        ObjectId couponInstance
-        Date createdAt
-        Date updatedAt
-    }
+
 
     PointInstance {
         ObjectId _id
@@ -387,6 +375,7 @@ erDiagram
     Brand ||--o{ Admin : "雇用"
     Brand ||--o{ PointRule : "定義"
     Brand ||--o{ CouponTemplate : "提供"
+    Brand ||--o{ DishTemplate : "提供餐點"
 
     %% 店鋪相關關係
     Store ||--o{ Inventory : "管理庫存"
@@ -410,7 +399,6 @@ erDiagram
 
     %% 用戶相關關係
     User ||--o{ CouponInstance : "持有優惠券"
-    User ||--o{ PointTransaction : "擁有點數交易"
     User ||--o{ PointInstance : "擁有點數"
 
     %% 管理員相關關係
@@ -418,7 +406,6 @@ erDiagram
 
     %% 點數與優惠券關係
     PointRule ||--o{ PointInstance : "創建點數"
-    PointInstance }o--o{ PointTransaction : "關聯交易"
     CouponTemplate ||--o{ CouponInstance : "創建優惠券"
     CouponInstance }o--o{ Order : "使用於訂單"
 ```
