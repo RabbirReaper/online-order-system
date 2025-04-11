@@ -138,18 +138,7 @@ config:
   theme: default
 ---
 erDiagram
-    Admin {
-        ObjectId _id
-        String name
-        String password
-        String role
-        ObjectId brand
-        Object[] manage
-        Boolean isActive
-        Date lastLogin
-        Date createdAt
-        Date updatedAt
-    }
+    %% 核心業務實體
     Brand {
         ObjectId _id
         String name
@@ -158,78 +147,69 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
-    User {
+
+    Store {
         ObjectId _id
         String name
-        String email
-        String password
-        String phone
-        Object[] addresses
-        ObjectId[] orderHistory
-        Object preferences
-        Object[] brandPoints
-        Date dateOfBirth
-        String gender
+        ObjectId brand
+        Array businessHours
+        ObjectId menuId
+        Array announcements
+        Object image
         Boolean isActive
-        String resetPasswordToken
-        Date resetPasswordExpire
         Date createdAt
         Date updatedAt
     }
+
+    Menu {
+        ObjectId _id
+        String name
+        ObjectId store
+        ObjectId brand
+        Array categories
+        Boolean isActive
+        Date createdAt
+        Date updatedAt
+    }
+
+    %% 餐點相關實體
     DishTemplate {
         ObjectId _id
         String name
         Number basePrice
-        Object[] optionCategories
+        Array optionCategories
         Object image
         String description
-        String[] tags
+        Array tags
     }
+
     DishInstance {
         ObjectId _id
         ObjectId templateId
         String name
         Number basePrice
-        Object[] options
+        Array options
         String specialInstructions
         Number finalPrice
         Date createdAt
         Date updatedAt
     }
+
     OptionCategory {
         ObjectId _id
         String name
         String inputType
-        Object[] options
+        Array options
     }
+
     Option {
         ObjectId _id
         String name
         ObjectId refDishTemplate
         Number price
     }
-    Menu {
-        ObjectId _id
-        String name
-        ObjectId store
-        ObjectId brand
-        Object[] categories
-        Boolean isActive
-        Date createdAt
-        Date updatedAt
-    }
-    Store {
-        ObjectId _id
-        String name
-        ObjectId brand
-        Object[] businessHours
-        ObjectId menuId
-        Object[] announcements
-        Object image
-        Boolean isActive
-        Date createdAt
-        Date updatedAt
-    }
+
+    %% 庫存相關實體
     Inventory {
         ObjectId _id
         ObjectId store
@@ -241,6 +221,7 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
+
     StockLog {
         ObjectId _id
         ObjectId store
@@ -256,6 +237,38 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
+
+    %% 用戶相關實體
+    User {
+        ObjectId _id
+        String name
+        String email
+        String password
+        String phone
+        Array addresses
+        Date dateOfBirth
+        String gender
+        Boolean isActive
+        String resetPasswordToken
+        Date resetPasswordExpire
+        Date createdAt
+        Date updatedAt
+    }
+
+    Admin {
+        ObjectId _id
+        String name
+        String password
+        String role
+        ObjectId brand
+        Array manage
+        Boolean isActive
+        Date lastLogin
+        Date createdAt
+        Date updatedAt
+    }
+
+    %% 訂單相關實體
     Order {
         ObjectId _id
         String orderDateCode
@@ -265,10 +278,10 @@ erDiagram
         ObjectId user
         String orderType
         String status
-        Object[] items
+        Array items
         Number subtotal
         Number serviceCharge
-        Object[] discounts
+        Array discounts
         Number totalDiscount
         Number total
         String paymentType
@@ -286,6 +299,8 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
+
+    %% 優惠與點數相關實體
     PointRule {
         ObjectId _id
         ObjectId brand
@@ -298,6 +313,7 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
+
     PointTransaction {
         ObjectId _id
         ObjectId user
@@ -313,6 +329,23 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
+
+    PointInstance {
+        ObjectId _id
+        ObjectId user
+        ObjectId brand
+        Number amount
+        String source
+        String sourceModel
+        ObjectId sourceId
+        String status
+        Date expiryDate
+        Date usedAt
+        Object usedIn
+        Date createdAt
+        Date updatedAt
+    }
+
     CouponTemplate {
         ObjectId _id
         ObjectId brand
@@ -324,7 +357,7 @@ erDiagram
         Object exchangeInfo
         Number validityPeriod
         Boolean isActive
-        ObjectId[] stores
+        Array stores
         Date startDate
         Date endDate
         Number totalIssued
@@ -332,13 +365,14 @@ erDiagram
         Date createdAt
         Date updatedAt
     }
+
     CouponInstance {
         ObjectId _id
         ObjectId template
         String couponName
         String couponType
         Number discount
-        Object[] exchangeItems
+        Array exchangeItems
         ObjectId user
         Boolean isUsed
         Date usedAt
@@ -347,26 +381,44 @@ erDiagram
         Date expiryDate
         Number pointsUsed
     }
-    Admin ||--o{ Store : "manages"
-    Brand ||--o{ Store : "has"
-    Brand ||--o{ Admin : "has"
-    Brand ||--o{ PointRule : "has"
-    Brand ||--o{ CouponTemplate : "has"
-    User ||--o{ CouponInstance : "owns"
-    User ||--o{ Order : "places"
-    User ||--o{ PointTransaction : "has"
-    Store ||--o{ Inventory : "tracks"
-    Store ||--o{ Order : "receives"
-    Store ||--o{ StockLog : "has"
-    Store ||--o| Menu : "has"
-    DishTemplate ||--o{ DishInstance : "instantiates"
-    DishTemplate ||--o{ Inventory : "tracked_in"
-    OptionCategory ||--o{ Option : "contains"
-    DishTemplate }o--o{ OptionCategory : "uses"
-    Menu }o--o{ DishTemplate : "includes"
-    Order ||--o{ DishInstance : "contains"
-    CouponTemplate ||--o{ CouponInstance : "instantiates"
-    CouponInstance ||--o{ Order : "applied_to"
-    Order ||--o{ StockLog : "generates"
-    Order ||--o{ PointTransaction : "generates"
+
+    %% 品牌相關關係
+    Brand ||--o{ Store : "擁有"
+    Brand ||--o{ Admin : "雇用"
+    Brand ||--o{ PointRule : "定義"
+    Brand ||--o{ CouponTemplate : "提供"
+
+    %% 店鋪相關關係
+    Store ||--o{ Inventory : "管理庫存"
+    Store ||--o{ Order : "接收訂單"
+    Store ||--o{ StockLog : "記錄庫存變動"
+    Store ||--|| Menu : "使用菜單"
+
+    %% 菜單與餐點關係
+    Menu }o--o{ DishTemplate : "包含餐點"
+
+    %% 餐點相關關係
+    DishTemplate ||--o{ DishInstance : "實例化"
+    DishTemplate ||--o{ Inventory : "追蹤庫存"
+    DishTemplate }o--o{ OptionCategory : "擁有選項類別"
+    OptionCategory ||--o{ Option : "包含選項"
+
+    %% 訂單相關關係
+    Order }o--o{ DishInstance : "包含餐點"
+    Order ||--o{ StockLog : "影響庫存"
+    Order }o--|| User : "由用戶下單"
+
+    %% 用戶相關關係
+    User ||--o{ CouponInstance : "持有優惠券"
+    User ||--o{ PointTransaction : "擁有點數交易"
+    User ||--o{ PointInstance : "擁有點數"
+
+    %% 管理員相關關係
+    Admin }o--o{ Store : "管理店鋪"
+
+    %% 點數與優惠券關係
+    PointRule ||--o{ PointInstance : "創建點數"
+    PointInstance }o--o{ PointTransaction : "關聯交易"
+    CouponTemplate ||--o{ CouponInstance : "創建優惠券"
+    CouponInstance }o--o{ Order : "使用於訂單"
 ```
