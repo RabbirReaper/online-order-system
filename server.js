@@ -6,7 +6,7 @@ import mongoose from 'mongoose'
 import session from 'express-session'
 import { fileURLToPath } from 'url';
 
-import apiRoutes from './routes/index.js'
+import apiRoutes from './server/routes/index.js'
 
 dotenv.config()
 const app = express()
