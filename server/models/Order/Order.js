@@ -145,31 +145,6 @@ orderSchema.pre('save', async function (next) {
   next();
 });
 
-// 計算訂單總金額
-orderSchema.methods.calculateTotal = function () {
-  // 計算商品小計
-  this.subtotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
-
-  // 計算折扣總額
-  this.totalDiscount = (this.discounts || []).reduce((sum, discount) => sum + discount.amount, 0);
-
-  // 計算最終總額
-  this.total = this.subtotal + this.serviceCharge;
-
-  // 外送訂單加上運費
-  if (this.orderType === 'delivery' && this.deliveryInfo && this.deliveryInfo.deliveryFee) {
-    this.total += this.deliveryInfo.deliveryFee;
-  }
-
-  // 減去折扣
-  this.total -= this.totalDiscount;
-
-  // 確保總金額不會小於0
-  if (this.total < 0) this.total = 0;
-
-  return this.total;
-};
-
 // 取消訂單的方法
 orderSchema.methods.cancelOrder = async function (reason, cancelledBy, cancelledByModel) {
   if (this.status === 'completed') {
