@@ -66,27 +66,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   }
 };
 
-// 添加默認地址方法
-userSchema.methods.addAddress = function (address) {
-  // 如果設置為默認地址，先將其他地址的默認標記移除
-  if (address.isDefault) {
-    this.addresses.forEach(addr => {
-      addr.isDefault = false;
-    });
-  }
-
-  // 如果這是第一個地址，自動設為默認
-  if (this.addresses.length === 0) {
-    address.isDefault = true;
-  }
-
-  this.addresses.push(address);
-  return this.save();
-};
-
-// 獲取默認地址方法
-userSchema.methods.getDefaultAddress = function () {
-  return this.addresses.find(addr => addr.isDefault) || this.addresses[0];
-};
-
 export default mongoose.model('User', userSchema);

@@ -83,21 +83,4 @@ const couponTemplateSchema = new mongoose.Schema({
   }, // 最大發行數量 (如果有限制)
 }, { timestamps: true });
 
-couponTemplateSchema.statics.findAvailable = function () {
-  const now = new Date();
-  return this.find({
-    isActive: true,
-    startDate: { $lte: now },
-    $or: [
-      { endDate: { $gte: now } },
-      { endDate: { $exists: false } }
-    ],
-    $or: [
-      { maxIssuance: { $exists: false } },
-      { $expr: { $lt: ['$totalIssued', '$maxIssuance'] } }
-    ]
-  });
-};
-
-
 export default mongoose.model('CouponTemplate', couponTemplateSchema);

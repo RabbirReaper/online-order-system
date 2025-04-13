@@ -127,43 +127,4 @@ const orderSchema = new mongoose.Schema({
   }, // 取消時間
 }, { timestamps: true });
 
-// 自動生成訂單編號
-orderSchema.pre('save', async function (next) {
-  if (this.isNew) {
-    // 使用台灣時間（UTC+8）
-    const taiwanNow = DateTime.now().setZone('Asia/Taipei');
-    const orderDateCode = taiwanNow.toFormat('yyLLdd'); // e.g. '240410'
-    this.orderDateCode = orderDateCode;
-
-    // 查找今天的最後一個訂單（根據相同的 orderDateCode）
-    const lastOrder = await this.constructor.findOne({
-      orderDateCode
-    }).sort({ sequence: -1 });
-
-    this.sequence = lastOrder ? lastOrder.sequence + 1 : 1;
-  }
-  next();
-});
-
-// 取消訂單的方法
-orderSchema.methods.cancelOrder = async function (reason, cancelledBy, cancelledByModel) {
-  if (this.status === 'completed') {
-    throw new Error('已完成的訂單無法取消');
-  }
-
-  if (this.status === 'cancelled') {
-    throw new Error('訂單已經被取消');
-  }
-
-  // 設置取消信息
-  this.status = 'cancelled';
-  this.cancelReason = reason;
-  this.cancelledBy = cancelledBy;
-  this.cancelledByModel = cancelledByModel;
-  this.cancelledAt = new Date();
-
-  await this.save();
-  return this;
-};
-
 export default mongoose.model('Order', orderSchema);
