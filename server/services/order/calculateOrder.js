@@ -1,6 +1,4 @@
 /**
- * server/services/order/calculateOrder.js
- *
  * 訂單金額計算服務
  * 集中處理所有與訂單金額計算相關的業務邏輯
  */
@@ -11,7 +9,7 @@
  * @param {Number} quantity - 數量
  * @returns {Number} 小計金額
  */
-const calculateItemSubtotal = (price, quantity) => {
+export const calculateItemSubtotal = (price, quantity) => {
   if (typeof price !== 'number' || price < 0 || typeof quantity !== 'number' || quantity <= 0) {
     return 0;
   }
@@ -23,7 +21,7 @@ const calculateItemSubtotal = (price, quantity) => {
  * @param {Array} items - 訂單項目陣列
  * @returns {Number} 小計金額
  */
-const calculateOrderSubtotal = (items = []) => {
+export const calculateOrderSubtotal = (items = []) => {
   if (!Array.isArray(items) || items.length === 0) {
     return 0;
   }
@@ -42,7 +40,7 @@ const calculateOrderSubtotal = (items = []) => {
  * @param {Number} serviceChargeRate - 服務費率 (如: 0.1 表示 10%)
  * @returns {Number} 服務費金額
  */
-const calculateServiceCharge = (subtotal, serviceChargeRate = 0.1) => {
+export const calculateServiceCharge = (subtotal, serviceChargeRate = 0.1) => {
   if (typeof subtotal !== 'number' || subtotal < 0) {
     return 0;
   }
@@ -62,7 +60,7 @@ const calculateServiceCharge = (subtotal, serviceChargeRate = 0.1) => {
  * @param {Number} maxDiscountAmount - 最大折扣金額 (僅對百分比折扣有效)
  * @returns {Number} 計算後的折扣金額
  */
-const calculateDiscountAmount = (discountType, discountValue, subtotal, maxDiscountAmount = null) => {
+export const calculateDiscountAmount = (discountType, discountValue, subtotal, maxDiscountAmount = null) => {
   if (typeof subtotal !== 'number' || subtotal <= 0) {
     return 0;
   }
@@ -92,7 +90,7 @@ const calculateDiscountAmount = (discountType, discountValue, subtotal, maxDisco
  * @param {Array} discounts - 折扣列表
  * @returns {Number} 折扣總額
  */
-const calculateTotalDiscount = (discounts = []) => {
+export const calculateTotalDiscount = (discounts = []) => {
   if (!Array.isArray(discounts) || discounts.length === 0) {
     return 0;
   }
@@ -113,7 +111,7 @@ const calculateTotalDiscount = (discounts = []) => {
  * @param {Number} totalDiscount - 折扣總額
  * @returns {Number} 計算後的訂單總金額
  */
-const calculateOrderTotal = (subtotal, serviceCharge = 0, deliveryFee = 0, totalDiscount = 0) => {
+export const calculateOrderTotal = (subtotal, serviceCharge = 0, deliveryFee = 0, totalDiscount = 0) => {
   const total = subtotal + serviceCharge + deliveryFee - totalDiscount;
   return Math.max(0, total); // 確保總金額至少為 0
 };
@@ -123,7 +121,7 @@ const calculateOrderTotal = (subtotal, serviceCharge = 0, deliveryFee = 0, total
  * @param {Object} order - 訂單對象或訂單數據
  * @returns {Object} 包含所有計算結果的對象
  */
-const calculateAllOrderAmounts = (order) => {
+export const calculateAllOrderAmounts = (order) => {
   // 防止空訂單
   if (!order || !Array.isArray(order.items)) {
     return {
@@ -139,7 +137,7 @@ const calculateAllOrderAmounts = (order) => {
   const subtotal = calculateOrderSubtotal(order.items);
 
   // 計算服務費 (預設10%)
-  const serviceCharge = calculateServiceCharge(subtotal, 0.1);
+  // const serviceCharge = calculateServiceCharge(subtotal, 0.1);
 
   // 計算外送費
   const deliveryFee = order.orderType === 'delivery' && order.deliveryInfo ?
@@ -164,7 +162,7 @@ const calculateAllOrderAmounts = (order) => {
  * 訂單金額計算服務 (用於 Order 模型)
  * @param {Object} order - Order 模型實例
  */
-const updateOrderAmounts = (order) => {
+export const updateOrderAmounts = (order) => {
   // 確保是有效的訂單對象
   if (!order || !Array.isArray(order.items)) {
     return false;
@@ -186,16 +184,4 @@ const updateOrderAmounts = (order) => {
   order.total = total;
 
   return true;
-};
-
-// 導出服務函數
-export {
-  calculateItemSubtotal,
-  calculateOrderSubtotal,
-  calculateServiceCharge,
-  calculateDiscountAmount,
-  calculateTotalDiscount,
-  calculateOrderTotal,
-  calculateAllOrderAmounts,
-  updateOrderAmounts
 };
