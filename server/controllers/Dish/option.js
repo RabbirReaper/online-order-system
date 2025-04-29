@@ -1,165 +1,127 @@
-import Option from '../../models/Dish/Option.js';
-import OptionCategory from '../../models/Dish/OptionCategory.js';
-import mongoose from 'mongoose';
+import * as optionService from '../../services/dish/optionService.js';
+import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取所有選項
-export const getAllOptions = async (req, res) => {
-  try {
-    const { categoryId } = req.query;
+export const getAllOptions = asyncHandler(async (req, res) => {
+  // 從當前登入的管理員中獲取品牌ID
+  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
 
-    // 過濾條件
-    const filter = {};
-    if (categoryId) {
-      filter.category = categoryId;
-    }
-
-    const options = await Option.find(filter)
-      .populate('category')
-      .sort({ category: 1, order: 1, name: 1 });
-
-    res.json({
-      success: true,
-      options
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: 'brandId 為必須參數'
     });
-  } catch (error) {
-    console.error('Error getting options:', error);
-    res.status(500).json({ success: false, message: '伺服器錯誤' });
   }
-};
+
+  const options = {
+    categoryId: req.query.categoryId
+  };
+
+  const allOptions = await optionService.getAllOptions(brandId, options);
+
+  res.json({
+    success: true,
+    options: allOptions
+  });
+});
 
 // 獲取單個選項
-export const getOptionById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const option = await Option.findById(id).populate('category');
+export const getOptionById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
 
-    if (!option) {
-      return res.status(404).json({ success: false, message: '選項不存在' });
-    }
-
-    res.json({
-      success: true,
-      option
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: 'brandId 為必須參數'
     });
-  } catch (error) {
-    console.error('Error getting option:', error);
-    res.status(500).json({ success: false, message: '伺服器錯誤' });
   }
-};
+
+  const option = await optionService.getOptionById(id, brandId);
+
+  res.json({
+    success: true,
+    option
+  });
+});
 
 // 創建新選項
-export const createOption = async (req, res) => {
-  try {
-    const { name, price, order, category } = req.body;
+export const createOption = asyncHandler(async (req, res) => {
+  const brandId = req.adminRole === 'boss' ? req.body.brand : req.adminBrand;
 
-    // 基本驗證
-    if (!name || !category) {
-      return res.status(400).json({ success: false, message: '名稱和類別為必填欄位' });
-    }
-
-    // 確認類別是否存在
-    const categoryExists = await OptionCategory.findById(category);
-    if (!categoryExists) {
-      return res.status(404).json({ success: false, message: '選項類別不存在' });
-    }
-
-    // 創建新選項
-    const newOption = new Option({
-      name,
-      price: price || 0,
-      order: order || 0,
-      category
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID為必須參數'
     });
-
-    await newOption.save();
-
-    res.status(201).json({
-      success: true,
-      message: '選項創建成功',
-      option: newOption
-    });
-  } catch (error) {
-    console.error('Error creating option:', error);
-    res.status(500).json({ success: false, message: '伺服器錯誤' });
   }
-};
+
+  const newOption = await optionService.createOption(req.body, brandId);
+
+  res.status(201).json({
+    success: true,
+    message: '選項創建成功',
+    option: newOption
+  });
+});
 
 // 更新選項
-export const updateOption = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, price, order, category } = req.body;
+export const updateOption = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const brandId = req.adminRole === 'boss' ? req.body.brand || req.query.brandId : req.adminBrand;
 
-    // 基本驗證
-    if (!name || !category) {
-      return res.status(400).json({ success: false, message: '名稱和類別為必填欄位' });
-    }
-
-    // 確認類別是否存在
-    const categoryExists = await OptionCategory.findById(category);
-    if (!categoryExists) {
-      return res.status(404).json({ success: false, message: '選項類別不存在' });
-    }
-
-    // 更新選項
-    const updatedOption = await Option.findByIdAndUpdate(
-      id,
-      {
-        name,
-        price: price || 0,
-        order: order || 0,
-        category
-      },
-      { new: true }
-    );
-
-    if (!updatedOption) {
-      return res.status(404).json({ success: false, message: '選項不存在' });
-    }
-
-    res.json({
-      success: true,
-      message: '選項更新成功',
-      option: updatedOption
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID為必須參數'
     });
-  } catch (error) {
-    console.error('Error updating option:', error);
-    res.status(500).json({ success: false, message: '伺服器錯誤' });
   }
-};
+
+  const updatedOption = await optionService.updateOption(id, req.body, brandId);
+
+  res.json({
+    success: true,
+    message: '選項更新成功',
+    option: updatedOption
+  });
+});
 
 // 刪除選項
-export const deleteOption = async (req, res) => {
-  try {
-    const { id } = req.params;
+export const deleteOption = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
 
-    // 檢查是否有關聯的餐點實例使用此選項
-    const DishInstance = mongoose.model('DishInstance');
-    const relatedInstances = await DishInstance.countDocuments({
-      'options.selections.id': id
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID為必須參數'
     });
-
-    if (relatedInstances > 0) {
-      return res.status(400).json({
-        success: false,
-        message: '此選項被餐點實例使用中，無法刪除。'
-      });
-    }
-
-    // 刪除選項
-    const deletedOption = await Option.findByIdAndDelete(id);
-
-    if (!deletedOption) {
-      return res.status(404).json({ success: false, message: '選項不存在' });
-    }
-
-    res.json({
-      success: true,
-      message: '選項刪除成功'
-    });
-  } catch (error) {
-    console.error('Error deleting option:', error);
-    res.status(500).json({ success: false, message: '伺服器錯誤' });
   }
-};
 
+  const result = await optionService.deleteOption(id, brandId);
+
+  res.json({
+    success: true,
+    message: result.message
+  });
+});
+
+// 獲取類別下的所有選項
+export const getOptionsByCategory = asyncHandler(async (req, res) => {
+  const { categoryId } = req.params;
+  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: 'brandId 為必須參數'
+    });
+  }
+
+  const options = await optionService.getOptionsByCategoryId(categoryId, brandId);
+
+  res.json({
+    success: true,
+    options
+  });
+});

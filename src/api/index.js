@@ -6,6 +6,7 @@ import storeApi from './modules/store';
 import brandApi from './modules/brand';
 import inventoryApi from './modules/inventory';
 import menuApi from './modules/menu';
+import dishApi from './modules/dish';
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -16,12 +17,20 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 確保跨域請求能攜帶cookie
 });
 
 // 請求攔截器，可以用於添加身份驗證令牌等
 apiClient.interceptors.request.use(
   (config) => {
-    // 在此處添加任何請求處理邏輯
+    // 添加管理員品牌ID (如果存在於本地存儲)
+    const adminInfo = JSON.parse(localStorage.getItem('adminInfo') || '{}');
+
+    if (adminInfo.brand && !config.params?.brandId && adminInfo.role !== 'boss') {
+      config.params = config.params || {};
+      config.params.brandId = adminInfo.brand;
+    }
+
     return config;
   },
   (error) => {
@@ -41,6 +50,16 @@ apiClient.interceptors.response.use(
       // 處理後端返回的錯誤信息
       const errorMessage = error.response.data.message || '請求失敗';
       console.error('API 請求錯誤:', errorMessage);
+
+      // 處理未授權錯誤 (401)，登出用戶
+      if (error.response.status === 401) {
+        // 清除本地存儲的用戶信息
+        localStorage.removeItem('adminInfo');
+        // 重定向到登入頁面
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
     } else {
       console.error('連接服務器失敗:', error.message);
     }
@@ -55,6 +74,7 @@ export default {
   brand: brandApi(apiClient),
   inventory: inventoryApi(apiClient),
   menu: menuApi(apiClient),
+  dish: dishApi(apiClient),
   // 導出 axios 實例，方便直接使用
   client: apiClient,
 };

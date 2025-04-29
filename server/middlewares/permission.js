@@ -1,13 +1,8 @@
 import Store from '../models/Store/Store.js';
+import Admin from '../models/User/Admin.js';
 
 /**
- * 權限檢查中介軟體
- * 檢查管理員是否具有特定權限
- * @param {Array|String} requiredPermissions - 所需的權限
- * @param {Boolean} requireAllPermissions - 是否需要具備所有權限 (預設: false，只需擁有其中一個)
- */
-/**
- * 角色檢查中介軟體
+ * 角色檢查中間軟體
  * 限制只有特定角色的管理員才能訪問
  * @param {Array|String} allowedRoles - 允許的角色
  */
@@ -36,6 +31,66 @@ export const roleMiddleware = (allowedRoles) => async (req, res, next) => {
     return next();
   } catch (error) {
     console.error('Role check error:', error);
+    return res.status(500).json({
+      success: false,
+      message: '伺服器錯誤'
+    });
+  }
+};
+
+/**
+ * 品牌中間件
+ * 處理品牌權限和設置品牌ID到請求對象
+ */
+export const brandMiddleware = async (req, res, next) => {
+  try {
+    // 確認使用者已通過驗證
+    if (!req.adminId || !req.adminRole) {
+      return res.status(401).json({
+        success: false,
+        message: '請先登入'
+      });
+    }
+
+    // 如果是boss角色，需要提供品牌ID參數
+    if (req.adminRole === 'boss') {
+      const brandId = req.query.brandId || req.body.brand;
+      if (!brandId) {
+        return res.status(400).json({
+          success: false,
+          message: 'boss角色必須提供品牌ID參數'
+        });
+      }
+
+      // 設置品牌ID到請求對象，方便後續使用
+      req.adminBrand = brandId;
+      return next();
+    }
+
+    // 如果是brand_admin或store_admin角色，獲取其所屬品牌
+    const admin = await Admin.findById(req.adminId);
+    if (!admin || !admin.brand) {
+      return res.status(403).json({
+        success: false,
+        message: '管理員帳號未正確設置品牌資訊'
+      });
+    }
+
+    // 設置品牌ID到請求對象
+    req.adminBrand = admin.brand;
+
+    // 如果有品牌參數，確認是否匹配管理員的品牌
+    const requestedBrandId = req.query.brandId || req.body.brand;
+    if (requestedBrandId && requestedBrandId !== admin.brand.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: '無權訪問其他品牌的資源'
+      });
+    }
+
+    return next();
+  } catch (error) {
+    console.error('Brand check error:', error);
     return res.status(500).json({
       success: false,
       message: '伺服器錯誤'
@@ -77,9 +132,17 @@ export const permissionMiddleware = (requiredPermissions, requireAllPermissions 
         return next();
       }
 
-      // 檢查指定的店鋪是否屬於此 brand_admin 管理範圍
-      const storeExists = req.adminManage.some(item => item.store.toString() === storeId);
-      if (!storeExists) {
+      // 檢查指定的店鋪是否屬於此 brand_admin 的品牌
+      const store = await Store.findById(storeId).select('brand');
+      if (!store) {
+        return res.status(404).json({
+          success: false,
+          message: '店鋪不存在'
+        });
+      }
+
+      // 從管理員中獲取品牌ID (已在brandMiddleware中設置)
+      if (store.brand.toString() !== req.adminBrand.toString()) {
         return res.status(403).json({
           success: false,
           message: '沒有操作此店鋪的權限'

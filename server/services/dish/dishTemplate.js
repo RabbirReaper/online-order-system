@@ -8,19 +8,18 @@ import OptionCategory from '../../models/Dish/OptionCategory.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**
- * 獲取所有餐點模板
+ * 獲取所有餐點模板（按品牌過濾）
+ * @param {String} brandId - 品牌ID
  * @param {Object} options - 查詢選項
  * @param {String} options.query - 搜尋關鍵字 (名稱)
  * @param {Array} options.tags - 標籤列表
- * @param {Number} options.page - 頁碼
- * @param {Number} options.limit - 每頁數量
- * @returns {Promise<Object>} 餐點模板列表與分頁資訊
+ * @returns {Promise<Array>} 餐點模板列表
  */
-export const getAllTemplates = async (options = {}) => {
-  const { query = '', tags = [], page = 1, limit = 20 } = options;
+export const getAllTemplates = async (brandId, options = {}) => {
+  const { query = '', tags = [] } = options;
 
   // 構建查詢條件
-  const queryConditions = {};
+  const queryConditions = { brand: brandId };
 
   if (query) {
     queryConditions.name = { $regex: query, $options: 'i' };
@@ -30,46 +29,27 @@ export const getAllTemplates = async (options = {}) => {
     queryConditions.tags = { $in: tags };
   }
 
-  // 計算分頁
-  const skip = (page - 1) * limit;
-
-  // 查詢總數
-  const total = await DishTemplate.countDocuments(queryConditions);
-
-  // 查詢餐點模板
+  // 查詢餐點模板 - 移除分頁，直接返回所有結果
   const templates = await DishTemplate.find(queryConditions)
-    .sort({ name: 1 })
-    .skip(skip)
-    .limit(limit);
+    .sort({ name: 1 });
 
-  // 處理分頁信息
-  const totalPages = Math.ceil(total / limit);
-  const hasNextPage = page < totalPages;
-  const hasPrevPage = page > 1;
-
-  return {
-    templates,
-    pagination: {
-      total,
-      totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage,
-      hasPrevPage
-    }
-  };
+  return templates;
 };
 
 /**
- * 根據ID獲取餐點模板
+ * 根據ID獲取餐點模板（驗證品牌）
  * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
  * @returns {Promise<Object>} 餐點模板
  */
-export const getTemplateById = async (templateId) => {
-  const template = await DishTemplate.findById(templateId);
+export const getTemplateById = async (templateId, brandId) => {
+  const template = await DishTemplate.findOne({
+    _id: templateId,
+    brand: brandId
+  });
 
   if (!template) {
-    throw new AppError('餐點模板不存在', 404);
+    throw new AppError('餐點模板不存在或無權訪問', 404);
   }
 
   return template;
@@ -78,9 +58,10 @@ export const getTemplateById = async (templateId) => {
 /**
  * 創建餐點模板
  * @param {Object} templateData - 模板數據
+ * @param {String} brandId - 品牌ID
  * @returns {Promise<Object>} 創建的餐點模板
  */
-export const createTemplate = async (templateData) => {
+export const createTemplate = async (templateData, brandId) => {
   // 基本驗證
   if (!templateData.name || !templateData.basePrice) {
     throw new AppError('名稱和基本價格為必填欄位', 400);
@@ -91,15 +72,21 @@ export const createTemplate = async (templateData) => {
     throw new AppError('圖片資訊不完整', 400);
   }
 
-  // 檢查選項類別是否存在
+  // 檢查選項類別是否存在且屬於同一品牌
   if (templateData.optionCategories && templateData.optionCategories.length > 0) {
     const categoryIds = templateData.optionCategories.map(oc => oc.categoryId);
-    const categories = await OptionCategory.find({ _id: { $in: categoryIds } });
+    const categories = await OptionCategory.find({
+      _id: { $in: categoryIds },
+      brand: brandId
+    });
 
     if (categories.length !== categoryIds.length) {
-      throw new AppError('部分選項類別不存在', 400);
+      throw new AppError('部分選項類別不存在或不屬於此品牌', 400);
     }
   }
+
+  // 確保設置品牌ID
+  templateData.brand = brandId;
 
   // 創建餐點模板
   const newTemplate = new DishTemplate(templateData);
@@ -112,25 +99,35 @@ export const createTemplate = async (templateData) => {
  * 更新餐點模板
  * @param {String} templateId - 模板ID
  * @param {Object} updateData - 更新數據
+ * @param {String} brandId - 品牌ID
  * @returns {Promise<Object>} 更新後的餐點模板
  */
-export const updateTemplate = async (templateId, updateData) => {
-  // 檢查模板是否存在
-  const template = await DishTemplate.findById(templateId);
+export const updateTemplate = async (templateId, updateData, brandId) => {
+  // 檢查模板是否存在且屬於該品牌
+  const template = await DishTemplate.findOne({
+    _id: templateId,
+    brand: brandId
+  });
 
   if (!template) {
-    throw new AppError('餐點模板不存在', 404);
+    throw new AppError('餐點模板不存在或無權訪問', 404);
   }
 
-  // 如果更新選項類別，檢查它們是否存在
+  // 如果更新選項類別，檢查它們是否存在且屬於同一品牌
   if (updateData.optionCategories && updateData.optionCategories.length > 0) {
     const categoryIds = updateData.optionCategories.map(oc => oc.categoryId);
-    const categories = await OptionCategory.find({ _id: { $in: categoryIds } });
+    const categories = await OptionCategory.find({
+      _id: { $in: categoryIds },
+      brand: brandId
+    });
 
     if (categories.length !== categoryIds.length) {
-      throw new AppError('部分選項類別不存在', 400);
+      throw new AppError('部分選項類別不存在或不屬於此品牌', 400);
     }
   }
+
+  // 防止更改品牌
+  delete updateData.brand;
 
   // 更新模板
   Object.keys(updateData).forEach(key => {
@@ -145,14 +142,18 @@ export const updateTemplate = async (templateId, updateData) => {
 /**
  * 刪除餐點模板
  * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
  * @returns {Promise<Object>} 刪除結果
  */
-export const deleteTemplate = async (templateId) => {
-  // 檢查模板是否存在
-  const template = await DishTemplate.findById(templateId);
+export const deleteTemplate = async (templateId, brandId) => {
+  // 檢查模板是否存在且屬於該品牌
+  const template = await DishTemplate.findOne({
+    _id: templateId,
+    brand: brandId
+  });
 
   if (!template) {
-    throw new AppError('餐點模板不存在', 404);
+    throw new AppError('餐點模板不存在或無權訪問', 404);
   }
 
   // TODO: 檢查是否有關聯的菜單項目、餐點實例等，如果有則拒絕刪除
@@ -165,14 +166,18 @@ export const deleteTemplate = async (templateId) => {
 /**
  * 獲取餐點模板的所有可用選項
  * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
  * @returns {Promise<Array>} 選項類別及其選項列表
  */
-export const getTemplateOptions = async (templateId) => {
+export const getTemplateOptions = async (templateId, brandId) => {
   // 獲取模板
-  const template = await DishTemplate.findById(templateId);
+  const template = await DishTemplate.findOne({
+    _id: templateId,
+    brand: brandId
+  });
 
   if (!template) {
-    throw new AppError('餐點模板不存在', 404);
+    throw new AppError('餐點模板不存在或無權訪問', 404);
   }
 
   if (!template.optionCategories || template.optionCategories.length === 0) {
@@ -181,7 +186,10 @@ export const getTemplateOptions = async (templateId) => {
 
   // 獲取模板關聯的所有選項類別
   const categoryIds = template.optionCategories.map(oc => oc.categoryId);
-  const categories = await OptionCategory.find({ _id: { $in: categoryIds } }).populate('options.refOption');
+  const categories = await OptionCategory.find({
+    _id: { $in: categoryIds },
+    brand: brandId
+  }).populate('options.refOption');
 
   // 組織返回數據結構
   const result = [];
