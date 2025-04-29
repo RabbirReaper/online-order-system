@@ -5,16 +5,19 @@ import { permissionMiddleware } from '../middlewares/permission.js';
 
 const router = express.Router();
 
-// 管理員登入
+// 保留管理員登入功能
 router.post('/login', authLogin);
 
+// 保留登出功能
+router.post('/logout', logout);
+
+// 暫時不需要的功能註解掉
+/*
 // 建立管理員帳號 (需要高級權限)
 router.post('/admin', authMiddleware, permissionMiddleware(['manage_staff']), createAdmin);
 
-// 登出
-router.post('/logout', logout);
-
 // 修改密碼
 router.post('/change-password', authMiddleware, changePassword);
+*/
 
 export default router;
