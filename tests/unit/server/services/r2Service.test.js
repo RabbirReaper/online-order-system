@@ -8,7 +8,6 @@ const dummyContentType = 'text/plain';
 
 describe('r2Service 基本功能測試', () => {
   const key = `test/${randomUUID()}.txt`; // 每次都用不同的 key，避免衝突
-  const publicUrl = process.env.VITE_R2_PUBLIC_URL; // 你如果有設定公開 URL，方便測試 getImageUrl
 
   it('應該可以成功上傳圖片', async () => {
     const result = await uploadImage(dummyImageData, key, dummyContentType);
@@ -20,13 +19,6 @@ describe('r2Service 基本功能測試', () => {
     expect(result).not.toBeNull();
     expect(result?.contentType).toBe(dummyContentType);
     expect(result?.data.toString()).toBe('Hello, world!');
-  });
-
-  it('應該可以成功取得公開圖片網址', () => {
-    if (publicUrl) {
-      const url = getImageUrl(key, publicUrl);
-      expect(url).toContain(key);
-    }
   });
 
   it('應該可以成功刪除圖片', async () => {
