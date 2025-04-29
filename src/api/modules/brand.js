@@ -27,7 +27,7 @@ export default function (apiClient) {
      * @param {Object} data - 品牌資料
      * @param {string} data.name - 品牌名稱
      * @param {string} [data.description] - 品牌描述
-     * @param {string|Buffer} [data.imageData] - 圖片資料 (Base64 或 Buffer)
+     * @param {string} [data.imageData] - 圖片資料 (Base64)
      * @param {Object} [data.image] - 現有圖片資訊 (提供 imageData 時忽略)
      * @returns {Promise} - API 回應
      */
@@ -42,7 +42,7 @@ export default function (apiClient) {
      * @param {Object} params.data - 更新資料
      * @param {string} [params.data.name] - 品牌名稱
      * @param {string} [params.data.description] - 品牌描述
-     * @param {string|Buffer} [params.data.imageData] - 新圖片資料 (Base64 或 Buffer)
+     * @param {string} [params.data.imageData] - 新圖片資料 (Base64)
      * @returns {Promise} - API 回應
      */
     updateBrand({ id, data }) {

@@ -30,7 +30,7 @@ export default function (apiClient) {
      * @param {Object} data - 店鋪資料
      * @param {string} data.name - 店鋪名稱
      * @param {string} data.brand - 品牌ID
-     * @param {string|Buffer} [data.imageData] - 圖片資料 (Base64 或 Buffer)
+     * @param {string} [data.imageData] - 圖片資料 (Base64)
      * @param {Object} [data.image] - 現有圖片資訊 (提供 imageData 時忽略)
      * @param {Array} [data.businessHours] - 營業時間
      * @param {string} [data.menuId] - 菜單ID
@@ -47,7 +47,7 @@ export default function (apiClient) {
      * @param {Object} params - 更新參數
      * @param {string} params.id - 店鋪ID
      * @param {Object} params.data - 更新的店鋪資料
-     * @param {string|Buffer} [params.data.imageData] - 新圖片資料 (Base64 或 Buffer)
+     * @param {string} [params.data.imageData] - 新圖片資料 (Base64)
      * @returns {Promise} - API 回應
      */
     updateStore({ id, data }) {

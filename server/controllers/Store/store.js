@@ -43,10 +43,8 @@ export const getStoreById = asyncHandler(async (req, res) => {
 // 創建店家
 export const createStore = asyncHandler(async (req, res) => {
   try {
-    // 處理可能的圖片資料
-    if (req.file) {
-      req.body.imageData = req.file.buffer;
-    }
+    // 圖片數據直接從請求體中獲取
+    // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
     const newStore = await storeService.createStore(req.body);
 
@@ -69,10 +67,8 @@ export const updateStore = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 處理圖片資料
-    if (req.file) {
-      req.body.imageData = req.file.buffer;
-    }
+    // 圖片數據直接從請求體中獲取
+    // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
     const updatedStore = await storeService.updateStore(id, req.body);
 

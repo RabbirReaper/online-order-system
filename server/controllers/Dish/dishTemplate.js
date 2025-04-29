@@ -57,11 +57,8 @@ export const createDishTemplate = asyncHandler(async (req, res) => {
     });
   }
 
-  // 處理可能的圖片資料
-  // 圖片資料可能來自表單的 base64 字串或檔案上傳
-  if (req.file) {
-    req.body.imageData = req.file.buffer;
-  }
+  // 圖片數據直接從請求體中獲取
+  // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
   const newTemplate = await dishTemplateService.createTemplate(req.body, brandId);
 
@@ -84,10 +81,8 @@ export const updateDishTemplate = asyncHandler(async (req, res) => {
     });
   }
 
-  // 處理圖片資料
-  if (req.file) {
-    req.body.imageData = req.file.buffer;
-  }
+  // 圖片數據直接從請求體中獲取
+  // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
   const updatedTemplate = await dishTemplateService.updateTemplate(id, req.body, brandId);
 

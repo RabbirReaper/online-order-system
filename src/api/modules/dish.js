@@ -33,7 +33,7 @@ export default function (apiClient) {
      * @param {string} data.brand - 品牌ID
      * @param {string} data.name - 名稱
      * @param {number} data.basePrice - 基本價格
-     * @param {string|Buffer} [data.imageData] - 圖片資料 (Base64 或 Buffer)
+     * @param {string} [data.imageData] - 圖片資料 (Base64)
      * @param {Object} [data.image] - 現有圖片資訊 (提供 imageData 時忽略)
      * @param {Array} [data.optionCategories] - 選項類別
      * @param {string} [data.description] - 描述
@@ -49,7 +49,7 @@ export default function (apiClient) {
      * @param {string} id - 模板ID
      * @param {Object} data - 更新資料
      * @param {string} data.brand - 品牌ID
-     * @param {string|Buffer} [data.imageData] - 新圖片資料 (Base64 或 Buffer)
+     * @param {string} [data.imageData] - 新圖片資料 (Base64)
      * @returns {Promise} - API 回應
      */
     updateDishTemplate(id, data) {
