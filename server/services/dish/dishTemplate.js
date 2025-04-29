@@ -217,19 +217,3 @@ export const getTemplateOptions = async (templateId) => {
 
   return result;
 };
-
-/**
- * 獲取餐點熱門標籤
- * @param {Number} limit - 返回標籤數量
- * @returns {Promise<Array>} 標籤列表
- */
-export const getPopularTags = async (limit = 10) => {
-  const tags = await DishTemplate.aggregate([
-    { $unwind: '$tags' },
-    { $group: { _id: '$tags', count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
-    { $limit: limit }
-  ]);
-
-  return tags.map(tag => tag._id);
-};
