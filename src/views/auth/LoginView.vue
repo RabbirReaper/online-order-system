@@ -115,18 +115,16 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    // 實際 API 呼叫 (此段程式碼僅供示範，實際環境中取消註解)
-    /*
+    // 實際 API 呼叫
     const response = await api.auth.login({
       name: formData.username,
       password: formData.password
     });
-    */
 
-    // 模擬 API 呼叫
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 保存登入資訊到 localStorage
+    localStorage.setItem('adminToken', response.token || 'dummy-token');
+    localStorage.setItem('adminRole', response.role || 'boss');
 
-    // 模擬登入成功
     console.log('登入成功');
 
     // 根據記住我選項，可以儲存部分資訊到 localStorage
@@ -137,7 +135,13 @@ const handleLogin = async () => {
     }
 
     // 如果有重定向參數，則導航到該頁面，否則導航到預設頁面
-    const redirectPath = route.query.redirect || '/admin';
+    let redirectPath = route.query.redirect || '/admin';
+
+    // 根據角色決定預設重定向位置
+    if (response.role === 'boss' && redirectPath === '/admin') {
+      redirectPath = '/boss';
+    }
+
     router.push(redirectPath);
 
   } catch (error) {
@@ -157,19 +161,34 @@ const handleLogin = async () => {
 // 測試用的快速登入功能
 const loginAsBoss = () => {
   formData.username = 'boss';
-  formData.password = 'password';
+  formData.password = '123456';
+
+  // 存儲相關資訊到 localStorage (測試用)
+  localStorage.setItem('adminToken', 'dummy-token');
+  localStorage.setItem('adminRole', 'boss');
+
   router.push('/boss');
 };
 
 const loginAsBrandAdmin = () => {
   formData.username = 'brand_admin';
   formData.password = 'password';
+
+  // 存儲相關資訊到 localStorage (測試用)
+  localStorage.setItem('adminToken', 'dummy-token');
+  localStorage.setItem('adminRole', 'brand_admin');
+
   router.push('/admin');
 };
 
 const loginAsStoreAdmin = () => {
   formData.username = 'store_admin';
   formData.password = 'password';
+
+  // 存儲相關資訊到 localStorage (測試用)
+  localStorage.setItem('adminToken', 'dummy-token');
+  localStorage.setItem('adminRole', 'store_admin');
+
   router.push('/admin');
 };
 </script>

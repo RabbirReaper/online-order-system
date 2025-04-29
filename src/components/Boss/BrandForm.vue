@@ -188,20 +188,39 @@ const submitForm = async () => {
 
     if (formData.image) {
       formDataToSend.append('image', formData.image);
+
+      // 轉換圖片為Base64用於API
+      const reader = new FileReader();
+      reader.readAsDataURL(formData.image);
+      reader.onload = async () => {
+        const imageData = reader.result.split(',')[1]; // 去除 data:image/x;base64, 前綴
+
+        // 實際呼叫 API
+        const response = await api.brand.createBrand({
+          name: formData.name,
+          description: formData.description || '',
+          imageData: imageData
+        });
+        console.log('品牌創建成功:', response);
+
+        // 顯示成功訊息
+        alert('品牌創建成功！');
+
+        // 重置表單
+        resetForm();
+
+        // 觸發事件通知父組件
+        emit('brand-created');
+      };
+      return;
     }
 
-    // 實際專案中，這裡可能需要使用另一個 API 先上傳圖片，然後將圖片資訊再與品牌一起儲存
-    // 為了示範，這裡假設 API 可以直接處理圖片上傳
-
-    // 實際呼叫 API (模擬)
-    // 實際環境中取消註解以下程式碼並使用真實 API
-    /*
-    const response = await api.brand.createBrand(formDataToSend);
+    // 如果沒有圖片，直接呼叫API (不應該發生，因為我們要求圖片必填)
+    const response = await api.brand.createBrand({
+      name: formData.name,
+      description: formData.description || '',
+    });
     console.log('品牌創建成功:', response);
-    */
-
-    // 模擬 API 呼叫
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // 顯示成功訊息
     alert('品牌創建成功！');

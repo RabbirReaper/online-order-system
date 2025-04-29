@@ -141,7 +141,7 @@ const pagination = reactive({
   limit: 12
 });
 
-// 模擬品牌數據 (實際應從 API 獲取)
+// 模擬品牌數據 (僅在 API 失敗時使用)
 const mockBrands = [
   {
     _id: '1',
@@ -238,46 +238,51 @@ const getPageNumbers = () => {
 const fetchBrands = async () => {
   isLoading.value = true;
   try {
-    // 這裡使用的是實際 API 的呼叫方式，但在示例中使用模擬數據
-    /*
+    // 實際 API 呼叫
     const response = await api.brand.getAllBrands({
       page: currentPage.value,
       limit: pagination.limit,
       search: searchQuery.value
     });
 
-    brands.value = response.brands;
-    pagination.total = response.pagination.total;
-    pagination.totalPages = response.pagination.totalPages;
-    */
-
-    // 模擬 API 呼叫
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 模擬搜尋功能
-    let filteredBrands = [...mockBrands];
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      filteredBrands = mockBrands.filter(brand =>
-        brand.name.toLowerCase().includes(query) ||
-        (brand.description && brand.description.toLowerCase().includes(query))
-      );
+    if (response && response.brands) {
+      brands.value = response.brands;
+      pagination.total = response.pagination?.total || 0;
+      pagination.totalPages = response.pagination?.totalPages || 1;
+    } else {
+      // 如果 API 未返回預期結構，使用模擬數據
+      console.warn('API返回的數據結構不符合預期，使用模擬數據');
+      useMockData();
     }
-
-    // 模擬分頁
-    pagination.total = filteredBrands.length;
-    pagination.totalPages = Math.ceil(filteredBrands.length / pagination.limit);
-
-    const start = (currentPage.value - 1) * pagination.limit;
-    const end = start + pagination.limit;
-    brands.value = filteredBrands.slice(start, end);
-
   } catch (error) {
     console.error('獲取品牌列表失敗:', error);
-    alert('載入品牌列表時發生錯誤');
+
+    // 使用模擬數據
+    useMockData();
   } finally {
     isLoading.value = false;
   }
+};
+
+// 使用模擬數據
+const useMockData = () => {
+  // 模擬搜尋功能
+  let filteredBrands = [...mockBrands];
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filteredBrands = mockBrands.filter(brand =>
+      brand.name.toLowerCase().includes(query) ||
+      (brand.description && brand.description.toLowerCase().includes(query))
+    );
+  }
+
+  // 模擬分頁
+  pagination.total = filteredBrands.length;
+  pagination.totalPages = Math.ceil(filteredBrands.length / pagination.limit);
+
+  const start = (currentPage.value - 1) * pagination.limit;
+  const end = start + pagination.limit;
+  brands.value = filteredBrands.slice(start, end);
 };
 
 // 切換頁碼
@@ -328,22 +333,19 @@ const truncateText = (text, maxLength) => {
 
 // 前往創建品牌頁面
 const goToCreateBrand = () => {
-  // 觸發父組件切換
-  // 可以使用自訂事件或 vue-router
-  // 這裡假設父組件透過設置 activeMenu 來控制
   window.dispatchEvent(new CustomEvent('set-active-menu', { detail: 'brand-create' }));
 };
 
 // 查看品牌詳情
 const viewBrandDetails = (brand) => {
   console.log('查看品牌詳情:', brand);
-  // 實際應用中可能會導航到品牌詳情頁面
+  alert(`查看品牌詳情功能尚未實現\n品牌ID: ${brand._id}\n品牌名稱: ${brand.name}`);
 };
 
 // 編輯品牌
 const editBrand = (brand) => {
   console.log('編輯品牌:', brand);
-  // 實際應用中可能會導航到品牌編輯頁面
+  alert(`編輯品牌功能尚未實現\n品牌ID: ${brand._id}\n品牌名稱: ${brand.name}`);
 };
 
 // 確認刪除品牌
@@ -362,12 +364,7 @@ const deleteBrand = async () => {
 
   try {
     // 實際 API 呼叫
-    /*
     await api.brand.deleteBrand(selectedBrand.value._id);
-    */
-
-    // 模擬 API 呼叫
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // 移除列表中的品牌
     brands.value = brands.value.filter(brand => brand._id !== selectedBrand.value._id);
@@ -409,11 +406,15 @@ onMounted(() => {
   // 載入品牌列表
   fetchBrands();
 
-  // 監聽自訂事件，處理外部切換菜單
+  // 監聽自訂事件，處理外部切換菜單和刷新列表
   window.addEventListener('set-active-menu', (event) => {
     if (event.detail === 'brand-list') {
       fetchBrands();
     }
+  });
+
+  window.addEventListener('refresh-brand-list', () => {
+    fetchBrands();
   });
 });
 </script>

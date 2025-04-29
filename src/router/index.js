@@ -3,24 +3,18 @@ import api from '@/api'
 
 // 檢查管理員登入狀態
 const checkAdminAuth = async () => {
-  // 測試階段直接返回已登入狀態和最高權限
-  return {
-    loggedIn: true,
-    role: 'boss',
-    manage: [] // 可以根據需要添加模擬的店鋪權限
+  // 測試階段使用真實 API 檢查登入狀態
+  try {
+    const response = await api.auth.checkLoginStatus()
+    return {
+      loggedIn: response,
+      role: localStorage.getItem('adminRole') || 'boss', // 暫時使用localStorage存儲的角色
+      manage: [] // 可以根據需要添加模擬的店鋪權限
+    }
+  } catch (error) {
+    console.error('檢查管理員登入狀態失敗', error)
+    return { loggedIn: false, role: null, manage: [] }
   }
-
-  // try {
-  //   const response = await api.auth.checkAdmin()
-  //   return {
-  //     loggedIn: response.data.loggedIn,
-  //     role: response.data.role,
-  //     manage: response.data.manage || []
-  //   }
-  // } catch (error) {
-  //   console.error('檢查管理員登入狀態失敗', error)
-  //   return { loggedIn: false, role: null, manage: [] }
-  // }
 }
 
 // 檢查會員登入狀態 (目前在測試階段暫時不使用)
@@ -166,7 +160,7 @@ router.beforeEach(async (to, from, next) => {
         return next('/admin')
       }
 
-      return next('/login')
+      return next('/admin/login')
     }
 
     // 檢查店鋪權限
@@ -199,11 +193,11 @@ router.beforeEach(async (to, from, next) => {
     // 重定向到合適的後台
     const { role } = await checkAdminAuth()
 
-    // if (role === 'boss') {
-    //   return next('/boss')
-    // } else {
-    //   return next('/admin')
-    // }
+    if (role === 'boss') {
+      return next('/boss')
+    } else {
+      return next('/admin')
+    }
   }
 
   if (to.matched.some(record => record.meta.customerGuest) && (await checkUserAuth()).loggedIn) {

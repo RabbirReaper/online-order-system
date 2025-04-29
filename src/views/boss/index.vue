@@ -177,9 +177,16 @@ const getMenuTitle = () => {
 const handleLogout = async () => {
   try {
     await api.auth.logout();
-    router.push('/login');
+    // 清除 localStorage 中的登入資訊
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminRole');
+    router.push('/admin/login');
   } catch (error) {
     console.error('登出失敗', error);
+    // 即使 API 失敗，仍然清除登入資訊
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminRole');
+    router.push('/admin/login');
   }
 };
 
@@ -187,10 +194,18 @@ const handleLogout = async () => {
 const handleBrandCreated = () => {
   // 切換到品牌列表並刷新
   setActiveMenu('brand-list');
+
+  // 觸發事件通知BrandList組件刷新列表
+  window.dispatchEvent(new CustomEvent('refresh-brand-list'));
 };
 
 onMounted(() => {
-  // 可以在這裡檢查登入狀態或執行其他初始化操作
+  // 監聽外部切換菜單事件
+  window.addEventListener('set-active-menu', (event) => {
+    if (event.detail) {
+      setActiveMenu(event.detail);
+    }
+  });
 });
 </script>
 
