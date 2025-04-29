@@ -46,9 +46,10 @@ mongoose.connect(`${process.env.MongoDB_url}`)
 app.use('/api', apiRoutes)
 
 
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
 })
+
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
