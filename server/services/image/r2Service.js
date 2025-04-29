@@ -9,7 +9,7 @@ import {
 
 // 創建 R2 客戶端
 const r2 = new S3Client({
-  region: process.env.VITE_R2_REGUION,
+  region: process.env.VITE_R2_REGION,
   endpoint: process.env.VITE_R2_ENDPOINT,
   credentials: {
     accessKeyId: process.env.VITE_R2_ACCESS_KEY_ID,
