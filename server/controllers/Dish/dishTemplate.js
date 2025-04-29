@@ -57,6 +57,12 @@ export const createDishTemplate = asyncHandler(async (req, res) => {
     });
   }
 
+  // 處理可能的圖片資料
+  // 圖片資料可能來自表單的 base64 字串或檔案上傳
+  if (req.file) {
+    req.body.imageData = req.file.buffer;
+  }
+
   const newTemplate = await dishTemplateService.createTemplate(req.body, brandId);
 
   res.status(201).json({
@@ -76,6 +82,11 @@ export const updateDishTemplate = asyncHandler(async (req, res) => {
       success: false,
       message: '品牌ID為必須參數'
     });
+  }
+
+  // 處理圖片資料
+  if (req.file) {
+    req.body.imageData = req.file.buffer;
   }
 
   const updatedTemplate = await dishTemplateService.updateTemplate(id, req.body, brandId);

@@ -7,18 +7,18 @@ import Store from '../../models/Store/Store.js';
 import Brand from '../../models/Brand/Brand.js';
 import Menu from '../../models/Menu/Menu.js';
 import { AppError } from '../../middlewares/error.js';
+import * as imageHelper from '../imageHelper.js';
+import { DateTime } from 'luxon';
 
 /**
  * 獲取所有店鋪
  * @param {Object} options - 查詢選項
  * @param {String} options.brandId - 按品牌篩選
  * @param {Boolean} options.activeOnly - 是否只顯示啟用的店鋪
- * @param {Number} options.page - 頁碼
- * @param {Number} options.limit - 每頁數量
- * @returns {Promise<Object>} 店鋪列表與分頁資訊
+ * @returns {Promise<Array>} 店鋪列表
  */
 export const getAllStores = async (options = {}) => {
-  const { brandId, activeOnly = false, page = 1, limit = 20 } = options;
+  const { brandId, activeOnly = false } = options;
 
   // 構建查詢條件
   const queryConditions = {};
@@ -31,36 +31,13 @@ export const getAllStores = async (options = {}) => {
     queryConditions.isActive = true;
   }
 
-  // 計算分頁
-  const skip = (page - 1) * limit;
-
-  // 查詢總數
-  const total = await Store.countDocuments(queryConditions);
-
-  // 查詢店鋪
+  // 查詢店鋪，移除分頁
   const stores = await Store.find(queryConditions)
     .populate('brand', 'name')
     .populate('menuId', 'name')
-    .sort({ name: 1 })
-    .skip(skip)
-    .limit(limit);
+    .sort({ name: 1 });
 
-  // 處理分頁信息
-  const totalPages = Math.ceil(total / limit);
-  const hasNextPage = page < totalPages;
-  const hasPrevPage = page > 1;
-
-  return {
-    stores,
-    pagination: {
-      total,
-      totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage,
-      hasPrevPage
-    }
-  };
+  return stores;
 };
 
 /**
@@ -97,9 +74,25 @@ export const createStore = async (storeData) => {
     throw new AppError('品牌不存在', 404);
   }
 
-  // 驗證圖片欄位
-  if (!storeData.image || !storeData.image.url || !storeData.image.key) {
-    throw new AppError('圖片資訊不完整', 400);
+  // 處理圖片上傳
+  if (storeData.imageData) {
+    try {
+      // 上傳圖片並獲取圖片資訊
+      const imageInfo = await imageHelper.uploadAndProcessImage(
+        storeData.imageData,
+        `stores/${storeData.brand}` // 使用品牌ID組織圖片路徑
+      );
+
+      // 設置圖片資訊到店鋪數據
+      storeData.image = imageInfo;
+
+      // 刪除原始圖片數據以避免儲存過大的文件
+      delete storeData.imageData;
+    } catch (error) {
+      throw new AppError(`圖片處理失敗: ${error.message}`, 400);
+    }
+  } else if (!storeData.image || !storeData.image.url || !storeData.image.key) {
+    throw new AppError('圖片資訊不完整，請提供圖片', 400);
   }
 
   // 創建店鋪
@@ -139,6 +132,35 @@ export const updateStore = async (storeId, updateData) => {
     }
   }
 
+  // 處理圖片更新
+  if (updateData.imageData) {
+    try {
+      // 如果存在舊圖片，則更新圖片
+      if (store.image && store.image.key) {
+        const brandId = updateData.brand || store.brand;
+        const imageInfo = await imageHelper.updateImage(
+          updateData.imageData,
+          store.image.key,
+          `stores/${brandId}`
+        );
+        updateData.image = imageInfo;
+      } else {
+        // 如果不存在舊圖片，則上傳新圖片
+        const brandId = updateData.brand || store.brand;
+        const imageInfo = await imageHelper.uploadAndProcessImage(
+          updateData.imageData,
+          `stores/${brandId}`
+        );
+        updateData.image = imageInfo;
+      }
+
+      // 刪除原始圖片數據
+      delete updateData.imageData;
+    } catch (error) {
+      throw new AppError(`圖片處理失敗: ${error.message}`, 400);
+    }
+  }
+
   // 如果更新菜單，檢查菜單是否存在
   if (updateData.menuId) {
     const menu = await Menu.findById(updateData.menuId);
@@ -171,6 +193,16 @@ export const deleteStore = async (storeId) => {
   }
 
   // TODO: 檢查是否有關聯訂單、庫存、員工等，如果有則拒絕刪除
+
+  // 刪除關聯圖片
+  if (store.image && store.image.key) {
+    try {
+      await imageHelper.deleteImage(store.image.key);
+    } catch (error) {
+      console.error(`刪除店鋪圖片失敗: ${error.message}`);
+      // 繼續刪除店鋪，不因圖片刪除失敗而中斷流程
+    }
+  }
 
   await store.deleteOne();
 
@@ -317,16 +349,11 @@ export const getStoreCurrentStatus = async (storeId) => {
   }
 
   // 獲取當前時間（使用台灣時區）
-  const now = new Date();
-  const taiwanTime = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Taipei',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(now);
+  const now = DateTime.now().setZone('Asia/Taipei');
+  const currentTimeStr = now.toFormat('HH:mm');
 
   // 獲取當前星期幾（0=星期日，6=星期六）
-  const currentDay = now.getDay();
+  const currentDay = now.weekday % 7; // DateTime 使用 1-7，轉為 0-6
 
   // 查找今天的營業時間
   const todayHours = store.businessHours?.find(day => day.day === currentDay);
@@ -337,9 +364,6 @@ export const getStoreCurrentStatus = async (storeId) => {
   }
 
   // 檢查是否在營業時間內
-  const currentTimeStr = taiwanTime.replace(/\s/g, ''); // 移除空格，得到 "HH:MM" 格式
-
-  // 檢查是否在任何一個時段內
   for (const period of todayHours.periods) {
     if (currentTimeStr >= period.open && currentTimeStr < period.close) {
       return { isOpen: true, status: 'open', message: '營業中' };

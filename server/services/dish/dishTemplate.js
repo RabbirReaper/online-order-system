@@ -6,6 +6,7 @@
 import DishTemplate from '../../models/Dish/DishTemplate.js';
 import OptionCategory from '../../models/Dish/OptionCategory.js';
 import { AppError } from '../../middlewares/error.js';
+import * as imageHelper from '../imageHelper.js';
 
 /**
  * 獲取所有餐點模板（按品牌過濾）
@@ -67,9 +68,28 @@ export const createTemplate = async (templateData, brandId) => {
     throw new AppError('名稱和基本價格為必填欄位', 400);
   }
 
-  // 驗證圖片欄位
-  if (!templateData.image || !templateData.image.url || !templateData.image.key) {
-    throw new AppError('圖片資訊不完整', 400);
+  // 確保設置品牌ID
+  templateData.brand = brandId;
+
+  // 處理圖片上傳
+  if (templateData.imageData) {
+    try {
+      // 上傳圖片並獲取圖片資訊
+      const imageInfo = await imageHelper.uploadAndProcessImage(
+        templateData.imageData,
+        `dishes/${brandId}` // 使用品牌ID組織圖片路徑
+      );
+
+      // 設置圖片資訊到模板數據
+      templateData.image = imageInfo;
+
+      // 刪除原始圖片數據以避免儲存過大的文件
+      delete templateData.imageData;
+    } catch (error) {
+      throw new AppError(`圖片處理失敗: ${error.message}`, 400);
+    }
+  } else if (!templateData.image || !templateData.image.url || !templateData.image.key) {
+    throw new AppError('圖片資訊不完整，請提供圖片', 400);
   }
 
   // 檢查選項類別是否存在且屬於同一品牌
@@ -84,9 +104,6 @@ export const createTemplate = async (templateData, brandId) => {
       throw new AppError('部分選項類別不存在或不屬於此品牌', 400);
     }
   }
-
-  // 確保設置品牌ID
-  templateData.brand = brandId;
 
   // 創建餐點模板
   const newTemplate = new DishTemplate(templateData);
@@ -111,6 +128,33 @@ export const updateTemplate = async (templateId, updateData, brandId) => {
 
   if (!template) {
     throw new AppError('餐點模板不存在或無權訪問', 404);
+  }
+
+  // 處理圖片更新
+  if (updateData.imageData) {
+    try {
+      // 如果存在舊圖片，則更新圖片
+      if (template.image && template.image.key) {
+        const imageInfo = await imageHelper.updateImage(
+          updateData.imageData,
+          template.image.key,
+          `dishes/${brandId}`
+        );
+        updateData.image = imageInfo;
+      } else {
+        // 如果不存在舊圖片，則上傳新圖片
+        const imageInfo = await imageHelper.uploadAndProcessImage(
+          updateData.imageData,
+          `dishes/${brandId}`
+        );
+        updateData.image = imageInfo;
+      }
+
+      // 刪除原始圖片數據
+      delete updateData.imageData;
+    } catch (error) {
+      throw new AppError(`圖片處理失敗: ${error.message}`, 400);
+    }
   }
 
   // 如果更新選項類別，檢查它們是否存在且屬於同一品牌
@@ -157,6 +201,16 @@ export const deleteTemplate = async (templateId, brandId) => {
   }
 
   // TODO: 檢查是否有關聯的菜單項目、餐點實例等，如果有則拒絕刪除
+
+  // 刪除關聯圖片
+  if (template.image && template.image.key) {
+    try {
+      await imageHelper.deleteImage(template.image.key);
+    } catch (error) {
+      console.error(`刪除餐點模板圖片失敗: ${error.message}`);
+      // 繼續刪除模板，不因圖片刪除失敗而中斷流程
+    }
+  }
 
   await template.deleteOne();
 

@@ -7,13 +7,10 @@ export default function (apiClient) {
   return {
     /**
      * 獲取所有品牌
-     * @param {Object} [params] - 查詢參數
-     * @param {number} [params.page] - 頁碼
-     * @param {number} [params.limit] - 每頁數量
      * @returns {Promise} - API 回應
      */
-    getAllBrands(params = {}) {
-      return apiClient.get('/store/brands', { params });
+    getAllBrands() {
+      return apiClient.get('/store/brands');
     },
 
     /**
@@ -28,6 +25,10 @@ export default function (apiClient) {
     /**
      * 創建新品牌
      * @param {Object} data - 品牌資料
+     * @param {string} data.name - 品牌名稱
+     * @param {string} [data.description] - 品牌描述
+     * @param {string|Buffer} [data.imageData] - 圖片資料 (Base64 或 Buffer)
+     * @param {Object} [data.image] - 現有圖片資訊 (提供 imageData 時忽略)
      * @returns {Promise} - API 回應
      */
     createBrand(data) {
@@ -38,7 +39,10 @@ export default function (apiClient) {
      * 更新品牌資料
      * @param {Object} params - 更新參數
      * @param {string} params.id - 品牌ID
-     * @param {Object} params.data - 更新的品牌資料
+     * @param {Object} params.data - 更新資料
+     * @param {string} [params.data.name] - 品牌名稱
+     * @param {string} [params.data.description] - 品牌描述
+     * @param {string|Buffer} [params.data.imageData] - 新圖片資料 (Base64 或 Buffer)
      * @returns {Promise} - API 回應
      */
     updateBrand({ id, data }) {
@@ -52,6 +56,28 @@ export default function (apiClient) {
      */
     deleteBrand(id) {
       return apiClient.delete(`/store/brands/${id}`);
+    },
+
+    /**
+     * 獲取品牌下的所有店鋪
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {boolean} [params.activeOnly] - 是否只顯示啟用的店鋪
+     * @returns {Promise} - API 回應
+     */
+    getBrandStores(params) {
+      return apiClient.get(`/store/brands/${params.brandId}/stores`, {
+        params: { activeOnly: params.activeOnly }
+      });
+    },
+
+    /**
+     * 獲取品牌統計數據
+     * @param {string} brandId - 品牌ID
+     * @returns {Promise} - API 回應
+     */
+    getBrandStats(brandId) {
+      return apiClient.get(`/store/brands/${brandId}/stats`);
     }
   };
 }
