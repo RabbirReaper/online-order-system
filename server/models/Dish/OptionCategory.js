@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const OptionCategorySchema = new mongoose.Schema({
+  brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
   name: { type: String, required: true },
   inputType: { type: String, enum: ['single', 'multiple'], required: true },
   options: [{

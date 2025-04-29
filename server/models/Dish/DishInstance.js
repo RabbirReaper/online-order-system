@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const DishInstanceSchema = new mongoose.Schema({
+  brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
   templateId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DishTemplate',
