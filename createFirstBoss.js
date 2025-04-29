@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Administrator from './server/models/Users/Admin.js';
+import Administrator from './server/models/User/Admin.js';
 
 dotenv.config();
 
