@@ -7,6 +7,7 @@ import brandApi from './modules/brand';
 import inventoryApi from './modules/inventory';
 import menuApi from './modules/menu';
 import dishApi from './modules/dish';
+import imageApi from './modules/image'; // 新增 image 模組
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -47,6 +48,7 @@ export default {
   inventory: inventoryApi(apiClient),
   menu: menuApi(apiClient),
   dish: dishApi(apiClient),
+  image: imageApi(apiClient), // 新增 image 模組
   // 導出 axios 實例，方便直接使用
   client: apiClient,
 };

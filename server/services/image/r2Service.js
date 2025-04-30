@@ -7,17 +7,18 @@ import {
   GetObjectCommand
 } from "@aws-sdk/client-s3";
 
-// 創建 R2 客戶端
-const r2 = new S3Client({
-  region: process.env.VITE_R2_REGION,
-  endpoint: process.env.VITE_R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.VITE_R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.VITE_R2_SECRET_ACCESS_KEY,
-  },
-});
+// 創建獲取 R2 客戶端的函數，不在頂層直接初始化
+function getR2Client() {
+  return new S3Client({
+    region: process.env.R2_REGION || 'auto',
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+  });
+}
 
-const BUCKET = process.env.VITE_R2_BUCKET;
 
 /**
  * 上傳圖片到 R2
@@ -27,8 +28,14 @@ const BUCKET = process.env.VITE_R2_BUCKET;
  * @returns {Promise<{key: string}>} - 成功上傳的圖片路徑
  */
 export async function uploadImage(imageData, key, contentType = "image/jpeg") {
+  // 檢查必要參數
+  if (!process.env.R2_BUCKET) {
+    throw new Error('未設定 R2_BUCKET 環境變數');
+  }
+
+  const r2 = getR2Client();
   const command = new PutObjectCommand({
-    Bucket: BUCKET,
+    Bucket: process.env.R2_BUCKET,
     Key: key,
     Body: imageData,
     ContentType: contentType,
@@ -44,8 +51,9 @@ export async function uploadImage(imageData, key, contentType = "image/jpeg") {
  * @returns {Promise<{data: Uint8Array, contentType: string} | null>} - 圖片數據與類型，若不存在則返回 null
  */
 export async function getImage(key) {
+  const r2 = getR2Client();
   const command = new GetObjectCommand({
-    Bucket: BUCKET,
+    Bucket: process.env.R2_BUCKET,
     Key: key,
   });
 
@@ -80,8 +88,9 @@ export async function getImage(key) {
  */
 export async function imageExists(key) {
   try {
+    const r2 = getR2Client();
     const command = new GetObjectCommand({
-      Bucket: BUCKET,
+      Bucket: process.env.R2_BUCKET,
       Key: key,
     });
 
@@ -101,8 +110,9 @@ export async function imageExists(key) {
  * @returns {Promise<string[]>} - 圖片路徑列表
  */
 export async function listImages(prefix) {
+  const r2 = getR2Client();
   const command = new ListObjectsV2Command({
-    Bucket: BUCKET,
+    Bucket: process.env.R2_BUCKET,
     Prefix: prefix,
   });
 
@@ -118,9 +128,10 @@ export async function listImages(prefix) {
  * @returns {Promise<{key: string, updated: boolean}>} - 更新結果
  */
 export async function updateImage(newImageData, key, contentType = "image/jpeg") {
+  const r2 = getR2Client();
   // 更新圖片就是重新上傳，覆蓋原有的圖片
   const command = new PutObjectCommand({
-    Bucket: BUCKET,
+    Bucket: process.env.R2_BUCKET,
     Key: key,
     Body: newImageData,
     ContentType: contentType,
@@ -136,8 +147,9 @@ export async function updateImage(newImageData, key, contentType = "image/jpeg")
  * @returns {Promise<{key: string, deleted: boolean}>} - 刪除結果
  */
 export async function deleteImage(key) {
+  const r2 = getR2Client();
   const command = new DeleteObjectCommand({
-    Bucket: BUCKET,
+    Bucket: process.env.R2_BUCKET,
     Key: key,
   });
 
@@ -151,7 +163,7 @@ export async function deleteImage(key) {
  * @param {string} publicUrl - R2 的公開訪問基礎 URL
  * @returns {string} - 圖片的公開 URL
  */
-export function getImageUrl(key, publicUrl) {
+export function getImageUrl(key, publicUrl = process.env.R2_PUBLIC_URL) {
   if (!publicUrl) {
     throw new Error('需要提供公開訪問的基礎 URL');
   }

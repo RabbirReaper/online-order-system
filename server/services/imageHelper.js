@@ -7,8 +7,6 @@ import * as r2Service from './image/r2Service.js';
 import { v4 as uuidv4 } from 'uuid';
 import { AppError } from '../middlewares/error.js';
 
-// 取得環境變數或預設值
-const R2_PUBLIC_URL = process.env.VITE_R2_PUBLIC_URL || 'https://your-cloudflare-public-url.com';
 
 /**
  * 上傳圖片並返回圖片資訊
@@ -52,7 +50,7 @@ export const uploadAndProcessImage = async (imageData, folder, fileName = null, 
     await r2Service.uploadImage(imageBuffer, key, contentType);
 
     // 生成公開URL
-    const url = r2Service.getImageUrl(key, R2_PUBLIC_URL);
+    const url = r2Service.getImageUrl(key, process.env.R2_PUBLIC_URL);
 
     // 返回圖片資訊物件
     return {
@@ -95,7 +93,7 @@ export const updateImage = async (newImageData, existingKey, folder, contentType
 
     // 如果沒有新圖片，返回現有圖片資訊
     return {
-      url: r2Service.getImageUrl(existingKey, R2_PUBLIC_URL),
+      url: r2Service.getImageUrl(existingKey, process.env.R2_PUBLIC_URL),
       key: existingKey,
       alt: existingKey.split('/').pop()
     };

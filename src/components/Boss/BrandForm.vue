@@ -89,7 +89,7 @@ const handleImageChange = (event) => {
     return;
   }
 
-  // 檢查檔案大小 (最大 2MB)
+  // 檢查檔案大小 (最大 1MB)
   if (file.size > 1 * 1024 * 1024) {
     errors.image = '圖片大小不能超過 1MB';
     return;
@@ -105,12 +105,10 @@ const handleImageChange = (event) => {
   formData.image = file;
   errors.image = '';
 
-  // 建立圖片預覽
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    imagePreview.value = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  // 使用 api.image.fileToBase64 來建立圖片預覽
+  api.image.fileToBase64(file).then(base64 => {
+    imagePreview.value = base64;
+  });
 };
 
 // 清除圖片
@@ -178,59 +176,34 @@ const submitForm = async () => {
   isSubmitting.value = true;
 
   try {
-    // 使用 FormData 來處理檔案上傳
-    const formDataToSend = new FormData();
-    formDataToSend.append('name', formData.name);
-
-    if (formData.description) {
-      formDataToSend.append('description', formData.description);
-    }
-
+    // 使用 api.image.fileToBase64 轉換圖片為 Base64
     if (formData.image) {
-      formDataToSend.append('image', formData.image);
+      // 使用新的 fileToBase64 函數轉換圖片
+      const base64Image = await api.image.fileToBase64(formData.image);
 
-      // 轉換圖片為Base64用於API
-      const reader = new FileReader();
-      reader.readAsDataURL(formData.image);
-      reader.onload = async () => {
-        const imageData = reader.result.split(',')[1]; // 去除 data:image/x;base64, 前綴
+      // 按後端要求分割 base64 數據（去除前綴）
+      const imageData = base64Image; // 保留完整的 base64 數據，包含 mime type 前綴
 
-        // 實際呼叫 API
-        const response = await api.brand.createBrand({
-          name: formData.name,
-          description: formData.description || '',
-          imageData: imageData
-        });
-        console.log('品牌創建成功:', response);
+      // 實際呼叫 API
+      const response = await api.brand.createBrand({
+        name: formData.name,
+        description: formData.description || '',
+        imageData: imageData
+      });
 
-        // 顯示成功訊息
-        alert('品牌創建成功！');
+      console.log('品牌創建成功:', response);
 
-        // 重置表單
-        resetForm();
+      // 顯示成功訊息
+      alert('品牌創建成功！');
 
-        // 觸發事件通知父組件
-        emit('brand-created');
-      };
-      return;
+      // 重置表單
+      resetForm();
+
+      // 觸發事件通知父組件
+      emit('brand-created');
+    } else {
+      throw new Error('請上傳品牌圖片');
     }
-
-    // 如果沒有圖片，直接呼叫API (不應該發生，因為我們要求圖片必填)
-    const response = await api.brand.createBrand({
-      name: formData.name,
-      description: formData.description || '',
-    });
-    console.log('品牌創建成功:', response);
-
-    // 顯示成功訊息
-    alert('品牌創建成功！');
-
-    // 重置表單
-    resetForm();
-
-    // 觸發事件通知父組件
-    emit('brand-created');
-
   } catch (error) {
     console.error('建立品牌時發生錯誤:', error);
 

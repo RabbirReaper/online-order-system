@@ -5,7 +5,6 @@ import path from 'path'
 import mongoose from 'mongoose'
 import session from 'express-session'
 import { fileURLToPath } from 'url';
-
 import apiRoutes from './server/routes/index.js'
 
 dotenv.config()
