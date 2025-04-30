@@ -56,7 +56,7 @@ export const uploadAndProcessImage = async (imageData, folder, fileName = null, 
     return {
       url,
       key,
-      alt: finalFileName // 默認使用檔名作為替代文字
+      alt: 'picture' // 默認使用檔名作為替代文字
     };
   } catch (error) {
     console.error('圖片上傳處理錯誤:', error);
