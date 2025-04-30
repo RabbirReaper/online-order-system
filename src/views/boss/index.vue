@@ -177,15 +177,9 @@ const getMenuTitle = () => {
 const handleLogout = async () => {
   try {
     await api.auth.logout();
-    // 清除 localStorage 中的登入資訊
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminRole');
     router.push('/admin/login');
   } catch (error) {
     console.error('登出失敗', error);
-    // 即使 API 失敗，仍然清除登入資訊
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminRole');
     router.push('/admin/login');
   }
 };
