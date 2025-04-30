@@ -19,10 +19,6 @@ export const authLogin = async (req, res) => {
       return res.status(401).json({ success: false, message: '用戶名或密碼錯誤' });
     }
 
-    // 建立 Session
-    req.session.user_id = admin._id;
-    req.session.role = admin.role;
-
     // 安全處理 manage 欄位
     const manageInfo = Array.isArray(admin.manage)
       ? admin.manage.map(m => ({
@@ -31,7 +27,10 @@ export const authLogin = async (req, res) => {
       }))
       : [];
 
-    req.session.manage = manageInfo;
+    // 建立 Session
+    req.session.adminId = admin._id;
+    req.session.adminRole = admin.role;
+    req.session.adminManage = manageInfo;
 
     return res.json({
       success: true,
@@ -249,6 +248,44 @@ export const changePassword = async (req, res) => {
     });
   } catch (error) {
     console.error('Change password error:', error);
+    return res.status(500).json({
+      success: false,
+      message: '伺服器錯誤'
+    });
+  }
+};
+
+// 檢查用戶狀態
+export const checkStatus = async (req, res) => {
+  try {
+    if (req.session.user_id) {
+      // 管理員登入
+      return res.json({
+        success: true,
+        loggedIn: true,
+        role: req.session.role,
+        user_id: req.session.user_id,
+        manage: req.session.manage || []
+      });
+    } else if (req.session.userId) {
+      // 客戶登入
+      return res.json({
+        success: true,
+        loggedIn: true,
+        role: 'customer',
+        user_id: req.session.userId
+      });
+    } else {
+      // 未登入
+      return res.json({
+        success: true,
+        loggedIn: false,
+        role: null,
+        manage: []
+      });
+    }
+  } catch (error) {
+    console.error('Check status error:', error);
     return res.status(500).json({
       success: false,
       message: '伺服器錯誤'

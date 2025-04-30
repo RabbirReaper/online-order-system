@@ -53,17 +53,20 @@ export default function (apiClient) {
 
     /**
      * 檢查登入狀態
-     * @returns {Promise<boolean>} - 是否已登入
+     * @returns {Promise<Object>} - 登入狀態信息
      */
     async checkLoginStatus() {
       try {
-        // 假設後端提供了一個檢查登入狀態的端點
-        // 如果實際沒有這個端點，可以修改為合適的實現
         const response = await apiClient.get('/auth/check-status');
-        return response.success === true;
+        console.log('登入狀態:', response);
+        return {
+          loggedIn: response.success && response.loggedIn,
+          role: response.role,
+          manage: response.manage || []
+        };
       } catch (error) {
         console.error('檢查登入狀態失敗:', error);
-        return false;
+        return { loggedIn: false, role: null, manage: [] };
       }
     }
   };

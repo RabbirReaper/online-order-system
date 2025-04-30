@@ -7,9 +7,9 @@ const checkAdminAuth = async () => {
   try {
     const response = await api.auth.checkLoginStatus()
     return {
-      loggedIn: response,
-      role: localStorage.getItem('adminRole') || 'boss', // 暫時使用localStorage存儲的角色
-      manage: [] // 可以根據需要添加模擬的店鋪權限
+      loggedIn: response.success && response.loggedIn,
+      role: response.role || 'boss', // 預設為 boss
+      manage: response.manage || [] // 預設為空陣列
     }
   } catch (error) {
     console.error('檢查管理員登入狀態失敗', error)
@@ -19,26 +19,13 @@ const checkAdminAuth = async () => {
 
 // 檢查會員登入狀態 (目前在測試階段暫時不使用)
 const checkUserAuth = async () => {
-  // 測試階段直接返回已登入狀態
+  // 使用統一的API檢查用戶登入狀態
+  const response = await api.auth.checkLoginStatus();
   return {
-    loggedIn: true,
-    userData: { id: 'test-user-id', name: '測試用戶' }
-  }
-
-  // 正式環境程式碼 (暫時註解)
-  /*
-  try {
-    const response = await api.auth.checkUser()
-    return {
-      loggedIn: response.data.loggedIn,
-      userData: response.data.user
-    }
-  } catch (error) {
-    console.error('檢查會員登入狀態失敗', error)
-    return { loggedIn: false, userData: null }
-  }
-  */
-}
+    loggedIn: response.loggedIn && response.role === 'customer',
+    userId: response.user_id
+  };
+};
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -188,7 +175,6 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // 已登入用戶重定向
   if (to.matched.some(record => record.meta.guest) && (await checkAdminAuth()).loggedIn) {
     // 重定向到合適的後台
     const { role } = await checkAdminAuth()
@@ -200,6 +186,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // 已登入用戶重定向
   if (to.matched.some(record => record.meta.customerGuest) && (await checkUserAuth()).loggedIn) {
     return next('/customer/my-account')
   }

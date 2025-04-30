@@ -1,5 +1,5 @@
 import express from 'express';
-import { authLogin, createAdmin, logout, changePassword } from '../controllers/User/auth.js';
+import { authLogin, createAdmin, logout, changePassword, checkStatus } from '../controllers/User/auth.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { permissionMiddleware } from '../middlewares/permission.js';
 
@@ -10,6 +10,9 @@ router.post('/login', authLogin);
 
 // 保留登出功能
 router.post('/logout', logout);
+
+// 檢查登入狀態
+router.get('/check-status', checkStatus);
 
 // 暫時不需要的功能註解掉
 /*

@@ -8,15 +8,16 @@ import Admin from '../models/User/Admin.js';
 export const authMiddleware = async (req, res, next) => {
   try {
     // 檢查 session 中是否有 user_id
-    if (!req.session || !req.session.user_id) {
+    if (!req.session || !req.session.adminId) {
       return res.status(401).json({
         success: false,
         message: '請先登入'
       });
     }
 
-    // 檢查 user_id 是否有效
-    if (!mongoose.Types.ObjectId.isValid(req.session.user_id)) {
+    // 檢查 adminId 是否有效
+    if (!mongoose.Types.ObjectId.isValid(req.session.adminId)) {
+      req.session.destroy();
       return res.status(401).json({
         success: false,
         message: '無效的使用者憑證'
@@ -24,7 +25,7 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     // 查找管理員並加載品牌資訊
-    const admin = await Admin.findById(req.session.user_id).select('role brand');
+    const admin = await Admin.findById(req.session.adminId).select('role brand');
 
     if (!admin) {
       req.session.destroy();
@@ -34,8 +35,8 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // 將管理員角色附加到 req 物件上，以便在後續路由中使用
-    if (!req.session.role) {
+    // 檢查 session 中的角色
+    if (!req.session.adminRole) {
       return res.status(401).json({
         success: false,
         message: '無效的使用者憑證'
@@ -43,9 +44,9 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     // 將用戶資訊附加到 req 物件上
-    req.adminId = req.session.user_id;
-    req.adminRole = req.session.role;
-    req.adminManage = req.session.manage || [];
+    req.adminId = req.session.adminId;
+    req.adminRole = req.session.adminRole;
+    req.adminManage = req.session.adminManage || [];
 
     // 如果不是boss角色，設置品牌ID
     if (admin.role !== 'boss' && admin.brand) {
