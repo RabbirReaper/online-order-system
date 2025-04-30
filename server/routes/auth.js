@@ -1,5 +1,5 @@
 import express from 'express';
-import { authLogin, createAdmin, logout, changePassword, checkStatus } from '../controllers/User/auth.js';
+import { authLogin, createAdmin, logout, changePassword, checkAdminLoginStatus, checkUserLoginStatus } from '../controllers/User/auth.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { permissionMiddleware } from '../middlewares/permission.js';
 
@@ -12,7 +12,8 @@ router.post('/login', authLogin);
 router.post('/logout', logout);
 
 // 檢查登入狀態
-router.get('/check-status', checkStatus);
+router.get('/check-admin-status', checkAdminLoginStatus);
+// router.get('/check-user-status', checkUserLoginStatus);
 
 // 暫時不需要的功能註解掉
 /*

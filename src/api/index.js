@@ -20,24 +20,6 @@ const apiClient = axios.create({
   withCredentials: true, // 確保跨域請求能攜帶cookie
 });
 
-// 請求攔截器，可以用於添加身份驗證令牌等
-apiClient.interceptors.request.use(
-  (config) => {
-    // 添加管理員品牌ID (如果存在於本地存儲)
-    const adminInfo = JSON.parse(localStorage.getItem('adminInfo') || '{}');
-
-    if (adminInfo.brand && !config.params?.brandId && adminInfo.role !== 'boss') {
-      config.params = config.params || {};
-      config.params.brandId = adminInfo.brand;
-    }
-
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 // 回應攔截器，用於統一處理回應
 apiClient.interceptors.response.use(
   (response) => {
@@ -50,16 +32,6 @@ apiClient.interceptors.response.use(
       // 處理後端返回的錯誤信息
       const errorMessage = error.response.data.message || '請求失敗';
       console.error('API 請求錯誤:', errorMessage);
-
-      // 處理未授權錯誤 (401)，登出用戶
-      if (error.response.status === 401) {
-        // 清除本地存儲的用戶信息
-        localStorage.removeItem('adminInfo');
-        // 重定向到登入頁面
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
-      }
     } else {
       console.error('連接服務器失敗:', error.message);
     }

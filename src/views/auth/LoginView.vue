@@ -121,75 +121,48 @@ const handleLogin = async () => {
       password: formData.password
     });
 
-    // 保存登入資訊到 localStorage
-    localStorage.setItem('adminToken', response.token || 'dummy-token');
-    localStorage.setItem('adminRole', response.role || 'boss');
 
-    console.log('登入成功');
-
-    // 根據記住我選項，可以儲存部分資訊到 localStorage
-    if (formData.remember) {
-      localStorage.setItem('rememberedUsername', formData.username);
+    // 只在登入成功後進行跳轉
+    if (response.success) {
+      console.log('登入成功');
+      // 如果有重定向參數，則導航到該頁面，否則導航到預設頁面
+      const redirectPath = route.query.redirect || '/admin';
+      router.push(redirectPath);
     } else {
-      localStorage.removeItem('rememberedUsername');
+      // 處理成功請求但業務邏輯失敗的情況
+      loginError.value = response.message || '登入失敗，請稍後再試';
     }
-
-    // 如果有重定向參數，則導航到該頁面，否則導航到預設頁面
-    let redirectPath = route.query.redirect || '/admin';
-
-    // 根據角色決定預設重定向位置
-    if (response.role === 'boss' && redirectPath === '/admin') {
-      redirectPath = '/boss';
-    }
-
-    router.push(redirectPath);
-
   } catch (error) {
     console.error('登入失敗:', error);
 
     // 設置錯誤訊息
-    if (error.response && error.response.data && error.response.data.message) {
-      loginError.value = error.response.data.message;
+    if (error.response && error.response.data) {
+      loginError.value = error.response.data.message || '登入失敗，請確認帳號和密碼是否正確';
     } else {
-      loginError.value = '登入失敗，請確認帳號和密碼是否正確';
+      loginError.value = '登入失敗，請檢查網路連線';
     }
   } finally {
     isLoading.value = false;
   }
 };
 
-// 測試用的快速登入功能
-const loginAsBoss = () => {
+// 修正後的測試登入功能
+const loginAsBoss = async () => {
   formData.username = 'boss';
   formData.password = '123456';
-
-  // 存儲相關資訊到 localStorage (測試用)
-  localStorage.setItem('adminToken', 'dummy-token');
-  localStorage.setItem('adminRole', 'boss');
-
-  router.push('/boss');
+  await handleLogin();  // 實際執行登入認證
 };
 
-const loginAsBrandAdmin = () => {
+const loginAsBrandAdmin = async () => {
   formData.username = 'brand_admin';
   formData.password = 'password';
-
-  // 存儲相關資訊到 localStorage (測試用)
-  localStorage.setItem('adminToken', 'dummy-token');
-  localStorage.setItem('adminRole', 'brand_admin');
-
-  router.push('/admin');
+  await handleLogin();  // 實際執行登入認證
 };
 
-const loginAsStoreAdmin = () => {
+const loginAsStoreAdmin = async () => {
   formData.username = 'store_admin';
   formData.password = 'password';
-
-  // 存儲相關資訊到 localStorage (測試用)
-  localStorage.setItem('adminToken', 'dummy-token');
-  localStorage.setItem('adminRole', 'store_admin');
-
-  router.push('/admin');
+  await handleLogin();  // 實際執行登入認證
 };
 </script>
 

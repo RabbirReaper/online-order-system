@@ -5,27 +5,24 @@ import api from '@/api'
 const checkAdminAuth = async () => {
   // 測試階段使用真實 API 檢查登入狀態
   try {
-    const response = await api.auth.checkLoginStatus()
-    return {
-      loggedIn: response.success && response.loggedIn,
-      role: response.role || 'boss', // 預設為 boss
-      manage: response.manage || [] // 預設為空陣列
-    }
+    const response = await api.auth.checkAdminStatus()
+    console.log('登入狀態:', response)
+    return response;
   } catch (error) {
     console.error('檢查管理員登入狀態失敗', error)
     return { loggedIn: false, role: null, manage: [] }
   }
 }
 
-// 檢查會員登入狀態 (目前在測試階段暫時不使用)
-const checkUserAuth = async () => {
-  // 使用統一的API檢查用戶登入狀態
-  const response = await api.auth.checkLoginStatus();
-  return {
-    loggedIn: response.loggedIn && response.role === 'customer',
-    userId: response.user_id
-  };
-};
+// // 檢查會員登入狀態 (目前在測試階段暫時不使用)
+// const checkUserAuth = async () => {
+//   // 使用統一的API檢查用戶登入狀態
+//   const response = await api.auth.checkLoginStatus();
+//   return {
+//     loggedIn: response.loggedIn && response.role === 'customer',
+//     userId: response.user_id
+//   };
+// };
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,7 +42,6 @@ const router = createRouter({
       path: '/admin/login',
       name: 'login',
       component: () => import('@/views/auth/LoginView.vue'),
-      meta: { guest: true }
     },
 
     // Boss 後台 (系統管理員)
@@ -123,6 +119,11 @@ const router = createRouter({
 
 // 全局前置守衛
 router.beforeEach(async (to, from, next) => {
+
+  if (to.path === '/admin/login') {
+    return next()
+  }
+
   // 管理員授權檢查
   if (to.matched.some(record => record.meta.requiresAdminAuth)) {
     const { loggedIn, role, manage } = await checkAdminAuth()
@@ -163,34 +164,17 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // 會員授權檢查
-  if (to.matched.some(record => record.meta.requiresCustomerAuth)) {
-    const { loggedIn } = await checkUserAuth()
+  // // 會員授權檢查
+  // if (to.matched.some(record => record.meta.requiresCustomerAuth)) {
+  //   const { loggedIn } = await checkUserAuth()
 
-    if (!loggedIn) {
-      return next({
-        path: '/customer/login',
-        query: { redirect: to.fullPath }
-      })
-    }
-  }
-
-  if (to.matched.some(record => record.meta.guest) && (await checkAdminAuth()).loggedIn) {
-    // 重定向到合適的後台
-    const { role } = await checkAdminAuth()
-
-    if (role === 'boss') {
-      return next('/boss')
-    } else {
-      return next('/admin')
-    }
-  }
-
-  // 已登入用戶重定向
-  if (to.matched.some(record => record.meta.customerGuest) && (await checkUserAuth()).loggedIn) {
-    return next('/customer/my-account')
-  }
-
+  //   if (!loggedIn) {
+  //     return next({
+  //       path: '/customer/login',
+  //       query: { redirect: to.fullPath }
+  //     })
+  //   }
+  // }
   next()
 })
 

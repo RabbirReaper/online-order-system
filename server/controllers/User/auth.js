@@ -34,8 +34,6 @@ export const authLogin = async (req, res) => {
 
     return res.json({
       success: true,
-      role: admin.role,
-      manage: manageInfo
     });
 
   } catch (error) {
@@ -255,25 +253,44 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// 檢查用戶狀態
-export const checkStatus = async (req, res) => {
+// 檢查admin狀態
+export const checkAdminLoginStatus = async (req, res) => {
   try {
-    if (req.session.user_id) {
+    if (req.session.adminId) {
       // 管理員登入
       return res.json({
         success: true,
         loggedIn: true,
-        role: req.session.role,
-        user_id: req.session.user_id,
-        manage: req.session.manage || []
+        role: req.session.adminRole,
+        manage: req.session.adminManage || []
       });
-    } else if (req.session.userId) {
+    } else {
+      // 未登入
+      return res.json({
+        success: true,
+        loggedIn: false,
+        role: null,
+        manage: []
+      });
+    }
+  } catch (error) {
+    console.error('Check status error:', error);
+    return res.status(500).json({
+      success: false,
+      message: '伺服器錯誤'
+    });
+  }
+};
+
+// 檢查user用戶狀態
+export const checkUserLoginStatus = async (req, res) => {
+  try {
+    if (req.session.userId) {
       // 客戶登入
       return res.json({
         success: true,
         loggedIn: true,
         role: 'customer',
-        user_id: req.session.userId
       });
     } else {
       // 未登入

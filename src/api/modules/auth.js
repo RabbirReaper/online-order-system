@@ -55,17 +55,15 @@ export default function (apiClient) {
      * 檢查登入狀態
      * @returns {Promise<Object>} - 登入狀態信息
      */
-    async checkLoginStatus() {
+    async checkAdminStatus() {
       try {
-        const response = await apiClient.get('/auth/check-status');
-        console.log('登入狀態:', response);
+        const res = await apiClient.get('/auth/check-admin-status');
         return {
-          loggedIn: response.success && response.loggedIn,
-          role: response.role,
-          manage: response.manage || []
+          loggedIn: res.loggedIn,
+          role: res.role,
+          manage: res.manage || []
         };
       } catch (error) {
-        console.error('檢查登入狀態失敗:', error);
         return { loggedIn: false, role: null, manage: [] };
       }
     }
