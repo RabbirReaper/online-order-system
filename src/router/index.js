@@ -101,7 +101,7 @@ const router = createRouter({
     {
       path: '/admin/:brandId',
       name: 'brand-admin',
-      component: () => import('@/views/admin/index.vue'),
+      component: () => import('@/views/brandAdmin/index.vue'),
       meta: { requiresAdminAuth: true },
       props: true
     },
