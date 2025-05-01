@@ -1,5 +1,5 @@
 import express from 'express';
-// import * as storeController from '../controllers/Store/store.js';
+import * as storeController from '../controllers/Store/store.js';
 // import * as inventoryController from '../controllers/Store/inventory.js';
 import * as brandController from '../controllers/Brand/brand.js';
 // import * as menuController from '../controllers/Menu/menu.js';
