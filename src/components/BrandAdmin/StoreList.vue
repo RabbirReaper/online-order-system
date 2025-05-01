@@ -40,7 +40,7 @@
             <img :src="store.image?.url || '/placeholder.jpg'" class="img-fluid w-100 h-100 object-fit-cover"
               :alt="store.name">
             <div class="store-status" :class="store.isActive ? 'bg-success' : 'bg-secondary'">
-              {{ store.isActive ? '營業中' : '已停業' }}
+              {{ store.isActive ? '啟用中' : '已停用' }}
             </div>
           </div>
 
