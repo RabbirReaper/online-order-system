@@ -9,7 +9,7 @@ import { permissionMiddleware, roleMiddleware } from '../middlewares/permission.
 const router = express.Router();
 
 // 註解掉暫時不需要的店鋪路由
-/*
+
 router.get('/', storeController.getAllStores);
 router.get('/:id', storeController.getStoreById);
 router.post('/', authMiddleware, roleMiddleware(['boss', 'brand_admin']), storeController.createStore);
@@ -21,7 +21,7 @@ router.get('/:id/business-hours', storeController.getStoreBusinessHours);
 router.put('/:id/business-hours', authMiddleware, permissionMiddleware(['edit_backend']), storeController.updateStoreBusinessHours);
 router.put('/:id/announcements', authMiddleware, permissionMiddleware(['edit_backend']), storeController.updateStoreAnnouncements);
 router.get('/:id/status', storeController.getStoreCurrentStatus);
-
+/*
 // 庫存路由
 router.get('/:storeId/inventory', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getStoreInventory);
 router.get('/:storeId/inventory/:dishId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
