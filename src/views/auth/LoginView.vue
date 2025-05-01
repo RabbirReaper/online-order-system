@@ -44,13 +44,6 @@
                   </div>
                 </div>
 
-                <!-- 記住我選項 -->
-                <div class="mb-4 form-check">
-                  <input type="checkbox" class="form-check-input" id="remember" v-model="formData.remember"
-                    :disabled="isLoading" />
-                  <label class="form-check-label" for="remember">記住我</label>
-                </div>
-
                 <!-- 提交按鈕 -->
                 <div class="d-grid gap-2">
                   <button type="submit" class="btn btn-primary" :disabled="isLoading">
@@ -126,7 +119,7 @@ const handleLogin = async () => {
     if (response.success) {
       console.log('登入成功');
       // 如果有重定向參數，則導航到該頁面，否則導航到預設頁面
-      const redirectPath = route.query.redirect || '/admin';
+      const redirectPath = route.query.redirect || '/boss';
       router.push(redirectPath);
     } else {
       // 處理成功請求但業務邏輯失敗的情況
