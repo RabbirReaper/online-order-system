@@ -5,6 +5,7 @@ import storeRoutes from './store.js';
 // import orderRoutes from './order.js';
 // import promotionRoutes from './promotion.js';
 // import userRoutes from './user.js';
+import { errorHandler, notFoundHandler } from '../middlewares/error.js';
 
 // 創建一個主要的 API 路由器
 const apiRouter = express.Router();
@@ -16,5 +17,9 @@ apiRouter.use('/store', storeRoutes);
 // apiRouter.use('/order', orderRoutes);
 // apiRouter.use('/promotion', promotionRoutes);
 // apiRouter.use('/user', userRoutes);
+
+// 錯誤處理中介軟體
+apiRouter.use(notFoundHandler);
+apiRouter.use(errorHandler);
 
 export default apiRouter;
