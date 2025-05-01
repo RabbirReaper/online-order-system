@@ -143,3 +143,32 @@ export const getBrandStats = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// 切換品牌啟用狀態
+export const toggleBrandActive = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (isActive === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: '啟用狀態為必填欄位'
+      });
+    }
+
+    const brand = await brandService.toggleBrandActive(id, isActive);
+
+    res.json({
+      success: true,
+      message: `品牌已${isActive ? '啟用' : '停用'}`,
+      brand
+    });
+  } catch (error) {
+    console.error('Error toggling brand status:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+});

@@ -11,10 +11,16 @@
         </div>
       </div>
       <div>
-        <button class="btn btn-primary" @click="goToCreateBrand">
+        <router-link :to="{ name: 'brand-create' }" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增品牌
-        </button>
+        </router-link>
       </div>
+    </div>
+
+    <!-- 網路錯誤提示 -->
+    <div class="alert alert-danger" v-if="networkError">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ networkError }}
     </div>
 
     <!-- 品牌卡片列表 -->
@@ -31,8 +37,8 @@
           <div class="card-body">
             <h5 class="card-title d-flex justify-content-between align-items-center">
               {{ brand.name }}
-              <span class="badge rounded-pill" :class="getBadgeClass(brand)">
-                {{ getStatusText(brand) }}
+              <span class="badge rounded-pill" :class="brand.isActive ? 'bg-success' : 'bg-secondary'">
+                {{ brand.isActive ? '啟用中' : '已停用' }}
               </span>
             </h5>
             <p class="card-text" v-if="brand.description">{{ truncateText(brand.description, 100) }}</p>
@@ -41,18 +47,28 @@
             </p>
           </div>
           <div class="card-footer bg-transparent border-top-0">
-            <div class="d-flex justify-content-between">
-              <button class="btn btn-outline-primary btn-sm" @click="viewBrandDetails(brand)">
-                <i class="bi bi-eye me-1"></i>查看
-              </button>
-              <div>
-                <button class="btn btn-outline-secondary btn-sm me-1" @click="editBrand(brand)">
-                  <i class="bi bi-pencil me-1"></i>編輯
-                </button>
-                <button class="btn btn-outline-danger btn-sm" @click="confirmDeleteBrand(brand)">
-                  <i class="bi bi-trash me-1"></i>刪除
-                </button>
+            <div class="d-flex flex-wrap">
+              <div class="btn-group mb-2 me-2">
+                <router-link :to="{ name: 'brand-detail', params: { id: brand._id } }"
+                  class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-eye me-1"></i>查看
+                </router-link>
+                <router-link :to="{ name: 'brand-admin', params: { brandId: brand._id } }"
+                  class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-door-open me-1"></i>進入
+                </router-link>
               </div>
+              <div class="btn-group mb-2 me-2">
+                <router-link :to="{ name: 'brand-edit', params: { id: brand._id } }"
+                  class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-pencil me-1"></i>編輯
+                </router-link>
+              </div>
+              <button class="btn btn-sm mb-2" :class="brand.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
+                @click="toggleBrandActive(brand)">
+                <i class="bi" :class="brand.isActive ? 'bi-pause-fill me-1' : 'bi-play-fill me-1'"></i>
+                {{ brand.isActive ? '停用' : '啟用' }}
+              </button>
             </div>
           </div>
         </div>
@@ -123,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
 import api from '@/api';
 
@@ -135,69 +151,12 @@ const searchQuery = ref('');
 const isDeleting = ref(false);
 const deleteModal = ref(null);
 const currentPage = ref(1);
+const networkError = ref('');
 const pagination = reactive({
   total: 0,
   totalPages: 0,
   limit: 12
 });
-
-// 模擬品牌數據 (僅在 API 失敗時使用)
-const mockBrands = [
-  {
-    _id: '1',
-    name: '好味餐廳',
-    description: '提供各式中式料理，以川菜為主，提供友善的用餐環境和優質的服務。',
-    image: { url: 'https://placehold.co/600x400/orange/white?text=好味餐廳' },
-    storesCount: 3,
-    status: 'active',
-    createdAt: '2023-01-15T08:00:00.000Z'
-  },
-  {
-    _id: '2',
-    name: '健康食堂',
-    description: '專注於健康飲食的連鎖品牌，提供低卡路里、高蛋白質的餐點選擇。',
-    image: { url: 'https://placehold.co/600x400/green/white?text=健康食堂' },
-    storesCount: 5,
-    status: 'active',
-    createdAt: '2023-02-20T09:30:00.000Z'
-  },
-  {
-    _id: '3',
-    name: '義饗廚房',
-    description: '正宗義大利美食，堅持使用進口原料，為顧客帶來地道的義式風味。',
-    image: { url: 'https://placehold.co/600x400/red/white?text=義饗廚房' },
-    storesCount: 2,
-    status: 'active',
-    createdAt: '2023-03-10T10:15:00.000Z'
-  },
-  {
-    _id: '4',
-    name: '上善茶坊',
-    description: '傳統台灣茶文化的現代詮釋，提供多種台灣茶品和精緻茶點。',
-    image: { url: 'https://placehold.co/600x400/teal/white?text=上善茶坊' },
-    storesCount: 7,
-    status: 'active',
-    createdAt: '2023-04-05T14:20:00.000Z'
-  },
-  {
-    _id: '5',
-    name: '銀河咖啡',
-    description: '從世界各地嚴選咖啡豆，堅持手工烘焙，為咖啡愛好者提供極致體驗。',
-    image: { url: 'https://placehold.co/600x400/brown/white?text=銀河咖啡' },
-    storesCount: 4,
-    status: 'inactive',
-    createdAt: '2023-05-18T11:45:00.000Z'
-  },
-  {
-    _id: '6',
-    name: '鮮活壽司',
-    description: '每日直送新鮮海產，由日本師傅親自料理，帶來正宗日式風味。',
-    image: { url: 'https://placehold.co/600x400/navy/white?text=鮮活壽司' },
-    storesCount: 1,
-    status: 'active',
-    createdAt: '2023-06-22T16:30:00.000Z'
-  }
-];
 
 // 頁碼生成
 const getPageNumbers = () => {
@@ -237,52 +196,51 @@ const getPageNumbers = () => {
 // 加載品牌列表
 const fetchBrands = async () => {
   isLoading.value = true;
+  networkError.value = '';
+
   try {
     // 實際 API 呼叫
-    const response = await api.brand.getAllBrands({
-      page: currentPage.value,
-      limit: pagination.limit,
-      search: searchQuery.value
-    });
+    const response = await api.brand.getAllBrands();
 
     if (response && response.brands) {
-      brands.value = response.brands;
-      pagination.total = response.pagination?.total || 0;
-      pagination.totalPages = response.pagination?.totalPages || 1;
-    } else {
-      // 如果 API 未返回預期結構，使用模擬數據
-      console.warn('API返回的數據結構不符合預期，使用模擬數據');
-      useMockData();
+      // 添加店鋪數量計數
+      brands.value = response.brands.map(brand => ({
+        ...brand,
+        storesCount: 0 // 初始值，實際應從API獲取
+      }));
+
+      // 獲取每個品牌的店鋪數量
+      for (let brand of brands.value) {
+        try {
+          const storesResponse = await api.brand.getBrandStores({ brandId: brand._id });
+          brand.storesCount = storesResponse.stores?.length || 0;
+        } catch (error) {
+          console.error(`獲取品牌 ${brand.name} 的店鋪列表失敗:`, error);
+        }
+      }
+
+      // 處理搜尋過濾
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        brands.value = brands.value.filter(brand =>
+          brand.name.toLowerCase().includes(query) ||
+          (brand.description && brand.description.toLowerCase().includes(query))
+        );
+      }
+
+      // 分頁處理(目前簡單處理)
+      pagination.total = brands.value.length;
+      pagination.totalPages = Math.ceil(pagination.total / pagination.limit);
+      const start = (currentPage.value - 1) * pagination.limit;
+      const end = start + pagination.limit;
+      brands.value = brands.value.slice(start, end);
     }
   } catch (error) {
     console.error('獲取品牌列表失敗:', error);
-
-    // 使用模擬數據
-    useMockData();
+    networkError.value = '網路連線有問題，無法獲取品牌資料';
   } finally {
     isLoading.value = false;
   }
-};
-
-// 使用模擬數據
-const useMockData = () => {
-  // 模擬搜尋功能
-  let filteredBrands = [...mockBrands];
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filteredBrands = mockBrands.filter(brand =>
-      brand.name.toLowerCase().includes(query) ||
-      (brand.description && brand.description.toLowerCase().includes(query))
-    );
-  }
-
-  // 模擬分頁
-  pagination.total = filteredBrands.length;
-  pagination.totalPages = Math.ceil(filteredBrands.length / pagination.limit);
-
-  const start = (currentPage.value - 1) * pagination.limit;
-  const end = start + pagination.limit;
-  brands.value = filteredBrands.slice(start, end);
 };
 
 // 切換頁碼
@@ -299,16 +257,6 @@ const changePage = (page) => {
 const handleSearch = () => {
   currentPage.value = 1; // 重置頁碼
   fetchBrands();
-};
-
-// 生成狀態文字
-const getStatusText = (brand) => {
-  return brand.status === 'active' ? '營運中' : '已停用';
-};
-
-// 生成狀態徽章樣式
-const getBadgeClass = (brand) => {
-  return brand.status === 'active' ? 'bg-success' : 'bg-secondary';
 };
 
 // 轉換日期格式
@@ -331,67 +279,21 @@ const truncateText = (text, maxLength) => {
   return text.substring(0, maxLength) + '...';
 };
 
-// 前往創建品牌頁面
-const goToCreateBrand = () => {
-  window.dispatchEvent(new CustomEvent('set-active-menu', { detail: 'brand-create' }));
-};
-
-// 查看品牌詳情
-const viewBrandDetails = (brand) => {
-  console.log('查看品牌詳情:', brand);
-  alert(`查看品牌詳情功能尚未實現\n品牌ID: ${brand._id}\n品牌名稱: ${brand.name}`);
-};
-
-// 編輯品牌
-const editBrand = (brand) => {
-  console.log('編輯品牌:', brand);
-  alert(`編輯品牌功能尚未實現\n品牌ID: ${brand._id}\n品牌名稱: ${brand.name}`);
-};
-
-// 確認刪除品牌
-const confirmDeleteBrand = (brand) => {
-  selectedBrand.value = brand;
-  if (deleteModal.value) {
-    deleteModal.value.show();
-  }
-};
-
-// 執行刪除品牌
-const deleteBrand = async () => {
-  if (!selectedBrand.value) return;
-
-  isDeleting.value = true;
-
+// 切換品牌啟用狀態
+const toggleBrandActive = async (brand) => {
   try {
-    // 實際 API 呼叫
-    await api.brand.deleteBrand(selectedBrand.value._id);
+    const newStatus = !brand.isActive;
+    await api.brand.toggleBrandActive({
+      id: brand._id,
+      isActive: newStatus
+    });
 
-    // 移除列表中的品牌
-    brands.value = brands.value.filter(brand => brand._id !== selectedBrand.value._id);
-
-    // 關閉對話框
-    if (deleteModal.value) {
-      deleteModal.value.hide();
-    }
-
-    // 顯示成功訊息
-    alert(`品牌 ${selectedBrand.value.name} 已成功刪除`);
-
-    // 如果當前頁已空，且不是第一頁，則返回上一頁
-    if (brands.value.length === 0 && currentPage.value > 1) {
-      currentPage.value--;
-      fetchBrands();
-    } else if (pagination.total > 0) {
-      // 重新整理資料，以更新總數等
-      fetchBrands();
-    }
+    // 更新本地狀態
+    brand.isActive = newStatus;
 
   } catch (error) {
-    console.error('刪除品牌失敗:', error);
-    alert('刪除品牌時發生錯誤');
-  } finally {
-    isDeleting.value = false;
-    selectedBrand.value = null;
+    console.error('切換品牌狀態失敗:', error);
+    alert('切換品牌狀態時發生錯誤');
   }
 };
 
@@ -406,13 +308,7 @@ onMounted(() => {
   // 載入品牌列表
   fetchBrands();
 
-  // 監聽自訂事件，處理外部切換菜單和刷新列表
-  window.addEventListener('set-active-menu', (event) => {
-    if (event.detail === 'brand-list') {
-      fetchBrands();
-    }
-  });
-
+  // 監聽刷新列表事件
   window.addEventListener('refresh-brand-list', () => {
     fetchBrands();
   });

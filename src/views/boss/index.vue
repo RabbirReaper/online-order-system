@@ -16,18 +16,16 @@
               </h6>
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" :class="{ active: activeMenu === 'brand-list' }" href="#"
-                    @click.prevent="setActiveMenu('brand-list')">
+                  <router-link class="nav-link" :to="{ name: 'brand-list' }">
                     <i class="bi bi-list-ul me-2"></i>
                     品牌列表
-                  </a>
+                  </router-link>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" :class="{ active: activeMenu === 'brand-create' }" href="#"
-                    @click.prevent="setActiveMenu('brand-create')">
+                  <router-link class="nav-link" :to="{ name: 'brand-create' }">
                     <i class="bi bi-plus-circle me-2"></i>
                     新增品牌
-                  </a>
+                  </router-link>
                 </li>
               </ul>
             </div>
@@ -38,18 +36,16 @@
               </h6>
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" :class="{ active: activeMenu === 'admin-list' }" href="#"
-                    @click.prevent="setActiveMenu('admin-list')">
+                  <router-link class="nav-link" :to="{ name: 'admin-list' }">
                     <i class="bi bi-people me-2"></i>
                     管理員列表
-                  </a>
+                  </router-link>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" :class="{ active: activeMenu === 'admin-create' }" href="#"
-                    @click.prevent="setActiveMenu('admin-create')">
+                  <router-link class="nav-link" :to="{ name: 'admin-create' }">
                     <i class="bi bi-person-plus me-2"></i>
                     新增管理員
-                  </a>
+                  </router-link>
                 </li>
               </ul>
             </div>
@@ -60,18 +56,16 @@
               </h6>
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" :class="{ active: activeMenu === 'system-settings' }" href="#"
-                    @click.prevent="setActiveMenu('system-settings')">
+                  <router-link class="nav-link" :to="{ name: 'system-settings' }">
                     <i class="bi bi-gear me-2"></i>
                     系統設置
-                  </a>
+                  </router-link>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" :class="{ active: activeMenu === 'account-settings' }" href="#"
-                    @click.prevent="setActiveMenu('account-settings')">
+                  <router-link class="nav-link" :to="{ name: 'account-settings' }">
                     <i class="bi bi-person-gear me-2"></i>
                     帳號設置
-                  </a>
+                  </router-link>
                 </li>
               </ul>
             </div>
@@ -90,7 +84,7 @@
       <main class="col-md-9 col-lg-10 ms-sm-auto px-md-3 overflow-auto">
         <div
           class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-          <h2>{{ getMenuTitle() }}</h2>
+          <h2>{{ getPageTitle() }}</h2>
           <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
               data-bs-toggle="dropdown" aria-expanded="false">
@@ -101,7 +95,7 @@
               <li>
                 <h6 class="dropdown-header">系統管理員</h6>
               </li>
-              <li><a class="dropdown-item" href="#" @click.prevent="setActiveMenu('account-settings')">設置</a></li>
+              <li><router-link class="dropdown-item" :to="{ name: 'account-settings' }">設置</router-link></li>
               <li>
                 <hr class="dropdown-divider">
               </li>
@@ -111,8 +105,8 @@
         </div>
 
         <div class="content">
-          <!-- 根據選中的選單來渲染對應的組件 -->
-          <component :is="activeComponent" @brand-created="handleBrandCreated" />
+          <!-- 使用 router-view 取代動態組件 -->
+          <router-view />
         </div>
       </main>
     </div>
@@ -120,51 +114,22 @@
 </template>
 
 <script setup>
-import { ref, computed, defineAsyncComponent, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
-
-// 懶加載組件
-const BrandList = defineAsyncComponent(() => import('@/components/Boss/BrandList.vue'));
-const BrandForm = defineAsyncComponent(() => import('@/components/Boss/BrandForm.vue'));
-const AdminList = defineAsyncComponent(() =>
-  Promise.resolve({ template: '<div>管理員列表功能（待開發）</div>' }));
-const AdminCreate = defineAsyncComponent(() =>
-  Promise.resolve({ template: '<div>新增管理員功能（待開發）</div>' }));
-const SystemSettings = defineAsyncComponent(() =>
-  Promise.resolve({ template: '<div>系統設置功能（待開發）</div>' }));
-const AccountSettings = defineAsyncComponent(() =>
-  Promise.resolve({ template: '<div>帳號設置功能（待開發）</div>' }));
 
 // 路由
 const router = useRouter();
+const route = useRoute();
 
-// 當前選中的選單
-const activeMenu = ref('brand-list');
-
-// 根據選中的選單返回對應的組件
-const activeComponent = computed(() => {
-  switch (activeMenu.value) {
-    case 'brand-list': return BrandList;
-    case 'brand-create': return BrandForm;
-    case 'admin-list': return AdminList;
-    case 'admin-create': return AdminCreate;
-    case 'system-settings': return SystemSettings;
-    case 'account-settings': return AccountSettings;
-    default: return BrandList;
-  }
-});
-
-// 設置當前選中的選單
-const setActiveMenu = (menu) => {
-  activeMenu.value = menu;
-};
-
-// 根據選中的選單返回對應的標題
-const getMenuTitle = () => {
-  switch (activeMenu.value) {
+// 根據當前路由返回對應的頁面標題
+const getPageTitle = () => {
+  const routeName = route.name;
+  switch (routeName) {
     case 'brand-list': return '品牌列表';
     case 'brand-create': return '新增品牌';
+    case 'brand-edit': return '編輯品牌';
+    case 'brand-detail': return '品牌詳情';
     case 'admin-list': return '管理員列表';
     case 'admin-create': return '新增管理員';
     case 'system-settings': return '系統設置';
@@ -184,20 +149,11 @@ const handleLogout = async () => {
   }
 };
 
-// 處理品牌創建成功
-const handleBrandCreated = () => {
-  // 切換到品牌列表並刷新
-  setActiveMenu('brand-list');
-
-  // 觸發事件通知BrandList組件刷新列表
-  window.dispatchEvent(new CustomEvent('refresh-brand-list'));
-};
-
 onMounted(() => {
-  // 監聽外部切換菜單事件
-  window.addEventListener('set-active-menu', (event) => {
-    if (event.detail) {
-      setActiveMenu(event.detail);
+  // 監聽頁面變更事件
+  window.addEventListener('change-page', (event) => {
+    if (event.detail && event.detail.name) {
+      router.push({ name: event.detail.name, params: event.detail.params || {} });
     }
   });
 });

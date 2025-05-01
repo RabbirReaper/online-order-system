@@ -276,3 +276,23 @@ export const getBrandStats = async (brandId) => {
     }
   };
 };
+
+/**
+ * 切換品牌啟用狀態
+ * @param {String} brandId - 品牌ID
+ * @param {Boolean} isActive - 啟用狀態
+ * @returns {Promise<Object>} 更新後的品牌
+ */
+export const toggleBrandActive = async (brandId, isActive) => {
+  // 檢查品牌是否存在
+  const brand = await Brand.findById(brandId);
+
+  if (!brand) {
+    throw new AppError('品牌不存在', 404);
+  }
+
+  brand.isActive = isActive;
+  await brand.save();
+
+  return brand;
+};

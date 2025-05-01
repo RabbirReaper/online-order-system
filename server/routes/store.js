@@ -37,6 +37,7 @@ router.post('/brands', authMiddleware, roleMiddleware(['boss']), brandController
 router.put('/brands/:id', authMiddleware, roleMiddleware(['boss']), brandController.updateBrand);
 router.delete('/brands/:id', authMiddleware, roleMiddleware(['boss']), brandController.deleteBrand);
 router.get('/brands/:id/stores', brandController.getBrandStores);
+router.put('/brands/:id/toggle', authMiddleware, roleMiddleware(['boss']), brandController.toggleBrandActive);
 // router.get('/brands/:id/stats', brandController.getBrandStats);
 
 // 註解掉暫時不需要的菜單路由

@@ -14,16 +14,6 @@ const checkAdminAuth = async () => {
   }
 }
 
-// // 檢查會員登入狀態 (目前在測試階段暫時不使用)
-// const checkUserAuth = async () => {
-//   // 使用統一的API檢查用戶登入狀態
-//   const response = await api.auth.checkLoginStatus();
-//   return {
-//     loggedIn: response.loggedIn && response.role === 'customer',
-//     userId: response.user_id
-//   };
-// };
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -32,7 +22,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       redirect: to => {
-        // 可以根據登入狀態決定重定向到哪個頁面
         return { path: '/admin' }
       }
     },
@@ -47,66 +36,74 @@ const router = createRouter({
     // Boss 後台 (系統管理員)
     {
       path: '/boss',
-      name: 'boss',
       component: () => import('@/views/boss/index.vue'),
-      meta: { requiresAdminAuth: true, role: 'boss' }
+      meta: { requiresAdminAuth: true, role: 'boss' },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'brand-list' }
+        },
+        {
+          path: 'brands',
+          name: 'brand-list',
+          component: () => import('@/components/Boss/BrandList.vue')
+        },
+        {
+          path: 'brands/create',
+          name: 'brand-create',
+          component: () => import('@/components/Boss/BrandForm.vue')
+        },
+        {
+          path: 'brands/edit/:id',
+          name: 'brand-edit',
+          component: () => import('@/components/Boss/BrandForm.vue'),
+          props: true
+        },
+        {
+          path: 'brands/detail/:id',
+          name: 'brand-detail',
+          component: () => import('@/components/Boss/BrandDetail.vue'),
+          props: true
+        },
+        {
+          path: 'admins',
+          name: 'admin-list',
+          component: {
+            template: '<div class="alert alert-info">管理員功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'admins/create',
+          name: 'admin-create',
+          component: {
+            template: '<div class="alert alert-info">管理員功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'settings',
+          name: 'system-settings',
+          component: {
+            template: '<div class="alert alert-info">系統設置功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'account',
+          name: 'account-settings',
+          component: {
+            template: '<div class="alert alert-info">系統設置功能（待開發）</div>'
+          }
+        }
+      ]
     },
 
-    // 管理員後台
+    // 品牌管理員後台 (新增)
     {
-      path: '/admin',
-      name: 'admin',
+      path: '/admin/:brandId',
+      name: 'brand-admin',
       component: () => import('@/views/admin/index.vue'),
-      meta: { requiresAdminAuth: true }
+      meta: { requiresAdminAuth: true },
+      props: true
     },
-
-    // // 店員前台 (點餐系統)
-    // {
-    //   path: '/staff/:storeId',
-    //   name: 'staff',
-    //   component: () => import('@/views/staff/index.vue'),
-    //   meta: { requiresAdminAuth: true }
-    // },
-
-    // // 客人前台
-    // {
-    //   path: '/customer',
-    //   component: () => import('@/views/customer/layout.vue'),
-    //   children: [
-    //     // 店鋪列表
-    //     {
-    //       path: 'stores',
-    //       name: 'customer-stores',
-    //       component: () => import('@/views/customer/stores.vue')
-    //     },
-    //     // 點餐頁面
-    //     {
-    //       path: 'ordering/:storeId',
-    //       name: 'customer-ordering',
-    //       component: () => import('@/views/customer/ordering.vue')
-    //     },
-    //     // 訂單確認頁面
-    //     {
-    //       path: 'confirmation/:orderId',
-    //       name: 'customer-confirmation',
-    //       component: () => import('@/views/customer/confirmation.vue')
-    //     },
-    //     // 會員登入/註冊
-    //     {
-    //       path: 'login',
-    //       name: 'customer-login',
-    //       component: () => import('@/views/customer/loginView.vue'),
-    //       meta: { customerGuest: true }
-    //     },
-    //     // 會員中心
-    //     {
-    //       path: 'my-account',
-    //       name: 'customer-my-account',
-    //       component: () => import('@/views/customer/myAccount.vue'),
-    //       meta: { requiresCustomerAuth: true }
-    //     }
-    //   ]
-    // },
 
     // 404 頁面
     {

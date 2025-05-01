@@ -78,6 +78,17 @@ export default function (apiClient) {
      */
     getBrandStats(brandId) {
       return apiClient.get(`/store/brands/${brandId}/stats`);
+    },
+
+    /**
+     * 切換品牌啟用狀態
+     * @param {Object} params - 參數
+     * @param {string} params.id - 品牌ID
+     * @param {boolean} params.isActive - 是否啟用
+     * @returns {Promise} - API 回應
+     */
+    toggleBrandActive({ id, isActive }) {
+      return apiClient.put(`/store/brands/${id}/toggle`, { isActive });
     }
   };
 }
