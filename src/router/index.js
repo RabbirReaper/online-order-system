@@ -97,13 +97,147 @@ const router = createRouter({
       ]
     },
 
-    // 品牌管理員後台 (新增)
+    // 品牌管理員後台
     {
       path: '/admin/:brandId',
-      name: 'brand-admin',
       component: () => import('@/views/brandAdmin/index.vue'),
       meta: { requiresAdminAuth: true },
-      props: true
+      props: true,
+      children: [
+        {
+          path: '',
+          name: 'brand-admin-dashboard',
+          component: () => import('@/components/BrandAdmin/Dashboard.vue')
+        },
+        // 店鋪管理路由
+        {
+          path: 'stores',
+          name: 'brand-admin-stores',
+          component: () => import('@/components/BrandAdmin/StoreList.vue')
+        },
+        {
+          path: 'stores/create',
+          name: 'brand-admin-store-create',
+          component: () => import('@/components/BrandAdmin/StoreForm.vue')
+        },
+        {
+          path: 'stores/edit/:id',
+          name: 'brand-admin-store-edit',
+          component: () => import('@/components/BrandAdmin/StoreForm.vue'),
+          props: true
+        },
+        {
+          path: 'stores/detail/:id',
+          name: 'brand-admin-store-detail',
+          component: () => import('@/components/BrandAdmin/StoreDetail.vue'),
+          props: true
+        },
+        // 菜單管理（預留）
+        {
+          path: 'menus',
+          name: 'brand-admin-menus',
+          component: {
+            template: '<div class="alert alert-info">菜單管理功能（待開發）</div>'
+          }
+        },
+        // 餐點管理（預留）
+        {
+          path: 'dishes',
+          name: 'brand-admin-dishes',
+          component: {
+            template: '<div class="alert alert-info">餐點管理功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'option-categories',
+          name: 'brand-admin-option-categories',
+          component: {
+            template: '<div class="alert alert-info">選項類別功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'options',
+          name: 'brand-admin-options',
+          component: {
+            template: '<div class="alert alert-info">選項管理功能（待開發）</div>'
+          }
+        },
+        // 庫存管理（預留）
+        {
+          path: 'inventory',
+          name: 'brand-admin-inventory',
+          component: {
+            template: '<div class="alert alert-info">庫存管理功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'inventory/logs',
+          name: 'brand-admin-inventory-logs',
+          component: {
+            template: '<div class="alert alert-info">庫存變更記錄功能（待開發）</div>'
+          }
+        },
+        // 訂單管理（預留）
+        {
+          path: 'orders',
+          name: 'brand-admin-orders',
+          component: {
+            template: '<div class="alert alert-info">訂單管理功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'orders/reports',
+          name: 'brand-admin-reports',
+          component: {
+            template: '<div class="alert alert-info">銷售報表功能（待開發）</div>'
+          }
+        },
+        // 促銷管理（預留）
+        {
+          path: 'coupons',
+          name: 'brand-admin-coupons',
+          component: {
+            template: '<div class="alert alert-info">優惠券功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'point-rules',
+          name: 'brand-admin-point-rules',
+          component: {
+            template: '<div class="alert alert-info">點數規則功能（待開發）</div>'
+          }
+        },
+        // 用戶管理（預留）
+        {
+          path: 'store-admins',
+          name: 'brand-admin-store-admins',
+          component: {
+            template: '<div class="alert alert-info">店鋪管理員功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'customers',
+          name: 'brand-admin-customers',
+          component: {
+            template: '<div class="alert alert-info">顧客管理功能（待開發）</div>'
+          }
+        },
+        // 系統設置（預留）
+        {
+          path: 'settings',
+          name: 'brand-admin-settings',
+          component: {
+            template: '<div class="alert alert-info">品牌設置功能（待開發）</div>'
+          }
+        },
+        {
+          path: 'account-settings',
+          name: 'brand-admin-account-settings',
+          component: {
+            template: '<div class="alert alert-info">帳號設置功能（待開發）</div>'
+          }
+        }
+      ]
     },
 
     // 404 頁面

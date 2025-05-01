@@ -53,7 +53,7 @@
                   class="btn btn-outline-primary btn-sm">
                   <i class="bi bi-eye me-1"></i>查看
                 </router-link>
-                <router-link :to="{ name: 'brand-admin', params: { brandId: brand._id } }"
+                <router-link :to="{ name: 'brand-admin-dashboard', params: { brandId: brand._id } }"
                   class="btn btn-outline-primary btn-sm">
                   <i class="bi bi-door-open me-1"></i>進入
                 </router-link>
