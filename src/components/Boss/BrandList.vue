@@ -108,48 +108,17 @@
         </li>
       </ul>
     </nav>
-
-    <!-- 刪除確認對話框 -->
-    <div class="modal fade" id="deleteBrandModal" tabindex="-1" ref="deleteModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" v-if="selectedBrand">
-            <p>您確定要刪除品牌 <strong>{{ selectedBrand.name }}</strong> 嗎？</p>
-            <div class="alert alert-danger">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              此操作無法撤銷，品牌相關的所有資料都將被永久刪除。
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="deleteBrand" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ isDeleting ? '處理中...' : '確認刪除' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
 import api from '@/api';
 
 // 狀態變數
 const brands = ref([]);
 const isLoading = ref(true);
-const selectedBrand = ref(null);
 const searchQuery = ref('');
-const isDeleting = ref(false);
-const deleteModal = ref(null);
 const currentPage = ref(1);
 const networkError = ref('');
 const pagination = reactive({
@@ -299,12 +268,6 @@ const toggleBrandActive = async (brand) => {
 
 // 生命週期鉤子
 onMounted(() => {
-  // 初始化刪除確認對話框
-  const modalElement = document.getElementById('deleteBrandModal');
-  if (modalElement) {
-    deleteModal.value = new Modal(modalElement);
-  }
-
   // 載入品牌列表
   fetchBrands();
 
