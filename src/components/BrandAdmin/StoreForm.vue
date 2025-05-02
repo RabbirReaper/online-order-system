@@ -40,8 +40,8 @@
                 清除
               </button>
             </div>
-            <div class="invalid-feedback" v-if="errors.image">{{ errors.image }}</div>
-            <div class="form-text text-muted">
+            <div class="text-danger" v-if="errors.image">{{ errors.image }}</div>
+            <div class="form-text text-muted" v-else>
               <i class="bi bi-info-circle me-1"></i>
               請上傳店鋪圖片，檔案大小限制為 1MB，支援 JPG、PNG 格式
             </div>
