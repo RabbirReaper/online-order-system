@@ -116,29 +116,29 @@ const router = createRouter({
         {
           path: '',
           name: 'brand-admin-dashboard',
-          component: () => import('@/components/BrandAdmin/Dashboard.vue')
+          component: () => import('@/components/BrandAdmin/DashBoard/Dashboard.vue')
         },
         // 店鋪管理路由
         {
           path: 'stores',
           name: 'brand-admin-stores',
-          component: () => import('@/components/BrandAdmin/StoreList.vue')
+          component: () => import('@/components/BrandAdmin/Store/StoreList.vue')
         },
         {
           path: 'stores/create',
           name: 'brand-admin-store-create',
-          component: () => import('@/components/BrandAdmin/StoreForm.vue')
+          component: () => import('@/components/BrandAdmin/Store/StoreForm.vue')
         },
         {
           path: 'stores/edit/:id',
           name: 'brand-admin-store-edit',
-          component: () => import('@/components/BrandAdmin/StoreForm.vue'),
+          component: () => import('@/components/BrandAdmin/Store/StoreForm.vue'),
           props: true
         },
         {
           path: 'stores/detail/:id',
           name: 'brand-admin-store-detail',
-          component: () => import('@/components/BrandAdmin/StoreDetail.vue'),
+          component: () => import('@/components/BrandAdmin/Store/StoreDetail.vue'),
           props: true
         },
         // 菜單管理（預留）
