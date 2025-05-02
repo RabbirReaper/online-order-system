@@ -437,8 +437,8 @@ const resetForm = () => {
     formData.businessHours = [];
     formData.announcements = [];
     formData.isActive = true;
-    clearImage();
   }
+  clearImage();
 
   // 清除錯誤
   errors.name = '';
@@ -453,7 +453,7 @@ const resetForm = () => {
 const validateForm = () => {
   // 清除先前的錯誤
   errors.name = '';
-  errors.image = '';
+  // errors.image = '';
   errors.businessHours = [];
   errors.announcements = [];
   formErrors.value = [];
@@ -478,6 +478,9 @@ const validateForm = () => {
   } else if (isEditMode.value && !formData.newImage && !formData.image) {
     errors.image = '請上傳店鋪圖片';
     formErrors.value.push('請上傳店鋪圖片');
+    isValid = false;
+  } else if (errors.image) {
+    formErrors.value.push(errors.image);
     isValid = false;
   }
 
