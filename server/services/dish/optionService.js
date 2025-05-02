@@ -39,11 +39,11 @@ export const getAllOptions = async (brandId, options = {}) => {
   }
 
   // 查詢選項，無分頁直接返回所有
-  const options = await Option.find(queryConditions)
+  const optionsList = await Option.find(queryConditions)
     .sort({ name: 1 })
     .populate('refDishTemplate', 'name');
 
-  return options;
+  return optionsList;
 };
 
 /**
