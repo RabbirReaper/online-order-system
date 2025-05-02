@@ -74,21 +74,21 @@ export const uploadAndProcessImage = async (imageData, folder, fileName = null, 
  */
 export const updateImage = async (newImageData, existingKey, folder, contentType = 'image/jpeg') => {
   try {
-    // 如果有新圖片，則刪除舊圖片並上傳新圖片
+    // 如果有新圖片
     if (newImageData) {
       // 檢查舊圖片是否存在
-      const imageExists = await r2Service.imageExists(existingKey);
+      const oldImageExists = await r2Service.imageExists(existingKey);
 
-      if (imageExists) {
-        // 刪除舊圖片
+      // 上傳新圖片 - 傳入 null 作為 fileName 參數讓 uploadAndProcessImage 自動生成 UUID
+      const newImageInfo = await uploadAndProcessImage(newImageData, folder, null, contentType);
+
+      // 只有在上傳成功且舊圖片存在且新舊key不同時才刪除舊圖片
+      if (oldImageExists && newImageInfo.key !== existingKey) {
         await r2Service.deleteImage(existingKey);
       }
 
-      // 保留原來的檔名
-      const fileName = existingKey.split('/').pop();
-
-      // 上傳新圖片
-      return await uploadAndProcessImage(newImageData, folder, fileName, contentType);
+      // 返回新圖片資訊
+      return newImageInfo;
     }
 
     // 如果沒有新圖片，返回現有圖片資訊
