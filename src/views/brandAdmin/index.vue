@@ -71,13 +71,13 @@
               <i class="bi bi-chevron-down float-end"></i>
             </div>
             <div class="collapse" id="dishManagement">
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes`">
+              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template`">
                 <i class="bi bi-grid me-2"></i>
                 餐點列表
               </router-link>
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template`">
+              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template/create`">
                 <i class="bi bi-card-list me-2"></i>
-                餐點模板
+                建立餐點模板
               </router-link>
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/option-categories`">
                 <i class="bi bi-tags me-2"></i>

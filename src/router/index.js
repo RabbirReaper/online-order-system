@@ -151,33 +151,30 @@ const router = createRouter({
             message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
-        // 餐點管理（預留）
+        // 餐點模板路由
         {
-          path: 'dishes',
-          name: 'brand-admin-dishes',
-          component: Placeholder,
-          props: {
-            title: '餐點管理功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          path: '/admin/:brandId/dishes/template',
+          name: 'DishTemplateList',
+          component: () => import('@/components/BrandAdmin/Dish/DishTemplate/List.vue'),
+          meta: { requiresAuth: true, title: '餐點模板' }
         },
         {
-          path: 'option-categories',
-          name: 'brand-admin-option-categories',
-          component: Placeholder,
-          props: {
-            title: '選項類別功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          path: '/admin/:brandId/dishes/template/create',
+          name: 'DishTemplateCreate',
+          component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Form.vue'),
+          meta: { requiresAuth: true, title: '新增餐點' }
         },
         {
-          path: 'options',
-          name: 'brand-admin-options',
-          component: Placeholder,
-          props: {
-            title: '選項管理功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          path: '/admin/:brandId/dishes/template/edit/:id',
+          name: 'DishTemplateEdit',
+          component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Form.vue'),
+          meta: { requiresAuth: true, title: '編輯餐點' }
+        },
+        {
+          path: '/admin/:brandId/dishes/template/detail/:id',
+          name: 'DishTemplateDetail',
+          component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Detail.vue'),
+          meta: { requiresAuth: true, title: '餐點詳情' }
         },
         // 庫存管理（預留）
         {
