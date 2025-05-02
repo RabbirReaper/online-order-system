@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import api from '@/api'
+import Placeholder from '@/components/Placeholder.vue'
 
 // 檢查管理員登入狀態
 const checkAdminAuth = async () => {
@@ -69,29 +70,37 @@ const router = createRouter({
         {
           path: 'admins',
           name: 'admin-list',
-          component: {
-            template: '<div class="alert alert-info">管理員功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '管理員功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'admins/create',
           name: 'admin-create',
-          component: {
-            template: '<div class="alert alert-info">管理員功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '管理員功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'settings',
           name: 'system-settings',
-          component: {
-            template: '<div class="alert alert-info">系統設置功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '系統設置功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'account',
           name: 'account-settings',
-          component: {
-            template: '<div class="alert alert-info">系統設置功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '系統設置功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         }
       ]
@@ -136,105 +145,133 @@ const router = createRouter({
         {
           path: 'menus',
           name: 'brand-admin-menus',
-          component: {
-            template: '<div class="alert alert-info">菜單管理功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '菜單管理功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         // 餐點管理（預留）
         {
           path: 'dishes',
           name: 'brand-admin-dishes',
-          component: {
-            template: '<div class="alert alert-info">餐點管理功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '餐點管理功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'option-categories',
           name: 'brand-admin-option-categories',
-          component: {
-            template: '<div class="alert alert-info">選項類別功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '選項類別功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'options',
           name: 'brand-admin-options',
-          component: {
-            template: '<div class="alert alert-info">選項管理功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '選項管理功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         // 庫存管理（預留）
         {
           path: 'inventory',
           name: 'brand-admin-inventory',
-          component: {
-            template: '<div class="alert alert-info">庫存管理功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '庫存管理功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'inventory/logs',
           name: 'brand-admin-inventory-logs',
-          component: {
-            template: '<div class="alert alert-info">庫存變更記錄功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '庫存變更記錄功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         // 訂單管理（預留）
         {
           path: 'orders',
           name: 'brand-admin-orders',
-          component: {
-            template: '<div class="alert alert-info">訂單管理功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '訂單管理功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'orders/reports',
           name: 'brand-admin-reports',
-          component: {
-            template: '<div class="alert alert-info">銷售報表功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '銷售報表功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         // 促銷管理（預留）
         {
           path: 'coupons',
           name: 'brand-admin-coupons',
-          component: {
-            template: '<div class="alert alert-info">優惠券功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '優惠券功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'point-rules',
           name: 'brand-admin-point-rules',
-          component: {
-            template: '<div class="alert alert-info">點數規則功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '點數規則功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         // 用戶管理（預留）
         {
           path: 'store-admins',
           name: 'brand-admin-store-admins',
-          component: {
-            template: '<div class="alert alert-info">店鋪管理員功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '店鋪管理員功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'customers',
           name: 'brand-admin-customers',
-          component: {
-            template: '<div class="alert alert-info">顧客管理功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '顧客管理功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         // 系統設置（預留）
         {
           path: 'settings',
           name: 'brand-admin-settings',
-          component: {
-            template: '<div class="alert alert-info">品牌設置功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '品牌設置功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
         {
           path: 'account-settings',
           name: 'brand-admin-account-settings',
-          component: {
-            template: '<div class="alert alert-info">帳號設置功能（待開發）</div>'
+          component: Placeholder,
+          props: {
+            title: '帳號設置功能',
+            message: '這個區塊目前尚未開發，請稍後再試。'
           }
         }
       ]
