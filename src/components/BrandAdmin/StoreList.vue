@@ -322,11 +322,6 @@ watch(() => brandId.value, (newId, oldId) => {
 onMounted(() => {
   // 載入店鋪列表
   fetchStores();
-
-  // 監聽刷新列表事件
-  window.addEventListener('refresh-store-list', () => {
-    fetchStores();
-  });
 });
 </script>
 

@@ -34,9 +34,10 @@
           <div class="mb-3">
             <label for="storeImage" class="form-label required">店鋪圖片</label>
             <div class="input-group">
-              <input type="file" class="form-control" id="storeImage" @change="handleImageChange"
+              <input type="file" class="form-control" id="storeImage" ref="fileInputRef" @change="handleImageChange"
                 :class="{ 'is-invalid': errors.image }" accept="image/*" />
-              <button class="btn btn-outline-secondary" type="button" @click="clearImage" v-if="imagePreview">
+              <button class="btn btn-outline-secondary" type="button" @click="clearImage"
+                v-if="formData.newImage || (formData.image && formData.image.url)">
                 清除
               </button>
             </div>
@@ -47,8 +48,8 @@
             </div>
 
             <!-- 圖片預覽 -->
-            <div class="mt-2" v-if="imagePreview">
-              <img :src="imagePreview" alt="圖片預覽" class="img-thumbnail" style="max-height: 200px" />
+            <div class="mt-2" v-if="formData.newImage">
+              <img :src="formData.newImage" alt="圖片預覽" class="img-thumbnail" style="max-height: 200px" />
             </div>
             <!-- 現有圖片 (編輯模式) -->
             <div class="mt-2" v-else-if="formData.image && formData.image.url">
@@ -256,7 +257,8 @@ const brandId = computed(() => route.params.brandId);
 const formData = reactive({
   name: '',
   brand: '',
-  image: null,
+  image: null,   // 現有圖片（編輯模式）
+  newImage: null, // 新上傳的圖片
   businessHours: [],
   announcements: [],
   isActive: true
@@ -272,9 +274,10 @@ const errors = reactive({
 
 // 狀態
 const isSubmitting = ref(false);
-const imagePreview = ref('');
 const successMessage = ref('');
 const formErrors = ref([]);
+const fileInputRef = ref(null);
+
 
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
@@ -386,10 +389,7 @@ const getAnnouncementError = (index, field) => {
 const handleImageChange = (event) => {
   const file = event.target.files[0];
 
-  // 驗證文件
-  if (!file) {
-    return;
-  }
+  if (!file) return;
 
   // 檢查檔案大小 (最大 1MB)
   if (file.size > 1 * 1024 * 1024) {
@@ -403,24 +403,21 @@ const handleImageChange = (event) => {
     return;
   }
 
-  // 儲存檔案並建立預覽
-  formData.newImage = file;
   errors.image = '';
 
-  // 使用 api.image.fileToBase64 來建立圖片預覽
+  // 直接轉換並儲存base64
   api.image.fileToBase64(file).then(base64 => {
-    imagePreview.value = base64;
+    formData.newImage = base64; // 直接保存base64字符串
   });
 };
 
 // 清除圖片
 const clearImage = () => {
   formData.newImage = null;
-  imagePreview.value = '';
+
   // 清除檔案輸入框的值
-  const fileInput = document.getElementById('storeImage');
-  if (fileInput) {
-    fileInput.value = '';
+  if (fileInputRef.value) {
+    fileInputRef.value.value = '';
   }
 };
 
@@ -470,17 +467,17 @@ const validateForm = () => {
     isValid = false;
   }
 
-  // 驗證圖片 (新增模式必填，編輯模式若有現有圖片則可選)
-  if (!isEditMode.value && !formData.newImage && !formData.image) {
+  // 驗證圖片
+  if (errors.image) {
+    formErrors.value.push(errors.image);
+    isValid = false;
+  } else if (!isEditMode.value && !formData.newImage && !formData.image) {
     errors.image = '請上傳店鋪圖片';
     formErrors.value.push('請上傳店鋪圖片');
     isValid = false;
   } else if (isEditMode.value && !formData.newImage && !formData.image) {
     errors.image = '請上傳店鋪圖片';
     formErrors.value.push('請上傳店鋪圖片');
-    isValid = false;
-  } else if (errors.image) {
-    formErrors.value.push(errors.image);
     isValid = false;
   }
 
@@ -615,10 +612,9 @@ const submitForm = async () => {
       isActive: formData.isActive
     };
 
-    // 如果有新上傳的圖片，處理圖片數據
+    // 直接使用已轉換的base64圖片，不需要再次轉換
     if (formData.newImage) {
-      // 使用 fileToBase64 轉換圖片
-      submitData.imageData = await api.image.fileToBase64(formData.newImage);
+      submitData.imageData = formData.newImage;
     }
 
     let response;
@@ -638,12 +634,12 @@ const submitForm = async () => {
 
     console.log(isEditMode.value ? '店鋪更新成功:' : '店鋪創建成功:', response);
 
-    // 觸發列表刷新
-    window.dispatchEvent(new CustomEvent('refresh-store-list'));
-
     // 延遲導航，讓用戶看到成功訊息
     setTimeout(() => {
-      router.push(`/admin/${brandId.value}/stores`);
+      router.push(`/admin/${brandId.value}/stores`).then(() => {
+        // 等待頁面導向完成後再刷新
+        window.location.reload();
+      });
     }, 1000);
   } catch (error) {
     console.error('儲存店鋪時發生錯誤:', error);
@@ -673,18 +669,8 @@ const submitForm = async () => {
   }
 };
 
-// 監聽品牌ID變化
-watch(() => brandId.value, (newId, oldId) => {
-  if (newId !== oldId) {
-    formData.brand = newId;
-  }
-});
-
 // 生命週期鉤子
 onMounted(() => {
-  // 初始化品牌ID
-  formData.brand = brandId.value;
-
   // 如果是編輯模式，獲取店鋪資料
   if (isEditMode.value) {
     fetchStoreData();
