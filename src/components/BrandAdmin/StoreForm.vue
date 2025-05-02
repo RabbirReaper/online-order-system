@@ -43,7 +43,7 @@
             <div class="invalid-feedback" v-if="errors.image">{{ errors.image }}</div>
             <div class="form-text text-muted">
               <i class="bi bi-info-circle me-1"></i>
-              請上傳店鋪圖片，檔案大小限制為 2MB，支援 JPG、PNG 格式
+              請上傳店鋪圖片，檔案大小限制為 1MB，支援 JPG、PNG 格式
             </div>
 
             <!-- 圖片預覽 -->
@@ -391,9 +391,9 @@ const handleImageChange = (event) => {
     return;
   }
 
-  // 檢查檔案大小 (最大 2MB)
-  if (file.size > 2 * 1024 * 1024) {
-    errors.image = '圖片大小超過限制，請上傳不超過 2MB 的檔案';
+  // 檢查檔案大小 (最大 1MB)
+  if (file.size > 1 * 1024 * 1024) {
+    errors.image = '圖片大小超過限制，請上傳不超過 1MB 的檔案';
     return;
   }
 
