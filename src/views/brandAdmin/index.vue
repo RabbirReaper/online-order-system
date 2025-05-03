@@ -24,14 +24,14 @@
 
           <!-- 店鋪管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#storeManagement" aria-expanded="false"
-              aria-controls="storeManagement" @click="toggleStoreManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('storeManagement')"
+              :aria-expanded="isExpanded('storeManagement')" aria-controls="storeManagement">
               <i class="bi bi-shop me-2"></i>
               店鋪管理
-              <i class="bi float-end" :class="storeManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="storeManagement">
+              <i class="bi float-end" :class="isExpanded('storeManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('storeManagement') }" id="storeManagement"
+              ref="storeManagementRef" :style="getCollapseStyle('storeManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/stores`">
                 <i class="bi bi-list-ul me-2"></i>
                 店鋪列表
@@ -45,14 +45,14 @@
 
           <!-- 菜單管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#menuManagement" aria-expanded="false"
-              aria-controls="menuManagement" @click="toggleMenuManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('menuManagement')"
+              :aria-expanded="isExpanded('menuManagement')" aria-controls="menuManagement">
               <i class="bi bi-menu-button-wide me-2"></i>
               菜單管理
-              <i class="bi float-end" :class="menuManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="menuManagement">
+              <i class="bi float-end" :class="isExpanded('menuManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('menuManagement') }" id="menuManagement"
+              ref="menuManagementRef" :style="getCollapseStyle('menuManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/menus`">
                 <i class="bi bi-list-check me-2"></i>
                 菜單列表
@@ -66,14 +66,14 @@
 
           <!-- 餐點管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#dishManagement" aria-expanded="false"
-              aria-controls="dishManagement" @click="toggleDishManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('dishManagement')"
+              :aria-expanded="isExpanded('dishManagement')" aria-controls="dishManagement">
               <i class="bi bi-cup-hot me-2"></i>
               餐點管理
-              <i class="bi float-end" :class="dishManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="dishManagement">
+              <i class="bi float-end" :class="isExpanded('dishManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('dishManagement') }" id="dishManagement"
+              ref="dishManagementRef" :style="getCollapseStyle('dishManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template`">
                 <i class="bi bi-grid me-2"></i>
                 餐點列表
@@ -95,14 +95,15 @@
 
           <!-- 庫存管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#inventoryManagement" aria-expanded="false"
-              aria-controls="inventoryManagement" @click="toggleInventoryManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('inventoryManagement')"
+              :aria-expanded="isExpanded('inventoryManagement')" aria-controls="inventoryManagement">
               <i class="bi bi-box-seam me-2"></i>
               庫存管理
-              <i class="bi float-end" :class="inventoryManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="inventoryManagement">
+              <i class="bi float-end"
+                :class="isExpanded('inventoryManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('inventoryManagement') }" id="inventoryManagement"
+              ref="inventoryManagementRef" :style="getCollapseStyle('inventoryManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/inventory`">
                 <i class="bi bi-box2 me-2"></i>
                 庫存狀態
@@ -116,14 +117,14 @@
 
           <!-- 訂單管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#orderManagement" aria-expanded="false"
-              aria-controls="orderManagement" @click="toggleOrderManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('orderManagement')"
+              :aria-expanded="isExpanded('orderManagement')" aria-controls="orderManagement">
               <i class="bi bi-receipt me-2"></i>
               訂單管理
-              <i class="bi float-end" :class="orderManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="orderManagement">
+              <i class="bi float-end" :class="isExpanded('orderManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('orderManagement') }" id="orderManagement"
+              ref="orderManagementRef" :style="getCollapseStyle('orderManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/orders`">
                 <i class="bi bi-list-ul me-2"></i>
                 訂單列表
@@ -137,14 +138,15 @@
 
           <!-- 促銷管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#promotionManagement" aria-expanded="false"
-              aria-controls="promotionManagement" @click="togglePromotionManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('promotionManagement')"
+              :aria-expanded="isExpanded('promotionManagement')" aria-controls="promotionManagement">
               <i class="bi bi-megaphone me-2"></i>
               促銷管理
-              <i class="bi float-end" :class="promotionManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="promotionManagement">
+              <i class="bi float-end"
+                :class="isExpanded('promotionManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('promotionManagement') }" id="promotionManagement"
+              ref="promotionManagementRef" :style="getCollapseStyle('promotionManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/coupons`">
                 <i class="bi bi-ticket-perforated me-2"></i>
                 優惠券
@@ -158,14 +160,14 @@
 
           <!-- 用戶管理 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#userManagement" aria-expanded="false"
-              aria-controls="userManagement" @click="toggleUserManagement">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('userManagement')"
+              :aria-expanded="isExpanded('userManagement')" aria-controls="userManagement">
               <i class="bi bi-people me-2"></i>
               用戶管理
-              <i class="bi float-end" :class="userManagementOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="userManagement">
+              <i class="bi float-end" :class="isExpanded('userManagement') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('userManagement') }" id="userManagement"
+              ref="userManagementRef" :style="getCollapseStyle('userManagement')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/store-admins`">
                 <i class="bi bi-person-workspace me-2"></i>
                 店鋪管理員
@@ -179,14 +181,14 @@
 
           <!-- 系統設置 -->
           <div class="mb-1">
-            <button class="nav-section-header px-3 py-2 w-100 text-start border-0 bg-transparent" type="button"
-              data-bs-toggle="collapse" data-bs-target="#systemSettings" aria-expanded="false"
-              aria-controls="systemSettings" @click="toggleSystemSettings">
+            <div class="nav-section-header px-3 py-2" @click="toggleSection('systemSettings')"
+              :aria-expanded="isExpanded('systemSettings')" aria-controls="systemSettings">
               <i class="bi bi-gear me-2"></i>
               系統設置
-              <i class="bi float-end" :class="systemSettingsOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-            </button>
-            <div class="collapse" id="systemSettings">
+              <i class="bi float-end" :class="isExpanded('systemSettings') ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+            </div>
+            <div class="collapse" :class="{ 'show': isExpanded('systemSettings') }" id="systemSettings"
+              ref="systemSettingsRef" :style="getCollapseStyle('systemSettings')">
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/settings`">
                 <i class="bi bi-sliders me-2"></i>
                 品牌設置
@@ -270,9 +272,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
+import _ from 'lodash';
 
 // 路由
 const router = useRouter();
@@ -289,47 +292,119 @@ const currentUserRole = ref('品牌管理員');
 const currentBrandName = ref('載入中...');
 const isLoading = ref(true);
 
-// 各折疊區塊的狀態管理
-const storeManagementOpen = ref(false);
-const menuManagementOpen = ref(false);
-const dishManagementOpen = ref(false);
-const inventoryManagementOpen = ref(false);
-const orderManagementOpen = ref(false);
-const promotionManagementOpen = ref(false);
-const userManagementOpen = ref(false);
-const systemSettingsOpen = ref(false);
+// 為各個折疊區塊創建refs
+const storeManagementRef = ref(null);
+const menuManagementRef = ref(null);
+const dishManagementRef = ref(null);
+const inventoryManagementRef = ref(null);
+const orderManagementRef = ref(null);
+const promotionManagementRef = ref(null);
+const userManagementRef = ref(null);
+const systemSettingsRef = ref(null);
 
-// 各折疊區塊的切換函數
-const toggleStoreManagement = () => {
-  storeManagementOpen.value = !storeManagementOpen.value;
+// 建立一個map來方便存取各個區塊的ref
+const sectionRefs = {
+  storeManagement: storeManagementRef,
+  menuManagement: menuManagementRef,
+  dishManagement: dishManagementRef,
+  inventoryManagement: inventoryManagementRef,
+  orderManagement: orderManagementRef,
+  promotionManagement: promotionManagementRef,
+  userManagement: userManagementRef,
+  systemSettings: systemSettingsRef
 };
 
-const toggleMenuManagement = () => {
-  menuManagementOpen.value = !menuManagementOpen.value;
+// 保存每個折疊區塊的實際高度
+const sectionHeights = ref({});
+
+// 已展開的折疊項目ID列表 - 使用響應式方式管理折疊狀態
+const expandedItems = ref([]);
+
+// 檢查特定折疊項是否應該展開
+const isExpanded = (id) => {
+  return expandedItems.value.includes(id);
 };
 
-const toggleDishManagement = () => {
-  dishManagementOpen.value = !dishManagementOpen.value;
+// 獲取折疊區塊的樣式
+const getCollapseStyle = (section) => {
+  if (!sectionHeights.value[section]) return {};
+
+  return {
+    maxHeight: isExpanded(section) ? sectionHeights.value[section] : '0px'
+  };
 };
 
-const toggleInventoryManagement = () => {
-  inventoryManagementOpen.value = !inventoryManagementOpen.value;
+// 計算所有折疊區塊的實際高度
+const calculateSectionHeights = () => {
+  const sections = Object.keys(sectionRefs);
+
+  sections.forEach(section => {
+    const element = sectionRefs[section].value;
+    if (element) {
+      // 臨時移除max-height限制來測量真實高度
+      element.style.maxHeight = 'none';
+      element.style.height = 'auto';
+      // 保存計算出的高度
+      sectionHeights.value[section] = element.scrollHeight + 'px';
+      // 重設樣式
+      element.style.maxHeight = isExpanded(section) ? sectionHeights.value[section] : '0px';
+    }
+  });
 };
 
-const toggleOrderManagement = () => {
-  orderManagementOpen.value = !orderManagementOpen.value;
+// 切換折疊狀態
+const toggleSection = (id) => {
+  // 檢查項目是否已展開
+  const index = expandedItems.value.indexOf(id);
+
+  if (index === -1) {
+    // 如果沒有展開，則添加到展開列表
+    expandedItems.value.push(id);
+  } else {
+    // 如果已展開，則從列表中移除
+    expandedItems.value.splice(index, 1);
+  }
+
+  // 確保高度已經計算
+  if (!sectionHeights.value[id] && sectionRefs[id].value) {
+    const element = sectionRefs[id].value;
+    element.style.maxHeight = 'none';
+    element.style.height = 'auto';
+    sectionHeights.value[id] = element.scrollHeight + 'px';
+  }
 };
 
-const togglePromotionManagement = () => {
-  promotionManagementOpen.value = !promotionManagementOpen.value;
-};
+// 初始化折疊狀態
+const initCollapseStates = () => {
+  // 基於路由路徑決定哪些折疊項應該展開
+  if (route.path.includes('/stores') && !expandedItems.value.includes('storeManagement'))
+    expandedItems.value.push('storeManagement');
 
-const toggleUserManagement = () => {
-  userManagementOpen.value = !userManagementOpen.value;
-};
+  if (route.path.includes('/menus') && !expandedItems.value.includes('menuManagement'))
+    expandedItems.value.push('menuManagement');
 
-const toggleSystemSettings = () => {
-  systemSettingsOpen.value = !systemSettingsOpen.value;
+  if ((route.path.includes('/dishes') ||
+    route.path.includes('/option-categories') ||
+    route.path.includes('/options')) && !expandedItems.value.includes('dishManagement'))
+    expandedItems.value.push('dishManagement');
+
+  if (route.path.includes('/inventory') && !expandedItems.value.includes('inventoryManagement'))
+    expandedItems.value.push('inventoryManagement');
+
+  if (route.path.includes('/orders') && !expandedItems.value.includes('orderManagement'))
+    expandedItems.value.push('orderManagement');
+
+  if ((route.path.includes('/coupons') ||
+    route.path.includes('/point-rules')) && !expandedItems.value.includes('promotionManagement'))
+    expandedItems.value.push('promotionManagement');
+
+  if ((route.path.includes('/store-admins') ||
+    route.path.includes('/customers')) && !expandedItems.value.includes('userManagement'))
+    expandedItems.value.push('userManagement');
+
+  if ((route.path.includes('/settings') ||
+    route.path.includes('/account-settings')) && !expandedItems.value.includes('systemSettings'))
+    expandedItems.value.push('systemSettings');
 };
 
 // 切換側邊欄顯示 (用於移動版)
@@ -411,6 +486,7 @@ const handleLogout = async () => {
 // 監聽路由變化
 watch(() => route.path, () => {
   closeSidebarOnMobile();
+  // 不再重設折疊狀態，只在初始化時設定一次
 });
 
 // 監聽品牌ID變化
@@ -420,10 +496,33 @@ watch(() => brandId.value, (newId, oldId) => {
   }
 });
 
+// 當折疊狀態變化時重新應用樣式
+watch(expandedItems, () => {
+  nextTick(() => {
+    // 可能需要重新計算，因為DOM可能已經變更
+    calculateSectionHeights();
+  });
+});
+
 // 生命週期鉤子
 onMounted(() => {
   // 載入品牌資訊
   fetchBrandInfo();
+
+  // 初始化折疊狀態
+  initCollapseStates();
+
+  // 確保DOM已經渲染後再計算高度
+  nextTick(() => {
+    calculateSectionHeights();
+  });
+
+  // 監聽視窗大小變化，使用lodash的debounce函數來優化性能
+  window.addEventListener('resize', _.debounce(() => {
+    nextTick(() => {
+      calculateSectionHeights();
+    });
+  }, 200));
 });
 </script>
 
@@ -544,5 +643,12 @@ onMounted(() => {
   .sidebar {
     transform: none !important;
   }
+}
+
+/* 折疊展開/收合動畫 */
+.collapse {
+  display: block;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
 }
 </style>
