@@ -180,7 +180,7 @@ export const deleteCategory = async (categoryId, brandId) => {
 
   // 檢查是否有餐點模板使用了此類別
   const templatesUsingCategory = await DishTemplate.countDocuments({
-    'optionCategories.categoryId': mongoose.Types.ObjectId(categoryId),
+    'optionCategories.categoryId': new mongoose.Types.ObjectId(categoryId),
     brand: brandId
   });
 
