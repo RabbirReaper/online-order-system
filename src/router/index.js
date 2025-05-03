@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import api from '@/api'
-import Placeholder from '@/components/Placeholder.vue'
+import Placeholder from '@/components/common/Placeholder.vue'
 
 // 檢查管理員登入狀態
 const checkAdminAuth = async () => {
