@@ -70,9 +70,9 @@
                       </button>
                     </div>
                   </td>
-                  <td>{{ getOptionName(option.refOption) }}</td>
-                  <td>{{ formatPrice(getOptionPrice(option.refOption)) }}</td>
-                  <td>{{ getRefDishName(option.refOption) }}</td>
+                  <td>{{ option.refOption.name }}</td>
+                  <td>{{ formatPrice(option.refOption.price) }}</td>
+                  <td>{{ formatRefDishName(option.refOption) }}</td>
                   <td>
                     <button type="button" class="btn btn-sm btn-outline-danger" @click="removeOption(option)">
                       <i class="bi bi-trash me-1"></i>移除
@@ -215,22 +215,10 @@ const formatPrice = (price) => {
   return '$' + price.toLocaleString('zh-TW');
 };
 
-// 獲取選項名稱
-const getOptionName = (optionId) => {
-  const option = allOptions.value.find(opt => opt._id === optionId);
-  return option ? option.name : '未知選項';
-};
-
-// 獲取選項價格
-const getOptionPrice = (optionId) => {
-  const option = allOptions.value.find(opt => opt._id === optionId);
-  return option ? option.price : 0;
-};
-
-// 獲取關聯餐點名稱
-const getRefDishName = (optionId) => {
-  const option = allOptions.value.find(opt => opt._id === optionId);
-  return option && option.refDishTemplate ? option.refDishTemplate.name : '無';
+// 格式化關聯餐點名稱函數
+const formatRefDishName = (option) => {
+  const dishName = option && option.refDishTemplate ? option.refDishTemplate.name : '無';
+  return dishName === '無' ? dishName : `餐點: ${dishName}`;
 };
 
 // 顯示添加選項對話框
@@ -242,7 +230,7 @@ const showAddOptionModal = () => {
 
 // 更新可用選項列表
 const updateAvailableOptions = () => {
-  const usedOptionIds = formData.options.map(opt => opt.refOption);
+  const usedOptionIds = formData.options.map(opt => opt.refOption._id);
   availableOptions.value = allOptions.value.filter(
     option => !usedOptionIds.includes(option._id)
   );
@@ -252,9 +240,12 @@ const updateAvailableOptions = () => {
 const addOption = () => {
   if (!selectedOptionId.value) return;
 
+  // 找到選擇的選項對象
+  const selectedOption = allOptions.value.find(opt => opt._id === selectedOptionId.value);
+
   // 添加到選項列表
   formData.options.push({
-    refOption: selectedOptionId.value,
+    refOption: selectedOption, // 直接存儲整個對象
     order: formData.options.length
   });
 
@@ -267,7 +258,7 @@ const addOption = () => {
 
 // 移除選項
 const removeOption = (option) => {
-  formData.options = formData.options.filter(opt => opt.refOption !== option.refOption);
+  formData.options = formData.options.filter(opt => opt.refOption._id !== option.refOption._id);
 
   // 重新排序
   formData.options.forEach((opt, idx) => {
@@ -280,7 +271,7 @@ const removeOption = (option) => {
 
 // 移動選項排序
 const moveOption = (option, direction) => {
-  const currentIndex = formData.options.findIndex(opt => opt.refOption === option.refOption);
+  const currentIndex = formData.options.findIndex(opt => opt.refOption._id === option.refOption._id);
   const newIndex = currentIndex + direction;
 
   // 檢查邊界
