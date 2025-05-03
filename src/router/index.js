@@ -153,28 +153,76 @@ const router = createRouter({
         },
         // 餐點模板路由
         {
-          path: '/admin/:brandId/dishes/template',
+          path: 'dishes/template',
           name: 'DishTemplateList',
           component: () => import('@/components/BrandAdmin/Dish/DishTemplate/List.vue'),
           meta: { requiresAuth: true, title: '餐點模板' }
         },
         {
-          path: '/admin/:brandId/dishes/template/create',
+          path: 'dishes/template/create',
           name: 'DishTemplateCreate',
           component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Form.vue'),
           meta: { requiresAuth: true, title: '新增餐點' }
         },
         {
-          path: '/admin/:brandId/dishes/template/edit/:id',
+          path: 'dishes/template/edit/:id',
           name: 'DishTemplateEdit',
           component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Form.vue'),
           meta: { requiresAuth: true, title: '編輯餐點' }
         },
         {
-          path: '/admin/:brandId/dishes/template/detail/:id',
+          path: 'dishes/template/detail/:id',
           name: 'DishTemplateDetail',
           component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Detail.vue'),
           meta: { requiresAuth: true, title: '餐點詳情' }
+        },
+        // 選項類別路由
+        {
+          path: 'option-categories',
+          name: 'brand-admin-option-categories',
+          component: () => import('@/components/BrandAdmin/Dish/OptionCategory/List.vue'),
+          meta: { requiresAuth: true, title: '選項類別管理' }
+        },
+        {
+          path: 'option-categories/create',
+          name: 'brand-admin-option-category-create',
+          component: () => import('@/components/BrandAdmin/Dish/OptionCategory/Form.vue'),
+          meta: { requiresAuth: true, title: '新增選項類別' }
+        },
+        {
+          path: 'option-categories/edit/:id',
+          name: 'brand-admin-option-category-edit',
+          component: () => import('@/components/BrandAdmin/Dish/OptionCategory/Form.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '編輯選項類別' }
+        },
+        {
+          path: 'option-categories/detail/:id',
+          name: 'brand-admin-option-category-detail',
+          component: () => import('@/components/BrandAdmin/Dish/OptionCategory/Detail.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '選項類別詳情' }
+        },
+
+        // 選項管理路由
+        {
+          path: 'options',
+          name: 'brand-admin-options',
+          component: () => import('@/components/BrandAdmin/Dish/Option/List.vue'),
+          meta: { requiresAuth: true, title: '選項管理' }
+        },
+        {
+          path: 'options/create',
+          name: 'brand-admin-option-create',
+          component: () => import('@/components/BrandAdmin/Dish/Option/Form.vue'),
+          meta: { requiresAuth: true, title: '新增選項' }
+        },
+        {
+          path: 'options/edit/:id',
+          name: 'brand-admin-option-edit',
+          component: () => import('@/components/BrandAdmin/Dish/Option/Form.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '編輯選項' }
         },
         // 庫存管理（預留）
         {

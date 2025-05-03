@@ -1,7 +1,6 @@
 /**
- * 餐點管理 API 模組
- * @param {Object} apiClient - Axios 實例
- * @returns {Object} - 餐點相關 API 方法
+ * 更新 src/api/modules/dish.js 文件
+ * 添加選項類別和選項相關的 API 方法
  */
 export default function (apiClient) {
   return {
@@ -115,6 +114,7 @@ export default function (apiClient) {
      * @param {string} id - 類別ID
      * @param {Object} data - 更新資料
      * @param {string} data.brand - 品牌ID
+     * @param {Array} [data.options] - 選項列表
      * @returns {Promise} - API 回應
      */
     updateOptionCategory(id, data) {
@@ -158,7 +158,7 @@ export default function (apiClient) {
      * @param {Object} data - 選項資料
      * @param {string} data.brand - 品牌ID
      * @param {string} data.name - 名稱
-     * @param {number} [data.price] - 價格
+     * @param {number} [data.price=0] - 價格
      * @param {string} [data.refDishTemplate] - 關聯的餐點模板
      * @returns {Promise} - API 回應
      */
@@ -171,6 +171,9 @@ export default function (apiClient) {
      * @param {string} id - 選項ID
      * @param {Object} data - 更新資料
      * @param {string} data.brand - 品牌ID
+     * @param {string} [data.name] - 名稱
+     * @param {number} [data.price] - 價格
+     * @param {string} [data.refDishTemplate] - 關聯的餐點模板
      * @returns {Promise} - API 回應
      */
     updateOption(id, data) {
