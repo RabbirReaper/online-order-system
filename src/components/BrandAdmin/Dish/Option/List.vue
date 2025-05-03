@@ -94,7 +94,15 @@
           </div>
           <div class="modal-body" v-if="optionToDelete">
             <p>確定要刪除選項 <strong>{{ optionToDelete.name }}</strong> 嗎？</p>
-            <div class="alert alert-warning">
+
+            <!-- 錯誤訊息區塊，只有當有錯誤時才顯示 -->
+            <div class="alert alert-danger mt-3" v-if="deleteError">
+              <i class="bi bi-exclamation-circle-fill me-2"></i>
+              {{ deleteError }}
+            </div>
+
+            <!-- 原有的警告訊息 -->
+            <div class="alert alert-warning" v-if="!deleteError">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               刪除選項可能會影響已關聯該選項的選項類別。此操作無法撤銷！
             </div>
@@ -131,6 +139,7 @@ const networkError = ref('');
 const deleteModal = ref(null);
 const optionToDelete = ref(null);
 const isDeleting = ref(false);
+const deleteError = ref('')
 
 // 計算已過濾的選項列表
 const filteredOptions = computed(() => {
@@ -177,6 +186,7 @@ const fetchOptions = async () => {
 // 顯示刪除確認對話框
 const confirmDelete = (option) => {
   optionToDelete.value = option;
+  deleteError.value = ''; // 清空錯誤訊息
   deleteModal.value.show();
 };
 
@@ -185,6 +195,7 @@ const deleteOption = async () => {
   if (!optionToDelete.value) return;
 
   isDeleting.value = true;
+  deleteError.value = ''; // 重置錯誤訊息
 
   try {
     await api.dish.deleteOption(optionToDelete.value._id, brandId.value);
@@ -196,12 +207,15 @@ const deleteOption = async () => {
     options.value = options.value.filter(
       option => option._id !== optionToDelete.value._id
     );
-
-    // 顯示成功通知
-    // alert('選項已成功刪除！');
   } catch (error) {
     console.error('刪除選項失敗:', error);
-    alert('刪除選項時發生錯誤');
+
+    // 獲取並設置後端返回的具體錯誤訊息
+    if (error.response && error.response.data && error.response.data.message) {
+      deleteError.value = error.response.data.message;
+    } else {
+      deleteError.value = '刪除選項時發生未知錯誤';
+    }
   } finally {
     isDeleting.value = false;
   }
