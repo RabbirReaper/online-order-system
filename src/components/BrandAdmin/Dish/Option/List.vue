@@ -198,7 +198,7 @@ const deleteOption = async () => {
     );
 
     // 顯示成功通知
-    alert('選項已成功刪除！');
+    // alert('選項已成功刪除！');
   } catch (error) {
     console.error('刪除選項失敗:', error);
     alert('刪除選項時發生錯誤');

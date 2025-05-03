@@ -200,7 +200,7 @@ const deleteCategory = async () => {
     );
 
     // 顯示成功通知
-    alert('選項類別已成功刪除！');
+    // alert('選項類別已成功刪除！');
   } catch (error) {
     console.error('刪除選項類別失敗:', error);
     alert('刪除選項類別時發生錯誤');
