@@ -212,7 +212,7 @@ export const deleteOption = async (optionId, brandId) => {
     'options.refOption': optionId,
     brand: brandId
   });
-
+  // TODO: 以後要改成直接拒絕
   if (categories.length > 0) {
     // 不直接拒絕，而是從類別中移除選項引用
     for (const category of categories) {
