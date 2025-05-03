@@ -212,18 +212,11 @@ export const deleteOption = async (optionId, brandId) => {
     'options.refOption': optionId,
     brand: brandId
   });
-  // TODO: 以後要改成直接拒絕
-  if (categories.length > 0) {
-    // 不直接拒絕，而是從類別中移除選項引用
-    for (const category of categories) {
-      category.options = category.options.filter(
-        o => o.refOption.toString() !== optionId
-      );
-      await category.save();
-    }
-  }
 
-  // TODO: 檢查是否有餐點實例使用了此選項，如果有則拒絕刪除
+  // 直接拒絕刪除被類別引用的選項
+  if (categories.length > 0) {
+    throw new AppError('無法刪除此選項，因為它已被一個或多個類別引用', 400);
+  }
 
   await option.deleteOne();
 
