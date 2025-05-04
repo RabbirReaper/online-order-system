@@ -87,7 +87,7 @@
     </div>
 
     <!-- 確認刪除對話框 -->
-    <DeleteConfirmModal modalId="deleteCategoryModal" :item="categoryToDelete" @delete="deleteCategory"
+    <ConfirmModal modalId="deleteCategoryModal" :item="categoryToDelete" @delete="deleteCategory"
       @close="categoryToDelete = null" />
   </div>
 </template>
@@ -96,7 +96,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/api';
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
+import ConfirmModal from '@/components/common/ConfirmModal.vue';
 
 // 從路由中獲取品牌ID
 const route = useRoute();
