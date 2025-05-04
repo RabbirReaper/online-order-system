@@ -87,39 +87,16 @@
     </div>
 
     <!-- 確認刪除對話框 -->
-    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" v-if="categoryToDelete">
-            <p>確定要刪除選項類別 <strong>{{ categoryToDelete.name }}</strong> 嗎？</p>
-            <div class="alert alert-warning">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              刪除選項類別將同時刪除該類別下的所有選項關聯。此操作無法撤銷！
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="deleteCategory" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ isDeleting ? '刪除中...' : '確認刪除' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <DeleteConfirmModal modalId="deleteCategoryModal" :item="categoryToDelete" @delete="deleteCategory"
+      @close="categoryToDelete = null" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { Modal } from 'bootstrap';
 import api from '@/api';
+import DeleteConfirmModal from '@/components/common/DeleteConfirmModal.vue';
 
 // 從路由中獲取品牌ID
 const route = useRoute();
@@ -130,9 +107,7 @@ const categories = ref([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
 const networkError = ref('');
-const deleteModal = ref(null);
 const categoryToDelete = ref(null);
-const isDeleting = ref(false);
 
 // 計算已過濾的類別列表
 const filteredCategories = computed(() => {
@@ -176,47 +151,27 @@ const fetchCategories = async () => {
   }
 };
 
-// 顯示刪除確認對話框
+// 確認刪除前的操作
 const confirmDelete = (category) => {
-  categoryToDelete.value = category;
-  deleteModal.value.show();
+  categoryToDelete.value = category; // 設置要刪除的項目，會自動顯示對話框
 };
 
-// 刪除選項類別
-const deleteCategory = async () => {
-  if (!categoryToDelete.value) return;
-
-  isDeleting.value = true;
-
+// 實際進行刪除的方法
+const deleteCategory = async (category) => {
   try {
-    await api.dish.deleteOptionCategory(categoryToDelete.value._id, brandId.value);
-
-    // 關閉對話框
-    deleteModal.value.hide();
-
+    await api.dish.deleteOptionCategory(category._id, brandId.value);
     // 從列表中移除已刪除的類別
     categories.value = categories.value.filter(
-      category => category._id !== categoryToDelete.value._id
+      item => item._id !== category._id
     );
-
-    // 顯示成功通知
-    // alert('選項類別已成功刪除！');
   } catch (error) {
     console.error('刪除選項類別失敗:', error);
     alert('刪除選項類別時發生錯誤');
-  } finally {
-    isDeleting.value = false;
   }
 };
 
 // 生命週期鉤子
 onMounted(() => {
-  // 初始化刪除確認對話框
-  const modalElement = document.getElementById('deleteConfirmModal');
-  if (modalElement) {
-    deleteModal.value = new Modal(modalElement);
-  }
-
   // 載入選項類別列表
   fetchCategories();
 
