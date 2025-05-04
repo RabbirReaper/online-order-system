@@ -38,13 +38,9 @@ const emit = defineEmits(['toggle']);
 const isExpanded = ref(props.initialExpanded); // 是否展開的狀態
 const collapseContentRef = ref(null); // 對折疊內容的引用
 const actualHeight = ref(0); // 保存實際高度值(數字形式)
-const forceUpdate = ref(0); // 用來強制更新computed的標記
 
 // 使用computed來計算內容樣式
 const contentStyle = computed(() => {
-  // 強制更新標記，當需要重新計算高度時增加此值
-  forceUpdate.value;
-
   if (!isExpanded.value) return '0px';
 
   if (collapseContentRef.value && actualHeight.value === 0) {
@@ -76,13 +72,6 @@ const toggleCollapse = () => {
   emit('toggle', isExpanded.value);
 };
 
-// 處理窗口大小調整
-const handleResize = () => {
-  // 重置高度並觸發重新計算
-  actualHeight.value = 0;
-  forceUpdate.value++;
-};
-
 // 組件掛載後
 onMounted(() => {
   // 初始計算內容高度
@@ -90,19 +79,6 @@ onMounted(() => {
     updateActualHeight();
   });
 
-  // 監聽窗口大小變化，使用防抖處理優化性能
-  window.addEventListener('resize', handleResize);
-});
-
-// 監聽內容變化
-watch(() => collapseContentRef.value?.innerHTML, () => {
-  // 內容變化時強制更新高度
-  handleResize();
-}, { deep: true });
-
-// 組件卸載時清除事件監聽
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
 });
 
 // 公開方法讓父組件可以控制折疊狀態
