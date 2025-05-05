@@ -561,7 +561,7 @@ const submitForm = async () => {
 
     // 準備提交資料
     const submitData = {
-      name: formData.name,
+      name: formData.name.trim(),
       brand: formData.brand,
       basePrice: Number(formData.basePrice),
       description: formData.description,
