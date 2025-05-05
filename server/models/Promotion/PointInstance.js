@@ -7,7 +7,6 @@ const pointInstanceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true
   },
   // 品牌關聯
   brand: {
@@ -54,5 +53,7 @@ const pointInstanceSchema = new mongoose.Schema({
     id: { type: mongoose.Schema.Types.ObjectId, refPath: 'usedIn.model' }
   },
 }, { timestamps: true });
+
+pointInstanceSchema.index({ brand: 1, user: 1 });
 
 export default mongoose.model('PointInstance', pointInstanceSchema);

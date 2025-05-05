@@ -1,3 +1,4 @@
+import store from '@/api/modules/store';
 import mongoose from 'mongoose';
 
 const storeSchema = new mongoose.Schema({
@@ -37,5 +38,7 @@ const storeSchema = new mongoose.Schema({
     default: true
   }, // 店家是否啟用
 }, { timestamps: true });
+
+storeSchema.index({ brand: 1 });
 
 export default mongoose.model('Store', storeSchema);

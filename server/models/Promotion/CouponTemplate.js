@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { C } from 'vitest/dist/chunks/reporters.d.CfRkRKN2';
 
 // 優惠券模板 (CouponTemplate)
 const couponTemplateSchema = new mongoose.Schema({
@@ -82,5 +83,8 @@ const couponTemplateSchema = new mongoose.Schema({
     type: Number
   }, // 最大發行數量 (如果有限制)
 }, { timestamps: true });
+
+couponTemplateSchema.index({ brand: 1 });
+
 
 export default mongoose.model('CouponTemplate', couponTemplateSchema);

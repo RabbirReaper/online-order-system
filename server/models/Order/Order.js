@@ -127,4 +127,8 @@ const orderSchema = new mongoose.Schema({
   }, // 取消時間
 }, { timestamps: true });
 
+orderSchema.index({ brand: 1, store: 1 });
+orderSchema.index({ brand: 1, user: 1 });
+
+
 export default mongoose.model('Order', orderSchema);

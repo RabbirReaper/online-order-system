@@ -2,13 +2,17 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
+    required: true
+  }, // 所屬品牌
   name: {
     type: String,
     required: true
   }, // 用戶名稱
   email: {
     type: String,
-    unique: [true, 'Email already exists'],
     trim: true
   }, // 電子郵件
   password: {
@@ -18,7 +22,6 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     required: true,
-    unique: [true, 'Phone number already exists']
   }, // 電話號碼
   addresses: [{
     name: { type: String, required: true }, // 地址名稱 (例如：家、公司)

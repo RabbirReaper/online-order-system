@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const stockLogSchema = new mongoose.Schema({
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
+    required: true
+  },
   store: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Store',
@@ -53,5 +58,7 @@ const stockLogSchema = new mongoose.Schema({
     ref: 'Admin'
   }
 }, { timestamps: true });
+
+stockLogSchema.index({ brand: 1, store: 1 });
 
 export default mongoose.model('StockLog', stockLogSchema);

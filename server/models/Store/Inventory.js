@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const inventorySchema = new mongoose.Schema({
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
+    required: true
+  },
   store: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Store',
@@ -31,6 +36,6 @@ const inventorySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // 複合索引：每家店只能有一道菜的唯一記錄
-inventorySchema.index({ store: 1, dish: 1 }, { unique: true });
+inventorySchema.index({ brand: 1, store: 1, dish: 1 }, { unique: true });
 
 export default mongoose.model('Inventory', inventorySchema);

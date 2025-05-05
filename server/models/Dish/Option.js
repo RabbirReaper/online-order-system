@@ -12,4 +12,6 @@ const OptionSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
 });
 
+OptionSchema.index({ brand: 1 });
+
 export default mongoose.model('Option', OptionSchema);

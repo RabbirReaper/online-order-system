@@ -2,6 +2,11 @@ import mongoose from 'mongoose';
 
 // 優惠券實例 (CouponInstance)
 const couponInstanceSchema = new mongoose.Schema({
+  brand: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
+    required: true
+  },
   template: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'CouponTemplate',
@@ -50,5 +55,7 @@ const couponInstanceSchema = new mongoose.Schema({
     required: true
   }, // 兌換使用的點數
 });
+
+couponInstanceSchema.index({ brand: 1, user: 1 });
 
 export default mongoose.model('CouponInstance', couponInstanceSchema);

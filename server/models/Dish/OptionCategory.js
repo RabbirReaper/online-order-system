@@ -10,4 +10,6 @@ const OptionCategorySchema = new mongoose.Schema({
   }]
 });
 
+OptionCategorySchema.index({ brand: 1 });
+
 export default mongoose.model('OptionCategory', OptionCategorySchema);

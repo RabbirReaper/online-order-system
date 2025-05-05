@@ -33,4 +33,7 @@ const pointRuleSchema = new mongoose.Schema({
   }, // 規則是否啟用
 }, { timestamps: true });
 
+
+pointRuleSchema.index({ brand: 1 });
+
 export default mongoose.model('PointRule', pointRuleSchema);

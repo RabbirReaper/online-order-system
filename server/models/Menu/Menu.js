@@ -36,4 +36,6 @@ const menuSchema = new mongoose.Schema({
   }, // 菜單是否啟用
 }, { timestamps: true });
 
+menuSchema.index({ brand: 1, store: 1 });
+
 export default mongoose.model('Menu', menuSchema);

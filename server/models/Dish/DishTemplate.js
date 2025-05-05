@@ -18,4 +18,6 @@ const DishTemplateSchema = new mongoose.Schema({
   tags: [{ type: String }]
 });
 
+DishTemplateSchema.index({ brand: 1 });
+
 export default mongoose.model("DishTemplate", DishTemplateSchema)
