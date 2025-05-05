@@ -1,4 +1,3 @@
-import store from '@/api/modules/store';
 import mongoose from 'mongoose';
 
 const storeSchema = new mongoose.Schema({
