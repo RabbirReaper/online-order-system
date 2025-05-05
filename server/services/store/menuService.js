@@ -32,7 +32,8 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
   // 處理菜單數據 - 深度填充餐點模板信息
   const populatedMenu = await Menu.findById(menu._id).populate({
     path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate'
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
   });
 
   // 如果不包含未發布的項目，過濾掉它們
@@ -65,11 +66,11 @@ export const createMenu = async (storeId, menuData) => {
   if (existingMenu) {
     throw new AppError('店鋪已有菜單，請使用更新操作', 400);
   }
-  console.log("menuData", menuData);
+
   // 檢查品牌
   if (menuData.brand) {
     if (menuData.brand.toString() !== store.brand.toString()) {
-      throw new AppError('菜單品牌必須與店鋪品牌一致' + menuData.brand.toString() + "," + store.brand.toString(), 400);
+      throw new AppError('菜單品牌必須與店鋪品牌一致', 400);
     }
   } else {
     menuData.brand = store.brand;
@@ -109,7 +110,12 @@ export const createMenu = async (storeId, menuData) => {
   store.menuId = newMenu._id;
   await store.save();
 
-  return newMenu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(newMenu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };
 
 /**
@@ -164,7 +170,7 @@ export const updateMenu = async (storeId, menuId, updateData) => {
   }
 
   // 更新其他欄位
-  if (updateData.name) {
+  if (updateData.name !== undefined) {
     menu.name = updateData.name;
   }
 
@@ -174,7 +180,12 @@ export const updateMenu = async (storeId, menuId, updateData) => {
 
   await menu.save();
 
-  return menu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(menu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };
 
 /**
@@ -214,8 +225,8 @@ export const deleteMenu = async (storeId, menuId) => {
  * 切換菜單項目啟用狀態
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
- * @param {String} categoryIndex - 分類索引
- * @param {String} dishIndex - 餐點索引
+ * @param {Number} categoryIndex - 分類索引
+ * @param {Number} dishIndex - 餐點索引
  * @param {Boolean} isPublished - 是否啟用
  * @returns {Promise<Object>} 更新後的菜單
  */
@@ -248,7 +259,12 @@ export const toggleMenuItem = async (storeId, menuId, categoryIndex, dishIndex, 
 
   await menu.save();
 
-  return menu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(menu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };
 
 /**
@@ -287,14 +303,19 @@ export const updateCategoryOrder = async (storeId, menuId, categoryOrders) => {
 
   await menu.save();
 
-  return menu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(menu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };
 
 /**
  * 更新餐點順序
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
- * @param {String} categoryIndex - 分類索引
+ * @param {Number} categoryIndex - 分類索引
  * @param {Array} dishOrders - 餐點順序 [{ dishIndex, order }]
  * @returns {Promise<Object>} 更新後的菜單
  */
@@ -332,14 +353,19 @@ export const updateDishOrder = async (storeId, menuId, categoryIndex, dishOrders
 
   await menu.save();
 
-  return menu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(menu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };
 
 /**
  * 添加餐點到菜單
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
- * @param {String} categoryIndex - 分類索引
+ * @param {Number} categoryIndex - 分類索引
  * @param {Object} dishData - 餐點數據
  * @returns {Promise<Object>} 更新後的菜單
  */
@@ -391,15 +417,20 @@ export const addDishToMenu = async (storeId, menuId, categoryIndex, dishData) =>
 
   await menu.save();
 
-  return menu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(menu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };
 
 /**
  * 從菜單中移除餐點
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
- * @param {String} categoryIndex - 分類索引
- * @param {String} dishIndex - 餐點索引
+ * @param {Number} categoryIndex - 分類索引
+ * @param {Number} dishIndex - 餐點索引
  * @returns {Promise<Object>} 更新後的菜單
  */
 export const removeDishFromMenu = async (storeId, menuId, categoryIndex, dishIndex) => {
@@ -432,5 +463,10 @@ export const removeDishFromMenu = async (storeId, menuId, categoryIndex, dishInd
 
   await menu.save();
 
-  return menu;
+  // 返回包含填充的模板資訊的菜單
+  return await Menu.findById(menu._id).populate({
+    path: 'categories.dishes.dishTemplate',
+    model: 'DishTemplate',
+    select: 'name description basePrice image tags optionCategories'
+  });
 };

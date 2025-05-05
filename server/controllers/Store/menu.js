@@ -17,7 +17,7 @@ export const getStoreMenu = asyncHandler(async (req, res) => {
     console.error('Error getting store menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '獲取菜單失敗'
     });
   }
 });
@@ -39,7 +39,7 @@ export const createMenu = asyncHandler(async (req, res) => {
     console.error('Error creating menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '創建菜單失敗'
     });
   }
 });
@@ -61,7 +61,7 @@ export const updateMenu = asyncHandler(async (req, res) => {
     console.error('Error updating menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '更新菜單失敗'
     });
   }
 });
@@ -81,7 +81,7 @@ export const deleteMenu = asyncHandler(async (req, res) => {
     console.error('Error deleting menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '刪除菜單失敗'
     });
   }
 });
@@ -89,17 +89,29 @@ export const deleteMenu = asyncHandler(async (req, res) => {
 // 切換菜單項目的啟用狀態
 export const toggleMenuItem = asyncHandler(async (req, res) => {
   try {
-    const { storeId, menuId, categoryIndex, dishIndex } = req.params;
-    const { isPublished } = req.body;
+    const { storeId, menuId } = req.params;
+    const { categoryIndex, dishIndex, isPublished } = req.body;
 
-    if (isPublished === undefined) {
+    // 檢查必要參數
+    if (categoryIndex === undefined || dishIndex === undefined || isPublished === undefined) {
       return res.status(400).json({
         success: false,
-        message: '缺少參數 isPublished'
+        message: '缺少必要參數（categoryIndex、dishIndex 或 isPublished）'
       });
     }
 
-    const menu = await menuService.toggleMenuItem(storeId, menuId, categoryIndex, dishIndex, isPublished);
+    // 確保參數是數字類型
+    const catIndex = parseInt(categoryIndex, 10);
+    const dishIdx = parseInt(dishIndex, 10);
+
+    if (isNaN(catIndex) || isNaN(dishIdx)) {
+      return res.status(400).json({
+        success: false,
+        message: 'categoryIndex 和 dishIndex 必須是有效的數字'
+      });
+    }
+
+    const menu = await menuService.toggleMenuItem(storeId, menuId, catIndex, dishIdx, isPublished);
 
     res.json({
       success: true,
@@ -110,7 +122,7 @@ export const toggleMenuItem = asyncHandler(async (req, res) => {
     console.error('Error toggling menu item:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '切換菜單項目狀態失敗'
     });
   }
 });
@@ -128,7 +140,13 @@ export const updateCategoryOrder = asyncHandler(async (req, res) => {
       });
     }
 
-    const menu = await menuService.updateCategoryOrder(storeId, menuId, categoryOrders);
+    // 確保所有索引和順序都是數字
+    const validatedOrders = categoryOrders.map(item => ({
+      categoryIndex: parseInt(item.categoryIndex, 10),
+      order: parseInt(item.order, 10)
+    }));
+
+    const menu = await menuService.updateCategoryOrder(storeId, menuId, validatedOrders);
 
     res.json({
       success: true,
@@ -139,7 +157,7 @@ export const updateCategoryOrder = asyncHandler(async (req, res) => {
     console.error('Error updating category order:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '更新分類順序失敗'
     });
   }
 });
@@ -147,17 +165,24 @@ export const updateCategoryOrder = asyncHandler(async (req, res) => {
 // 更新餐點順序
 export const updateDishOrder = asyncHandler(async (req, res) => {
   try {
-    const { storeId, menuId, categoryIndex } = req.params;
-    const { dishOrders } = req.body;
+    const { storeId, menuId } = req.params;
+    const { categoryIndex, dishOrders } = req.body;
 
-    if (!dishOrders || !Array.isArray(dishOrders)) {
+    if (categoryIndex === undefined || !dishOrders || !Array.isArray(dishOrders)) {
       return res.status(400).json({
         success: false,
         message: '缺少有效的餐點順序資料'
       });
     }
 
-    const menu = await menuService.updateDishOrder(storeId, menuId, categoryIndex, dishOrders);
+    // 確保分類索引和所有餐點索引和順序都是數字
+    const catIndex = parseInt(categoryIndex, 10);
+    const validatedOrders = dishOrders.map(item => ({
+      dishIndex: parseInt(item.dishIndex, 10),
+      order: parseInt(item.order, 10)
+    }));
+
+    const menu = await menuService.updateDishOrder(storeId, menuId, catIndex, validatedOrders);
 
     res.json({
       success: true,
@@ -168,7 +193,7 @@ export const updateDishOrder = asyncHandler(async (req, res) => {
     console.error('Error updating dish order:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '更新餐點順序失敗'
     });
   }
 });
@@ -176,17 +201,20 @@ export const updateDishOrder = asyncHandler(async (req, res) => {
 // 添加餐點到菜單
 export const addDishToMenu = asyncHandler(async (req, res) => {
   try {
-    const { storeId, menuId, categoryIndex } = req.params;
-    const dishData = req.body;
+    const { storeId, menuId } = req.params;
+    const { categoryIndex, dishData } = req.body;
 
-    if (!dishData || !dishData.dishTemplate) {
+    if (categoryIndex === undefined || !dishData || !dishData.dishTemplate) {
       return res.status(400).json({
         success: false,
         message: '缺少有效的餐點資料'
       });
     }
 
-    const menu = await menuService.addDishToMenu(storeId, menuId, categoryIndex, dishData);
+    // 確保分類索引是數字
+    const catIndex = parseInt(categoryIndex, 10);
+
+    const menu = await menuService.addDishToMenu(storeId, menuId, catIndex, dishData);
 
     res.json({
       success: true,
@@ -197,7 +225,7 @@ export const addDishToMenu = asyncHandler(async (req, res) => {
     console.error('Error adding dish to menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '添加餐點失敗'
     });
   }
 });
@@ -205,9 +233,21 @@ export const addDishToMenu = asyncHandler(async (req, res) => {
 // 從菜單中移除餐點
 export const removeDishFromMenu = asyncHandler(async (req, res) => {
   try {
-    const { storeId, menuId, categoryIndex, dishIndex } = req.params;
+    const { storeId, menuId } = req.params;
+    const { categoryIndex, dishIndex } = req.body;
 
-    const menu = await menuService.removeDishFromMenu(storeId, menuId, categoryIndex, dishIndex);
+    if (categoryIndex === undefined || dishIndex === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要參數'
+      });
+    }
+
+    // 確保索引是數字
+    const catIndex = parseInt(categoryIndex, 10);
+    const dishIdx = parseInt(dishIndex, 10);
+
+    const menu = await menuService.removeDishFromMenu(storeId, menuId, catIndex, dishIdx);
 
     res.json({
       success: true,
@@ -218,7 +258,7 @@ export const removeDishFromMenu = asyncHandler(async (req, res) => {
     console.error('Error removing dish from menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '移除餐點失敗'
     });
   }
 });
@@ -227,28 +267,28 @@ export const removeDishFromMenu = asyncHandler(async (req, res) => {
 export const toggleMenuActive = asyncHandler(async (req, res) => {
   try {
     const { storeId, menuId } = req.params;
-    const { isActive } = req.body;
+    const { active } = req.body;
 
-    if (isActive === undefined) {
+    if (active === undefined) {
       return res.status(400).json({
         success: false,
-        message: '缺少參數 isActive'
+        message: '缺少參數 active'
       });
     }
 
     // 更新菜單數據中的 isActive 欄位
-    const menu = await menuService.updateMenu(storeId, menuId, { isActive });
+    const menu = await menuService.updateMenu(storeId, menuId, { isActive: active });
 
     res.json({
       success: true,
-      message: `菜單已${isActive ? '啟用' : '停用'}`,
+      message: `菜單已${active ? '啟用' : '停用'}`,
       menu
     });
   } catch (error) {
     console.error('Error toggling menu status:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      message: error.message || '切換菜單狀態失敗'
     });
   }
 });

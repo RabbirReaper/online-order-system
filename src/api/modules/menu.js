@@ -8,10 +8,13 @@ export default function (apiClient) {
     /**
      * 獲取店鋪菜單
      * @param {string} storeId - 店鋪ID
+     * @param {boolean} includeUnpublished - 是否包含未發布的項目（可選）
      * @returns {Promise} - API 回應
      */
-    getStoreMenu(storeId) {
-      return apiClient.get(`/store/${storeId}/menu`);
+    getStoreMenu(storeId, includeUnpublished = false) {
+      return apiClient.get(`/store/${storeId}/menu`, {
+        params: { includeUnpublished }
+      });
     },
 
     /**
@@ -72,8 +75,8 @@ export default function (apiClient) {
      */
     toggleMenuItem({ storeId, menuId, categoryIndex, dishIndex, isPublished }) {
       return apiClient.put(`/store/${storeId}/menu/${menuId}/toggle-item`, {
-        categoryIndex,
-        dishIndex,
+        categoryIndex: parseInt(categoryIndex, 10),
+        dishIndex: parseInt(dishIndex, 10),
         isPublished
       });
     },
@@ -87,7 +90,13 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateCategoryOrder({ storeId, menuId, categoryOrders }) {
-      return apiClient.put(`/store/${storeId}/menu/${menuId}/category-order`, { categoryOrders });
+      return apiClient.put(`/store/${storeId}/menu/${menuId}/category-order`, {
+        categoryOrders: categoryOrders.map(item => ({
+          ...item,
+          categoryIndex: parseInt(item.categoryIndex, 10),
+          order: parseInt(item.order, 10)
+        }))
+      });
     },
 
     /**
@@ -101,8 +110,12 @@ export default function (apiClient) {
      */
     updateDishOrder({ storeId, menuId, categoryIndex, dishOrders }) {
       return apiClient.put(`/store/${storeId}/menu/${menuId}/dish-order`, {
-        categoryIndex,
-        dishOrders
+        categoryIndex: parseInt(categoryIndex, 10),
+        dishOrders: dishOrders.map(item => ({
+          ...item,
+          dishIndex: parseInt(item.dishIndex, 10),
+          order: parseInt(item.order, 10)
+        }))
       });
     },
 
@@ -117,7 +130,7 @@ export default function (apiClient) {
      */
     addDishToMenu({ storeId, menuId, categoryIndex, dishData }) {
       return apiClient.post(`/store/${storeId}/menu/${menuId}/dish`, {
-        categoryIndex,
+        categoryIndex: parseInt(categoryIndex, 10),
         dishData
       });
     },
@@ -133,7 +146,10 @@ export default function (apiClient) {
      */
     removeDishFromMenu({ storeId, menuId, categoryIndex, dishIndex }) {
       return apiClient.delete(`/store/${storeId}/menu/${menuId}/dish`, {
-        data: { categoryIndex, dishIndex }
+        data: {
+          categoryIndex: parseInt(categoryIndex, 10),
+          dishIndex: parseInt(dishIndex, 10)
+        }
       });
     }
   };
