@@ -47,7 +47,6 @@ export const getAllStores = async (options = {}) => {
  */
 export const getStoreById = async (storeId) => {
   const store = await Store.findById(storeId)
-    .populate('brand', 'name')
     .populate('menuId', 'name');
 
   if (!store) {

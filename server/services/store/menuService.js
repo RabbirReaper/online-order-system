@@ -65,11 +65,11 @@ export const createMenu = async (storeId, menuData) => {
   if (existingMenu) {
     throw new AppError('店鋪已有菜單，請使用更新操作', 400);
   }
-
+  console.log("menuData", menuData);
   // 檢查品牌
   if (menuData.brand) {
     if (menuData.brand.toString() !== store.brand.toString()) {
-      throw new AppError('菜單品牌必須與店鋪品牌一致', 400);
+      throw new AppError('菜單品牌必須與店鋪品牌一致' + menuData.brand.toString() + "," + store.brand.toString(), 400);
     }
   } else {
     menuData.brand = store.brand;
