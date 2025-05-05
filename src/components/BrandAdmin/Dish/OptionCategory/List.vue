@@ -19,9 +19,9 @@
     </div>
 
     <!-- 網路錯誤提示 -->
-    <div class="alert alert-danger" v-if="networkError">
+    <div class="alert alert-danger" v-if="errorMessage">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ networkError }}
+      {{ errorMessage }}
     </div>
 
     <!-- 選項類別列表 -->
@@ -106,7 +106,7 @@ const brandId = computed(() => route.params.brandId);
 const categories = ref([]);
 const isLoading = ref(true);
 const searchQuery = ref('');
-const networkError = ref('');
+const errorMessage = ref('');
 const categoryToDelete = ref(null);
 
 // 計算已過濾的類別列表
@@ -136,7 +136,7 @@ const fetchCategories = async () => {
   if (!brandId.value) return;
 
   isLoading.value = true;
-  networkError.value = '';
+  errorMessage.value = '';
 
   try {
     const response = await api.dish.getAllOptionCategories(brandId.value);
@@ -145,7 +145,15 @@ const fetchCategories = async () => {
     }
   } catch (error) {
     console.error('獲取選項類別列表失敗:', error);
-    networkError.value = '網路連線有問題，無法獲取選項類別資料';
+
+    // 嘗試獲取更有意義的錯誤訊息
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage.value = error.response.data.message; // 從API回應中獲取錯誤訊息
+    } else if (error.message) {
+      errorMessage.value = error.message; // 從錯誤物件獲取訊息
+    } else {
+      errorMessage.value = '無法連接到伺服器，請檢查網路連線'; // 預設訊息
+    }
   } finally {
     isLoading.value = false;
   }

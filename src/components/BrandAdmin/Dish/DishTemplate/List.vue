@@ -26,9 +26,9 @@
     </div>
 
     <!-- 網路錯誤提示 -->
-    <div class="alert alert-danger" v-if="networkError">
+    <div class="alert alert-danger" v-if="errorMessage">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ networkError }}
+      {{ errorMessage }}
     </div>
 
     <!-- 餐點模板卡片列表 -->
@@ -172,7 +172,7 @@ const isLoading = ref(true);
 const searchQuery = ref('');
 const filterTag = ref('');
 const currentPage = ref(1);
-const networkError = ref('');
+const errorMessage = ref('');
 const deleteModal = ref(null);
 const dishToDelete = ref(null);
 const isDeleting = ref(false);
@@ -245,7 +245,7 @@ const fetchDishes = async () => {
   if (!brandId.value) return;
 
   isLoading.value = true;
-  networkError.value = '';
+  errorMessage.value = '';
 
   try {
     // 獲取餐點模板列表
@@ -282,7 +282,14 @@ const fetchDishes = async () => {
     }
   } catch (error) {
     console.error('獲取餐點列表失敗:', error);
-    networkError.value = '網路連線有問題，無法獲取餐點資料';
+    // 嘗試獲取更有意義的錯誤訊息
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage.value = error.response.data.message; // 從API回應中獲取錯誤訊息
+    } else if (error.message) {
+      errorMessage.value = error.message; // 從錯誤物件獲取訊息
+    } else {
+      errorMessage.value = '無法連接到伺服器，請檢查網路連線'; // 預設訊息
+    }
   } finally {
     isLoading.value = false;
   }
