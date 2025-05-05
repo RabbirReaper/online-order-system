@@ -100,7 +100,7 @@
                     <tbody>
                       <tr v-for="(dish, dishIndex) in category.dishes" :key="dishIndex">
                         <td>
-                          <select v-model="dish.dishTemplate" class="form-select"
+                          <select v-model="dish.dishTemplate._id" class="form-select"
                             :class="{ 'is-invalid': getDishError(categoryIndex, dishIndex, 'dishTemplate') }">
                             <option value="">選擇餐點</option>
                             <option v-for="template in dishTemplates" :key="template._id" :value="template._id">

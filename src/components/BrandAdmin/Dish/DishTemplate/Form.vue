@@ -36,7 +36,7 @@
             <textarea class="form-control" id="dishDescription" v-model="formData.description" rows="3"
               :class="{ 'is-invalid': errors.description }"></textarea>
             <div class="invalid-feedback" v-if="errors.description">{{ errors.description }}</div>
-            <div class="form-text">簡短描述餐點的內容或特色，不超過200字</div>
+            <div class="form-text">簡短描述餐點的內容或特色，不超過1000字</div>
           </div>
 
           <!-- 標籤 -->
@@ -385,9 +385,9 @@ const validateForm = () => {
   }
 
   // 驗證描述
-  if (formData.description && formData.description.length > 200) {
-    errors.description = '餐點描述不能超過 200 個字元';
-    formErrors.value.push('餐點描述不能超過 200 個字元');
+  if (formData.description && formData.description.length > 1000) {
+    errors.description = '餐點描述不能超過 1000 個字元';
+    formErrors.value.push('餐點描述不能超過 1000 個字元');
     isValid = false;
   }
 
