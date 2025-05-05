@@ -51,10 +51,6 @@
                 菜單列表
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/menus/template`">
-                <i class="bi bi-card-list me-2"></i>
-                菜單模板
-              </router-link>
             </CollapsibleSection>
           </div>
 

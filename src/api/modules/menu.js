@@ -58,6 +58,83 @@ export default function (apiClient) {
      */
     toggleMenuActive({ storeId, menuId, active }) {
       return apiClient.put(`/store/${storeId}/menu/${menuId}/toggle`, { active });
+    },
+
+    /**
+     * 切換菜單項目啟用狀態
+     * @param {Object} params - 狀態參數
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.menuId - 菜單ID
+     * @param {number} params.categoryIndex - 分類索引
+     * @param {number} params.dishIndex - 餐點索引
+     * @param {boolean} params.isPublished - 是否啟用
+     * @returns {Promise} - API 回應
+     */
+    toggleMenuItem({ storeId, menuId, categoryIndex, dishIndex, isPublished }) {
+      return apiClient.put(`/store/${storeId}/menu/${menuId}/toggle-item`, {
+        categoryIndex,
+        dishIndex,
+        isPublished
+      });
+    },
+
+    /**
+     * 更新分類順序
+     * @param {Object} params - 順序參數
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.menuId - 菜單ID
+     * @param {Array} params.categoryOrders - 分類順序 [{ categoryIndex, order }]
+     * @returns {Promise} - API 回應
+     */
+    updateCategoryOrder({ storeId, menuId, categoryOrders }) {
+      return apiClient.put(`/store/${storeId}/menu/${menuId}/category-order`, { categoryOrders });
+    },
+
+    /**
+     * 更新餐點順序
+     * @param {Object} params - 順序參數
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.menuId - 菜單ID
+     * @param {number} params.categoryIndex - 分類索引
+     * @param {Array} params.dishOrders - 餐點順序 [{ dishIndex, order }]
+     * @returns {Promise} - API 回應
+     */
+    updateDishOrder({ storeId, menuId, categoryIndex, dishOrders }) {
+      return apiClient.put(`/store/${storeId}/menu/${menuId}/dish-order`, {
+        categoryIndex,
+        dishOrders
+      });
+    },
+
+    /**
+     * 添加餐點到菜單
+     * @param {Object} params - 添加參數
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.menuId - 菜單ID
+     * @param {number} params.categoryIndex - 分類索引
+     * @param {Object} params.dishData - 餐點資料
+     * @returns {Promise} - API 回應
+     */
+    addDishToMenu({ storeId, menuId, categoryIndex, dishData }) {
+      return apiClient.post(`/store/${storeId}/menu/${menuId}/dish`, {
+        categoryIndex,
+        dishData
+      });
+    },
+
+    /**
+     * 從菜單中移除餐點
+     * @param {Object} params - 移除參數
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.menuId - 菜單ID
+     * @param {number} params.categoryIndex - 分類索引
+     * @param {number} params.dishIndex - 餐點索引
+     * @returns {Promise} - API 回應
+     */
+    removeDishFromMenu({ storeId, menuId, categoryIndex, dishIndex }) {
+      return apiClient.delete(`/store/${storeId}/menu/${menuId}/dish`, {
+        data: { categoryIndex, dishIndex }
+      });
     }
   };
 }

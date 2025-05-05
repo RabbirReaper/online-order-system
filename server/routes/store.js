@@ -2,7 +2,7 @@ import express from 'express';
 import * as storeController from '../controllers/Store/store.js';
 // import * as inventoryController from '../controllers/Store/inventory.js';
 import * as brandController from '../controllers/Brand/brand.js';
-// import * as menuController from '../controllers/Menu/menu.js';
+import * as menuController from '../controllers/Store/menu.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { permissionMiddleware, roleMiddleware } from '../middlewares/permission.js';
 
@@ -40,13 +40,17 @@ router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['vi
 */
 
 
-// 註解掉暫時不需要的菜單路由
-/*
+//菜單路由
 router.get('/:storeId/menu', menuController.getStoreMenu);
 router.post('/:storeId/menu', authMiddleware, roleMiddleware(['boss', 'brand_admin']), menuController.createMenu);
 router.put('/:storeId/menu/:menuId', authMiddleware, roleMiddleware(['boss', 'brand_admin']), menuController.updateMenu);
 router.delete('/:storeId/menu/:menuId', authMiddleware, roleMiddleware(['boss', 'brand_admin']), menuController.deleteMenu);
 router.put('/:storeId/menu/:menuId/toggle', authMiddleware, permissionMiddleware(['edit_backend']), menuController.toggleMenuActive);
-*/
+
+router.put('/:storeId/menu/:menuId/toggle-item', authMiddleware, permissionMiddleware(['edit_backend']), menuController.toggleMenuItem);
+router.put('/:storeId/menu/:menuId/category-order', authMiddleware, permissionMiddleware(['edit_backend']), menuController.updateCategoryOrder);
+router.put('/:storeId/menu/:menuId/dish-order', authMiddleware, permissionMiddleware(['edit_backend']), menuController.updateDishOrder);
+router.post('/:storeId/menu/:menuId/dish', authMiddleware, permissionMiddleware(['edit_backend']), menuController.addDishToMenu);
+router.delete('/:storeId/menu/:menuId/dish', authMiddleware, permissionMiddleware(['edit_backend']), menuController.removeDishFromMenu);
 
 export default router;

@@ -142,14 +142,45 @@ const router = createRouter({
           props: true
         },
         // 菜單管理（預留）
+        // {
+        //   path: 'menus',
+        //   name: 'brand-admin-menus',
+        //   component: Placeholder,
+        //   props: {
+        //     title: '菜單管理功能',
+        //     message: '這個區塊目前尚未開發，請稍後再試。'
+        //   }
+        // },
+        // 菜單管理路由
         {
           path: 'menus',
           name: 'brand-admin-menus',
-          component: Placeholder,
-          props: {
-            title: '菜單管理功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Menu/MenuStoreSelect.vue'),
+          meta: { requiresAuth: true, title: '選擇店鋪' }
+        },
+        {
+          path: 'menus/store/:storeId',
+          name: 'brand-admin-store-menu',
+          component: () => import('@/components/BrandAdmin/Menu/MenuList.vue'),
+          meta: { requiresAuth: true, title: '店鋪菜單' }
+        },
+        {
+          path: 'menus/create/:storeId',
+          name: 'brand-admin-menu-create',
+          component: () => import('@/components/BrandAdmin/Menu/MenuForm.vue'),
+          meta: { requiresAuth: true, title: '新增菜單' }
+        },
+        {
+          path: 'menus/edit/:storeId/:menuId',
+          name: 'brand-admin-menu-edit',
+          component: () => import('@/components/BrandAdmin/Menu/MenuForm.vue'),
+          meta: { requiresAuth: true, title: '編輯菜單' }
+        },
+        {
+          path: 'menus/detail/:storeId/:menuId',
+          name: 'brand-admin-menu-detail',
+          component: () => import('@/components/BrandAdmin/Menu/MenuDetail.vue'),
+          meta: { requiresAuth: true, title: '菜單詳情' }
         },
         // 餐點模板路由
         {
