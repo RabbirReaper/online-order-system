@@ -7,7 +7,10 @@ import brandApi from './modules/brand';
 import inventoryApi from './modules/inventory';
 import menuApi from './modules/menu';
 import dishApi from './modules/dish';
-import imageApi from './modules/image'; // 新增 image 模組
+import imageApi from './modules/image';
+import userApi from './modules/user'; // 新增用戶模組
+import orderApi from './modules/order'; // 新增訂單模組
+import promotionApi from './modules/promotion'; // 新增促銷模組
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -48,7 +51,10 @@ export default {
   inventory: inventoryApi(apiClient),
   menu: menuApi(apiClient),
   dish: dishApi(apiClient),
-  image: imageApi(apiClient), // 新增 image 模組
+  image: imageApi(apiClient),
+  user: userApi(apiClient), // 新增用戶模組
+  order: orderApi(apiClient), // 新增訂單模組
+  promotion: promotionApi(apiClient), // 新增促銷模組
   // 導出 axios 實例，方便直接使用
   client: apiClient,
 };
