@@ -141,16 +141,6 @@ const router = createRouter({
           component: () => import('@/components/BrandAdmin/Store/StoreDetail.vue'),
           props: true
         },
-        // 菜單管理（預留）
-        // {
-        //   path: 'menus',
-        //   name: 'brand-admin-menus',
-        //   component: Placeholder,
-        //   props: {
-        //     title: '菜單管理功能',
-        //     message: '這個區塊目前尚未開發，請稍後再試。'
-        //   }
-        // },
         // 菜單管理路由
         {
           path: 'menus',
