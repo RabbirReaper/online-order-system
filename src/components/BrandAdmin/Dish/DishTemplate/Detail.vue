@@ -16,7 +16,10 @@
     <div v-if="dish && !isLoading">
       <!-- 頁面頂部工具列 -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">{{ dish.name }}</h4>
+        <div class="d-flex">
+          <div class="bg-primary rounded me-3" style="width: 6px; height: 26px;"></div>
+          <h4 class="mb-0">{{ dish.name }}</h4>
+        </div>
         <div class="d-flex">
           <router-link :to="`/admin/${brandId}/dishes/template/edit/${dish._id}`" class="btn btn-primary me-2">
             <i class="bi bi-pencil me-1"></i>編輯餐點

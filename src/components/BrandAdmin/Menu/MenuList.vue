@@ -2,7 +2,10 @@
   <div class="container-fluid py-4">
     <!-- 頁面標題及操作按鈕 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4>{{ storeName }} 的菜單管理</h4>
+      <div class="d-flex">
+        <div class="bg-primary rounded me-3" style="width: 6px; height: 26px;"></div>
+        <h4>{{ storeName }} 的菜單管理</h4>
+      </div>
       <div class="d-flex">
         <router-link :to="`/admin/${brandId}/menus`" class="btn btn-outline-secondary me-2">
           <i class="bi bi-arrow-left me-1"></i>返回店鋪列表

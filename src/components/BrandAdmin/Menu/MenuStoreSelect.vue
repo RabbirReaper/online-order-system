@@ -1,8 +1,9 @@
 <template>
-  <div class="container py-4">
+  <div class="container-fluid py-4">
     <!-- 頁面標題 -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4>選擇要管理菜單的店鋪</h4>
+    <div class="d-flex mb-4">
+      <div class="bg-primary rounded me-3" style="width: 6px; height: 26px;"></div>
+      <h4 class="mb-0">選擇要管理菜單的店鋪</h4>
     </div>
 
     <!-- 搜尋和篩選 -->
