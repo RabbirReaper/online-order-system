@@ -59,10 +59,6 @@
                 </span>
               </li>
             </ul>
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              編輯選項資訊不會影響與類別的關聯，請到選項類別管理頁面修改關聯關係。
-            </div>
           </div>
           <div v-else class="alert alert-light text-center">
             <div class="text-muted">此選項尚未關聯到任何選項類別</div>
@@ -305,7 +301,7 @@ const submitForm = async () => {
 
       // 觸發刷新列表事件
       window.dispatchEvent(new CustomEvent('refresh-option-list'));
-    }, 1500);
+    }, 500);
   } catch (error) {
     console.error('儲存選項時發生錯誤:', error);
 
@@ -356,7 +352,7 @@ watch(() => formData.refDishTemplate, (newTemplateId, oldTemplateId) => {
   if (formData.name === "" && !userClearedName.value && newTemplateId) {
     const dish = dishes.value.find(dish => dish._id === newTemplateId);
     if (dish) {
-      formData.name = dish.name;
+      formData.name = "+" + dish.name;
     }
   }
 });
