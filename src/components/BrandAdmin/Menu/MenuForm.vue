@@ -2,7 +2,11 @@
   <div class="container-fluid py-4">
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4>{{ isEditMode ? '編輯菜單' : '新增菜單' }}</h4>
+      <div class="d-flex ">
+        <div class="bg-primary rounded me-3" style="width: 6px; height: 26px;"></div>
+        <h4 class="mb-0"> {{ isEditMode ? '編輯菜單' : '新增菜單' }}</h4>
+      </div>
+
       <router-link :to="`/admin/${brandId}/menus/store/${storeId}`" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>返回菜單管理
       </router-link>
