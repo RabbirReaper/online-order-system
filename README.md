@@ -105,6 +105,113 @@ yarn lint
 ---
 config:
   theme: default
+  layout: elk
+  look: neo
+---
+flowchart TB
+ subgraph s3["新架構"]
+        brand_CEO_A["品牌總管理員 A"]
+        Boss["Boss"]
+        brand_CEO_B["品牌總管理員 B"]
+        brand_A_database["主資料庫"]
+        Dishs_A["菜品"]
+        CategoryOptionsA["類別選項"]
+        OptionsA["選項"]
+        StoreA2["店鋪A2"]
+        AdminAssignment["管理員分配"]
+        StoreAdminA1["店鋪管理員A1"]
+        StoreAdminA2["店鋪管理員A2"]
+        StoreAdminA3["店鋪管理員A3"]
+        MenuA2["菜單A2"]
+        StoreAreaA1["StoreAreaA1"]
+  end
+ subgraph StoreAreaA1["店鋪A1區域"]
+        StoreA1["店鋪A1"]
+        MenuA1["菜單A1"]
+        NetpageA1["前端網頁"]
+        Promotion["促銷系統"]
+        ExCoupon["兌換券"]
+        DiscountCoupon["折價券"]
+        MenuPage["菜單頁面"]
+        CustomerCountPage["客人帳戶相關頁面"]
+        ShoppingCartPage["購物車頁面"]
+        CheckOutPage["客人結帳確認頁面"]
+        n1["庫存與銷售控制"]
+        n2["資料耦合"]
+        n3["點餐頁面"]
+        n4["完成頁面"]
+        n5["店員前端頁面"]
+        n6["訂單查看頁面"]
+        n7["庫存增減頁面<br>餐點啟用/停賣頁面"]
+  end
+    Boss --> brand_CEO_A & brand_CEO_B
+    brand_CEO_A --> brand_A_database & AdminAssignment
+    brand_CEO_A -.-> StoreA1 & StoreA2
+    brand_A_database -- 包含 --- Dishs_A & CategoryOptionsA & OptionsA
+    CategoryOptionsA -- 連接 --> OptionsA
+    Dishs_A -- 連接 --> CategoryOptionsA
+    AdminAssignment --> StoreAdminA1 & StoreAdminA2 & StoreAdminA3
+    StoreAdminA1 -- 擁有權限P1,P2,P3 --> StoreA1
+    StoreAdminA2 -- 擁有權限P1,P2 --> StoreA1
+    StoreAdminA3 -- 擁有權限P1,P2,P3,P4 --> StoreA2
+    StoreA1 --> MenuA1 & n1 & n5
+    brand_A_database -- 資料提供 --> MenuA1 & MenuA2
+    StoreA2 --> MenuA2
+    StoreA1 -- 資料提供 --> NetpageA1
+    Promotion -- 包含 --- ExCoupon & DiscountCoupon
+    brand_A_database --> Promotion
+    NetpageA1 --- MenuPage & CustomerCountPage & ShoppingCartPage
+    Promotion --> ShoppingCartPage
+    Promotion -- 提供客人的Coupon --> CustomerCountPage
+    ShoppingCartPage --> CheckOutPage
+    brand_A_database -- 提供客人個資 --> CustomerCountPage
+    n1 -- 資料提供 --> n2
+    MenuA1 -- 資料提供 --> n2
+    n2 --> MenuPage & n3
+    CheckOutPage -- 提交訂單 --> n4
+    n4 L_n4_n1_0@-- 根據販售的餐點減少庫存 --> n1
+    n5 --- n3
+    n5 --> n6 & n7
+    n7 --> n1
+    style brand_CEO_A fill:#f9f,stroke:#333
+    style Boss fill:#f9f,stroke:#333,stroke-width:2px
+    style brand_CEO_B fill:#f9f,stroke:#333
+    style brand_A_database fill:#90EE90,stroke:#006400
+    style Dishs_A fill:#C1FFC1,stroke:#006400
+    style CategoryOptionsA fill:#C1FFC1,stroke:#006400
+    style OptionsA fill:#C1FFC1,stroke:#006400
+    style StoreA2 fill:#D8BFD8,stroke:#333
+    style AdminAssignment fill:#FFB6C1,stroke:#333
+    style StoreAdminA1 fill:#FFE4E1,stroke:#333
+    style StoreAdminA2 fill:#FFE4E1,stroke:#333
+    style StoreAdminA3 fill:#FFE4E1,stroke:#333
+    style MenuA2 fill:#E6E6FA,stroke:#333
+    style StoreAreaA1 fill:#B0F0FD,stroke:#1E90FF,stroke-width:4px,stroke-dasharray: 5 5
+    style StoreA1 fill:#00CED1,stroke:#333,color:white,font-weight:bold
+    style MenuA1 fill:#00BFFF,stroke:#333,color:white,font-weight:bold
+    style NetpageA1 fill:#1E90FF,stroke:#333,color:white,font-weight:bold
+    style Promotion fill:#4169E1,stroke:#333,color:white
+    style ExCoupon fill:#B0E0E6,stroke:#333
+    style DiscountCoupon fill:#B0E0E6,stroke:#333
+    style MenuPage fill:#87CEFA,stroke:#333
+    style CustomerCountPage fill:#87CEFA,stroke:#333
+    style ShoppingCartPage fill:#87CEFA,stroke:#333
+    style CheckOutPage fill:#87CEFA,stroke:#333
+    style n1 fill:#5F9EA0,stroke:#333,color:white,font-weight:bold
+    style n2 fill:#4682B4,stroke:#333,color:white,font-weight:bold
+    style n3 fill:#6495ED,stroke:#333,color:white
+    style n4 fill:#AA00FF,color:white,stroke:#333,font-weight:bold
+    style n5 fill:#6495ED,stroke:#333,color:white
+    style n6 fill:#6495ED,stroke:#333,color:white
+    style n7 fill:#5F9EA0,stroke:#333,color:white,font-weight:bold
+    style s3 fill:#E0FFE0,stroke:#50b050,stroke-width:2px
+    L_n4_n1_0@{ animation: fast }
+```
+
+```mermaid
+---
+config:
+  theme: default
   look: neo
   layout: elk
 ---
