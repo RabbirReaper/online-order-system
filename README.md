@@ -108,7 +108,7 @@ config:
   layout: elk
   look: neo
 ---
-flowchart TB
+flowchart TD
  subgraph s3["新架構"]
         brand_CEO_A["品牌總管理員 A"]
         Boss["Boss"]
