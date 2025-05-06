@@ -137,6 +137,17 @@ export const createOption = async (optionData, brandId) => {
     }
   }
 
+  // 檢查名稱是否已存在於該品牌下
+  const existingOption = await Option.findOne({
+    name: optionData.name,
+    brand: brandId
+  });
+
+  if (existingOption) {
+    throw new AppError('此選項名稱已存在', 400);
+  }
+
+
   // 確保設置品牌ID
   optionData.brand = brandId;
 
@@ -155,39 +166,6 @@ export const createOption = async (optionData, brandId) => {
  * @returns {Promise<Object>} 更新後的選項
  */
 export const updateOption = async (optionId, updateData, brandId) => {
-  // 檢查選項是否存在且屬於該品牌
-  const option = await Option.findOne({
-    _id: optionId,
-    brand: brandId
-  });
-
-  if (!option) {
-    throw new AppError('選項不存在或無權訪問', 404);
-  }
-
-  // 檢查關聯的餐點模板是否存在且屬於該品牌
-  if (updateData.refDishTemplate) {
-    const template = await DishTemplate.findOne({
-      _id: updateData.refDishTemplate,
-      brand: brandId
-    });
-
-    if (!template) {
-      throw new AppError('關聯的餐點模板不存在或不屬於此品牌', 404);
-    }
-  }
-
-  // 防止更改品牌
-  delete updateData.brand;
-
-  // 更新選項
-  Object.keys(updateData).forEach(key => {
-    option[key] = updateData[key];
-  });
-
-  await option.save();
-
-  return option;
 };
 
 /**
