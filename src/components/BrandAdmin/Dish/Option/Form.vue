@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch, nextTick, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
 
@@ -333,6 +333,33 @@ const submitForm = async () => {
     isSubmitting.value = false;
   }
 };
+
+// 添加一個變數來追蹤用戶是否手動清空了名稱
+const userClearedName = ref(false);
+
+// 監聽名稱變化
+watch(() => formData.name, (newName, oldName) => {
+  // 如果名稱從有值變為空值，表示用戶手動清空了
+  if (oldName !== "" && newName === "") {
+    userClearedName.value = true;
+  }
+});
+
+// 監聽引用餐點模板變化
+watch(() => formData.refDishTemplate, (newTemplateId, oldTemplateId) => {
+  // 如果引用模板改變，重置「用戶清空」標記
+  if (newTemplateId !== oldTemplateId) {
+    userClearedName.value = false;
+  }
+
+  // 只有當名稱為空且用戶未手動清空過名稱時，才自動填充
+  if (formData.name === "" && !userClearedName.value && newTemplateId) {
+    const dish = dishes.value.find(dish => dish._id === newTemplateId);
+    if (dish) {
+      formData.name = dish.name;
+    }
+  }
+});
 
 // 生命週期鉤子
 onMounted(() => {
