@@ -78,98 +78,128 @@ export const getInventoryItem = async (storeId, itemId, inventoryType = 'dish') 
 };
 
 /**
- * 創建新的庫存項目
- * @param {Object} inventoryData - 庫存資料
+ * 創建庫存項目
+ * @param {Object} inventoryData - 庫存數據
+ * @param {String} inventoryData.brandId - 品牌ID
+ * @param {String} inventoryData.storeId - 店鋪ID
+ * @param {String} inventoryData.inventoryType - 庫存類型 ('dish' 或 'else')
+ * @param {String} [inventoryData.dishId] - 餐點ID（當 inventoryType 為 'dish' 時必填）
+ * @param {String} inventoryData.itemName - 項目名稱
+ * @param {Number} [inventoryData.initialWarehouseStock=0] - 初始倉庫庫存
+ * @param {Number} [inventoryData.initialAvailableStock=0] - 初始可販售庫存
+ * @param {Number} [inventoryData.minStockAlert=0] - 最低庫存警告值
+ * @param {Number} [inventoryData.maxStockLimit] - 最高庫存限制
+ * @param {Boolean} [inventoryData.isInventoryTracked=true] - 是否追蹤庫存
+ * @param {Boolean} [inventoryData.showAvailableStockToCustomer=false] - 是否顯示庫存數量給客人
  * @param {String} adminId - 管理員ID
- * @returns {Promise<Object>} 新創建的庫存項目
+ * @returns {Promise<Object>} 創建的庫存項目
  */
 export const createInventory = async (inventoryData, adminId) => {
-  const {
-    brandId,
-    storeId,
-    inventoryType,
-    dishId,
-    itemName,
-    initialWarehouseStock = 0,
-    initialAvailableStock = 0,
-    minStockAlert = 0,
-    maxStockLimit,
-    isInventoryTracked = true,
-    showAvailableStockToCustomer = false
-  } = inventoryData;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  // 檢查是否已存在
-  let existingQuery = {
-    brand: brandId,
-    store: storeId,
-    inventoryType
-  };
+  // 檢查店鋪是否存在
+  const store = await Store.findById(inventoryData.storeId).session(session);
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
 
-  if (inventoryType === 'dish') {
-    existingQuery.dish = dishId;
+  // 驗證品牌
+  if (store.brand.toString() !== inventoryData.brandId) {
+    throw new AppError('店鋪不屬於該品牌', 403);
+  }
+
+  // 如果是餐點庫存，檢查餐點是否存在
+  if (inventoryData.inventoryType === 'dish') {
+    if (!inventoryData.dishId) {
+      throw new AppError('餐點庫存必須提供餐點ID', 400);
+    }
+
+    const dish = await DishTemplate.findById(inventoryData.dishId).session(session);
+    if (!dish) {
+      throw new AppError('餐點不存在', 404);
+    }
+
+    // 檢查該餐點是否已有庫存記錄
+    const existingInventory = await Inventory.findOne({
+      brand: inventoryData.brandId,
+      store: inventoryData.storeId,
+      inventoryType: 'dish',
+      dish: inventoryData.dishId
+    }).session(session);
+
+    if (existingInventory) {
+      throw new AppError('該餐點已有庫存記錄', 400);
+    }
   } else {
-    existingQuery.itemName = itemName;
+    // 檢查相同名稱的項目是否已存在
+    const existingInventory = await Inventory.findOne({
+      brand: inventoryData.brandId,
+      store: inventoryData.storeId,
+      inventoryType: 'else',
+      itemName: inventoryData.itemName
+    }).session(session);
+
+    if (existingInventory) {
+      throw new AppError('該項目名稱已存在', 400);
+    }
   }
 
-  const existingInventory = await Inventory.findOne(existingQuery);
-
-  if (existingInventory) {
-    throw new AppError('此項目已在庫存中', 400);
-  }
-
-  // 創建新庫存項目
+  // 創建庫存項目
   const newInventory = new Inventory({
-    brand: brandId,
-    store: storeId,
-    inventoryType,
-    dish: inventoryType === 'dish' ? dishId : undefined,
-    itemName,
-    warehouseStock: initialWarehouseStock,
-    availableStock: initialAvailableStock,
-    minStockAlert,
-    maxStockLimit,
-    isInventoryTracked,
-    showAvailableStockToCustomer
+    brand: inventoryData.brandId,
+    store: inventoryData.storeId,
+    inventoryType: inventoryData.inventoryType,
+    dish: inventoryData.dishId,
+    itemName: inventoryData.itemName,
+    warehouseStock: inventoryData.initialWarehouseStock || 0,
+    availableStock: inventoryData.initialAvailableStock || 0,
+    minStockAlert: inventoryData.minStockAlert || 0,
+    maxStockLimit: inventoryData.maxStockLimit,
+    isInventoryTracked: inventoryData.isInventoryTracked !== false,
+    showAvailableStockToCustomer: inventoryData.showAvailableStockToCustomer || false
   });
 
-  // 保存庫存項目
-  await newInventory.save();
+  await newInventory.save({ session });
 
-  // 如果有初始庫存，創建庫存日誌
-  if (initialWarehouseStock > 0) {
-    await StockLog.create({
-      brand: brandId,
-      store: storeId,
-      inventoryType,
-      dish: inventoryType === 'dish' ? dishId : undefined,
-      itemName,
+  // 記錄初始庫存日誌
+  if (inventoryData.initialWarehouseStock > 0) {
+    const warehouseLog = new StockLog({
+      brand: inventoryData.brandId,
+      store: inventoryData.storeId,
+      inventoryType: inventoryData.inventoryType,
+      dish: inventoryData.dishId,
+      itemName: inventoryData.itemName,
       stockType: 'warehouseStock',
       previousStock: 0,
-      newStock: initialWarehouseStock,
-      changeAmount: initialWarehouseStock,
+      newStock: inventoryData.initialWarehouseStock,
+      changeAmount: inventoryData.initialWarehouseStock,
       changeType: 'initial_stock',
-      reason: '初始庫存設置',
+      reason: '初始庫存設定',
       admin: adminId
     });
+    await warehouseLog.save({ session });
   }
 
-  if (initialAvailableStock > 0) {
-    await StockLog.create({
-      brand: brandId,
-      store: storeId,
-      inventoryType,
-      dish: inventoryType === 'dish' ? dishId : undefined,
-      itemName,
+  if (inventoryData.initialAvailableStock > 0) {
+    const availableLog = new StockLog({
+      brand: inventoryData.brandId,
+      store: inventoryData.storeId,
+      inventoryType: inventoryData.inventoryType,
+      dish: inventoryData.dishId,
+      itemName: inventoryData.itemName,
       stockType: 'availableStock',
       previousStock: 0,
-      newStock: initialAvailableStock,
-      changeAmount: initialAvailableStock,
+      newStock: inventoryData.initialAvailableStock,
+      changeAmount: inventoryData.initialAvailableStock,
       changeType: 'initial_stock',
-      reason: '初始可販售庫存設置',
+      reason: '初始庫存設定',
       admin: adminId
     });
+    await availableLog.save({ session });
   }
 
+  await session.commitTransaction();
   return newInventory;
 };
 
