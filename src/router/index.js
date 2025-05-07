@@ -254,11 +254,17 @@ const router = createRouter({
         {
           path: 'inventory',
           name: 'brand-admin-inventory',
-          component: () => import('@/components/BrandAdmin/Inventory/StockStatus.vue'),
-          meta: { requiresAuth: true, title: '庫存管理' }
+          component: () => import('@/components/BrandAdmin/Inventory/StoreSelect.vue'),
+          meta: { requiresAuth: true, title: '選擇店鋪' }
         },
         {
-          path: 'inventory/detail/:id',
+          path: 'inventory/store/:storeId',
+          name: 'brand-admin-store-inventory',
+          component: () => import('@/components/BrandAdmin/Inventory/StockStatus.vue'),
+          meta: { requiresAuth: true, title: '店鋪庫存管理' }
+        },
+        {
+          path: 'inventory/store/:storeId/detail/:id',
           name: 'brand-admin-inventory-detail',
           component: () => import('@/components/BrandAdmin/Inventory/StockDetail.vue'),
           meta: { requiresAuth: true, title: '庫存詳情' }

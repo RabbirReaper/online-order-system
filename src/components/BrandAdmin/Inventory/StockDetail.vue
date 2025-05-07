@@ -6,7 +6,7 @@
         {{ inventoryItem.itemName }} - 庫存詳情
       </h4>
       <div>
-        <router-link :to="`/admin/${brandId}/inventory?storeId=${storeId}`" class="btn btn-secondary">
+        <router-link :to="`/admin/${brandId}/inventory/store/${storeId}`" class="btn btn-secondary">
           <i class="bi bi-arrow-left me-1"></i>返回列表
         </router-link>
       </div>
@@ -290,15 +290,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Modal } from 'bootstrap';
 import api from '@/api';
 import StockAdjustModal from './StockAdjustModal.vue';
 
 // 路由
 const route = useRoute();
+const router = useRouter();
 const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.query.storeId || route.params.storeId);
+const storeId = computed(() => route.params.storeId);
 const itemId = computed(() => route.params.id);
 
 // 狀態

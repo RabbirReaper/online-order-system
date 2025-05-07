@@ -44,11 +44,11 @@ router.post('/:storeId/inventory/:itemId/transfer', authMiddleware, permissionMi
 router.post('/:storeId/inventory/:itemId/damage', authMiddleware, permissionMiddleware(['order_system']), inventoryController.processDamage);
 
 // 庫存統計路由
+router.get('/:storeId/inventory/summary', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockChangeSummary);
+router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryHealthReport);
 router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryLogs);
 router.get('/:storeId/inventory/:itemId/trends', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockTrends);
 router.get('/:storeId/inventory/:itemId/stats', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getItemInventoryStats);
-router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryHealthReport);
-router.get('/:storeId/inventory/summary', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockChangeSummary);
 
 // 批量操作
 router.post('/:storeId/inventory/bulk', authMiddleware, permissionMiddleware(['order_system']), inventoryController.bulkUpdateInventory);

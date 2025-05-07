@@ -2,7 +2,12 @@
   <div>
     <!-- 頁面頂部工具列 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">庫存管理</h4>
+      <div class="d-flex align-items-center">
+        <router-link :to="`/admin/${brandId}/inventory`" class="btn btn-outline-secondary me-3">
+          <i class="bi bi-arrow-left"></i>
+        </router-link>
+        <h4 class="mb-0">{{ storeName }} - 庫存管理</h4>
+      </div>
       <div class="d-flex gap-2">
         <div class="dropdown">
           <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -154,7 +159,7 @@
                     <button class="btn btn-outline-primary" @click="openAdjustModal(item)">
                       <i class="bi bi-pencil"></i> 調整
                     </button>
-                    <router-link :to="`/admin/${brandId}/inventory/detail/${item._id}`"
+                    <router-link :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}`"
                       class="btn btn-outline-secondary">
                       <i class="bi bi-eye"></i> 詳情
                     </router-link>
@@ -163,7 +168,7 @@
               </tr>
 
               <!-- 無資料提示 -->
-              <tr v-if="inventoryItems.length === 0">
+              <tr v-if="!inventoryItems || inventoryItems.length === 0">
                 <td colspan="9" class="text-center py-4">
                   <div class="text-muted">
                     {{ searchQuery ? '沒有符合搜尋條件的庫存項目' : '尚未建立任何庫存項目' }}
@@ -300,21 +305,23 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Modal } from 'bootstrap';
 import api from '@/api';
 
 // 路由
 const route = useRoute();
+const router = useRouter();
 const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.query.storeId);
+const storeId = computed(() => route.params.storeId);
 
 // 狀態
 const isLoading = ref(true);
 const error = ref('');
-const inventoryItems = ref([]);
+const inventoryItems = ref([]); // 初始化為空數組，而不是 undefined
 const searchQuery = ref('');
 const currentPage = ref(1);
+const storeName = ref('');
 
 // 篩選條件
 const filters = reactive({
@@ -445,29 +452,53 @@ const fetchInventory = async () => {
 
     const response = await api.inventory.getStoreInventory(params);
 
-    inventoryItems.value = response.inventoryItems;
-    pagination.total = response.total;
-    pagination.totalPages = response.totalPages;
+    // 確保 response 有 inventoryItems 屬性
+    if (response && response.inventoryItems) {
+      inventoryItems.value = response.inventoryItems;
+      pagination.total = response.total || 0;
+      pagination.totalPages = response.totalPages || 1;
 
-    // 根據狀態篩選
-    if (filters.status) {
-      inventoryItems.value = inventoryItems.value.filter(item => {
-        const status = getStatusText(item);
-        switch (filters.status) {
-          case 'normal': return status === '正常';
-          case 'low': return status === '低庫存';
-          case 'out': return status === '缺貨';
-          case 'overstock': return status === '庫存過多';
-          default: return true;
-        }
-      });
+      // 根據狀態篩選
+      if (filters.status) {
+        inventoryItems.value = inventoryItems.value.filter(item => {
+          const status = getStatusText(item);
+          switch (filters.status) {
+            case 'normal': return status === '正常';
+            case 'low': return status === '低庫存';
+            case 'out': return status === '缺貨';
+            case 'overstock': return status === '庫存過多';
+            default: return true;
+          }
+        });
+      }
+
+      // 計算統計數據
+      updateStats();
+    } else {
+      // 如果沒有正確的響應資料結構，設置預設值
+      inventoryItems.value = [];
+      pagination.total = 0;
+      pagination.totalPages = 1;
+      stats.value = {
+        totalItems: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        overStock: 0
+      };
     }
-
-    // 計算統計數據
-    updateStats();
   } catch (err) {
     console.error('獲取庫存列表失敗:', err);
     error.value = '獲取庫存列表時發生錯誤';
+    // 設置預設值以避免 undefined 錯誤
+    inventoryItems.value = [];
+    pagination.total = 0;
+    pagination.totalPages = 1;
+    stats.value = {
+      totalItems: 0,
+      lowStock: 0,
+      outOfStock: 0,
+      overStock: 0
+    };
   } finally {
     isLoading.value = false;
   }
@@ -475,6 +506,17 @@ const fetchInventory = async () => {
 
 // 更新統計數據
 const updateStats = () => {
+  // 確保 inventoryItems.value 存在
+  if (!inventoryItems.value || !Array.isArray(inventoryItems.value)) {
+    stats.value = {
+      totalItems: 0,
+      lowStock: 0,
+      outOfStock: 0,
+      overStock: 0
+    };
+    return;
+  }
+
   stats.value = {
     totalItems: inventoryItems.value.length,
     lowStock: inventoryItems.value.filter(item => getStatusText(item) === '低庫存').length,
@@ -614,12 +656,29 @@ const submitAdjustment = async () => {
   }
 };
 
+// 獲取店鋪資訊
+const fetchStoreInfo = async () => {
+  if (!storeId.value) return;
+
+  try {
+    const response = await api.store.getStoreById(storeId.value);
+    if (response && response.store) {
+      storeName.value = response.store.name;
+    }
+  } catch (err) {
+    console.error('獲取店鋪資訊失敗:', err);
+  }
+};
+
 // 生命週期
 onMounted(() => {
   // 初始化 Modal
   if (adjustModalRef.value) {
     adjustModal.value = new Modal(adjustModalRef.value);
   }
+
+  // 獲取店鋪資訊
+  fetchStoreInfo();
 
   // 載入庫存列表
   fetchInventory();
