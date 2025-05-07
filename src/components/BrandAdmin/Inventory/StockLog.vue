@@ -288,8 +288,10 @@ const hasActiveFilters = () => {
 
 // 獲取庫存日誌
 const fetchStockLogs = async () => {
+  // 如果沒有有效的 storeId，跳過請求
   if (!storeId.value) {
     error.value = '請選擇店鋪';
+    isLoading.value = false;
     return;
   }
 
@@ -327,7 +329,20 @@ const fetchStockLogs = async () => {
     pagination.totalPages = response.totalPages;
   } catch (err) {
     console.error('獲取庫存日誌失敗:', err);
-    error.value = '獲取庫存日誌時發生錯誤';
+
+    // 更詳細的錯誤處理
+    if (err.response?.status === 500) {
+      error.value = '服務器錯誤：無法獲取庫存日誌。請確認後端 API 路由配置正確。';
+    } else if (err.response?.data?.message) {
+      error.value = err.response.data.message;
+    } else {
+      error.value = '獲取庫存日誌時發生未知錯誤';
+    }
+
+    // 設置預設值
+    stockLogs.value = [];
+    pagination.total = 0;
+    pagination.totalPages = 1;
   } finally {
     isLoading.value = false;
   }
@@ -369,6 +384,7 @@ const exportLogs = async () => {
     // TODO: 實作匯出功能
     // 可以將日誌數據匯出為 CSV 或 Excel 格式
     console.log('匯出日誌功能待實作');
+    alert('匯出功能尚未實作');
   } catch (err) {
     console.error('匯出失敗:', err);
     alert('匯出日誌時發生錯誤');
@@ -377,7 +393,13 @@ const exportLogs = async () => {
 
 // 生命週期
 onMounted(() => {
-  fetchStockLogs();
+  // 只有在有有效的 storeId 時才獲取日誌
+  if (storeId.value) {
+    fetchStockLogs();
+  } else {
+    isLoading.value = false;
+    error.value = '請選擇店鋪以查看庫存變更記錄';
+  }
 });
 </script>
 
