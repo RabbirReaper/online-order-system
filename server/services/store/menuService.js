@@ -25,8 +25,13 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
   // 獲取店鋪菜單
   const menu = await Menu.findOne({ store: storeId });
 
+  // 如果菜單不存在，返回一個空的菜單對象
   if (!menu) {
-    throw new AppError('店鋪菜單不存在', 404);
+    return {
+      exists: false,
+      store: storeId,
+      categories: []
+    };
   }
 
   // 處理菜單數據 - 深度填充餐點模板信息

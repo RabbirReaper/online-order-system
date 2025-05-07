@@ -227,16 +227,17 @@ const fetchData = async () => {
     }
 
     // 2. 獲取菜單資料
-    try {
-      const menuResponse = await api.menu.getStoreMenu(storeId.value);
-      if (menuResponse && menuResponse.menu) {
-        menu.value = menuResponse.menu;
-      }
-    } catch (error) {
-      // 沒有菜單不視為錯誤
-      console.log('店鋪尚未有菜單', error);
+    const menuResponse = await api.menu.getStoreMenu(storeId.value);
+
+    if (menuResponse.menu.exists === false) {
       menu.value = null;
+      return;
     }
+
+    if (menuResponse && menuResponse.menu) {
+      menu.value = menuResponse.menu;
+    }
+
   } catch (error) {
     console.error('獲取資料失敗:', error);
   } finally {
