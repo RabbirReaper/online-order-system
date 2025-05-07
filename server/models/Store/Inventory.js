@@ -11,31 +11,111 @@ const inventorySchema = new mongoose.Schema({
     ref: 'Store',
     required: true
   },
+
+  // 庫存類型：餐點或原料
+  inventoryType: {
+    type: String,
+    enum: ['dish', 'else'],
+    required: true
+  },
+
+  // 關聯餐點（如果是餐點庫存）
   dish: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DishTemplate',
-    required: true
+    required: function () {
+      return this.inventoryType === 'dish';
+    }
   },
-  dishName: {
+
+  // 庫存項目名稱（餐點名稱或原料名稱）
+  itemName: {
     type: String,
     required: true
-  }, // 冗餘名稱，方便查詢
-  stock: {
+  },
+
+  // 倉庫庫存（實際總庫存）
+  warehouseStock: {
     type: Number,
-    required: true,
+    default: 0,
+    min: 0
+  },
+
+  // (可選)可販售庫存，顯示給客人看得
+  availableStock: {
+    type: Number,
+    default: 0,
     min: 0,
-    default: 0
-  }, // 庫存量
-  dailyLimit: {
-    type: Number
-  }, // 每日限制（可選）
+    validate: {
+      validator: function (value) {
+        return value <= this.warehouseStock;
+      },
+      message: '可使用庫存不能超過倉庫庫存'
+    }
+  },
+
+  // 最低庫存警告值
+  minStockAlert: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+
+  // 最高庫存限制（避免過量庫存）
+  maxStockLimit: {
+    type: Number,
+    min: 0
+  },
+
+  // 是否追蹤庫存
   isInventoryTracked: {
     type: Boolean,
     default: true
-  }
+  },
+
+  // 是否顯示庫存數量給客人（只有餐點類型才有可能需要）
+  showAvailableStockToCustomer: {
+    type: Boolean,
+    default: false
+  },
+
 }, { timestamps: true });
 
-// 複合索引：每家店只能有一道菜的唯一記錄
-inventorySchema.index({ brand: 1, store: 1, dish: 1 }, { unique: true });
+
+// 索引
+// 主要查詢索引：品牌+店鋪+餐點的複合索引（用於餐點庫存）
+inventorySchema.index({ brand: 1, store: 1, dish: 1 }, {
+  unique: true,
+  partialFilterExpression: { inventoryType: 'dish' }
+});
+
+// 主要查詢索引：品牌+店鋪+項目名稱（用於非餐點庫存）
+inventorySchema.index({ brand: 1, store: 1, itemName: 1 }, {
+  unique: true,
+  partialFilterExpression: { inventoryType: 'else' }
+});
+
+// 虛擬屬性
+// 是否需要補貨
+inventorySchema.virtual('needsRestock').get(function () {
+  return this.isInventoryTracked && this.warehouseStock <= this.minStockAlert;
+});
+
+// 是否庫存過多
+inventorySchema.virtual('isOverstock').get(function () {
+  return this.maxStockLimit && this.warehouseStock > this.maxStockLimit;
+});
+
+// 顯示給客人的庫存（根據設定決定）
+inventorySchema.virtual('customerVisibleStock').get(function () {
+  if (!this.showAvailableStockToCustomer) return null;
+  return this.availableStock;
+});
+
+// 是否售罄（用於餐點）
+inventorySchema.virtual('isSoldOut').get(function () {
+  if (!this.isInventoryTracked) return false;
+  return this.availableStock === 0;
+});
 
 export default mongoose.model('Inventory', inventorySchema);
