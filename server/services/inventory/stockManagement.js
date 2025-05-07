@@ -7,6 +7,9 @@ import mongoose from 'mongoose';
 import Inventory from '../../models/Store/Inventory.js';
 import StockLog from '../../models/Store/StockLog.js';
 import { AppError } from '../../middlewares/error.js';
+import Store from '../../models/Store/Store.js';
+import DishTemplate from '../../models/Dish/DishTemplate.js';
+
 
 /**
  * 獲取店鋪庫存列表
@@ -95,17 +98,18 @@ export const getInventoryItem = async (storeId, itemId, inventoryType = 'dish') 
  * @returns {Promise<Object>} 創建的庫存項目
  */
 export const createInventory = async (inventoryData, adminId) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // const session = await mongoose.startSession();
+  // session.startTransaction();
 
   // 檢查店鋪是否存在
-  const store = await Store.findById(inventoryData.storeId).session(session);
+  // const store = await Store.findById(inventoryData.storeId).session(session);
+  const store = await Store.findById(inventoryData.storeId)
   if (!store) {
     throw new AppError('店鋪不存在', 404);
   }
 
   // 驗證品牌
-  if (store.brand.toString() !== inventoryData.brandId) {
+  if (store.brand.toString() !== inventoryData.brandId.toString()) {
     throw new AppError('店鋪不屬於該品牌', 403);
   }
 
@@ -199,7 +203,7 @@ export const createInventory = async (inventoryData, adminId) => {
     await availableLog.save({ session });
   }
 
-  await session.commitTransaction();
+  // await session.commitTransaction();
   return newInventory;
 };
 
