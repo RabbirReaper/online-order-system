@@ -62,7 +62,7 @@ const inventorySchema = new mongoose.Schema({
   },
 
   // 最高庫存限制（避免過量庫存）
-  maxStockLimit: {
+  maxStockAlert: {
     type: Number,
     min: 0
   },

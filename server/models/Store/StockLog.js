@@ -69,15 +69,6 @@ const stockLogSchema = new mongoose.Schema({
   // 變更原因
   reason: {
     type: String,
-    validate: {
-      validator: function (val) {
-        if (['manual_add', 'manual_subtract', 'damage'].includes(this.changeType)) {
-          return !!val;
-        }
-        return true;
-      },
-      message: '手動調整、損毀或過期時必須提供原因'
-    }
   },
 
   // 關聯訂單（如果是訂單引起的變更）
