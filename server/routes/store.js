@@ -1,6 +1,6 @@
 import express from 'express';
 import * as storeController from '../controllers/Store/store.js';
-// import * as inventoryController from '../controllers/Store/inventory.js';
+import * as inventoryController from '../controllers/Store/inventory.js';
 import * as brandController from '../controllers/Brand/brand.js';
 import * as menuController from '../controllers/Store/menu.js';
 import { authMiddleware } from '../middlewares/auth.js';
@@ -30,14 +30,28 @@ router.get('/:id/business-hours', storeController.getStoreBusinessHours);
 router.put('/:id/business-hours', authMiddleware, permissionMiddleware(['edit_backend']), storeController.updateStoreBusinessHours);
 router.put('/:id/announcements', authMiddleware, permissionMiddleware(['edit_backend']), storeController.updateStoreAnnouncements);
 router.get('/:id/status', storeController.getStoreCurrentStatus);
-/*
+
 // 庫存路由
 router.get('/:storeId/inventory', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getStoreInventory);
-router.get('/:storeId/inventory/:dishId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
+router.get('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
 router.post('/:storeId/inventory', authMiddleware, permissionMiddleware(['order_system']), inventoryController.createInventory);
-router.put('/:storeId/inventory/:dishId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
+router.put('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
+
+// 庫存操作路由
+router.post('/:storeId/inventory/:itemId/reduce', authMiddleware, permissionMiddleware(['order_system']), inventoryController.reduceStock);
+router.post('/:storeId/inventory/:itemId/add', authMiddleware, permissionMiddleware(['order_system']), inventoryController.addStock);
+router.post('/:storeId/inventory/:itemId/transfer', authMiddleware, permissionMiddleware(['order_system']), inventoryController.transferStock);
+router.post('/:storeId/inventory/:itemId/damage', authMiddleware, permissionMiddleware(['order_system']), inventoryController.processDamage);
+
+// 庫存統計路由
 router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryLogs);
-*/
+router.get('/:storeId/inventory/:itemId/trends', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockTrends);
+router.get('/:storeId/inventory/:itemId/stats', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getItemInventoryStats);
+router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryHealthReport);
+router.get('/:storeId/inventory/summary', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockChangeSummary);
+
+// 批量操作
+router.post('/:storeId/inventory/bulk', authMiddleware, permissionMiddleware(['order_system']), inventoryController.bulkUpdateInventory);
 
 
 //菜單路由

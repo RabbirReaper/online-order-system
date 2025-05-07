@@ -12,30 +12,37 @@ import { AppError } from '../../middlewares/error.js';
  * 獲取店鋪庫存列表
  * @param {String} storeId - 店鋪ID
  * @param {Object} options - 查詢選項
- * @param {Boolean} options.onlyAvailable - 是否只顯示有庫存的項目 (默認 false)
- * @param {String} options.search - 搜尋關鍵字 (默認 '')
+ * @param {String} options.inventoryType - 庫存類型（dish、else）
+ * @param {Boolean} options.onlyAvailable - 是否只顯示有庫存的項目
+ * @param {String} options.search - 搜尋關鍵字
  * @returns {Promise<Array>} 庫存列表
  */
 export const getStoreInventory = async (storeId, options = {}) => {
-  const { onlyAvailable = false, search = '' } = options;
+  const { inventoryType, onlyAvailable = false, search = '' } = options;
 
   // 構建查詢條件
   const query = { store: storeId };
 
+  // 篩選庫存類型
+  if (inventoryType) {
+    query.inventoryType = inventoryType;
+  }
+
   // 只顯示有庫存的項目
   if (onlyAvailable) {
-    query.stock = { $gt: 0 };
+    query.availableStock = { $gt: 0 };
   }
 
   // 搜尋關鍵字
   if (search) {
-    query.dishName = { $regex: search, $options: 'i' };
+    query.itemName = { $regex: search, $options: 'i' };
   }
 
   // 查詢庫存
   const inventory = await Inventory.find(query)
     .populate('dish')
-    .sort({ dishName: 1 });
+    .populate('brand')
+    .sort({ itemName: 1 });
 
   return inventory;
 };
@@ -43,17 +50,28 @@ export const getStoreInventory = async (storeId, options = {}) => {
 /**
  * 獲取單個庫存項目
  * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
+ * @param {String} itemId - 項目ID（餐點ID或其他庫存ID）
+ * @param {String} inventoryType - 庫存類型
  * @returns {Promise<Object>} 庫存項目
  */
-export const getInventoryItem = async (storeId, dishId) => {
-  const inventoryItem = await Inventory.findOne({
+export const getInventoryItem = async (storeId, itemId, inventoryType = 'dish') => {
+  const query = {
     store: storeId,
-    dish: dishId
-  }).populate('dish');
+    inventoryType
+  };
+
+  if (inventoryType === 'dish') {
+    query.dish = itemId;
+  } else {
+    query._id = itemId;
+  }
+
+  const inventoryItem = await Inventory.findOne(query)
+    .populate('dish')
+    .populate('brand');
 
   if (!inventoryItem) {
-    throw new AppError('找不到此餐點的庫存資訊', 404);
+    throw new AppError('找不到此項目的庫存資訊', 404);
   }
 
   return inventoryItem;
@@ -61,50 +79,93 @@ export const getInventoryItem = async (storeId, dishId) => {
 
 /**
  * 創建新的庫存項目
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
- * @param {String} dishName - 餐點名稱
- * @param {Number} initialStock - 初始庫存量
- * @param {Number} dailyLimit - 每日限制數量 (可選)
- * @param {Boolean} isInventoryTracked - 是否追蹤庫存 (默認 true)
+ * @param {Object} inventoryData - 庫存資料
  * @param {String} adminId - 管理員ID
  * @returns {Promise<Object>} 新創建的庫存項目
  */
-export const createInventory = async (storeId, dishId, dishName, initialStock, dailyLimit = null, isInventoryTracked = true, adminId) => {
-  // 檢查餐點是否已經在庫存中
-  const existingInventory = await Inventory.findOne({
+export const createInventory = async (inventoryData, adminId) => {
+  const {
+    brandId,
+    storeId,
+    inventoryType,
+    dishId,
+    itemName,
+    initialWarehouseStock = 0,
+    initialAvailableStock = 0,
+    minStockAlert = 0,
+    maxStockLimit,
+    isInventoryTracked = true,
+    showAvailableStockToCustomer = false
+  } = inventoryData;
+
+  // 檢查是否已存在
+  let existingQuery = {
+    brand: brandId,
     store: storeId,
-    dish: dishId
-  });
+    inventoryType
+  };
+
+  if (inventoryType === 'dish') {
+    existingQuery.dish = dishId;
+  } else {
+    existingQuery.itemName = itemName;
+  }
+
+  const existingInventory = await Inventory.findOne(existingQuery);
 
   if (existingInventory) {
-    throw new AppError('此餐點已在庫存中', 400);
+    throw new AppError('此項目已在庫存中', 400);
   }
 
   // 創建新庫存項目
   const newInventory = new Inventory({
+    brand: brandId,
     store: storeId,
-    dish: dishId,
-    dishName,
-    stock: initialStock,
-    dailyLimit,
-    isInventoryTracked
+    inventoryType,
+    dish: inventoryType === 'dish' ? dishId : undefined,
+    itemName,
+    warehouseStock: initialWarehouseStock,
+    availableStock: initialAvailableStock,
+    minStockAlert,
+    maxStockLimit,
+    isInventoryTracked,
+    showAvailableStockToCustomer
   });
 
   // 保存庫存項目
   await newInventory.save();
 
   // 如果有初始庫存，創建庫存日誌
-  if (initialStock > 0) {
+  if (initialWarehouseStock > 0) {
     await StockLog.create({
+      brand: brandId,
       store: storeId,
-      dish: dishId,
-      dishName,
+      inventoryType,
+      dish: inventoryType === 'dish' ? dishId : undefined,
+      itemName,
+      stockType: 'warehouseStock',
       previousStock: 0,
-      newStock: initialStock,
-      changeAmount: initialStock,
+      newStock: initialWarehouseStock,
+      changeAmount: initialWarehouseStock,
       changeType: 'initial_stock',
       reason: '初始庫存設置',
+      admin: adminId
+    });
+  }
+
+  if (initialAvailableStock > 0) {
+    await StockLog.create({
+      brand: brandId,
+      store: storeId,
+      inventoryType,
+      dish: inventoryType === 'dish' ? dishId : undefined,
+      itemName,
+      stockType: 'availableStock',
+      previousStock: 0,
+      newStock: initialAvailableStock,
+      changeAmount: initialAvailableStock,
+      changeType: 'initial_stock',
+      reason: '初始可販售庫存設置',
       admin: adminId
     });
   }
@@ -114,48 +175,43 @@ export const createInventory = async (storeId, dishId, dishName, initialStock, d
 
 /**
  * 更新庫存
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
  * @param {Object} updateData - 更新數據
- * @param {Number} updateData.stock - 新庫存量 (可選)
- * @param {Number} updateData.changeAmount - 庫存變化量 (可選)
- * @param {Number} updateData.dailyLimit - 每日限制數量 (可選)
- * @param {Boolean} updateData.isInventoryTracked - 是否追蹤庫存 (可選)
- * @param {String} updateData.reason - 變更原因 (必填)
  * @param {String} adminId - 管理員ID
  * @returns {Promise<Object>} 更新後的庫存項目
  */
-export const updateInventory = async (storeId, dishId, updateData, adminId) => {
-  // 檢查必填項
-  if (!updateData.reason) {
-    throw new AppError('庫存變更必須提供原因', 400);
-  }
+export const updateInventory = async (updateData, adminId) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    stockType = 'warehouseStock',
+    stock,
+    changeAmount,
+    reason,
+    minStockAlert,
+    maxStockLimit,
+    isInventoryTracked,
+    showAvailableStockToCustomer
+  } = updateData;
 
   // 查找庫存項目
-  const inventoryItem = await Inventory.findOne({
-    store: storeId,
-    dish: dishId
-  });
-
-  if (!inventoryItem) {
-    throw new AppError('找不到此餐點的庫存資訊', 404);
-  }
+  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
 
   // 記錄先前的庫存
-  const previousStock = inventoryItem.stock;
+  const previousStock = inventoryItem[stockType];
   let newStock = previousStock;
-  let changeAmount = 0;
+  let actualChangeAmount = 0;
   let changeType = '';
 
   // 如果提供了新庫存量
-  if (updateData.stock !== undefined) {
-    newStock = updateData.stock;
-    changeAmount = newStock - previousStock;
-    changeType = changeAmount > 0 ? 'manual_add' : 'manual_subtract';
+  if (stock !== undefined) {
+    newStock = stock;
+    actualChangeAmount = newStock - previousStock;
+    changeType = actualChangeAmount > 0 ? 'manual_add' : 'manual_subtract';
   }
   // 如果提供了變化量
-  else if (updateData.changeAmount !== undefined) {
-    changeAmount = updateData.changeAmount;
+  else if (changeAmount !== undefined) {
+    actualChangeAmount = changeAmount;
     newStock = previousStock + changeAmount;
     changeType = changeAmount > 0 ? 'manual_add' : 'manual_subtract';
   }
@@ -165,33 +221,48 @@ export const updateInventory = async (storeId, dishId, updateData, adminId) => {
     throw new AppError('庫存不能為負數', 400);
   }
 
-  // 更新庫存
-  inventoryItem.stock = newStock;
-
-  // 更新每日限制 (如果提供)
-  if (updateData.dailyLimit !== undefined) {
-    inventoryItem.dailyLimit = updateData.dailyLimit;
+  // 確保可販售庫存不超過倉庫庫存
+  if (stockType === 'availableStock' && newStock > inventoryItem.warehouseStock) {
+    throw new AppError('可販售庫存不能超過倉庫庫存', 400);
   }
 
-  // 更新庫存追蹤狀態 (如果提供)
-  if (updateData.isInventoryTracked !== undefined) {
-    inventoryItem.isInventoryTracked = updateData.isInventoryTracked;
+  // 更新庫存
+  inventoryItem[stockType] = newStock;
+
+  // 更新其他設定
+  if (minStockAlert !== undefined) {
+    inventoryItem.minStockAlert = minStockAlert;
+  }
+
+  if (maxStockLimit !== undefined) {
+    inventoryItem.maxStockLimit = maxStockLimit;
+  }
+
+  if (isInventoryTracked !== undefined) {
+    inventoryItem.isInventoryTracked = isInventoryTracked;
+  }
+
+  if (showAvailableStockToCustomer !== undefined) {
+    inventoryItem.showAvailableStockToCustomer = showAvailableStockToCustomer;
   }
 
   // 保存庫存項目
   await inventoryItem.save();
 
   // 如果庫存有變化，創建庫存日誌
-  if (changeAmount !== 0) {
+  if (actualChangeAmount !== 0) {
     await StockLog.create({
+      brand: inventoryItem.brand,
       store: storeId,
-      dish: dishId,
-      dishName: inventoryItem.dishName,
+      inventoryType: inventoryItem.inventoryType,
+      dish: inventoryItem.dish,
+      itemName: inventoryItem.itemName,
+      stockType,
       previousStock,
       newStock,
-      changeAmount,
+      changeAmount: actualChangeAmount,
       changeType,
-      reason: updateData.reason,
+      reason: reason || '手動調整庫存',
       admin: adminId
     });
   }
@@ -200,59 +271,50 @@ export const updateInventory = async (storeId, dishId, updateData, adminId) => {
 };
 
 /**
- * 減少庫存
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
- * @param {Number} quantity - 減少的數量
- * @param {String} reason - 減少原因
- * @param {String} orderId - 訂單ID (可選)
- * @param {String} adminId - 管理員ID (可選)
+ * 減少庫存（用於訂單消耗）
+ * @param {Object} reduceData - 減少數據
  * @returns {Promise<Boolean>} 操作是否成功
  */
-export const reduceStock = async (storeId, dishId, quantity, reason, orderId = null, adminId = null) => {
-  // 查找庫存項目
-  const inventoryItem = await Inventory.findOne({
-    store: storeId,
-    dish: dishId
-  });
+export const reduceStock = async (reduceData) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    quantity,
+    reason,
+    orderId,
+    adminId
+  } = reduceData;
 
-  if (!inventoryItem) {
-    throw new AppError('找不到此餐點的庫存資訊', 404);
-  }
+  // 查找庫存項目
+  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
 
   // 如果不追蹤庫存，直接返回成功
   if (!inventoryItem.isInventoryTracked) {
     return true;
   }
 
-  // 檢查庫存是否足夠
-  if (inventoryItem.stock < quantity) {
+  // 檢查可販售庫存是否足夠
+  if (inventoryItem.availableStock < quantity) {
     throw new AppError('庫存不足', 400);
   }
 
-  // 檢查每日限制
-  if (inventoryItem.dailyLimit !== null && inventoryItem.dailyLimit < quantity) {
-    throw new AppError('超過每日可售數量限制', 400);
-  }
-
   // 記錄先前的庫存
-  const previousStock = inventoryItem.stock;
+  const previousAvailableStock = inventoryItem.availableStock;
 
-  // 更新庫存
-  inventoryItem.stock -= quantity;
-
-  // 更新每日限制 (如果有)
-  if (inventoryItem.dailyLimit !== null) {
-    inventoryItem.dailyLimit -= quantity;
-  }
+  // 更新可販售庫存
+  inventoryItem.availableStock -= quantity;
 
   // 創建庫存日誌
   await StockLog.create({
+    brand: inventoryItem.brand,
     store: storeId,
-    dish: dishId,
-    dishName: inventoryItem.dishName,
-    previousStock,
-    newStock: inventoryItem.stock,
+    inventoryType: inventoryItem.inventoryType,
+    dish: inventoryItem.dish,
+    itemName: inventoryItem.itemName,
+    stockType: 'availableStock',
+    previousStock: previousAvailableStock,
+    newStock: inventoryItem.availableStock,
     changeAmount: -quantity,
     changeType: orderId ? 'order' : 'manual_subtract',
     reason: reason || '訂單消耗',
@@ -268,42 +330,39 @@ export const reduceStock = async (storeId, dishId, quantity, reason, orderId = n
 
 /**
  * 增加庫存
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
- * @param {Number} quantity - 增加的數量
- * @param {String} reason - 增加原因
- * @param {String} adminId - 管理員ID
+ * @param {Object} addData - 增加數據
  * @returns {Promise<Boolean>} 操作是否成功
  */
-export const addStock = async (storeId, dishId, quantity, reason, adminId) => {
+export const addStock = async (addData) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    stockType = 'warehouseStock',
+    quantity,
+    reason,
+    adminId
+  } = addData;
+
   // 查找庫存項目
-  const inventoryItem = await Inventory.findOne({
-    store: storeId,
-    dish: dishId
-  });
-
-  if (!inventoryItem) {
-    throw new AppError('找不到此餐點的庫存資訊', 404);
-  }
-
-  // 如果不追蹤庫存，直接返回成功
-  if (!inventoryItem.isInventoryTracked) {
-    return true;
-  }
+  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
 
   // 記錄先前的庫存
-  const previousStock = inventoryItem.stock;
+  const previousStock = inventoryItem[stockType];
 
   // 更新庫存
-  inventoryItem.stock += quantity;
+  inventoryItem[stockType] += quantity;
 
   // 創建庫存日誌
   await StockLog.create({
+    brand: inventoryItem.brand,
     store: storeId,
-    dish: dishId,
-    dishName: inventoryItem.dishName,
+    inventoryType: inventoryItem.inventoryType,
+    dish: inventoryItem.dish,
+    itemName: inventoryItem.itemName,
+    stockType,
     previousStock,
-    newStock: inventoryItem.stock,
+    newStock: inventoryItem[stockType],
     changeAmount: quantity,
     changeType: 'manual_add',
     reason: reason || '手動增加庫存',
@@ -317,25 +376,67 @@ export const addStock = async (storeId, dishId, quantity, reason, adminId) => {
 };
 
 /**
- * 設置每日限制
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
- * @param {Number} newLimit - 新的每日限制數量 (null 表示無限制)
+ * 庫存調撥（從倉庫到可販售）
+ * @param {Object} transferData - 調撥數據
  * @returns {Promise<Boolean>} 操作是否成功
  */
-export const setDailyLimit = async (storeId, dishId, newLimit) => {
-  // 查找庫存項目
-  const inventoryItem = await Inventory.findOne({
-    store: storeId,
-    dish: dishId
-  });
+export const transferStock = async (transferData) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    quantity,
+    reason,
+    adminId
+  } = transferData;
 
-  if (!inventoryItem) {
-    throw new AppError('找不到此餐點的庫存資訊', 404);
+  // 查找庫存項目
+  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
+
+  // 檢查倉庫庫存是否足夠
+  if (inventoryItem.warehouseStock < quantity) {
+    throw new AppError('倉庫庫存不足', 400);
   }
 
-  // 更新每日限制
-  inventoryItem.dailyLimit = newLimit;
+  // 記錄先前的庫存
+  const previousWarehouseStock = inventoryItem.warehouseStock;
+  const previousAvailableStock = inventoryItem.availableStock;
+
+  // 更新庫存
+  inventoryItem.warehouseStock -= quantity;
+  inventoryItem.availableStock += quantity;
+
+  // 創建庫存日誌 - 倉庫減少
+  await StockLog.create({
+    brand: inventoryItem.brand,
+    store: storeId,
+    inventoryType: inventoryItem.inventoryType,
+    dish: inventoryItem.dish,
+    itemName: inventoryItem.itemName,
+    stockType: 'warehouseStock',
+    previousStock: previousWarehouseStock,
+    newStock: inventoryItem.warehouseStock,
+    changeAmount: -quantity,
+    changeType: 'system_adjustment',
+    reason: reason || '調撥至可販售庫存',
+    admin: adminId
+  });
+
+  // 創建庫存日誌 - 可販售增加
+  await StockLog.create({
+    brand: inventoryItem.brand,
+    store: storeId,
+    inventoryType: inventoryItem.inventoryType,
+    dish: inventoryItem.dish,
+    itemName: inventoryItem.itemName,
+    stockType: 'availableStock',
+    previousStock: previousAvailableStock,
+    newStock: inventoryItem.availableStock,
+    changeAmount: quantity,
+    changeType: 'system_adjustment',
+    reason: reason || '從倉庫調撥',
+    admin: adminId
+  });
 
   // 保存庫存項目
   await inventoryItem.save();
@@ -357,7 +458,8 @@ export const restoreInventoryForCancelledOrder = async (order) => {
   // 查找相關的庫存日誌
   const stockLogs = await StockLog.find({
     order: order._id,
-    changeType: 'order'
+    changeType: 'order',
+    stockType: 'availableStock'
   });
 
   // 如果沒有相關日誌，返回成功
@@ -370,7 +472,8 @@ export const restoreInventoryForCancelledOrder = async (order) => {
     // 查找庫存項目
     const inventoryItem = await Inventory.findOne({
       store: log.store,
-      dish: log.dish
+      dish: log.dish,
+      inventoryType: log.inventoryType
     });
 
     if (!inventoryItem) {
@@ -383,18 +486,21 @@ export const restoreInventoryForCancelledOrder = async (order) => {
     }
 
     // 記錄先前的庫存
-    const previousStock = inventoryItem.stock;
+    const previousStock = inventoryItem.availableStock;
 
     // 還原庫存 (因為減少庫存時 changeAmount 是負數，所以還原時取負值)
-    inventoryItem.stock -= log.changeAmount;
+    inventoryItem.availableStock -= log.changeAmount;
 
     // 創建庫存日誌
     await StockLog.create({
+      brand: log.brand,
       store: log.store,
+      inventoryType: log.inventoryType,
       dish: log.dish,
-      dishName: log.dishName,
+      itemName: log.itemName,
+      stockType: 'availableStock',
       previousStock,
-      newStock: inventoryItem.stock,
+      newStock: inventoryItem.availableStock,
       changeAmount: -log.changeAmount,
       changeType: 'system_adjustment',
       reason: `訂單取消還原庫存: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
@@ -409,45 +515,65 @@ export const restoreInventoryForCancelledOrder = async (order) => {
 };
 
 /**
- * 重置每日限制
- * 這個函數通常在每日結束時通過排程任務調用
- * @param {String} storeId - 店鋪ID (可選，如果不提供則重置所有店鋪)
- * @returns {Promise<Number>} 重置的項目數量
+ * 損耗或過期處理
+ * @param {Object} damageData - 損耗數據
+ * @returns {Promise<Boolean>} 操作是否成功
  */
-export const resetDailyLimits = async (storeId = null) => {
-  // 構建查詢條件
-  const query = {
-    isInventoryTracked: true,
-    dailyLimit: { $ne: null }
-  };
+export const processDamage = async (damageData) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    stockType = 'warehouseStock',
+    quantity,
+    reason,
+    adminId
+  } = damageData;
 
-  // 如果指定了店鋪，只重置該店鋪的限制
-  if (storeId) {
-    query.store = storeId;
+  if (!reason) {
+    throw new AppError('損耗處理必須提供原因', 400);
   }
 
-  // 獲取所有需要重置的庫存項目
-  const inventoryItems = await Inventory.find(query);
+  // 查找庫存項目
+  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
 
-  // 逐一重置每日限制
-  let resetCount = 0;
-  for (const item of inventoryItems) {
-    // 根據餐點模板查找原始設定
-    // 注意：這個邏輯可能需要根據實際業務調整
-    // 這裡假設每日限制重置為與庫存相同的值
-    item.dailyLimit = item.stock;
-    await item.save();
-    resetCount++;
+  // 檢查庫存是否足夠
+  if (inventoryItem[stockType] < quantity) {
+    throw new AppError('庫存不足', 400);
   }
 
-  return resetCount;
+  // 記錄先前的庫存
+  const previousStock = inventoryItem[stockType];
+
+  // 更新庫存
+  inventoryItem[stockType] -= quantity;
+
+  // 創建庫存日誌
+  await StockLog.create({
+    brand: inventoryItem.brand,
+    store: storeId,
+    inventoryType: inventoryItem.inventoryType,
+    dish: inventoryItem.dish,
+    itemName: inventoryItem.itemName,
+    stockType,
+    previousStock,
+    newStock: inventoryItem[stockType],
+    changeAmount: -quantity,
+    changeType: 'damage',
+    reason,
+    admin: adminId
+  });
+
+  // 保存庫存項目
+  await inventoryItem.save();
+
+  return true;
 };
 
 /**
  * 批量更新庫存
- * 適用於從主數據庫同步多個餐點的庫存
  * @param {String} storeId - 店鋪ID
- * @param {Array} items - 餐點庫存數據陣列 [{dishId, dishName, stock, dailyLimit, isInventoryTracked}]
+ * @param {Array} items - 庫存數據陣列
  * @param {String} adminId - 管理員ID
  * @returns {Promise<Object>} 更新結果
  */
@@ -462,60 +588,58 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
     errors: []
   };
 
-  // 逐一處理每個項目
   for (const item of items) {
     try {
-      // 檢查必要字段
-      if (!item.dishId || !item.dishName) {
+      if (!item.itemId && !item.itemName) {
         results.errors.push({
-          dishId: item.dishId || 'unknown',
-          error: '缺少必要欄位'
+          item: item,
+          error: '缺少必要的項目識別資訊'
         });
         continue;
       }
 
-      // 查找現有庫存項目
-      const existingItem = await Inventory.findOne({
-        store: storeId,
-        dish: item.dishId
-      });
+      // 嘗試查找或創建庫存
+      const inventoryItem = await getInventoryItem(
+        storeId,
+        item.itemId,
+        item.inventoryType || 'dish'
+      ).catch(() => null);
 
-      if (existingItem) {
+      if (inventoryItem) {
         // 更新現有項目
-        const updateData = {
-          reason: '批量更新庫存'
-        };
-
-        if (item.stock !== undefined) {
-          updateData.stock = item.stock;
-        }
-
-        if (item.dailyLimit !== undefined) {
-          updateData.dailyLimit = item.dailyLimit;
-        }
-
-        if (item.isInventoryTracked !== undefined) {
-          updateData.isInventoryTracked = item.isInventoryTracked;
-        }
-
-        await updateInventory(storeId, item.dishId, updateData, adminId);
+        await updateInventory({
+          storeId,
+          itemId: item.itemId,
+          inventoryType: item.inventoryType,
+          stockType: item.stockType || 'warehouseStock',
+          stock: item.stock,
+          reason: item.reason || '批量更新庫存',
+          minStockAlert: item.minStockAlert,
+          maxStockLimit: item.maxStockLimit,
+          isInventoryTracked: item.isInventoryTracked,
+          showAvailableStockToCustomer: item.showAvailableStockToCustomer
+        }, adminId);
         results.updated++;
       } else {
         // 創建新項目
-        await createInventory(
+        await createInventory({
+          brandId: item.brandId,
           storeId,
-          item.dishId,
-          item.dishName,
-          item.stock || 0,
-          item.dailyLimit || null,
-          item.isInventoryTracked !== undefined ? item.isInventoryTracked : true,
-          adminId
-        );
+          inventoryType: item.inventoryType || 'dish',
+          dishId: item.inventoryType === 'dish' ? item.itemId : undefined,
+          itemName: item.itemName,
+          initialWarehouseStock: item.warehouseStock || 0,
+          initialAvailableStock: item.availableStock || 0,
+          minStockAlert: item.minStockAlert || 0,
+          maxStockLimit: item.maxStockLimit,
+          isInventoryTracked: item.isInventoryTracked !== undefined ? item.isInventoryTracked : true,
+          showAvailableStockToCustomer: item.showAvailableStockToCustomer || false
+        }, adminId);
         results.created++;
       }
     } catch (error) {
       results.errors.push({
-        dishId: item.dishId || 'unknown',
+        item: item,
         error: error.message
       });
     }

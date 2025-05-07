@@ -19,12 +19,16 @@ export const {
   updateInventory,
   reduceStock,
   addStock,
-  setDailyLimit,
-  restoreInventoryForCancelledOrder
+  transferStock,
+  processDamage,
+  restoreInventoryForCancelledOrder,
+  bulkUpdateInventory
 } = stockManagement;
 
 export const {
   getInventoryLogs,
   getStockTrends,
-  getDishInventoryStats
+  getItemInventoryStats,
+  getInventoryHealthReport,
+  getStockChangeSummary
 } = stockStats;

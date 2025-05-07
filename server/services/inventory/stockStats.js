@@ -10,19 +10,15 @@ import { getStartOfDay, getEndOfDay } from '../../utils/date.js';
 
 /**
  * 獲取庫存變更日誌
- * @param {String} storeId - 店鋪ID
  * @param {Object} options - 查詢選項
- * @param {String} options.dishId - 餐點ID (可選)
- * @param {Date} options.startDate - 開始日期 (可選)
- * @param {Date} options.endDate - 結束日期 (可選)
- * @param {String} options.changeType - 變更類型 (可選: 'manual_add', 'manual_subtract', 'order', 'system_adjustment', 'initial_stock')
- * @param {Number} options.page - 頁碼 (默認 1)
- * @param {Number} options.limit - 每頁數量 (默認 20)
  * @returns {Promise<Object>} 庫存日誌及分頁資訊
  */
-export const getInventoryLogs = async (storeId, options = {}) => {
+export const getInventoryLogs = async (options = {}) => {
   const {
-    dishId,
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    stockType,
     startDate,
     endDate,
     changeType,
@@ -33,9 +29,24 @@ export const getInventoryLogs = async (storeId, options = {}) => {
   // 構建查詢條件
   const query = { store: storeId };
 
-  // 過濾特定餐點
-  if (dishId) {
-    query.dish = dishId;
+  // 篩選庫存類型
+  if (inventoryType) {
+    query.inventoryType = inventoryType;
+  }
+
+  // 篩選特定項目
+  if (itemId) {
+    if (inventoryType === 'dish') {
+      query.dish = itemId;
+    } else {
+      // 對於非餐點類型，itemId 可能是項目名稱
+      query.itemName = itemId;
+    }
+  }
+
+  // 篩選庫存類型（倉庫或可販售）
+  if (stockType) {
+    query.stockType = stockType;
   }
 
   // 過濾日期範圍
@@ -69,7 +80,8 @@ export const getInventoryLogs = async (storeId, options = {}) => {
     .limit(limit)
     .populate('admin', 'name')
     .populate('order', 'orderDateCode sequence')
-    .populate('dish', 'name');
+    .populate('dish', 'name')
+    .populate('brand', 'name');
 
   // 處理分頁資訊
   const totalPages = Math.ceil(total / limit);
@@ -90,24 +102,40 @@ export const getInventoryLogs = async (storeId, options = {}) => {
 };
 
 /**
- * 獲取庫存趨勢數據 (一段時間內的變化)
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
- * @param {Number} days - 天數 (默認 30)
+ * 獲取庫存趨勢數據
+ * @param {Object} options - 查詢選項
  * @returns {Promise<Array>} 庫存趨勢數據
  */
-export const getStockTrends = async (storeId, dishId, days = 30) => {
+export const getStockTrends = async (options = {}) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish',
+    stockType = 'warehouseStock',
+    days = 30
+  } = options;
+
   // 計算開始日期
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   startDate.setHours(0, 0, 0, 0);
 
-  // 查詢此期間的所有庫存日誌
-  const logs = await StockLog.find({
+  // 構建查詢條件
+  const logQuery = {
     store: storeId,
-    dish: dishId,
+    inventoryType,
+    stockType,
     createdAt: { $gte: startDate }
-  }).sort({ createdAt: 1 });
+  };
+
+  if (inventoryType === 'dish' && itemId) {
+    logQuery.dish = itemId;
+  } else if (itemId) {
+    logQuery.itemName = itemId;
+  }
+
+  // 查詢此期間的所有庫存日誌
+  const logs = await StockLog.find(logQuery).sort({ createdAt: 1 });
 
   // 初始化結果數組
   const trends = [];
@@ -120,8 +148,7 @@ export const getStockTrends = async (storeId, dishId, days = 30) => {
   // 查詢初始庫存
   let initialStock = 0;
   const initialLogBefore = await StockLog.findOne({
-    store: storeId,
-    dish: dishId,
+    ...logQuery,
     createdAt: { $lt: startDate }
   }).sort({ createdAt: -1 });
 
@@ -150,6 +177,7 @@ export const getStockTrends = async (storeId, dishId, days = 30) => {
     let additions = 0;
     let subtractions = 0;
     let orderConsumption = 0;
+    let damages = 0;
 
     dayLogs.forEach(log => {
       dayChange += log.changeAmount;
@@ -159,6 +187,8 @@ export const getStockTrends = async (storeId, dishId, days = 30) => {
       } else if (log.changeAmount < 0) {
         if (log.changeType === 'order') {
           orderConsumption += Math.abs(log.changeAmount);
+        } else if (log.changeType === 'damage') {
+          damages += Math.abs(log.changeAmount);
         }
         subtractions += Math.abs(log.changeAmount);
       }
@@ -175,7 +205,8 @@ export const getStockTrends = async (storeId, dishId, days = 30) => {
       additions,
       subtractions,
       orderConsumption,
-      adjustments: subtractions - orderConsumption
+      damages,
+      adjustments: subtractions - orderConsumption - damages
     });
 
     // 移至下一天
@@ -186,35 +217,55 @@ export const getStockTrends = async (storeId, dishId, days = 30) => {
 };
 
 /**
- * 獲取餐點庫存統計
- * @param {String} storeId - 店鋪ID
- * @param {String} dishId - 餐點ID
+ * 獲取項目庫存統計
+ * @param {Object} options - 查詢選項
  * @returns {Promise<Object>} 庫存統計
  */
-export const getDishInventoryStats = async (storeId, dishId) => {
+export const getItemInventoryStats = async (options = {}) => {
+  const {
+    storeId,
+    itemId,
+    inventoryType = 'dish'
+  } = options;
+
   // 查詢當前庫存
-  const inventory = await Inventory.findOne({
+  const query = {
     store: storeId,
-    dish: dishId
-  });
+    inventoryType
+  };
+
+  if (inventoryType === 'dish') {
+    query.dish = itemId;
+  } else {
+    query._id = itemId;
+  }
+
+  const inventory = await Inventory.findOne(query);
 
   if (!inventory) {
     return {
-      currentStock: 0,
-      dailyLimit: null,
+      currentWarehouseStock: 0,
+      currentAvailableStock: 0,
+      minStockAlert: 0,
+      maxStockLimit: null,
       isTracked: false,
+      showToCustomer: false,
       consumptionRate: 0,
       estimatedDaysLeft: 0,
       lastUpdate: null,
+      needsRestock: false,
+      isOverstock: false,
       stats: {
         last7Days: {
           consumed: 0,
           added: 0,
+          damaged: 0,
           netChange: 0
         },
         last30Days: {
           consumed: 0,
           added: 0,
+          damaged: 0,
           netChange: 0
         }
       }
@@ -230,11 +281,19 @@ export const getDishInventoryStats = async (storeId, dishId) => {
   last30Days.setDate(last30Days.getDate() - 30);
 
   // 查詢最近 30 天的庫存變更日誌
-  const logs = await StockLog.find({
+  const logQuery = {
     store: storeId,
-    dish: dishId,
+    inventoryType,
     createdAt: { $gte: last30Days }
-  });
+  };
+
+  if (inventoryType === 'dish') {
+    logQuery.dish = itemId;
+  } else {
+    logQuery.itemName = inventory.itemName;
+  }
+
+  const logs = await StockLog.find(logQuery);
 
   // 處理統計數據
   const last7DaysLogs = logs.filter(log => log.createdAt >= last7Days);
@@ -242,11 +301,13 @@ export const getDishInventoryStats = async (storeId, dishId) => {
     last7Days: {
       consumed: 0,
       added: 0,
+      damaged: 0,
       netChange: 0
     },
     last30Days: {
       consumed: 0,
       added: 0,
+      damaged: 0,
       netChange: 0
     }
   };
@@ -258,7 +319,11 @@ export const getDishInventoryStats = async (storeId, dishId) => {
     if (log.changeAmount > 0) {
       stats.last7Days.added += log.changeAmount;
     } else {
-      stats.last7Days.consumed += Math.abs(log.changeAmount);
+      if (log.changeType === 'order') {
+        stats.last7Days.consumed += Math.abs(log.changeAmount);
+      } else if (log.changeType === 'damage') {
+        stats.last7Days.damaged += Math.abs(log.changeAmount);
+      }
     }
   });
 
@@ -269,63 +334,74 @@ export const getDishInventoryStats = async (storeId, dishId) => {
     if (log.changeAmount > 0) {
       stats.last30Days.added += log.changeAmount;
     } else {
-      stats.last30Days.consumed += Math.abs(log.changeAmount);
+      if (log.changeType === 'order') {
+        stats.last30Days.consumed += Math.abs(log.changeAmount);
+      } else if (log.changeType === 'damage') {
+        stats.last30Days.damaged += Math.abs(log.changeAmount);
+      }
     }
   });
 
   // 計算消耗率 (每天平均消耗量)
   const dailyConsumptionRate = stats.last30Days.consumed / 30;
 
-  // 計算預估剩餘天數
+  // 計算預估剩餘天數（基於可販售庫存）
   let estimatedDaysLeft = 0;
   if (dailyConsumptionRate > 0) {
-    estimatedDaysLeft = Math.floor(inventory.stock / dailyConsumptionRate);
+    estimatedDaysLeft = Math.floor(inventory.availableStock / dailyConsumptionRate);
   }
 
   // 查詢最後更新時間
-  const lastLog = await StockLog.findOne({
-    store: storeId,
-    dish: dishId
-  }).sort({ createdAt: -1 });
+  const lastLog = await StockLog.findOne(logQuery).sort({ createdAt: -1 });
 
   return {
-    currentStock: inventory.stock,
-    dailyLimit: inventory.dailyLimit,
+    currentWarehouseStock: inventory.warehouseStock,
+    currentAvailableStock: inventory.availableStock,
+    minStockAlert: inventory.minStockAlert,
+    maxStockLimit: inventory.maxStockLimit,
     isTracked: inventory.isInventoryTracked,
+    showToCustomer: inventory.showAvailableStockToCustomer,
     consumptionRate: dailyConsumptionRate,
     estimatedDaysLeft: estimatedDaysLeft,
     lastUpdate: lastLog ? lastLog.createdAt : null,
+    needsRestock: inventory.needsRestock,
+    isOverstock: inventory.isOverstock,
     stats
   };
 };
 
 /**
  * 獲取庫存健康狀況報告
- * 用於識別需要補貨或存貨過多的餐點
  * @param {String} storeId - 店鋪ID
  * @param {Object} options - 選項
- * @param {Number} options.lowStockThreshold - 低庫存閾值 (默認 5)
- * @param {Number} options.criticalDaysThreshold - 庫存不足天數閾值 (默認 3)
- * @param {Number} options.overStockDaysThreshold - 庫存過多天數閾值 (默認 30)
  * @returns {Promise<Object>} 庫存健康報告
  */
 export const getInventoryHealthReport = async (storeId, options = {}) => {
   const {
-    lowStockThreshold = 5,
+    inventoryType,
     criticalDaysThreshold = 3,
     overStockDaysThreshold = 30
   } = options;
 
-  // 獲取店鋪所有庫存項目
-  const inventoryItems = await Inventory.find({
+  // 構建查詢條件
+  const query = {
     store: storeId,
     isInventoryTracked: true
-  }).populate('dish', 'name');
+  };
+
+  if (inventoryType) {
+    query.inventoryType = inventoryType;
+  }
+
+  // 獲取店鋪所有庫存項目
+  const inventoryItems = await Inventory.find(query)
+    .populate('dish', 'name')
+    .populate('brand', 'name');
 
   // 初始化結果
   const result = {
     total: inventoryItems.length,
-    lowStock: [],
+    needsRestock: [],
     critical: [],
     overstock: [],
     healthy: []
@@ -334,25 +410,33 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
   // 逐一檢查每個庫存項目
   for (const item of inventoryItems) {
     // 獲取詳細統計
-    const stats = await getDishInventoryStats(storeId, item.dish._id);
+    const stats = await getItemInventoryStats({
+      storeId,
+      itemId: item.inventoryType === 'dish' ? item.dish._id : item._id,
+      inventoryType: item.inventoryType
+    });
+
     const healthStatus = {
-      id: item.dish._id,
-      name: item.dishName,
-      stock: item.stock,
+      id: item._id,
+      itemType: item.inventoryType,
+      itemName: item.itemName,
+      dishName: item.dish?.name,
+      warehouseStock: item.warehouseStock,
+      availableStock: item.availableStock,
       dailyConsumption: stats.consumptionRate,
       estimatedDaysLeft: stats.estimatedDaysLeft
     };
 
     // 分類庫存健康狀況
-    if (item.stock <= lowStockThreshold) {
-      // 低庫存
-      healthStatus.status = 'low_stock';
-      result.lowStock.push(healthStatus);
+    if (item.needsRestock) {
+      // 需要補貨（低於警告值）
+      healthStatus.status = 'needs_restock';
+      result.needsRestock.push(healthStatus);
     } else if (stats.estimatedDaysLeft <= criticalDaysThreshold) {
       // 庫存即將不足
       healthStatus.status = 'critical';
       result.critical.push(healthStatus);
-    } else if (stats.consumptionRate > 0 && stats.estimatedDaysLeft > overStockDaysThreshold) {
+    } else if (item.isOverstock) {
       // 庫存過多
       healthStatus.status = 'overstock';
       result.overstock.push(healthStatus);
@@ -364,4 +448,69 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
   }
 
   return result;
+};
+
+/**
+ * 獲取庫存變更摘要
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 變更摘要
+ */
+export const getStockChangeSummary = async (options = {}) => {
+  const {
+    storeId,
+    startDate,
+    endDate,
+    inventoryType,
+    groupBy = 'changeType' // 'changeType', 'itemName', 'stockType'
+  } = options;
+
+  // 構建查詢條件
+  const matchConditions = {
+    store: new mongoose.Types.ObjectId(storeId)
+  };
+
+  if (inventoryType) {
+    matchConditions.inventoryType = inventoryType;
+  }
+
+  if (startDate || endDate) {
+    matchConditions.createdAt = {};
+    if (startDate) matchConditions.createdAt.$gte = new Date(startDate);
+    if (endDate) matchConditions.createdAt.$lte = new Date(endDate);
+  }
+
+  // 構建聚合管道
+  const pipeline = [
+    { $match: matchConditions },
+    {
+      $group: {
+        _id: `$${groupBy}`,
+        totalChanges: { $sum: 1 },
+        totalAmount: { $sum: '$changeAmount' },
+        increases: {
+          $sum: {
+            $cond: [{ $gt: ['$changeAmount', 0] }, '$changeAmount', 0]
+          }
+        },
+        decreases: {
+          $sum: {
+            $cond: [{ $lt: ['$changeAmount', 0] }, '$changeAmount', 0]
+          }
+        }
+      }
+    },
+    { $sort: { _id: 1 } }
+  ];
+
+  const summary = await StockLog.aggregate(pipeline);
+
+  return summary.reduce((acc, item) => {
+    acc[item._id] = {
+      totalChanges: item.totalChanges,
+      totalAmount: item.totalAmount,
+      increases: item.increases,
+      decreases: Math.abs(item.decreases)
+    };
+    return acc;
+  }, {});
 };
