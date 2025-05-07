@@ -144,19 +144,19 @@
               <div class="col-md-3">
                 <div class="text-center">
                   <h6 class="text-muted">總入庫</h6>
-                  <h4 class="mb-0 text-success">+{{ stats.totalIncoming }}</h4>
+                  <h4 class="mb-0 text-success">+{{ stats.last30Days?.added || 0 }}</h4>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="text-center">
                   <h6 class="text-muted">總出庫</h6>
-                  <h4 class="mb-0 text-danger">-{{ stats.totalOutgoing }}</h4>
+                  <h4 class="mb-0 text-danger">-{{ stats.last30Days?.consumed || 0 }}</h4>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="text-center">
                   <h6 class="text-muted">日均消耗</h6>
-                  <h4 class="mb-0">{{ stats.dailyAverage.toFixed(1) }}</h4>
+                  <h4 class="mb-0">{{ (stats.consumptionRate || 0).toFixed(1) }}</h4>
                 </div>
               </div>
               <div class="col-md-3">
@@ -225,7 +225,7 @@
       </div>
     </div>
 
-    <!-- 調整庫存 Modal (重用 StockStatus 的 Modal) -->
+    <!-- 調整庫存 Modal -->
     <StockAdjustModal v-if="showAdjustModal" :item="inventoryItem" :store-id="storeId" :brand-id="brandId"
       @close="showAdjustModal = false" @success="handleAdjustSuccess" />
 
@@ -397,19 +397,19 @@ const getChangeTypeBadgeClass = (type) => {
 
 // 獲取剩餘天數
 const getDaysRemaining = () => {
-  if (!inventoryItem.value || !stats.value || stats.value.dailyAverage === 0) {
+  if (!inventoryItem.value || !stats.value || stats.value.consumptionRate === 0) {
     return '無法計算';
   }
-  const days = Math.floor(inventoryItem.value.availableStock / stats.value.dailyAverage);
+  const days = Math.floor(inventoryItem.value.availableStock / stats.value.consumptionRate);
   return days > 0 ? `${days} 天` : '即將耗盡';
 };
 
 // 獲取剩餘天數樣式
 const getDaysRemainingClass = () => {
-  if (!inventoryItem.value || !stats.value || stats.value.dailyAverage === 0) {
+  if (!inventoryItem.value || !stats.value || stats.value.consumptionRate === 0) {
     return '';
   }
-  const days = Math.floor(inventoryItem.value.availableStock / stats.value.dailyAverage);
+  const days = Math.floor(inventoryItem.value.availableStock / stats.value.consumptionRate);
   if (days <= 3) return 'text-danger';
   if (days <= 7) return 'text-warning';
   return 'text-success';
@@ -445,7 +445,7 @@ const fetchInventoryDetail = async () => {
     await fetchRecentLogs();
   } catch (err) {
     console.error('獲取庫存詳情失敗:', err);
-    error.value = '獲取庫存詳情時發生錯誤';
+    error.value = err.response?.data?.message || '獲取庫存詳情時發生錯誤';
   } finally {
     isLoading.value = false;
   }

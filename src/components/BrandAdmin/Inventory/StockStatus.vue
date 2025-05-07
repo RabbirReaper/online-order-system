@@ -148,7 +148,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in inventorys" :key="item._id" :class="getRowClass(item)">
+              <tr v-for="item in inventories" :key="item._id" :class="getRowClass(item)">
                 <td>
                   <span class="badge" :class="item.inventoryType === 'dish' ? 'bg-info' : 'bg-secondary'">
                     {{ item.inventoryType === 'dish' ? '餐點' : '其他' }}
@@ -179,7 +179,8 @@
                     <button class="btn btn-outline-primary" @click="openAdjustModal(item)">
                       <i class="bi bi-pencil"></i> 調整
                     </button>
-                    <router-link :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}`"
+                    <router-link
+                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`"
                       class="btn btn-outline-secondary">
                       <i class="bi bi-eye"></i> 詳情
                     </router-link>
@@ -188,7 +189,7 @@
               </tr>
 
               <!-- 無資料提示 -->
-              <tr v-if="!inventorys || inventorys.length === 0">
+              <tr v-if="!inventories || inventories.length === 0">
                 <td colspan="9" class="text-center py-4">
                   <div class="text-muted">
                     {{ searchQuery ? '沒有符合搜尋條件的庫存項目' : '尚未建立任何庫存項目' }}
@@ -224,40 +225,9 @@
     <CreateInventoryModal v-if="showCreateModal" :store-id="storeId" :brand-id="brandId"
       @close="showCreateModal = false" @success="handleCreateSuccess" />
 
-    <!-- 庫存調整 Modal (保持原有) -->
-    <div class="modal fade" id="adjustStockModal" tabindex="-1" ref="adjustModalRef">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">調整庫存</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body" v-if="selectedItem">
-            <h6 class="mb-3">{{ selectedItem.itemName }}</h6>
-
-            <!-- 調整類型選擇 -->
-            <div class="mb-3">
-              <label class="form-label">調整類型</label>
-              <select v-model="adjustForm.type" class="form-select" @change="resetAdjustForm">
-                <option value="warehouse">調整倉庫庫存</option>
-                <option value="available">調整可販售庫存</option>
-                <option value="transfer">轉移到可販售</option>
-                <option value="damage">損耗處理</option>
-              </select>
-            </div>
-
-            <!-- 調整表單的其餘部分保持不變... -->
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="submitAdjustment" :disabled="isAdjusting">
-              <span v-if="isAdjusting" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isAdjusting ? '處理中...' : '確認調整' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- 庫存調整 Modal -->
+    <StockAdjustModal v-if="showAdjustModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
+      @close="showAdjustModal = false" @success="handleAdjustSuccess" />
   </div>
 </template>
 
@@ -267,6 +237,7 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '@/api';
 import InitializeDishInventoryModal from './InitializeDishInventoryModal.vue';
 import CreateInventoryModal from './CreateInventoryModal.vue';
+import StockAdjustModal from './StockAdjustModal.vue';
 
 // 路由
 const route = useRoute();
@@ -277,14 +248,16 @@ const storeId = computed(() => route.params.storeId);
 // 狀態
 const isLoading = ref(true);
 const error = ref('');
-const inventorys = ref([]);
+const inventories = ref([]);
 const searchQuery = ref('');
 const currentPage = ref(1);
 const storeName = ref('');
 
-// 新增的狀態
+// Modal 狀態
 const showInitializeModal = ref(false);
 const showCreateModal = ref(false);
+const showAdjustModal = ref(false);
+const selectedItem = ref(null);
 
 // 篩選條件
 const filters = reactive({
@@ -306,23 +279,6 @@ const stats = ref({
   lowStock: 0,
   outOfStock: 0,
   overStock: 0
-});
-
-// 調整庫存相關
-const adjustModalRef = ref(null);
-const selectedItem = ref(null);
-const isAdjusting = ref(false);
-const adjustError = ref('');
-
-// 調整表單
-const adjustForm = ref({
-  type: 'warehouse',
-  warehouseStock: 0,
-  availableStock: 0,
-  transferQuantity: 1,
-  damageFrom: 'warehouse',
-  damageQuantity: 1,
-  reason: ''
 });
 
 // 計算可見頁碼
@@ -356,13 +312,18 @@ const visiblePages = computed(() => {
   return pages;
 });
 
-// 新增方法
+// Modal 操作方法
 const openInitializeModal = () => {
   showInitializeModal.value = true;
 };
 
 const openCreateModal = () => {
   showCreateModal.value = true;
+};
+
+const openAdjustModal = (item) => {
+  selectedItem.value = item;
+  showAdjustModal.value = true;
 };
 
 const handleInitializeSuccess = () => {
@@ -375,7 +336,13 @@ const handleCreateSuccess = () => {
   fetchInventory();
 };
 
-// 其餘方法保持不變...
+const handleAdjustSuccess = () => {
+  showAdjustModal.value = false;
+  selectedItem.value = null;
+  fetchInventory();
+};
+
+// 庫存狀態相關方法
 const getStatusText = (item) => {
   if (!item.isInventoryTracked) return '不追蹤';
   if (item.availableStock === 0) return '缺貨';
@@ -402,6 +369,7 @@ const getRowClass = (item) => {
   return '';
 };
 
+// 獲取庫存列表
 const fetchInventory = async () => {
   if (!storeId.value) {
     error.value = '請選擇店鋪';
@@ -428,14 +396,14 @@ const fetchInventory = async () => {
     }
 
     const response = await api.inventory.getStoreInventory(params);
-    console.log('獲取庫存列表:', response);
+
     if (response && response.inventory) {
-      inventorys.value = response.inventory;
-      pagination.total = response.total || 0;
-      pagination.totalPages = response.totalPages || 1;
+      inventories.value = response.inventory;
+      pagination.total = response.total || response.inventory.length;
+      pagination.totalPages = response.totalPages || Math.ceil(pagination.total / pagination.limit);
 
       if (filters.status) {
-        inventorys.value = inventorys.value.filter(item => {
+        inventories.value = inventories.value.filter(item => {
           const status = getStatusText(item);
           switch (filters.status) {
             case 'normal': return status === '正常';
@@ -449,7 +417,7 @@ const fetchInventory = async () => {
 
       updateStats();
     } else {
-      inventorys.value = [];
+      inventories.value = [];
       pagination.total = 0;
       pagination.totalPages = 1;
       stats.value = {
@@ -461,8 +429,8 @@ const fetchInventory = async () => {
     }
   } catch (err) {
     console.error('獲取庫存列表失敗:', err);
-    error.value = '獲取庫存列表時發生錯誤';
-    inventorys.value = [];
+    error.value = err.response?.data?.message || '獲取庫存列表時發生錯誤';
+    inventories.value = [];
     pagination.total = 0;
     pagination.totalPages = 1;
     stats.value = {
@@ -476,8 +444,9 @@ const fetchInventory = async () => {
   }
 };
 
+// 更新統計數據
 const updateStats = () => {
-  if (!inventorys.value || !Array.isArray(inventorys.value)) {
+  if (!inventories.value || !Array.isArray(inventories.value)) {
     stats.value = {
       totalItems: 0,
       lowStock: 0,
@@ -488,18 +457,20 @@ const updateStats = () => {
   }
 
   stats.value = {
-    totalItems: inventorys.value.length,
-    lowStock: inventorys.value.filter(item => getStatusText(item) === '低庫存').length,
-    outOfStock: inventorys.value.filter(item => getStatusText(item) === '缺貨').length,
-    overStock: inventorys.value.filter(item => getStatusText(item) === '庫存過多').length
+    totalItems: inventories.value.length,
+    lowStock: inventories.value.filter(item => getStatusText(item) === '低庫存').length,
+    outOfStock: inventories.value.filter(item => getStatusText(item) === '缺貨').length,
+    overStock: inventories.value.filter(item => getStatusText(item) === '庫存過多').length
   };
 };
 
+// 搜尋處理
 const handleSearch = () => {
   currentPage.value = 1;
   fetchInventory();
 };
 
+// 篩選操作
 const applyFilters = () => {
   currentPage.value = 1;
   fetchInventory();
@@ -513,119 +484,14 @@ const resetFilters = () => {
   fetchInventory();
 };
 
+// 換頁
 const changePage = (page) => {
   if (page < 1 || page > pagination.totalPages || page === '...') return;
   currentPage.value = page;
   fetchInventory();
 };
 
-// 修改 openAdjustModal 方法，不使用 Modal 實例
-const openAdjustModal = (item) => {
-  selectedItem.value = item;
-  adjustForm.value.warehouseStock = item.warehouseStock;
-  adjustForm.value.availableStock = item.availableStock;
-  adjustForm.value.reason = '';
-  adjustError.value = '';
-
-};
-
-const resetAdjustForm = () => {
-  adjustForm.value.reason = '';
-  adjustForm.value.transferQuantity = 1;
-  adjustForm.value.damageQuantity = 1;
-};
-
-const getDamageMaxQuantity = () => {
-  if (!selectedItem.value) return 0;
-  if (adjustForm.value.damageFrom === 'warehouse') {
-    return selectedItem.value.warehouseStock;
-  } else {
-    return selectedItem.value.availableStock;
-  }
-};
-
-const submitAdjustment = async () => {
-  if (!selectedItem.value || !adjustForm.value.reason.trim()) {
-    adjustError.value = '請填寫調整原因';
-    return;
-  }
-
-  isAdjusting.value = true;
-  adjustError.value = '';
-
-  try {
-    let response;
-    const itemId = selectedItem.value._id;
-    const inventoryType = selectedItem.value.inventoryType;
-
-    switch (adjustForm.value.type) {
-      case 'warehouse':
-        response = await api.inventory.updateInventory({
-          storeId: storeId.value,
-          itemId,
-          data: {
-            inventoryType,
-            stockType: 'warehouseStock',
-            stock: adjustForm.value.warehouseStock,
-            reason: adjustForm.value.reason
-          }
-        });
-        break;
-
-      case 'available':
-        response = await api.inventory.updateInventory({
-          storeId: storeId.value,
-          itemId,
-          data: {
-            inventoryType,
-            stockType: 'availableStock',
-            stock: adjustForm.value.availableStock,
-            reason: adjustForm.value.reason
-          }
-        });
-        break;
-
-      case 'transfer':
-        response = await api.inventory.transferStock({
-          storeId: storeId.value,
-          itemId,
-          quantity: adjustForm.value.transferQuantity,
-          reason: adjustForm.value.reason,
-          inventoryType
-        });
-        break;
-
-      case 'damage':
-        response = await api.inventory.processDamage({
-          storeId: storeId.value,
-          itemId,
-          quantity: adjustForm.value.damageQuantity,
-          reason: adjustForm.value.reason,
-          stockType: adjustForm.value.damageFrom === 'warehouse' ? 'warehouseStock' : 'availableStock',
-          inventoryType
-        });
-        break;
-    }
-
-    if (response) {
-      // 關閉 modal - 使用原生 Bootstrap 方法
-      const modalElement = document.getElementById('adjustStockModal');
-      if (modalElement) {
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        if (modal) {
-          modal.hide();
-        }
-      }
-      fetchInventory();
-    }
-  } catch (err) {
-    console.error('調整庫存失敗:', err);
-    adjustError.value = err.response?.data?.message || '調整庫存時發生錯誤';
-  } finally {
-    isAdjusting.value = false;
-  }
-};
-
+// 獲取店鋪資訊
 const fetchStoreInfo = async () => {
   if (!storeId.value) return;
 
@@ -639,8 +505,8 @@ const fetchStoreInfo = async () => {
   }
 };
 
+// 生命週期
 onMounted(() => {
-
   fetchStoreInfo();
   fetchInventory();
 });

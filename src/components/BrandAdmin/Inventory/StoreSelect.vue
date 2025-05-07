@@ -129,12 +129,12 @@ const fetchStores = async () => {
 
     if (response && response.stores) {
       stores.value = response.stores;
-
-      // 不再自動獲取所有統計，改為按需載入
+    } else {
+      stores.value = [];
     }
   } catch (err) {
     console.error('獲取店鋪列表失敗:', err);
-    error.value = '獲取店鋪列表時發生錯誤';
+    error.value = err.response?.data?.message || '獲取店鋪列表時發生錯誤';
   } finally {
     isLoading.value = false;
   }
@@ -148,24 +148,17 @@ const fetchStoreStats = async (store) => {
   }
   loadingStats.value[store._id] = true;
 
-  storeStats.value[store._id] = {
-    totalItems: 0,
-    lowStock: 0,
-    outOfStock: 0,
-    normal: 0
-  };
-
   try {
     // 使用獲取店鋪庫存列表的 API 來計算統計
     const response = await api.inventory.getStoreInventory({
       storeId: store._id,
       inventoryType: 'dish',
-      limit: 1000 // 設置較大的 limit 來獲取所有項目
+      onlyTracked: true
     });
 
-    if (response && response.inventoryItems) {
+    if (response && response.inventory) {
       // 手動計算統計數據
-      const items = response.inventoryItems;
+      const items = response.inventory;
       const stats = {
         totalItems: items.length,
         lowStock: 0,
@@ -187,9 +180,22 @@ const fetchStoreStats = async (store) => {
       });
 
       storeStats.value[store._id] = stats;
+    } else {
+      storeStats.value[store._id] = {
+        totalItems: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        normal: 0
+      };
     }
   } catch (err) {
     console.error(`獲取店鋪 ${store.name} 的庫存統計失敗:`, err);
+    storeStats.value[store._id] = {
+      totalItems: 0,
+      lowStock: 0,
+      outOfStock: 0,
+      normal: 0
+    };
   } finally {
     loadingStats.value[store._id] = false;
   }

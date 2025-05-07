@@ -235,7 +235,7 @@ const visiblePages = computed(() => {
     }
   }
 
-  return pages;
+  return pages.filter((page, index, self) => self.indexOf(page) === index);
 });
 
 // 格式化日期時間
@@ -324,9 +324,16 @@ const fetchStockLogs = async () => {
 
     const response = await api.inventory.getInventoryLogs(params);
 
-    stockLogs.value = response.logs;
-    pagination.total = response.total;
-    pagination.totalPages = response.totalPages;
+    if (response) {
+      stockLogs.value = response.logs || [];
+      pagination.total = response.pagination?.total || response.total || 0;
+      pagination.totalPages = response.pagination?.totalPages || response.totalPages ||
+        Math.ceil(pagination.total / pagination.limit);
+    } else {
+      stockLogs.value = [];
+      pagination.total = 0;
+      pagination.totalPages = 1;
+    }
   } catch (err) {
     console.error('獲取庫存日誌失敗:', err);
 

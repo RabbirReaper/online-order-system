@@ -59,9 +59,9 @@
           <div v-if="adjustForm.type === 'transfer'" class="mb-3">
             <label class="form-label">轉移數量</label>
             <input type="number" v-model.number="adjustForm.transferQuantity" class="form-control" min="1"
-              :max="item.warehouseStock - item.availableStock">
+              :max="Math.max(0, item.warehouseStock - item.availableStock)">
             <div class="form-text text-muted">
-              最多可轉移: {{ item.warehouseStock - item.availableStock }}
+              最多可轉移: {{ Math.max(0, item.warehouseStock - item.availableStock) }}
             </div>
           </div>
 
@@ -142,6 +142,18 @@ const adjustForm = ref({
   reason: ''
 });
 
+// 獲取正確的項目 ID
+// 根據後端邏輯，dish 類型的庫存使用 dish ID，其他類型使用 _id
+const getItemId = () => {
+  if (props.item.inventoryType === 'dish') {
+    // 對於餐點類型，使用 dish 字段（可能是對象或 ID）
+    return typeof props.item.dish === 'object' ? props.item.dish._id : props.item.dish;
+  } else {
+    // 對於其他類型，使用庫存項目的 _id
+    return props.item._id;
+  }
+};
+
 // 初始化表單值
 const initForm = () => {
   if (props.item) {
@@ -155,6 +167,7 @@ const resetForm = () => {
   adjustForm.value.reason = '';
   adjustForm.value.transferQuantity = 1;
   adjustForm.value.damageQuantity = 1;
+  initForm();
 };
 
 // 獲取損耗最大數量
@@ -184,8 +197,17 @@ const submitAdjustment = async () => {
 
   try {
     let response;
-    const itemId = props.item._id;
-    const inventoryType = props.item.inventoryType;
+    const itemId = getItemId();
+    const inventoryType = props.item.inventoryType || 'dish';
+
+    console.log('提交庫存調整:', {
+      itemId,
+      inventoryType,
+      storeId: props.storeId,
+      type: adjustForm.value.type,
+      dish: props.item.dish,
+      _id: props.item._id
+    });
 
     switch (adjustForm.value.type) {
       case 'warehouse':
@@ -241,7 +263,26 @@ const submitAdjustment = async () => {
     }
   } catch (err) {
     console.error('調整庫存失敗:', err);
-    error.value = err.response?.data?.message || '調整庫存時發生錯誤';
+    console.error('錯誤詳情:', {
+      response: err.response,
+      data: err.response?.data,
+      status: err.response?.status,
+      url: err.config?.url,
+      method: err.config?.method,
+      itemId: getItemId(),
+      item: props.item
+    });
+
+    // 更詳細的錯誤處理
+    if (err.response?.status === 404) {
+      error.value = '找不到此庫存項目。對於餐點類型，請確認使用正確的 ID。';
+    } else if (err.response?.status === 403) {
+      error.value = '權限不足，請確認您有 order_system 權限';
+    } else if (err.response?.data?.message) {
+      error.value = err.response.data.message;
+    } else {
+      error.value = '調整庫存時發生錯誤，請稍後再試';
+    }
   } finally {
     isSubmitting.value = false;
   }
@@ -255,6 +296,7 @@ watch(() => props.item, () => {
 // 生命週期
 onMounted(() => {
   initForm();
+  console.log('庫存項目資料:', props.item);
 });
 </script>
 
