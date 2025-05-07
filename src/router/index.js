@@ -118,6 +118,7 @@ const router = createRouter({
           name: 'brand-admin-dashboard',
           component: () => import('@/components/BrandAdmin/DashBoard/Dashboard.vue')
         },
+
         // 店鋪管理路由
         {
           path: 'stores',
@@ -141,6 +142,7 @@ const router = createRouter({
           component: () => import('@/components/BrandAdmin/Store/StoreDetail.vue'),
           props: true
         },
+
         // 菜單管理路由
         {
           path: 'menus',
@@ -172,6 +174,7 @@ const router = createRouter({
           component: () => import('@/components/BrandAdmin/Menu/MenuDetail.vue'),
           meta: { requiresAuth: true, title: '菜單詳情' }
         },
+
         // 餐點模板路由
         {
           path: 'dishes/template',
@@ -197,6 +200,7 @@ const router = createRouter({
           component: () => import('@/components/BrandAdmin/Dish/DishTemplate/Detail.vue'),
           meta: { requiresAuth: true, title: '餐點詳情' }
         },
+
         // 選項類別路由
         {
           path: 'option-categories',
@@ -245,25 +249,27 @@ const router = createRouter({
           props: true,
           meta: { requiresAuth: true, title: '編輯選項' }
         },
-        // 庫存管理（預留）
+
+        // 庫存管理
         {
           path: 'inventory',
           name: 'brand-admin-inventory',
-          component: Placeholder,
-          props: {
-            title: '庫存管理功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Inventory/StockStatus.vue'),
+          meta: { requiresAuth: true, title: '庫存管理' }
+        },
+        {
+          path: 'inventory/detail/:id',
+          name: 'brand-admin-inventory-detail',
+          component: () => import('@/components/BrandAdmin/Inventory/StockDetail.vue'),
+          meta: { requiresAuth: true, title: '庫存詳情' }
         },
         {
           path: 'inventory/logs',
           name: 'brand-admin-inventory-logs',
-          component: Placeholder,
-          props: {
-            title: '庫存變更記錄功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Inventory/StockLog.vue'),
+          meta: { requiresAuth: true, title: '庫存變更記錄' }
         },
+
         // 訂單管理（預留）
         {
           path: 'orders',
