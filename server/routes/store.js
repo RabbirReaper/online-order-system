@@ -33,21 +33,20 @@ router.get('/:id/status', storeController.getStoreCurrentStatus);
 
 // 庫存路由
 router.get('/:storeId/inventory', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getStoreInventory);
-router.get('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
 router.post('/:storeId/inventory', authMiddleware, permissionMiddleware(['order_system']), inventoryController.createInventory);
-router.put('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
 
-// 庫存操作路由
 router.get('/:storeId/inventory/summary', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockChangeSummary);
 router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryHealthReport);
 router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryLogs);
 router.post('/:storeId/inventory/bulk', authMiddleware, permissionMiddleware(['order_system']), inventoryController.bulkUpdateInventory);
 
+router.put('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
+router.get('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
+
 router.post('/:storeId/inventory/:itemId/reduce', authMiddleware, permissionMiddleware(['order_system']), inventoryController.reduceStock);
 router.post('/:storeId/inventory/:itemId/add', authMiddleware, permissionMiddleware(['order_system']), inventoryController.addStock);
 router.post('/:storeId/inventory/:itemId/transfer', authMiddleware, permissionMiddleware(['order_system']), inventoryController.transferStock);
 router.post('/:storeId/inventory/:itemId/damage', authMiddleware, permissionMiddleware(['order_system']), inventoryController.processDamage);
-
 router.get('/:storeId/inventory/:itemId/trends', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockTrends);
 router.get('/:storeId/inventory/:itemId/stats', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getItemInventoryStats);
 
