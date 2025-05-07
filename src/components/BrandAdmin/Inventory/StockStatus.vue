@@ -148,7 +148,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in inventoryItems" :key="item._id" :class="getRowClass(item)">
+              <tr v-for="item in inventorys" :key="item._id" :class="getRowClass(item)">
                 <td>
                   <span class="badge" :class="item.inventoryType === 'dish' ? 'bg-info' : 'bg-secondary'">
                     {{ item.inventoryType === 'dish' ? '餐點' : '其他' }}
@@ -188,7 +188,7 @@
               </tr>
 
               <!-- 無資料提示 -->
-              <tr v-if="!inventoryItems || inventoryItems.length === 0">
+              <tr v-if="!inventorys || inventorys.length === 0">
                 <td colspan="9" class="text-center py-4">
                   <div class="text-muted">
                     {{ searchQuery ? '沒有符合搜尋條件的庫存項目' : '尚未建立任何庫存項目' }}
@@ -277,7 +277,7 @@ const storeId = computed(() => route.params.storeId);
 // 狀態
 const isLoading = ref(true);
 const error = ref('');
-const inventoryItems = ref([]);
+const inventorys = ref([]);
 const searchQuery = ref('');
 const currentPage = ref(1);
 const storeName = ref('');
@@ -428,14 +428,14 @@ const fetchInventory = async () => {
     }
 
     const response = await api.inventory.getStoreInventory(params);
-
-    if (response && response.inventoryItems) {
-      inventoryItems.value = response.inventoryItems;
+    console.log('獲取庫存列表:', response);
+    if (response && response.inventory) {
+      inventorys.value = response.inventory;
       pagination.total = response.total || 0;
       pagination.totalPages = response.totalPages || 1;
 
       if (filters.status) {
-        inventoryItems.value = inventoryItems.value.filter(item => {
+        inventorys.value = inventorys.value.filter(item => {
           const status = getStatusText(item);
           switch (filters.status) {
             case 'normal': return status === '正常';
@@ -449,7 +449,7 @@ const fetchInventory = async () => {
 
       updateStats();
     } else {
-      inventoryItems.value = [];
+      inventorys.value = [];
       pagination.total = 0;
       pagination.totalPages = 1;
       stats.value = {
@@ -462,7 +462,7 @@ const fetchInventory = async () => {
   } catch (err) {
     console.error('獲取庫存列表失敗:', err);
     error.value = '獲取庫存列表時發生錯誤';
-    inventoryItems.value = [];
+    inventorys.value = [];
     pagination.total = 0;
     pagination.totalPages = 1;
     stats.value = {
@@ -477,7 +477,7 @@ const fetchInventory = async () => {
 };
 
 const updateStats = () => {
-  if (!inventoryItems.value || !Array.isArray(inventoryItems.value)) {
+  if (!inventorys.value || !Array.isArray(inventorys.value)) {
     stats.value = {
       totalItems: 0,
       lowStock: 0,
@@ -488,10 +488,10 @@ const updateStats = () => {
   }
 
   stats.value = {
-    totalItems: inventoryItems.value.length,
-    lowStock: inventoryItems.value.filter(item => getStatusText(item) === '低庫存').length,
-    outOfStock: inventoryItems.value.filter(item => getStatusText(item) === '缺貨').length,
-    overStock: inventoryItems.value.filter(item => getStatusText(item) === '庫存過多').length
+    totalItems: inventorys.value.length,
+    lowStock: inventorys.value.filter(item => getStatusText(item) === '低庫存').length,
+    outOfStock: inventorys.value.filter(item => getStatusText(item) === '缺貨').length,
+    overStock: inventorys.value.filter(item => getStatusText(item) === '庫存過多').length
   };
 };
 
