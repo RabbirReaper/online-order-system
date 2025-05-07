@@ -38,20 +38,19 @@ router.post('/:storeId/inventory', authMiddleware, permissionMiddleware(['order_
 router.put('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
 
 // 庫存操作路由
+router.get('/:storeId/inventory/summary', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockChangeSummary);
+router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryHealthReport);
+router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryLogs);
+router.post('/:storeId/inventory/bulk', authMiddleware, permissionMiddleware(['order_system']), inventoryController.bulkUpdateInventory);
+
 router.post('/:storeId/inventory/:itemId/reduce', authMiddleware, permissionMiddleware(['order_system']), inventoryController.reduceStock);
 router.post('/:storeId/inventory/:itemId/add', authMiddleware, permissionMiddleware(['order_system']), inventoryController.addStock);
 router.post('/:storeId/inventory/:itemId/transfer', authMiddleware, permissionMiddleware(['order_system']), inventoryController.transferStock);
 router.post('/:storeId/inventory/:itemId/damage', authMiddleware, permissionMiddleware(['order_system']), inventoryController.processDamage);
 
-// 庫存統計路由
-router.get('/:storeId/inventory/summary', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockChangeSummary);
-router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryHealthReport);
-router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryLogs);
 router.get('/:storeId/inventory/:itemId/trends', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockTrends);
 router.get('/:storeId/inventory/:itemId/stats', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getItemInventoryStats);
 
-// 批量操作
-router.post('/:storeId/inventory/bulk', authMiddleware, permissionMiddleware(['order_system']), inventoryController.bulkUpdateInventory);
 
 
 //菜單路由

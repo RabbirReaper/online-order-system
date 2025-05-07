@@ -146,8 +146,14 @@ const fetchStoreStats = async (store) => {
   if (loadingStats.value[store._id] || storeStats.value[store._id]) {
     return;
   }
-
   loadingStats.value[store._id] = true;
+
+  storeStats.value[store._id] = {
+    totalItems: 0,
+    lowStock: 0,
+    outOfStock: 0,
+    normal: 0
+  };
 
   try {
     // 使用獲取店鋪庫存列表的 API 來計算統計
@@ -184,13 +190,6 @@ const fetchStoreStats = async (store) => {
     }
   } catch (err) {
     console.error(`獲取店鋪 ${store.name} 的庫存統計失敗:`, err);
-    // 設置預設值
-    storeStats.value[store._id] = {
-      totalItems: 0,
-      lowStock: 0,
-      outOfStock: 0,
-      normal: 0
-    };
   } finally {
     loadingStats.value[store._id] = false;
   }
