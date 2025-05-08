@@ -10,66 +10,62 @@
       </div>
       <div class="d-flex gap-2">
         <!-- 新增按鈕組 -->
-        <div class="btn-group">
-          <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+        <BDropdown variant="primary" text="新增庫存" class="btn-group">
+          <template #button-content>
             <i class="bi bi-plus-lg me-1"></i>新增庫存
-          </button>
-          <ul class="dropdown-menu">
-            <li>
-              <button class="dropdown-item" @click="openInitializeModal">
-                <i class="bi bi-box-seam me-2"></i>初始化餐點庫存
-              </button>
-            </li>
-            <li>
-              <button class="dropdown-item" @click="openCreateModal">
-                <i class="bi bi-plus-circle me-2"></i>新增自訂義庫存
-              </button>
-            </li>
-          </ul>
-        </div>
+          </template>
+          <BDropdownItem @click="openInitializeModal">
+            <i class="bi bi-box-seam me-2"></i>初始化餐點庫存
+          </BDropdownItem>
+          <BDropdownItem @click="openCreateModal">
+            <i class="bi bi-plus-circle me-2"></i>新增自訂義庫存
+          </BDropdownItem>
+        </BDropdown>
 
         <!-- 原有的篩選和搜尋按鈕 -->
-        <div class="dropdown">
-          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <BDropdown variant="outline-secondary" text="篩選" auto-close="outside">
+          <template #button-content>
             <i class="bi bi-filter me-1"></i>篩選
-          </button>
-          <div class="dropdown-menu p-3" style="min-width: 300px;">
-            <!-- 庫存類型篩選 -->
-            <div class="mb-3">
-              <label class="form-label">庫存類型</label>
-              <select v-model="filters.inventoryType" class="form-select" @change="applyFilters">
-                <option value="">全部類型</option>
-                <option value="dish">餐點</option>
-                <option value="else">其他</option>
-              </select>
-            </div>
-
-            <!-- 庫存狀態篩選 -->
-            <div class="mb-3">
-              <label class="form-label">庫存狀態</label>
-              <select v-model="filters.status" class="form-select" @change="applyFilters">
-                <option value="">全部狀態</option>
-                <option value="normal">正常</option>
-                <option value="low">低庫存</option>
-                <option value="out">缺貨</option>
-                <option value="overstock">庫存過多</option>
-              </select>
-            </div>
-
-            <!-- 追蹤狀態篩選 -->
-            <div class="mb-3">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" v-model="filters.onlyTracked" id="onlyTracked"
-                  @change="applyFilters">
-                <label class="form-check-label" for="onlyTracked">
-                  只顯示追蹤庫存的項目
-                </label>
+          </template>
+          <template #default>
+            <div class="dropdown-menu-form p-3" style="min-width: 300px;">
+              <!-- 庫存類型篩選 -->
+              <div class="mb-3">
+                <label class="form-label">庫存類型</label>
+                <select v-model="filters.inventoryType" class="form-select" @change="applyFilters">
+                  <option value="">全部類型</option>
+                  <option value="dish">餐點</option>
+                  <option value="else">其他</option>
+                </select>
               </div>
-            </div>
 
-            <button class="btn btn-sm btn-secondary w-100" @click="resetFilters">重置篩選</button>
-          </div>
-        </div>
+              <!-- 庫存狀態篩選 -->
+              <div class="mb-3">
+                <label class="form-label">庫存狀態</label>
+                <select v-model="filters.status" class="form-select" @change="applyFilters">
+                  <option value="">全部狀態</option>
+                  <option value="normal">正常</option>
+                  <option value="low">低庫存</option>
+                  <option value="out">缺貨</option>
+                  <option value="overstock">庫存過多</option>
+                </select>
+              </div>
+
+              <!-- 追蹤狀態篩選 -->
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" v-model="filters.onlyTracked" id="onlyTracked"
+                    @change="applyFilters">
+                  <label class="form-check-label" for="onlyTracked">
+                    只顯示追蹤庫存的項目
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-sm btn-secondary w-100" @click="resetFilters">重置篩選</button>
+            </div>
+          </template>
+        </BDropdown>
 
         <div class="input-group" style="width: 300px;">
           <input type="text" class="form-control" placeholder="搜尋項目名稱..." v-model="searchQuery" @input="handleSearch">
@@ -175,16 +171,15 @@
                   </div>
                 </td>
                 <td>
-                  <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary" @click="openAdjustModal(item)">
+                  <BButtonGroup size="sm">
+                    <BButton variant="outline-primary" @click="openAdjustModal(item)">
                       <i class="bi bi-pencil"></i> 調整
-                    </button>
-                    <router-link
-                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`"
-                      class="btn btn-outline-secondary">
+                    </BButton>
+                    <BButton variant="outline-secondary"
+                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`">
                       <i class="bi bi-eye"></i> 詳情
-                    </router-link>
-                  </div>
+                    </BButton>
+                  </BButtonGroup>
                 </td>
               </tr>
 
@@ -234,6 +229,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { BDropdown, BDropdownItem, BButton, BButtonGroup } from 'bootstrap-vue-next';
 import api from '@/api';
 import InitializeDishInventoryModal from './InitializeDishInventoryModal.vue';
 import CreateInventoryModal from './CreateInventoryModal.vue';
@@ -536,5 +532,10 @@ onMounted(() => {
 
 .dropdown-menu {
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-menu-form {
+  position: relative;
+  padding: 1rem;
 }
 </style>
