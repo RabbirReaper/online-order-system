@@ -121,37 +121,26 @@
     </div>
 
     <!-- 確認刪除對話框 -->
-    <div class="modal fade" ref="deleteModalRef" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認刪除菜單</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p v-if="menu">確定要刪除菜單「{{ menu.name }}」嗎？</p>
-            <div class="alert alert-danger">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              此操作無法撤銷，菜單內所有分類和餐點數據都將被永久刪除。
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="deleteMenu" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"></span>
-              {{ isDeleting ? '刪除中...' : '確認刪除' }}
-            </button>
-          </div>
+    <b-modal id="deleteModal" v-model:show="showDeleteModal" title="確認刪除菜單" @ok="deleteMenu" :ok-disabled="isDeleting"
+      ok-title="確認刪除" ok-variant="danger" cancel-title="取消">
+      <p v-if="menu">確定要刪除菜單「{{ menu.name }}」嗎？</p>
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        此操作無法撤銷，菜單內所有分類和餐點數據都將被永久刪除。
+      </div>
+      <div v-if="isDeleting" class="text-center">
+        <div class="spinner-border text-danger" role="status">
+          <span class="visually-hidden">刪除中...</span>
         </div>
       </div>
-    </div>
+    </b-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Modal } from 'bootstrap';
+import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 路由相關
@@ -166,8 +155,7 @@ const menu = ref(null);
 const isLoading = ref(true);
 const isDeleting = ref(false);
 const storeName = ref('載入中...');
-const deleteModalRef = ref(null);
-const deleteModal = ref(null);
+const showDeleteModal = ref(false);
 
 // 計算屬性
 const hasMenu = computed(() => !!menu.value);
@@ -270,9 +258,7 @@ const toggleMenuActive = async () => {
 
 // 顯示刪除確認對話框
 const confirmDeleteMenu = () => {
-  if (deleteModal.value) {
-    deleteModal.show();
-  }
+  showDeleteModal.value = true;
 };
 
 // 刪除菜單
@@ -289,9 +275,7 @@ const deleteMenu = async () => {
     });
 
     // 隱藏對話框
-    if (deleteModal.value) {
-      deleteModal.hide();
-    }
+    showDeleteModal.value = false;
 
     // 刪除成功後重定向回店鋪列表
     setTimeout(() => {
@@ -314,11 +298,6 @@ watch([storeId, brandId], ([newStoreId, newBrandId]) => {
 
 // 生命週期鉤子
 onMounted(() => {
-  // 初始化Modal
-  if (deleteModalRef.value) {
-    deleteModal.value = new Modal(deleteModalRef.value);
-  }
-
   // 載入數據
   fetchData();
 });

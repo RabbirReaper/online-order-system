@@ -75,129 +75,100 @@
     </div>
 
     <!-- 編輯餐點價格模態框 -->
-    <div class="modal fade" id="dishModal" tabindex="-1" aria-labelledby="dishModalLabel" aria-hidden="true"
-      ref="modalRef">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="dishModalLabel">編輯餐點</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">餐點名稱</label>
-              <input type="text" class="form-control" disabled :value="editForm.name">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">模板價格</label>
-              <input type="text" class="form-control" disabled :value="formatPrice(editForm.basePrice)">
-            </div>
-            <div class="mb-3">
-              <label for="dishPrice" class="form-label">自訂價格 (可選)</label>
-              <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="number" id="dishPrice" class="form-control" v-model="editForm.price"
-                  placeholder="留空則使用模板價格">
-              </div>
-              <div class="form-text">若要使用模板價格，請留空此欄位</div>
-            </div>
-            <div class="mb-3">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="dishIsPublished" v-model="editForm.isPublished">
-                <label class="form-check-label" for="dishIsPublished">在菜單中啟用</label>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label for="dishOrder" class="form-label">顯示順序</label>
-              <input type="number" class="form-control" id="dishOrder" v-model.number="editForm.order" min="0">
-              <div class="form-text">數字越小，顯示越前面</div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="saveDish">儲存變更</button>
-          </div>
+    <b-modal id="dishModal" v-model:show="showEditModal" title="編輯餐點" @ok="saveDish" ok-title="儲存變更" cancel-title="取消">
+      <div class="mb-3">
+        <label class="form-label">餐點名稱</label>
+        <input type="text" class="form-control" disabled :value="editForm.name">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">模板價格</label>
+        <input type="text" class="form-control" disabled :value="formatPrice(editForm.basePrice)">
+      </div>
+      <div class="mb-3">
+        <label for="dishPrice" class="form-label">自訂價格 (可選)</label>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="number" id="dishPrice" class="form-control" v-model="editForm.price" placeholder="留空則使用模板價格">
+        </div>
+        <div class="form-text">若要使用模板價格，請留空此欄位</div>
+      </div>
+      <div class="mb-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="dishIsPublished" v-model="editForm.isPublished">
+          <label class="form-check-label" for="dishIsPublished">在菜單中啟用</label>
         </div>
       </div>
-    </div>
+      <div class="mb-3">
+        <label for="dishOrder" class="form-label">顯示順序</label>
+        <input type="number" class="form-control" id="dishOrder" v-model.number="editForm.order" min="0">
+        <div class="form-text">數字越小，顯示越前面</div>
+      </div>
+    </b-modal>
 
     <!-- 添加餐點模態框 -->
-    <div class="modal fade" id="addDishModal" tabindex="-1" aria-labelledby="addDishModalLabel" aria-hidden="true"
-      ref="addModalRef">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="addDishModalLabel">添加餐點到 {{ categoryName }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="isLoadingTemplates" class="text-center py-4">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">加載中...</span>
-              </div>
-            </div>
-            <div v-else>
-              <!-- 搜尋框 -->
-              <div class="mb-3">
-                <input type="text" class="form-control" placeholder="搜尋餐點..." v-model="dishSearchQuery"
-                  @input="filterDishTemplates">
-              </div>
-
-              <!-- 餐點模板列表 -->
-              <div v-if="filteredDishTemplates.length > 0" class="table-responsive">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th style="width: 80px">圖片</th>
-                      <th>餐點名稱</th>
-                      <th style="width: 120px">基本價格</th>
-                      <th style="width: 120px">選項</th>
-                      <th style="width: 100px">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="template in filteredDishTemplates" :key="template._id">
-                      <td>
-                        <img :src="template.image?.url || '/placeholder.jpg'" class="dish-thumbnail" alt="">
-                      </td>
-                      <td>
-                        <div class="fw-bold">{{ template.name }}</div>
-                        <div class="small text-muted">{{ template.description }}</div>
-                      </td>
-                      <td>{{ formatPrice(template.basePrice) }}</td>
-                      <td>
-                        <span class="badge bg-info me-1 mb-1"
-                          v-if="template.optionCategories && template.optionCategories.length > 0">
-                          {{ template.optionCategories.length }} 種選項
-                        </span>
-                        <span class="text-muted" v-else>無選項</span>
-                      </td>
-                      <td>
-                        <button class="btn btn-sm btn-primary" @click="selectDishTemplate(template)">
-                          <i class="bi bi-plus-lg me-1"></i>選擇
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div v-else class="text-center py-3">
-                <p class="mb-0 text-muted">找不到符合條件的餐點模板</p>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-          </div>
+    <b-modal id="addDishModal" v-model:show="showAddModal" :title="`添加餐點到 ${categoryName}`" size="lg" cancel-title="取消"
+      @ok="false" :ok-disabled="true" ok-title="">
+      <div v-if="isLoadingTemplates" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">加載中...</span>
         </div>
       </div>
-    </div>
+      <div v-else>
+        <!-- 搜尋框 -->
+        <div class="mb-3">
+          <input type="text" class="form-control" placeholder="搜尋餐點..." v-model="dishSearchQuery"
+            @input="filterDishTemplates">
+        </div>
+
+        <!-- 餐點模板列表 -->
+        <div v-if="filteredDishTemplates.length > 0" class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th style="width: 80px">圖片</th>
+                <th>餐點名稱</th>
+                <th style="width: 120px">基本價格</th>
+                <th style="width: 120px">選項</th>
+                <th style="width: 100px">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="template in filteredDishTemplates" :key="template._id">
+                <td>
+                  <img :src="template.image?.url || '/placeholder.jpg'" class="dish-thumbnail" alt="">
+                </td>
+                <td>
+                  <div class="fw-bold">{{ template.name }}</div>
+                  <div class="small text-muted">{{ template.description }}</div>
+                </td>
+                <td>{{ formatPrice(template.basePrice) }}</td>
+                <td>
+                  <span class="badge bg-info me-1 mb-1"
+                    v-if="template.optionCategories && template.optionCategories.length > 0">
+                    {{ template.optionCategories.length }} 種選項
+                  </span>
+                  <span class="text-muted" v-else>無選項</span>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-primary" @click="selectDishTemplate(template)">
+                    <i class="bi bi-plus-lg me-1"></i>選擇
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="text-center py-3">
+          <p class="mb-0 text-muted">找不到符合條件的餐點模板</p>
+        </div>
+      </div>
+    </b-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
-import { Modal } from 'bootstrap';
+import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 定義props
@@ -224,10 +195,8 @@ const emit = defineEmits(['update:modelValue']);
 // 內部狀態
 const dishes = ref([]);
 const editIndex = ref(-1);
-const modalInstance = ref(null);
-const addModalInstance = ref(null);
-const modalRef = ref(null);
-const addModalRef = ref(null);
+const showEditModal = ref(false);
+const showAddModal = ref(false);
 const isLoadingTemplates = ref(false);
 const dishTemplates = ref([]);
 const filteredDishTemplates = ref([]);
@@ -297,9 +266,7 @@ const addDish = async () => {
   filterDishTemplates();
 
   // 顯示模態框
-  if (addModalInstance.value) {
-    addModalInstance.value.show();
-  }
+  showAddModal.value = true;
 };
 
 // 篩選餐點模板
@@ -342,9 +309,7 @@ const selectDishTemplate = (template) => {
   emit('update:modelValue', newDishes);
 
   // 關閉模態框
-  if (addModalInstance.value) {
-    addModalInstance.value.hide();
-  }
+  showAddModal.value = false;
 };
 
 // 編輯餐點
@@ -361,9 +326,7 @@ const editDish = (index) => {
   editForm.order = dish.order !== undefined ? dish.order : index;
 
   // 顯示模態框
-  if (modalInstance.value) {
-    modalInstance.value.show();
-  }
+  showEditModal.value = true;
 };
 
 // 更新餐點 (僅更新狀態)
@@ -396,9 +359,7 @@ const saveDish = () => {
   emit('update:modelValue', newDishes);
 
   // 關閉模態框
-  if (modalInstance.value) {
-    modalInstance.value.hide();
-  }
+  showEditModal.value = false;
 };
 
 // 移除餐點
@@ -472,15 +433,6 @@ const fetchDishTemplates = async () => {
 
 // 生命週期鉤子
 onMounted(async () => {
-  // 初始化模態框
-  if (modalRef.value) {
-    modalInstance.value = new Modal(modalRef.value);
-  }
-
-  if (addModalRef.value) {
-    addModalInstance.value = new Modal(addModalRef.value);
-  }
-
   // 獲取餐點模板
   await fetchDishTemplates();
 });

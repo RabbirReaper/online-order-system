@@ -72,49 +72,32 @@
     </div>
 
     <!-- 新增/編輯分類模態框 -->
-    <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true"
-      ref="modalRef">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="categoryModalLabel">{{ editMode ? '編輯分類' : '新增分類' }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="categoryName" class="form-label required">分類名稱</label>
-              <input type="text" class="form-control" id="categoryName" v-model="modalForm.name"
-                :class="{ 'is-invalid': modalErrors.name }" />
-              <div class="invalid-feedback" v-if="modalErrors.name">{{ modalErrors.name }}</div>
-            </div>
-
-            <div class="mb-3">
-              <label for="categoryDescription" class="form-label">分類描述</label>
-              <textarea class="form-control" id="categoryDescription" v-model="modalForm.description"
-                rows="3"></textarea>
-            </div>
-
-            <div class="mb-3">
-              <label for="categoryOrder" class="form-label">顯示順序</label>
-              <input type="number" class="form-control" id="categoryOrder" v-model.number="modalForm.order" min="0" />
-              <div class="form-text">數字越小，顯示越前面</div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="saveCategory">
-              {{ editMode ? '更新分類' : '新增分類' }}
-            </button>
-          </div>
-        </div>
+    <b-modal id="categoryModal" v-model:show="showModal" :title="editMode ? '編輯分類' : '新增分類'" @ok="saveCategory"
+      @cancel="resetModalForm" ok-title="確定" cancel-title="取消">
+      <div class="mb-3">
+        <label for="categoryName" class="form-label required">分類名稱</label>
+        <input type="text" class="form-control" id="categoryName" v-model="modalForm.name"
+          :class="{ 'is-invalid': modalErrors.name }" />
+        <div class="invalid-feedback" v-if="modalErrors.name">{{ modalErrors.name }}</div>
       </div>
-    </div>
+
+      <div class="mb-3">
+        <label for="categoryDescription" class="form-label">分類描述</label>
+        <textarea class="form-control" id="categoryDescription" v-model="modalForm.description" rows="3"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label for="categoryOrder" class="form-label">顯示順序</label>
+        <input type="number" class="form-control" id="categoryOrder" v-model.number="modalForm.order" min="0" />
+        <div class="form-text">數字越小，顯示越前面</div>
+      </div>
+    </b-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
-import { Modal } from 'bootstrap';
+import { ref, reactive, computed, watch } from 'vue';
+import { BModal } from 'bootstrap-vue-next';
 
 // 定義props
 const props = defineProps({
@@ -142,8 +125,7 @@ const categories = ref([]);
 const expandedCategories = ref({});
 const editMode = ref(false);
 const editIndex = ref(-1);
-const modalInstance = ref(null);
-const modalRef = ref(null);
+const showModal = ref(false);
 
 // 模態框表單
 const modalForm = reactive({
@@ -187,9 +169,7 @@ const addCategory = () => {
   modalErrors.name = '';
 
   // 顯示模態框
-  if (modalInstance.value) {
-    modalInstance.value.show();
-  }
+  showModal.value = true;
 };
 
 // 編輯分類
@@ -205,9 +185,7 @@ const editCategory = (index) => {
   modalErrors.name = '';
 
   // 顯示模態框
-  if (modalInstance.value) {
-    modalInstance.value.show();
-  }
+  showModal.value = true;
 };
 
 // 在列表中直接展開/收起分類編輯區域
@@ -236,6 +214,14 @@ const removeCategory = (index) => {
     categories.value = newCategories;
     emit('update:modelValue', newCategories);
   }
+};
+
+// 重置模態框表單
+const resetModalForm = () => {
+  modalForm.name = '';
+  modalForm.description = '';
+  modalForm.order = 0;
+  modalErrors.name = '';
 };
 
 // 保存分類
@@ -274,18 +260,8 @@ const saveCategory = () => {
   emit('update:modelValue', newCategories);
 
   // 關閉模態框
-  if (modalInstance.value) {
-    modalInstance.value.hide();
-  }
+  showModal.value = false;
 };
-
-// 生命週期鉤子
-onMounted(() => {
-  // 初始化模態框
-  if (modalRef.value) {
-    modalInstance.value = new Modal(modalRef.value);
-  }
-});
 </script>
 
 <style scoped>
