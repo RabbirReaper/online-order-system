@@ -83,17 +83,7 @@ const inventorySchema = new mongoose.Schema({
 
 
 // 索引
-// 主要查詢索引：品牌+店鋪+餐點的複合索引（用於餐點庫存）
-inventorySchema.index({ brand: 1, store: 1, dish: 1 }, {
-  unique: true,
-  partialFilterExpression: { inventoryType: 'dish' }
-});
-
-// 主要查詢索引：品牌+店鋪+項目名稱（用於非餐點庫存）
-inventorySchema.index({ brand: 1, store: 1, itemName: 1 }, {
-  unique: true,
-  partialFilterExpression: { inventoryType: 'else' }
-});
+inventorySchema.index({ store: 1 })
 
 // 虛擬屬性
 // 是否需要補貨

@@ -87,7 +87,7 @@ const stockLogSchema = new mongoose.Schema({
 
 // 索引
 // 按時間查詢索引
-stockLogSchema.index({ brand: 1, store: 1, createdAt: -1 });
+stockLogSchema.index({ store: 1, createdAt: -1 });
 
 
 export default mongoose.model('StockLog', stockLogSchema);
