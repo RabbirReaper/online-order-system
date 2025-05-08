@@ -3,34 +3,34 @@
     <!-- 頁面頂部工具列 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex">
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="搜尋店鋪..." v-model="searchQuery" @input="handleSearch">
-          <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
+        <BInputGroup style="width: 300px;">
+          <BFormInput type="text" placeholder="搜尋店鋪..." v-model="searchQuery" @input="handleSearch" />
+          <BButton variant="outline-secondary" @click="handleSearch">
             <i class="bi bi-search"></i>
-          </button>
-        </div>
+          </BButton>
+        </BInputGroup>
 
         <div class="ms-2">
-          <select class="form-select" v-model="filterActive" @change="handleSearch">
-            <option value="all">所有狀態</option>
-            <option value="active">僅顯示啟用</option>
-            <option value="inactive">僅顯示停用</option>
-          </select>
+          <BFormSelect v-model="filterActive" @change="handleSearch">
+            <BFormSelectOption value="all">所有狀態</BFormSelectOption>
+            <BFormSelectOption value="active">僅顯示啟用</BFormSelectOption>
+            <BFormSelectOption value="inactive">僅顯示停用</BFormSelectOption>
+          </BFormSelect>
         </div>
       </div>
 
       <div>
-        <router-link :to="`/admin/${brandId}/stores/create`" class="btn btn-primary">
+        <RouterLink :to="`/admin/${brandId}/stores/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增店鋪
-        </router-link>
+        </RouterLink>
       </div>
     </div>
 
     <!-- 網路錯誤提示 -->
-    <div class="alert alert-danger" v-if="networkError">
+    <BAlert :show="!!networkError" variant="danger">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
       {{ networkError }}
-    </div>
+    </BAlert>
 
     <!-- 店鋪卡片列表 -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
@@ -70,21 +70,20 @@
 
           <div class="card-footer bg-transparent border-top-0">
             <div class="d-flex flex-wrap">
-              <div class="btn-group mb-2 me-2">
-                <router-link :to="`/admin/${brandId}/stores/detail/${store._id}`"
-                  class="btn btn-outline-primary btn-sm">
+              <BButtonGroup class="mb-2 me-2">
+                <RouterLink :to="`/admin/${brandId}/stores/detail/${store._id}`" class="btn btn-outline-primary btn-sm">
                   <i class="bi bi-eye me-1"></i>查看
-                </router-link>
-                <router-link :to="`/admin/${brandId}/stores/edit/${store._id}`" class="btn btn-outline-primary btn-sm">
+                </RouterLink>
+                <RouterLink :to="`/admin/${brandId}/stores/edit/${store._id}`" class="btn btn-outline-primary btn-sm">
                   <i class="bi bi-pencil me-1"></i>編輯
-                </router-link>
-              </div>
+                </RouterLink>
+              </BButtonGroup>
 
-              <button class="btn btn-sm mb-2" :class="store.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
+              <BButton size="sm" class="mb-2" :variant="store.isActive ? 'outline-warning' : 'outline-success'"
                 @click="toggleStoreActive(store)">
                 <i class="bi" :class="store.isActive ? 'bi-pause-fill me-1' : 'bi-play-fill me-1'"></i>
                 {{ store.isActive ? '停用' : '啟用' }}
-              </button>
+              </BButton>
             </div>
           </div>
         </div>
@@ -92,15 +91,15 @@
 
       <!-- 無資料提示 -->
       <div class="col-12" v-if="stores.length === 0 && !isLoading">
-        <div class="alert alert-info text-center py-4">
+        <BAlert :show="true" variant="info" class="text-center py-4">
           <i class="bi bi-info-circle me-2 fs-4"></i>
           <p class="mb-0">{{ searchQuery ? '沒有符合搜尋條件的店鋪' : '尚未創建任何店鋪' }}</p>
           <div class="mt-3" v-if="!searchQuery">
-            <router-link :to="`/admin/${brandId}/stores/create`" class="btn btn-primary">
+            <RouterLink :to="`/admin/${brandId}/stores/create`" class="btn btn-primary">
               <i class="bi bi-plus-lg me-1"></i>新增第一間店鋪
-            </router-link>
+            </RouterLink>
           </div>
-        </div>
+        </BAlert>
       </div>
 
       <!-- 加載中提示 -->
@@ -114,27 +113,24 @@
     </div>
 
     <!-- 分頁控制 -->
-    <nav aria-label="店鋪列表分頁" class="mt-4" v-if="pagination.totalPages > 1">
-      <ul class="pagination justify-content-center">
-        <li class="page-item" :class="{ disabled: currentPage === 1 }">
-          <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
-        </li>
-
-        <li class="page-item" v-for="page in getPageNumbers()" :key="page" :class="{ active: currentPage === page }">
-          <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
-        </li>
-
-        <li class="page-item" :class="{ disabled: currentPage === pagination.totalPages }">
-          <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">下一頁</a>
-        </li>
-      </ul>
-    </nav>
+    <BPagination v-if="pagination.totalPages > 1" v-model="currentPage" :total-rows="pagination.total"
+      :per-page="pagination.limit" align="center" class="mt-4" @input="changePage" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import {
+  BButton,
+  BButtonGroup,
+  BFormInput,
+  BFormSelect,
+  BFormSelectOption,
+  BInputGroup,
+  BAlert,
+  BPagination
+} from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 從路由中獲取品牌ID
@@ -196,41 +192,6 @@ const formatBusinessHours = (businessHours) => {
   return businessHours.periods.map(period => {
     return `${period.open}-${period.close}`;
   }).join(', ');
-};
-
-// 頁碼生成
-const getPageNumbers = () => {
-  const totalPages = pagination.totalPages;
-  const currentPageNum = currentPage.value;
-  const pageNumbers = [];
-
-  // 顯示最多 5 個頁碼
-  if (totalPages <= 5) {
-    // 若總頁數少於 5，顯示全部頁碼
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
-  } else {
-    // 若總頁數大於 5，顯示當前頁附近的頁碼
-    if (currentPageNum <= 3) {
-      // 當前頁在前 3 頁，顯示前 5 頁
-      for (let i = 1; i <= 5; i++) {
-        pageNumbers.push(i);
-      }
-    } else if (currentPageNum >= totalPages - 2) {
-      // 當前頁在後 3 頁，顯示後 5 頁
-      for (let i = totalPages - 4; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      // 當前頁在中間，顯示當前頁及其前後 2 頁
-      for (let i = currentPageNum - 2; i <= currentPageNum + 2; i++) {
-        pageNumbers.push(i);
-      }
-    }
-  }
-
-  return pageNumbers;
 };
 
 // 加載店鋪列表
@@ -351,19 +312,5 @@ onMounted(() => {
   color: white;
   font-size: 0.75rem;
   font-weight: 500;
-}
-
-/* 分頁樣式 */
-.pagination .page-item.active .page-link {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-}
-
-.pagination .page-link {
-  color: #0d6efd;
-}
-
-.pagination .page-link:focus {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 </style>

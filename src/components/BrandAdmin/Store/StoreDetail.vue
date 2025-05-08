@@ -71,8 +71,7 @@
                 </button>
 
                 <!-- 刪除按鈕 -->
-                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
-                  data-bs-target="#deleteStoreModal">
+                <button type="button" class="btn btn-outline-danger btn-sm" @click="showDeleteModal = true">
                   <i class="bi bi-trash me-1"></i>刪除店鋪
                 </button>
               </div>
@@ -87,8 +86,7 @@
             <div class="card-body">
               <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
                 <span>營業時間</span>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                  data-bs-target="#businessHoursModal">
+                <button class="btn btn-sm btn-outline-primary" @click="showBusinessHoursModal = true">
                   <i class="bi bi-pencil me-1"></i>快速編輯
                 </button>
               </h5>
@@ -134,8 +132,7 @@
             <div class="card-body">
               <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
                 <span>店鋪公告</span>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                  data-bs-target="#announcementsModal">
+                <button class="btn btn-sm btn-outline-primary" @click="showAnnouncementsModal = true">
                   <i class="bi bi-pencil me-1"></i>快速編輯
                 </button>
               </h5>
@@ -216,176 +213,132 @@
     </div>
 
     <!-- 刪除確認對話框 -->
-    <div class="modal fade" id="deleteStoreModal" tabindex="-1" aria-labelledby="deleteStoreModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="deleteStoreModalLabel">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-
-          <div class="modal-body" v-if="store">
-            <p>您確定要刪除店鋪 <strong>{{ store.name }}</strong> 嗎？</p>
-            <div class="alert alert-danger">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              此操作無法撤銷，店鋪相關的所有資料都將被永久刪除。
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ isDeleting ? '處理中...' : '確認刪除' }}
-            </button>
-          </div>
+    <BModal v-model:show="showDeleteModal" title="確認刪除" centered>
+      <div v-if="store">
+        <p>您確定要刪除店鋪 <strong>{{ store.name }}</strong> 嗎？</p>
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          此操作無法撤銷，店鋪相關的所有資料都將被永久刪除。
         </div>
       </div>
-    </div>
+
+      <template #footer>
+        <BButton variant="secondary" @click="showDeleteModal = false">取消</BButton>
+        <BButton variant="danger" @click="handleDelete" :disabled="isDeleting">
+          <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          {{ isDeleting ? '處理中...' : '確認刪除' }}
+        </BButton>
+      </template>
+    </BModal>
 
     <!-- 營業時間快速編輯對話框 -->
-    <div class="modal fade" id="businessHoursModal" tabindex="-1" aria-labelledby="businessHoursModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="businessHoursModalLabel">編輯營業時間</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-
-          <div class="modal-body">
-            <div class="table-responsive">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>星期</th>
-                    <th>營業時段</th>
-                    <th width="100px">公休日</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- 這裡重用StoreForm中的營業時間編輯區塊，或簡化版本 -->
-                  <tr v-for="day in editBusinessHours" :key="day.day">
-                    <td>{{ getDayName(day.day) }}</td>
-                    <td>
-                      <div v-if="!day.isClosed">
-                        <div v-for="(period, pIndex) in day.periods" :key="pIndex" class="mb-2">
-                          <div class="d-flex align-items-center">
-                            <div class="time-input-group">
-                              <input type="time" class="form-control form-control-sm"
-                                v-model="day.periods[pIndex].open" />
-                            </div>
-                            <span class="mx-2">至</span>
-                            <div class="time-input-group">
-                              <input type="time" class="form-control form-control-sm"
-                                v-model="day.periods[pIndex].close" />
-                            </div>
-
-                            <!-- 刪除時段按鈕 -->
-                            <button type="button" class="btn btn-sm btn-outline-danger ms-2"
-                              @click="removePeriod(day, pIndex)" v-if="day.periods.length > 1">
-                              <i class="bi bi-trash"></i>
-                            </button>
-                          </div>
-                        </div>
-
-                        <!-- 新增時段按鈕 -->
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-1" @click="addPeriod(day)">
-                          <i class="bi bi-plus-circle me-1"></i>新增時段
-                        </button>
+    <BModal v-model:show="showBusinessHoursModal" title="編輯營業時間" size="lg" centered>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>星期</th>
+              <th>營業時段</th>
+              <th width="100px">公休日</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="day in editBusinessHours" :key="day.day">
+              <td>{{ getDayName(day.day) }}</td>
+              <td>
+                <div v-if="!day.isClosed">
+                  <div v-for="(period, pIndex) in day.periods" :key="pIndex" class="mb-2">
+                    <div class="d-flex align-items-center">
+                      <div class="time-input-group">
+                        <input type="time" class="form-control form-control-sm" v-model="day.periods[pIndex].open" />
                       </div>
-                      <div v-else class="text-muted">
-                        公休日
+                      <span class="mx-2">至</span>
+                      <div class="time-input-group">
+                        <input type="time" class="form-control form-control-sm" v-model="day.periods[pIndex].close" />
                       </div>
-                    </td>
-                    <td>
-                      <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" :id="`modal-isClosed-${day.day}`"
-                          v-model="day.isClosed">
-                        <label class="form-check-label" :for="`modal-isClosed-${day.day}`"></label>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="updateBusinessHours" :disabled="isUpdatingHours">
-              <span v-if="isUpdatingHours" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ isUpdatingHours ? '更新中...' : '保存變更' }}
-            </button>
-          </div>
-        </div>
+                      <!-- 刪除時段按鈕 -->
+                      <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+                        @click="removePeriod(day, pIndex)" v-if="day.periods.length > 1">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- 新增時段按鈕 -->
+                  <button type="button" class="btn btn-sm btn-outline-primary mt-1" @click="addPeriod(day)">
+                    <i class="bi bi-plus-circle me-1"></i>新增時段
+                  </button>
+                </div>
+                <div v-else class="text-muted">
+                  公休日
+                </div>
+              </td>
+              <td>
+                <BFormCheckbox v-model="day.isClosed" switch>
+                </BFormCheckbox>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
+
+      <template #footer>
+        <BButton variant="secondary" @click="showBusinessHoursModal = false">取消</BButton>
+        <BButton variant="primary" @click="updateBusinessHours" :disabled="isUpdatingHours">
+          <span v-if="isUpdatingHours" class="spinner-border spinner-border-sm me-1" role="status"
+            aria-hidden="true"></span>
+          {{ isUpdatingHours ? '更新中...' : '保存變更' }}
+        </BButton>
+      </template>
+    </BModal>
 
     <!-- 公告快速編輯對話框 -->
-    <div class="modal fade" id="announcementsModal" tabindex="-1" aria-labelledby="announcementsModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="announcementsModalLabel">編輯店鋪公告</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-
-          <div class="modal-body">
-            <div v-if="editAnnouncements.length > 0">
-              <div v-for="(announcement, index) in editAnnouncements" :key="index" class="card mb-3">
-                <div class="card-body">
-                  <div class="mb-3">
-                    <label :for="`modal-announcement-title-${index}`" class="form-label required">公告標題</label>
-                    <input type="text" class="form-control" :id="`modal-announcement-title-${index}`"
-                      v-model="announcement.title">
-                  </div>
-
-                  <div class="mb-3">
-                    <label :for="`modal-announcement-content-${index}`" class="form-label required">公告內容</label>
-                    <textarea class="form-control" :id="`modal-announcement-content-${index}`"
-                      v-model="announcement.content" rows="3"></textarea>
-                  </div>
-
-                  <div class="text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger" @click="removeModalAnnouncement(index)">
-                      <i class="bi bi-trash me-1"></i>刪除公告
-                    </button>
-                  </div>
-                </div>
-              </div>
+    <BModal v-model:show="showAnnouncementsModal" title="編輯店鋪公告" size="lg" centered>
+      <div v-if="editAnnouncements.length > 0">
+        <div v-for="(announcement, index) in editAnnouncements" :key="index" class="card mb-3">
+          <div class="card-body">
+            <div class="mb-3">
+              <label :for="`modal-announcement-title-${index}`" class="form-label required">公告標題</label>
+              <BFormInput :id="`modal-announcement-title-${index}`" v-model="announcement.title" />
             </div>
 
-            <div class="text-center mt-3">
-              <button type="button" class="btn btn-outline-primary" @click="addModalAnnouncement">
-                <i class="bi bi-plus-circle me-1"></i>新增公告
-              </button>
+            <div class="mb-3">
+              <label :for="`modal-announcement-content-${index}`" class="form-label required">公告內容</label>
+              <BFormTextarea :id="`modal-announcement-content-${index}`" v-model="announcement.content" rows="3" />
             </div>
-          </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="updateAnnouncements"
-              :disabled="isUpdatingAnnouncements">
-              <span v-if="isUpdatingAnnouncements" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ isUpdatingAnnouncements ? '更新中...' : '保存變更' }}
-            </button>
+            <div class="text-end">
+              <BButton size="sm" variant="outline-danger" @click="removeModalAnnouncement(index)">
+                <i class="bi bi-trash me-1"></i>刪除公告
+              </BButton>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <div class="text-center mt-3">
+        <BButton variant="outline-primary" @click="addModalAnnouncement">
+          <i class="bi bi-plus-circle me-1"></i>新增公告
+        </BButton>
+      </div>
+
+      <template #footer>
+        <BButton variant="secondary" @click="showAnnouncementsModal = false">取消</BButton>
+        <BButton variant="primary" @click="updateAnnouncements" :disabled="isUpdatingAnnouncements">
+          <span v-if="isUpdatingAnnouncements" class="spinner-border spinner-border-sm me-1" role="status"
+            aria-hidden="true"></span>
+          {{ isUpdatingAnnouncements ? '更新中...' : '保存變更' }}
+        </BButton>
+      </template>
+    </BModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Modal } from 'bootstrap';
+import { BModal, BButton, BFormCheckbox, BFormInput, BFormTextarea } from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 路由
@@ -403,6 +356,11 @@ const error = ref('');
 const isDeleting = ref(false);
 const isUpdatingHours = ref(false);
 const isUpdatingAnnouncements = ref(false);
+
+// Modal 顯示狀態
+const showDeleteModal = ref(false);
+const showBusinessHoursModal = ref(false);
+const showAnnouncementsModal = ref(false);
 
 // 編輯用的數據
 const editBusinessHours = ref([]);
@@ -513,21 +471,10 @@ const handleDelete = async () => {
     await api.store.deleteStore(store.value._id);
 
     // 關閉模態對話框
-    const modalElement = document.getElementById('deleteStoreModal');
-    const modal = Modal.getInstance(modalElement);
-    if (modal) {
-      modal.hide();
-    }
+    showDeleteModal.value = false;
 
-    // 確保模態背景被移除後再導航
+    // 延遲導航
     setTimeout(() => {
-      // 手動移除可能殘留的 backdrop
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-        document.body.classList.remove('modal-open');
-      }
-
       // 返回店鋪列表
       router.push(`/admin/${brandId.value}/stores`);
 
@@ -577,11 +524,7 @@ const updateBusinessHours = async () => {
       store.value.businessHours = response.store.businessHours;
 
       // 關閉模態窗口
-      const modalElement = document.getElementById('businessHoursModal');
-      const modal = Modal.getInstance(modalElement);
-      if (modal) {
-        modal.hide();
-      }
+      showBusinessHoursModal.value = false;
     }
   } catch (err) {
     console.error('更新營業時間失敗:', err);
@@ -635,11 +578,7 @@ const updateAnnouncements = async () => {
       store.value.announcements = response.store.announcements;
 
       // 關閉模態窗口
-      const modalElement = document.getElementById('announcementsModal');
-      const modal = Modal.getInstance(modalElement);
-      if (modal) {
-        modal.hide();
-      }
+      showAnnouncementsModal.value = false;
     }
   } catch (err) {
     console.error('更新公告失敗:', err);
@@ -654,15 +593,19 @@ onMounted(() => {
   // 獲取店鋪資料
   fetchStoreData();
 
-  // 監聽模態對話框事件
-  document.getElementById('businessHoursModal')?.addEventListener('show.bs.modal', () => {
-    // 重新初始化編輯數據
-    editBusinessHours.value = JSON.parse(JSON.stringify(store.value.businessHours || []));
+  // 監聽模態對話框打開事件
+  // 當營業時間編輯模態框開啟時重新初始化數據
+  watch(showBusinessHoursModal, (newValue) => {
+    if (newValue) {
+      editBusinessHours.value = JSON.parse(JSON.stringify(store.value.businessHours || []));
+    }
   });
 
-  document.getElementById('announcementsModal')?.addEventListener('show.bs.modal', () => {
-    // 重新初始化編輯數據
-    editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []));
+  // 當公告編輯模態框開啟時重新初始化數據
+  watch(showAnnouncementsModal, (newValue) => {
+    if (newValue) {
+      editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []));
+    }
   });
 });
 </script>

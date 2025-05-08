@@ -12,40 +12,36 @@
           <!-- 店鋪名稱 -->
           <div class="mb-3">
             <label for="storeName" class="form-label required">店鋪名稱</label>
-            <input type="text" class="form-control" id="storeName" v-model="formData.name"
-              :class="{ 'is-invalid': errors.name }" required />
-            <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
-            <div class="form-text">請輸入店鋪名稱，不可超過50個字元</div>
+            <BFormInput id="storeName" v-model="formData.name" :state="errors.name ? false : null" required />
+            <BFormInvalidFeedback v-if="errors.name">{{ errors.name }}</BFormInvalidFeedback>
+            <BFormText>請輸入店鋪名稱，不可超過50個字元</BFormText>
           </div>
 
           <!-- 店鋪狀態 (僅在編輯模式顯示) -->
           <div class="mb-3" v-if="isEditMode">
             <label class="form-label d-block">店鋪狀態</label>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="isActive" v-model="formData.isActive">
-              <label class="form-check-label" for="isActive">
-                {{ formData.isActive ? '啟用' : '停用' }}
-              </label>
-            </div>
-            <div class="form-text">啟用狀態決定店鋪是否可見及可下單</div>
+            <BFormCheckbox v-model="formData.isActive" switch>
+              {{ formData.isActive ? '啟用' : '停用' }}
+            </BFormCheckbox>
+            <BFormText>啟用狀態決定店鋪是否可見及可下單</BFormText>
           </div>
 
           <!-- 店鋪圖片 -->
           <div class="mb-3">
             <label for="storeImage" class="form-label required">店鋪圖片</label>
-            <div class="input-group">
-              <input type="file" class="form-control" id="storeImage" ref="fileInputRef" @change="handleImageChange"
-                :class="{ 'is-invalid': errors.image }" accept="image/*" />
-              <button class="btn btn-outline-secondary" type="button" @click="clearImage"
+            <BInputGroup>
+              <BFormFile id="storeImage" ref="fileInputRef" @change="handleImageChange"
+                :state="errors.image ? false : null" accept="image/*" />
+              <BButton variant="outline-secondary" @click="clearImage"
                 v-if="formData.newImage || (formData.image && formData.image.url)">
                 清除
-              </button>
-            </div>
-            <div class="text-danger" v-if="errors.image">{{ errors.image }}</div>
-            <div class="form-text text-muted" v-else>
+              </BButton>
+            </BInputGroup>
+            <BFormInvalidFeedback v-if="errors.image">{{ errors.image }}</BFormInvalidFeedback>
+            <BFormText v-else>
               <i class="bi bi-info-circle me-1"></i>
               請上傳店鋪圖片，檔案大小限制為 1MB，支援 JPG、PNG 格式
-            </div>
+            </BFormText>
 
             <!-- 圖片預覽 -->
             <div class="mt-2" v-if="formData.newImage">
@@ -65,10 +61,10 @@
         <div class="mb-4">
           <h6 class="border-bottom pb-2 mb-3 d-flex justify-content-between">
             <span>營業時間</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" @click="addDefaultBusinessHours"
+            <BButton size="sm" variant="outline-primary" @click="addDefaultBusinessHours"
               v-if="formData.businessHours.length === 0">
               <i class="bi bi-plus-circle me-1"></i>設置預設時間
-            </button>
+            </BButton>
           </h6>
 
           <!-- 營業時間表格 -->
@@ -90,48 +86,45 @@
                       <div v-for="(period, pIndex) in day.periods" :key="pIndex" class="mb-2">
                         <div class="d-flex align-items-center">
                           <div class="time-input-group">
-                            <input type="time" class="form-control form-control-sm" v-model="day.periods[pIndex].open"
-                              :class="{ 'is-invalid': hasTimeError(day, pIndex, 'open') }" />
+                            <BFormInput type="time" size="sm" v-model="day.periods[pIndex].open"
+                              :state="hasTimeError(day, pIndex, 'open') ? false : null" />
                           </div>
                           <span class="mx-2">至</span>
                           <div class="time-input-group">
-                            <input type="time" class="form-control form-control-sm" v-model="day.periods[pIndex].close"
-                              :class="{ 'is-invalid': hasTimeError(day, pIndex, 'close') }" />
+                            <BFormInput type="time" size="sm" v-model="day.periods[pIndex].close"
+                              :state="hasTimeError(day, pIndex, 'close') ? false : null" />
                           </div>
 
                           <!-- 刪除時段按鈕 -->
-                          <button type="button" class="btn btn-sm btn-outline-danger ms-2"
-                            @click="removePeriod(day, pIndex)" v-if="day.periods.length > 1">
+                          <BButton size="sm" variant="outline-danger" class="ms-2" @click="removePeriod(day, pIndex)"
+                            v-if="day.periods.length > 1">
                             <i class="bi bi-trash"></i>
-                          </button>
+                          </BButton>
                         </div>
-                        <div class="text-danger small"
+                        <BFormInvalidFeedback :state="false"
                           v-if="hasTimeError(day, pIndex, 'open') || hasTimeError(day, pIndex, 'close')">
                           時間格式不正確或關店時間早於開店時間
-                        </div>
+                        </BFormInvalidFeedback>
                       </div>
 
                       <!-- 新增時段按鈕 -->
-                      <button type="button" class="btn btn-sm btn-outline-primary mt-1" @click="addPeriod(day)">
+                      <BButton size="sm" variant="outline-primary" class="mt-1" @click="addPeriod(day)">
                         <i class="bi bi-plus-circle me-1"></i>新增時段
-                      </button>
+                      </BButton>
                     </div>
                     <div v-else class="text-muted">
                       公休日
                     </div>
                   </td>
                   <td>
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" :id="`isClosed-${day.day}`"
-                        v-model="day.isClosed">
-                      <label class="form-check-label" :for="`isClosed-${day.day}`"></label>
-                    </div>
+                    <BFormCheckbox :id="`isClosed-${day.day}`" v-model="day.isClosed" switch>
+                    </BFormCheckbox>
                   </td>
                   <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger" @click="removeBusinessDay(index)"
+                    <BButton size="sm" variant="outline-danger" @click="removeBusinessDay(index)"
                       v-if="formData.businessHours.length > 1">
                       <i class="bi bi-trash me-1"></i>刪除
-                    </button>
+                    </BButton>
                   </td>
                 </tr>
 
@@ -139,9 +132,9 @@
                 <tr v-if="formData.businessHours.length === 0">
                   <td colspan="4" class="text-center py-3">
                     <div class="text-muted">尚未設置營業時間</div>
-                    <button type="button" class="btn btn-sm btn-primary mt-2" @click="addDefaultBusinessHours">
+                    <BButton size="sm" variant="primary" class="mt-2" @click="addDefaultBusinessHours">
                       <i class="bi bi-plus-circle me-1"></i>設置預設時間
-                    </button>
+                    </BButton>
                   </td>
                 </tr>
               </tbody>
@@ -153,9 +146,9 @@
         <div class="mb-4">
           <h6 class="border-bottom pb-2 mb-3 d-flex justify-content-between">
             <span>店鋪公告</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" @click="addAnnouncement">
+            <BButton size="sm" variant="outline-primary" @click="addAnnouncement">
               <i class="bi bi-plus-circle me-1"></i>新增公告
-            </button>
+            </BButton>
           </h6>
 
           <!-- 公告列表 -->
@@ -164,26 +157,26 @@
               <div class="card-body">
                 <div class="mb-3">
                   <label :for="`announcement-title-${index}`" class="form-label required">公告標題</label>
-                  <input type="text" class="form-control" :id="`announcement-title-${index}`"
-                    v-model="announcement.title" :class="{ 'is-invalid': getAnnouncementError(index, 'title') }">
-                  <div class="invalid-feedback" v-if="getAnnouncementError(index, 'title')">
+                  <BFormInput :id="`announcement-title-${index}`" v-model="announcement.title"
+                    :state="getAnnouncementError(index, 'title') ? false : null" />
+                  <BFormInvalidFeedback v-if="getAnnouncementError(index, 'title')">
                     {{ getAnnouncementError(index, 'title') }}
-                  </div>
+                  </BFormInvalidFeedback>
                 </div>
 
                 <div class="mb-3">
                   <label :for="`announcement-content-${index}`" class="form-label required">公告內容</label>
-                  <textarea class="form-control" :id="`announcement-content-${index}`" v-model="announcement.content"
-                    :class="{ 'is-invalid': getAnnouncementError(index, 'content') }" rows="3"></textarea>
-                  <div class="invalid-feedback" v-if="getAnnouncementError(index, 'content')">
+                  <BFormTextarea :id="`announcement-content-${index}`" v-model="announcement.content"
+                    :state="getAnnouncementError(index, 'content') ? false : null" rows="3" />
+                  <BFormInvalidFeedback v-if="getAnnouncementError(index, 'content')">
                     {{ getAnnouncementError(index, 'content') }}
-                  </div>
+                  </BFormInvalidFeedback>
                 </div>
 
                 <div class="text-end">
-                  <button type="button" class="btn btn-sm btn-outline-danger" @click="removeAnnouncement(index)">
+                  <BButton size="sm" variant="outline-danger" @click="removeAnnouncement(index)">
                     <i class="bi bi-trash me-1"></i>刪除公告
-                  </button>
+                  </BButton>
                 </div>
               </div>
             </div>
@@ -192,45 +185,45 @@
           <!-- 無公告提示 -->
           <div class="alert alert-light text-center py-3" v-else>
             <div class="text-muted">尚未設置店鋪公告</div>
-            <button type="button" class="btn btn-sm btn-primary mt-2" @click="addAnnouncement">
+            <BButton size="sm" variant="primary" class="mt-2" @click="addAnnouncement">
               <i class="bi bi-plus-circle me-1"></i>新增公告
-            </button>
+            </BButton>
           </div>
         </div>
 
         <!-- 表單驗證錯誤訊息 -->
-        <div class="alert alert-danger" v-if="formErrors.length > 0">
+        <BAlert :show="formErrors.length > 0" variant="danger">
           <p class="mb-1"><strong><i class="bi bi-exclamation-triangle-fill me-2"></i>請修正以下錯誤：</strong></p>
           <ul class="mb-0 ps-3">
             <li v-for="(error, index) in formErrors" :key="index">{{ error }}</li>
           </ul>
-        </div>
+        </BAlert>
 
         <!-- 提交結果訊息 -->
-        <div class="alert alert-success" v-if="successMessage">
+        <BAlert :show="!!successMessage" variant="success">
           <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
-        </div>
+        </BAlert>
 
         <!-- 按鈕組 -->
         <div class="d-flex justify-content-between">
           <!-- 左側 - 重置按鈕 -->
           <div>
-            <button type="button" class="btn btn-secondary" @click="resetForm" :disabled="isSubmitting">
+            <BButton variant="secondary" @click="resetForm" :disabled="isSubmitting">
               <i class="bi bi-arrow-counterclockwise me-1"></i>重置
-            </button>
+            </BButton>
           </div>
 
           <!-- 右側 - 取消和儲存按鈕 -->
           <div>
-            <router-link :to="`/admin/${brandId}/stores`" class="btn btn-secondary me-2" :disabled="isSubmitting">
+            <RouterLink :to="`/admin/${brandId}/stores`" class="btn btn-secondary me-2" :disabled="isSubmitting">
               <i class="bi bi-x-circle me-1"></i>取消
-            </router-link>
-            <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+            </RouterLink>
+            <BButton type="submit" variant="primary" :disabled="isSubmitting">
               <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status"
                 aria-hidden="true"></span>
               <i v-else class="bi bi-save me-1"></i>
               {{ isSubmitting ? '處理中...' : (isEditMode ? '更新店鋪' : '建立店鋪') }}
-            </button>
+            </BButton>
           </div>
         </div>
       </form>
@@ -241,6 +234,17 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import {
+  BButton,
+  BFormInput,
+  BFormTextarea,
+  BFormCheckbox,
+  BFormFile,
+  BFormInvalidFeedback,
+  BFormText,
+  BInputGroup,
+  BAlert
+} from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 路由
