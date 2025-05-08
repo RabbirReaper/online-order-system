@@ -91,7 +91,7 @@
         </div>
       </div>
       <div class="col-md-3">
-        <div class="card bg-warning text-white">
+        <div class="card bg-warning text-block">
           <div class="card-body">
             <h6 class="card-title">低庫存</h6>
             <h3 class="mb-0">{{ stats.lowStock }}</h3>
@@ -355,7 +355,7 @@ const getStatusBadgeClass = (item) => {
   const status = getStatusText(item);
   switch (status) {
     case '缺貨': return 'bg-danger';
-    case '低庫存': return 'bg-warning';
+    case '低庫存': return 'bg-warning text-dark';
     case '庫存過多': return 'bg-info';
     case '不追蹤': return 'bg-secondary';
     default: return 'bg-success';

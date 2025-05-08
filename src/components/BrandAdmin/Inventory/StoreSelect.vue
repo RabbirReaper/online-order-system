@@ -41,7 +41,7 @@
                     <i class="bi bi-box-seam me-1"></i>
                     總項目: {{ storeStats[store._id].totalItems }}
                   </span>
-                  <span :class="storeStats[store._id].lowStock > 0 ? 'text-warning' : ''">
+                  <span :class="storeStats[store._id].lowStock > 0 ? 'text-dark' : ''">
                     <i class="bi bi-exclamation-triangle me-1"></i>
                     低庫存: {{ storeStats[store._id].lowStock }}
                   </span>
