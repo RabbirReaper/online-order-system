@@ -127,8 +127,8 @@
               </div>
               <div class="d-flex justify-content-between text-muted small mt-1">
                 <span>0</span>
-                <span>警告值: {{ inventoryItem.minStockAlert }}</span>
-                <span v-if="inventoryItem.maxStockAlert">最高: {{ inventoryItem.maxStockAlert }}</span>
+                <span>過低警告值: {{ inventoryItem.minStockAlert }}</span>
+                <span v-if="inventoryItem.maxStockAlert">過高警告值: {{ inventoryItem.maxStockAlert }}</span>
               </div>
             </div>
           </div>
@@ -245,7 +245,7 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label">最高庫存限制</label>
+                <label class="form-label">庫存過高警告值</label>
                 <input type="number" v-model.number="settingsForm.maxStockAlert" class="form-control" min="0">
                 <div class="form-text">留空表示無限制</div>
               </div>
