@@ -67,8 +67,8 @@
 
             <div class="row g-3">
               <div class="col-md-4">
-                <label class="form-label">最高限制</label>
-                <input type="number" v-model.number="defaultSettings.maxStockLimit" class="form-control" min="0"
+                <label class="form-label">過高庫存警告</label>
+                <input type="number" v-model.number="defaultSettings.maxStockAlert" class="form-control" min="0"
                   placeholder="可選">
               </div>
               <div class="col-md-4">
@@ -126,7 +126,7 @@
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">最高限制</label>
-                        <input type="number" v-model.number="dishSettings[dishId].maxStockLimit" class="form-control"
+                        <input type="number" v-model.number="dishSettings[dishId].maxStockAlert" class="form-control"
                           min="0" placeholder="可選">
                       </div>
                       <div class="col-md-4">
@@ -201,7 +201,7 @@ const defaultSettings = reactive({
   warehouseStock: 0,
   availableStock: 0,
   minStockAlert: 5,
-  maxStockLimit: null,
+  maxStockAlert: null,
   isInventoryTracked: true,
   showAvailableStockToCustomer: false
 });
@@ -284,7 +284,7 @@ const submitInitialization = async () => {
         initialWarehouseStock: settings.warehouseStock,
         initialAvailableStock: settings.availableStock,
         minStockAlert: settings.minStockAlert,
-        maxStockLimit: settings.maxStockLimit,
+        maxStockAlert: settings.maxStockAlert,
         isInventoryTracked: settings.isInventoryTracked,
         showAvailableStockToCustomer: settings.showAvailableStockToCustomer
       };

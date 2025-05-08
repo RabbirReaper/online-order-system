@@ -122,7 +122,7 @@ export const createInventory = async (inventoryData, adminId) => {
     warehouseStock: inventoryData.initialWarehouseStock || 0,
     availableStock: inventoryData.initialAvailableStock || 0,
     minStockAlert: inventoryData.minStockAlert || 0,
-    maxStockLimit: inventoryData.maxStockLimit,
+    maxStockAlert: inventoryData.maxStockAlert,
     isInventoryTracked: inventoryData.isInventoryTracked !== false,
     showAvailableStockToCustomer: inventoryData.showAvailableStockToCustomer || false
   });
@@ -183,7 +183,7 @@ export const updateInventory = async (updateData, adminId) => {
     changeAmount,
     reason,
     minStockAlert,
-    maxStockLimit,
+    maxStockAlert,
     isInventoryTracked,
     showAvailableStockToCustomer
   } = updateData;
@@ -228,8 +228,8 @@ export const updateInventory = async (updateData, adminId) => {
     inventoryItem.minStockAlert = minStockAlert;
   }
 
-  if (maxStockLimit !== undefined) {
-    inventoryItem.maxStockLimit = maxStockLimit;
+  if (maxStockAlert !== undefined) {
+    inventoryItem.maxStockAlert = maxStockAlert;
   }
 
   if (isInventoryTracked !== undefined) {
@@ -619,7 +619,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
           stock: item.stock,
           reason: item.reason || '批量更新庫存',
           minStockAlert: item.minStockAlert,
-          maxStockLimit: item.maxStockLimit,
+          maxStockAlert: item.maxStockAlert,
           isInventoryTracked: item.isInventoryTracked,
           showAvailableStockToCustomer: item.showAvailableStockToCustomer
         }, adminId);
@@ -635,7 +635,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
           initialWarehouseStock: item.warehouseStock || 0,
           initialAvailableStock: item.availableStock || 0,
           minStockAlert: item.minStockAlert || 0,
-          maxStockLimit: item.maxStockLimit,
+          maxStockAlert: item.maxStockAlert,
           isInventoryTracked: item.isInventoryTracked !== undefined ? item.isInventoryTracked : true,
           showAvailableStockToCustomer: item.showAvailableStockToCustomer || false
         }, adminId);

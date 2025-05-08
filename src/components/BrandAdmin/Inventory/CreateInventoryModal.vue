@@ -44,7 +44,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">最高庫存限制</label>
-                <input type="number" v-model.number="form.maxStockLimit" class="form-control" min="0"
+                <input type="number" v-model.number="form.maxStockAlert" class="form-control" min="0"
                   placeholder="選填，留空表示無限制">
               </div>
             </div>
@@ -116,7 +116,7 @@ const form = reactive({
   initialWarehouseStock: 0,
   initialAvailableStock: 0,
   minStockAlert: 5,
-  maxStockLimit: null,
+  maxStockAlert: null,
   isInventoryTracked: true,
   showAvailableStockToCustomer: false
 });
@@ -151,7 +151,7 @@ const submitForm = async () => {
       initialWarehouseStock: form.initialWarehouseStock,
       initialAvailableStock: form.initialAvailableStock,
       minStockAlert: form.minStockAlert,
-      maxStockLimit: form.maxStockLimit || undefined,
+      maxStockAlert: form.maxStockAlert || undefined,
       isInventoryTracked: form.isInventoryTracked,
       showAvailableStockToCustomer: form.showAvailableStockToCustomer
     };

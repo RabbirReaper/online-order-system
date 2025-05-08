@@ -142,7 +142,7 @@
                 <th>可販售庫存</th>
                 <th>狀態</th>
                 <th>最低警告值</th>
-                <th>最高限制</th>
+                <th>過高庫存警告</th>
                 <th>顯示給客人</th>
                 <th width="150">操作</th>
               </tr>
@@ -167,7 +167,7 @@
                   </span>
                 </td>
                 <td>{{ item.minStockAlert }}</td>
-                <td>{{ item.maxStockLimit || '-' }}</td>
+                <td>{{ item.maxStockAlert || '-' }}</td>
                 <td>
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" :checked="item.showAvailableStockToCustomer"
@@ -347,7 +347,7 @@ const getStatusText = (item) => {
   if (!item.isInventoryTracked) return '不追蹤';
   if (item.availableStock === 0) return '缺貨';
   if (item.availableStock <= item.minStockAlert) return '低庫存';
-  if (item.maxStockLimit && item.warehouseStock > item.maxStockLimit) return '庫存過多';
+  if (item.maxStockAlert && item.warehouseStock > item.maxStockAlert) return '庫存過多';
   return '正常';
 };
 

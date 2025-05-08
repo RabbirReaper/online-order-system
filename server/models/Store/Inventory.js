@@ -93,7 +93,7 @@ inventorySchema.virtual('needsRestock').get(function () {
 
 // 是否庫存過多
 inventorySchema.virtual('isOverstock').get(function () {
-  return this.maxStockLimit && this.warehouseStock > this.maxStockLimit;
+  return this.maxStockAlert && this.warehouseStock > this.maxStockAlert;
 });
 
 // 顯示給客人的庫存（根據設定決定）

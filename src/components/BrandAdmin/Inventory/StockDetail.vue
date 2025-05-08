@@ -66,8 +66,8 @@
               <p class="mb-0 fw-bold">{{ inventoryItem.minStockAlert }}</p>
             </div>
             <div class="mb-3">
-              <label class="text-muted small">最高庫存限制</label>
-              <p class="mb-0 fw-bold">{{ inventoryItem.maxStockLimit || '無限制' }}</p>
+              <label class="text-muted small">過高庫存警告</label>
+              <p class="mb-0 fw-bold">{{ inventoryItem.maxStockAlert || '無限制' }}</p>
             </div>
             <div>
               <label class="text-muted small">最後更新時間</label>
@@ -128,7 +128,7 @@
               <div class="d-flex justify-content-between text-muted small mt-1">
                 <span>0</span>
                 <span>警告值: {{ inventoryItem.minStockAlert }}</span>
-                <span v-if="inventoryItem.maxStockLimit">最高: {{ inventoryItem.maxStockLimit }}</span>
+                <span v-if="inventoryItem.maxStockAlert">最高: {{ inventoryItem.maxStockAlert }}</span>
               </div>
             </div>
           </div>
@@ -246,7 +246,7 @@
 
               <div class="mb-3">
                 <label class="form-label">最高庫存限制</label>
-                <input type="number" v-model.number="settingsForm.maxStockLimit" class="form-control" min="0">
+                <input type="number" v-model.number="settingsForm.maxStockAlert" class="form-control" min="0">
                 <div class="form-text">留空表示無限制</div>
               </div>
 
@@ -315,7 +315,7 @@ const settingsModalRef = ref(null);
 const settingsModal = ref(null);
 const settingsForm = ref({
   minStockAlert: 0,
-  maxStockLimit: null,
+  maxStockAlert: null,
   isInventoryTracked: true,
   showAvailableStockToCustomer: false
 });
@@ -337,10 +337,10 @@ const formatDate = (dateString) => {
 
 // 獲取庫存百分比
 const getStockPercentage = () => {
-  if (!inventoryItem.value || !inventoryItem.value.maxStockLimit) {
+  if (!inventoryItem.value || !inventoryItem.value.maxStockAlert) {
     return 100;
   }
-  return Math.min(100, (inventoryItem.value.availableStock / inventoryItem.value.maxStockLimit) * 100);
+  return Math.min(100, (inventoryItem.value.availableStock / inventoryItem.value.maxStockAlert) * 100);
 };
 
 // 獲取進度條樣式
@@ -348,8 +348,8 @@ const getProgressBarClass = () => {
   if (!inventoryItem.value) return 'bg-secondary';
 
   if (inventoryItem.value.availableStock === 0) return 'bg-danger';
-  if (inventoryItem.value.availableStock <= inventoryItem.value.minStockAlert) return 'bg-warning';
-  if (inventoryItem.value.maxStockLimit && inventoryItem.value.warehouseStock > inventoryItem.value.maxStockLimit) {
+  if (inventoryItem.value.availableStock <= inventoryItem.value.minStockAlert) return 'bg-warning text-dark';
+  if (inventoryItem.value.maxStockAlert && inventoryItem.value.warehouseStock > inventoryItem.value.maxStockAlert) {
     return 'bg-info';
   }
   return 'bg-success';
@@ -361,7 +361,7 @@ const getStatusText = () => {
 
   if (inventoryItem.value.availableStock === 0) return '缺貨';
   if (inventoryItem.value.availableStock <= inventoryItem.value.minStockAlert) return '低庫存';
-  if (inventoryItem.value.maxStockLimit && inventoryItem.value.warehouseStock > inventoryItem.value.maxStockLimit) {
+  if (inventoryItem.value.maxStockAlert && inventoryItem.value.warehouseStock > inventoryItem.value.maxStockAlert) {
     return '庫存過多';
   }
   return '正常';
@@ -433,7 +433,7 @@ const fetchInventoryDetail = async () => {
     // 初始化設定表單
     settingsForm.value = {
       minStockAlert: inventoryItem.value.minStockAlert,
-      maxStockLimit: inventoryItem.value.maxStockLimit,
+      maxStockAlert: inventoryItem.value.maxStockAlert,
       isInventoryTracked: inventoryItem.value.isInventoryTracked,
       showAvailableStockToCustomer: inventoryItem.value.showAvailableStockToCustomer
     };
@@ -504,7 +504,7 @@ const submitSettings = async () => {
   try {
     const data = {
       minStockAlert: settingsForm.value.minStockAlert,
-      maxStockLimit: settingsForm.value.maxStockLimit || undefined,
+      maxStockAlert: settingsForm.value.maxStockAlert || undefined,
       isInventoryTracked: settingsForm.value.isInventoryTracked,
       showAvailableStockToCustomer: settingsForm.value.showAvailableStockToCustomer
     };
