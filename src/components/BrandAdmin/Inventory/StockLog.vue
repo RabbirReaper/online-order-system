@@ -2,7 +2,12 @@
   <div>
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">庫存變更記錄</h4>
+      <div class="d-flex align-items-center">
+        <router-link :to="`/admin/${brandId}/inventory`" class="btn btn-outline-secondary me-3">
+          <i class="bi bi-arrow-left"></i>
+        </router-link>
+        <h4 class="mb-0">{{ storeName }}</h4>
+      </div>
       <div class="d-flex gap-2">
         <!-- 篩選按鈕 -->
         <div class="dropdown">
@@ -190,6 +195,7 @@ const error = ref('');
 const stockLogs = ref([]);
 const searchQuery = ref('');
 const currentPage = ref(1);
+const storeName = ref('');
 
 // 篩選條件
 const filters = reactive({
@@ -329,6 +335,9 @@ const fetchStockLogs = async () => {
       pagination.total = response.pagination?.total || response.total || 0;
       pagination.totalPages = response.pagination?.totalPages || response.totalPages ||
         Math.ceil(pagination.total / pagination.limit);
+      if (stockLogs.value) {
+        storeName.value = stockLogs.value[0].store.name
+      }
     } else {
       stockLogs.value = [];
       pagination.total = 0;

@@ -49,19 +49,12 @@ export const getStoreInventory = async (storeId, options = {}) => {
  * @param {String} inventoryType - 庫存類型
  * @returns {Promise<Object>} 庫存項目
  */
-export const getInventoryItem = async (storeId, itemId, inventoryType = 'dish') => {
-  const query = {
-    store: storeId,
-    inventoryType
-  };
-
-  if (inventoryType === 'dish') {
-    query.dish = itemId;
-  } else {
-    query._id = itemId;
-  }
-
-  const inventoryItem = await Inventory.findOne(query)
+export const getInventoryItem = async (storeId, inventoryId) => {
+  // 直接用 findById，並確保此庫存屬於該店鋪
+  const inventoryItem = await Inventory.findOne({
+    _id: inventoryId,
+    store: storeId  // 確保安全性，只能查詢該店鋪的庫存
+  })
     .populate('dish', 'name')
     .populate('brand', 'name');
 

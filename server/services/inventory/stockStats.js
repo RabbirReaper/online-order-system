@@ -81,7 +81,7 @@ export const getInventoryLogs = async (options = {}) => {
     .populate('admin', 'name')
     .populate('order', 'orderDateCode sequence')
     .populate('dish', 'name')
-    .populate('brand', 'name');
+    .populate('store', 'name');
 
   // 處理分頁資訊
   const totalPages = Math.ceil(total / limit);

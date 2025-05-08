@@ -4,16 +4,15 @@ import Placeholder from '@/components/common/Placeholder.vue'
 
 // 檢查管理員登入狀態
 const checkAdminAuth = async () => {
-  // 測試階段使用真實 API 檢查登入狀態
-  // try {
-  //   const response = await api.auth.checkAdminStatus()
-  //   console.log('登入狀態:', response)
-  //   return response;
-  // } catch (error) {
-  //   console.error('檢查管理員登入狀態失敗', error)
-  //   return { loggedIn: false, role: null, manage: [] }
-  // }
-  return { loggedIn: true, role: 'boss', manage: [] }
+  try {
+    const response = await api.auth.checkAdminStatus()
+    console.log('登入狀態:', response)
+    return response;
+  } catch (error) {
+    console.error('檢查管理員登入狀態失敗', error)
+    return { loggedIn: false, role: null, manage: [] }
+  }
+  // return { loggedIn: true, role: 'boss', manage: [] }
 }
 
 const router = createRouter({

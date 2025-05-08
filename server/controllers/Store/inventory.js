@@ -30,12 +30,10 @@ export const getStoreInventory = asyncHandler(async (req, res) => {
 export const getInventoryItem = asyncHandler(async (req, res) => {
   try {
     const { storeId, itemId } = req.params;
-    const { inventoryType = 'dish' } = req.query;
 
     const inventoryItem = await inventoryService.management.getInventoryItem(
       storeId,
-      itemId,
-      inventoryType
+      itemId  // 這裡的 itemId 實際上是 inventory 的 _id
     );
 
     res.json({
