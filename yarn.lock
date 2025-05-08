@@ -2387,6 +2387,11 @@ bootstrap-icons@^1.11.3:
   resolved "https://registry.yarnpkg.com/bootstrap-icons/-/bootstrap-icons-1.11.3.tgz#03f9cb754ec005c52f9ee616e2e84a82cab3084b"
   integrity sha512-+3lpHrCw/it2/7lBL15VR0HEumaBss0+f/Lb6ZvHISn1mlK83jjFpooTLsMWbIjJMDjDjOExMsTxnXSIT4k4ww==
 
+bootstrap-vue-next@^0.29.2:
+  version "0.29.2"
+  resolved "https://registry.yarnpkg.com/bootstrap-vue-next/-/bootstrap-vue-next-0.29.2.tgz#0653c9a0d9cbc6cf4856d70b191aea6a1dd00424"
+  integrity sha512-0Q4IMw7kY+TS/j5AWbHg1Kvm0z9ABvh0cvOBl5u3xVju0e9gQClX+6xJqIF6TXhXccCayp8EU5mFj7QWCPzS2g==
+
 bootstrap@^5.3.5:
   version "5.3.5"
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-5.3.5.tgz#be42cfe0d580e97ee1abb7d38ce94f5c393c9bb6"

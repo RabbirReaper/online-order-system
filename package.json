@@ -21,6 +21,7 @@
     "bcrypt": "^5.1.1",
     "bootstrap": "^5.3.5",
     "bootstrap-icons": "^1.11.3",
+    "bootstrap-vue-next": "^0.29.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
