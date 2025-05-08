@@ -22,7 +22,7 @@ export default function (apiClient) {
      * 獲取特定庫存項目詳情
      * @param {Object} params - 查詢參數
      * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.itemId - 項目ID（餐點ID或其他庫存ID）
+     * @param {string} params.itemId - 項目ID (統一使用 inventory._id)
      * @param {string} [params.inventoryType='dish'] - 庫存類型
      * @returns {Promise} - API 回應
      */
@@ -47,13 +47,11 @@ export default function (apiClient) {
      * 更新庫存資料
      * @param {Object} params - 更新參數
      * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.itemId - 項目ID
+     * @param {string} params.itemId - 項目ID (統一使用 inventory._id)
      * @param {Object} params.data - 更新的庫存資料
      * @returns {Promise} - API 回應
      */
     updateInventory({ storeId, itemId, data }) {
-      // 如果 inventoryType 是 dish，則確保是餐點的 dishId
-      // 如果是其他類型，則確保是庫存項目的 _id
       console.log('updateInventory called with:', { storeId, itemId, data });
 
       return apiClient.put(`/store/${storeId}/inventory/${itemId}`, data);

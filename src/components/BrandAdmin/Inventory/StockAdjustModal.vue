@@ -142,18 +142,6 @@ const adjustForm = ref({
   reason: ''
 });
 
-// 獲取正確的項目 ID
-// 根據後端邏輯，dish 類型的庫存使用 dish ID，其他類型使用 _id
-const getItemId = () => {
-  if (props.item.inventoryType === 'dish') {
-    // 對於餐點類型，使用 dish 字段（可能是對象或 ID）
-    return typeof props.item.dish === 'object' ? props.item.dish._id : props.item.dish;
-  } else {
-    // 對於其他類型，使用庫存項目的 _id
-    return props.item._id;
-  }
-};
-
 // 初始化表單值
 const initForm = () => {
   if (props.item) {
@@ -186,6 +174,7 @@ const closeModal = () => {
 };
 
 // 提交調整
+// 提交調整
 const submitAdjustment = async () => {
   if (!props.item || !adjustForm.value.reason.trim()) {
     error.value = '請填寫調整原因';
@@ -197,16 +186,14 @@ const submitAdjustment = async () => {
 
   try {
     let response;
-    const itemId = getItemId();
+    const itemId = props.item._id; // 現在直接使用 item._id
     const inventoryType = props.item.inventoryType || 'dish';
 
     console.log('提交庫存調整:', {
       itemId,
       inventoryType,
       storeId: props.storeId,
-      type: adjustForm.value.type,
-      dish: props.item.dish,
-      _id: props.item._id
+      type: adjustForm.value.type
     });
 
     switch (adjustForm.value.type) {
@@ -263,19 +250,10 @@ const submitAdjustment = async () => {
     }
   } catch (err) {
     console.error('調整庫存失敗:', err);
-    console.error('錯誤詳情:', {
-      response: err.response,
-      data: err.response?.data,
-      status: err.response?.status,
-      url: err.config?.url,
-      method: err.config?.method,
-      itemId: getItemId(),
-      item: props.item
-    });
 
-    // 更詳細的錯誤處理
+    // 更新錯誤訊息
     if (err.response?.status === 404) {
-      error.value = '找不到此庫存項目。對於餐點類型，請確認使用正確的 ID。';
+      error.value = '找不到此庫存項目';
     } else if (err.response?.status === 403) {
       error.value = '權限不足，請確認您有 order_system 權限';
     } else if (err.response?.data?.message) {
@@ -287,7 +265,6 @@ const submitAdjustment = async () => {
     isSubmitting.value = false;
   }
 };
-
 // 監聽 item 變化
 watch(() => props.item, () => {
   initForm();

@@ -421,7 +421,7 @@ const fetchInventoryDetail = async () => {
   error.value = '';
 
   try {
-    // 獲取庫存詳情
+    // 獲取庫存詳情 - 現在直接使用 itemId，不再需要區分類型
     const response = await api.inventory.getInventoryItem({
       storeId: storeId.value,
       itemId: itemId.value,
@@ -511,7 +511,7 @@ const submitSettings = async () => {
 
     await api.inventory.updateInventory({
       storeId: storeId.value,
-      itemId: itemId.value,
+      itemId: itemId.value, // 現在統一使用 itemId (即 inventory._id)
       data: {
         ...data,
         inventoryType: inventoryItem.value.inventoryType
