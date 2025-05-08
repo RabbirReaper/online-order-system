@@ -193,22 +193,16 @@
           </button>
           <h1 class="h5 mb-0">品牌管理系統</h1>
         </div>
-        <div class="dropdown">
-          <button class="btn btn-link text-white dropdown-toggle" type="button" id="mobileDropdownMenuButton"
-            data-bs-toggle="dropdown" aria-expanded="false">
+        <!-- 使用 b-dropdown 替代原生的 dropdown -->
+        <BDropdown variant="link" no-caret class="text-white">
+          <template #button-content>
             <i class="bi bi-person-circle"></i>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileDropdownMenuButton">
-            <li>
-              <h6 class="dropdown-header">{{ currentUserRole }}</h6>
-            </li>
-            <li><router-link class="dropdown-item" :to="`/admin/${brandId}/account-settings`">設置</router-link></li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li><a class="dropdown-item" href="#" @click.prevent="handleLogout">登出</a></li>
-          </ul>
-        </div>
+          </template>
+          <h6 class="dropdown-header">{{ currentUserRole }}</h6>
+          <b-dropdown-item :to="`/admin/${brandId}/account-settings`">設置</b-dropdown-item>
+          <b-dropdown-divider></b-dropdown-divider>
+          <b-dropdown-item @click="handleLogout">登出</b-dropdown-item>
+        </BDropdown>
       </div>
 
       <div class="content-wrapper">
@@ -216,23 +210,17 @@
         <div
           class="d-none d-md-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
           <h2>{{ getPageTitle() }}</h2>
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
-              data-bs-toggle="dropdown" aria-expanded="false">
+          <!-- 使用 b-dropdown 替代原生的 dropdown -->
+          <BDropdown text="" size="sm" variant="outline-secondary">
+            <template #button-content>
               <i class="bi bi-person-circle me-1"></i>
               {{ currentUserRole }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-              <li>
-                <h6 class="dropdown-header">{{ currentBrandName }}</h6>
-              </li>
-              <li><router-link class="dropdown-item" :to="`/admin/${brandId}/account-settings`">設置</router-link></li>
-              <li>
-                <hr class="dropdown-divider">
-              </li>
-              <li><a class="dropdown-item" href="#" @click.prevent="handleLogout">登出</a></li>
-            </ul>
-          </div>
+            </template>
+            <h6 class="dropdown-header">{{ currentBrandName }}</h6>
+            <b-dropdown-item :to="`/admin/${brandId}/account-settings`">設置</b-dropdown-item>
+            <b-dropdown-divider></b-dropdown-divider>
+            <b-dropdown-item @click="handleLogout">登出</b-dropdown-item>
+          </BDropdown>
         </div>
 
         <div class="content pb-3">
@@ -246,6 +234,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { BDropdown, BDropdownItem, BDropdownDivider } from 'bootstrap-vue-next';
 import api from '@/api';
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue';
 
@@ -457,11 +446,6 @@ onMounted(() => {
   z-index: 1020;
 }
 
-/* 提高 z-index 以確保下拉選單在上層 */
-.dropdown-menu {
-  z-index: 1031;
-}
-
 /* 移動裝置側邊欄 */
 @media (max-width: 767.98px) {
   .sidebar {
@@ -485,5 +469,14 @@ onMounted(() => {
   .sidebar {
     transform: none !important;
   }
+}
+
+/* 調整 Bootstrap Vue Next dropdown 在黑色背景上的樣式 */
+:deep(.text-white .btn-link) {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+:deep(.text-white .btn-link:hover) {
+  color: #fff !important;
 }
 </style>
