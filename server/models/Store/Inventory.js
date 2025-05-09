@@ -77,7 +77,7 @@ const inventorySchema = new mongoose.Schema({
   // 是否啟用庫存系統（會根據點餐扣庫存）
   isInventoryTracked: {
     type: Boolean,
-    default: true
+    default: false
   },
 
   // 是否強制設為售完（即使沒啟用庫存系統）
