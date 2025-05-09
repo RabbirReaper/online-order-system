@@ -120,8 +120,8 @@
               <tr v-for="log in stockLogs" :key="log._id">
                 <td>{{ formatDateTime(log.createdAt) }}</td>
                 <td>
-                  <span class="badge" :class="log.inventoryType === 'dish' ? 'bg-info' : 'bg-secondary'">
-                    {{ log.inventoryType === 'dish' ? '餐點' : '其他' }}
+                  <span class="badge" :class="log.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
+                    {{ log.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                   </span>
                 </td>
                 <td>{{ log.itemName }}</td>
@@ -343,9 +343,9 @@ const fetchStockLogs = async () => {
     if (filters.inventoryType) params.inventoryType = filters.inventoryType;
     if (filters.stockType) params.stockType = filters.stockType;
     if (filters.changeType) params.changeType = filters.changeType;
-
+    console.log('篩選條件:', params);
     const response = await api.inventory.getInventoryLogs(params);
-
+    console.log('獲取庫存日誌:', response);
     if (response) {
       stockLogs.value = response.logs || [];
       pagination.total = response.pagination?.total || response.total || 0;
