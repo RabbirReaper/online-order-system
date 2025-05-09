@@ -1,6 +1,6 @@
 <template>
   <BModal :model-value="show" @update:model-value="emit('close')" title="調整庫存" @ok="submitAdjustment"
-    :ok-disabled="isSubmitting" ok-title="確認調整" cancel-title="取消">
+    :ok-disabled="isSubmitting" ok-title="確認調整" cancel-title="取消" no-close-on-backdrop>
     <template #default>
       <div v-if="item">
         <h6 class="mb-3">{{ item.itemName }}</h6>
@@ -65,7 +65,7 @@
             :max="Math.max(0, item.totalStock - item.availableStock)" :disabled="!item.enableAvailableStock">
           <div class="form-text text-muted">
             {{ item.enableAvailableStock ? `最多可轉移: ${Math.max(0, item.totalStock - item.availableStock)}` :
-            '請先啟用可販售庫存功能' }}
+              '請先啟用可販售庫存功能' }}
           </div>
         </div>
 
