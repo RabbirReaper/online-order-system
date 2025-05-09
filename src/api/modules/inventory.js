@@ -49,7 +49,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateInventory({ storeId, itemId, data }) {
-      console.log('updateInventory called with:', { storeId, itemId, data });
+      // console.log('updateInventory called with:', { storeId, itemId, data });
       return apiClient.put(`/store/${storeId}/inventory/${itemId}`, data);
     },
 
