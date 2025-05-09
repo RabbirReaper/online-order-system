@@ -17,7 +17,7 @@ export const getInventoryLogs = async (options = {}) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'DishTemplate',
+    inventoryType,
     stockType,
     startDate,
     endDate,
@@ -234,12 +234,12 @@ export const getItemInventoryStats = async (options = {}) => {
     inventoryType
   };
 
-  if (inventoryType === 'DishTemplate') {
-    query.dish = itemId;
-  } else {
-    query._id = itemId;
-  }
-
+  // if (inventoryType === 'DishTemplate') {
+  //   query.dish = itemId;
+  // } else {
+  //   query._id = itemId;
+  // }
+  query._id = itemId;
   const inventory = await Inventory.findOne(query);
 
   if (!inventory) {
