@@ -12,32 +12,32 @@ const stockLogSchema = new mongoose.Schema({
     required: true
   },
 
-  // 庫存類型：餐點或原料
+  // 庫存類型：餐點或原料（與 inventory 保持一致）
   inventoryType: {
     type: String,
-    enum: ['dish', 'else'],
+    enum: ['DishTemplate', 'else'],  // 改為與 inventory 一致
     required: true
   },
 
-  // 關聯餐點（僅當 inventoryType 為 'dish' 時必填）
+  // 關聯餐點（僅當 inventoryType 為 'DishTemplate' 時必填）
   dish: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DishTemplate',
     required: function () {
-      return this.inventoryType === 'dish';
+      return this.inventoryType === 'DishTemplate';  // 改為與 inventory 一致
     }
   },
 
-  // 庫存項目名稱（原本的 dishName 改為通用的 itemName）
+  // 庫存項目名稱
   itemName: {
     type: String,
     required: true
   },
 
-  // 庫存變更類型：倉庫庫存或可用庫存
+  // 庫存變更類型：總庫存或可用庫存
   stockType: {
     type: String,
-    enum: ['warehouseStock', 'availableStock'],
+    enum: ['totalStock', 'availableStock'],  // 改為與 inventory 一致
     required: true
   },
 
@@ -62,7 +62,7 @@ const stockLogSchema = new mongoose.Schema({
   // 變更類型
   changeType: {
     type: String,
-    enum: ['manual_add', 'manual_subtract', 'order', 'system_adjustment', 'initial_stock', 'restock', 'damage'],
+    enum: ['manual_add', 'manual_subtract', 'order', 'system_adjustment', 'initial_stock', 'restock', 'damage', 'daily_reset'],  // 添加 daily_reset 用於重置可用庫存
     required: true
   },
 
@@ -82,6 +82,21 @@ const stockLogSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
   },
+
+  // 記錄操作時的相關標記
+  metadata: {
+    // 是否為可用庫存的每日重置
+    isDailyReset: {
+      type: Boolean,
+      default: false
+    },
+    // 操作時 inventory 的相關設定（用於歷史記錄參考）
+    inventorySettings: {
+      enableAvailableStock: Boolean,
+      isInventoryTracked: Boolean,
+      isSoldOut: Boolean
+    }
+  }
 
 }, { timestamps: true });
 
