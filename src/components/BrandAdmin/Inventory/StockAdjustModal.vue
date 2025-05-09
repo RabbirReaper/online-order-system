@@ -169,7 +169,9 @@ const getDamageMaxQuantity = () => {
 };
 
 // 提交調整
-const submitAdjustment = async () => {
+const submitAdjustment = async (evt) => {
+  evt.preventDefault(); // 停掉 BModal 內建的 close
+
   if (!props.item || !adjustForm.value.reason.trim()) {
     error.value = '請填寫調整原因';
     return;

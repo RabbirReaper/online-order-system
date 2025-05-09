@@ -126,7 +126,9 @@ watch(() => form.initialWarehouseStock, (newValue) => {
 });
 
 // 提交表單
-const submitForm = async () => {
+const submitForm = async (evt) => {
+  evt.preventDefault(); // 停掉 BModal 內建的 close
+
   // 驗證表單
   if (!form.itemName.trim()) {
     error.value = '請輸入項目名稱';

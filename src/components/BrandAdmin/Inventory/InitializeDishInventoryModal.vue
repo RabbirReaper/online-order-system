@@ -272,7 +272,8 @@ watch(selectedDishes, (newValue, oldValue) => {
 });
 
 // 提交初始化
-const submitInitialization = async () => {
+const submitInitialization = async (evt) => {
+  evt.preventDefault(); // 停掉 BModal 內建的 close
   if (selectedDishes.value.length === 0) {
     error.value = '請選擇至少一個餐點';
     return;
