@@ -196,7 +196,7 @@ export const createInventory = async (inventoryData, adminId) => {
 export const updateInventory = async (updateData, adminId) => {
   const {
     storeId,
-    itemId,
+    inventoryId,  // 從 itemId 改為 inventoryId
     stockType = 'totalStock',
     stock,
     changeAmount,
@@ -209,7 +209,7 @@ export const updateInventory = async (updateData, adminId) => {
   } = updateData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId);
+  const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
   // 記錄先前的庫存
   const previousStock = inventoryItem[stockType];
@@ -309,7 +309,7 @@ export const updateInventory = async (updateData, adminId) => {
 export const reduceStock = async (reduceData) => {
   const {
     storeId,
-    itemId,
+    inventoryId,  // 從 itemId 改為 inventoryId
     quantity,
     reason,
     orderId,
@@ -317,7 +317,7 @@ export const reduceStock = async (reduceData) => {
   } = reduceData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId);
+  const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
   // 如果不追蹤庫存，直接返回成功
   if (!inventoryItem.isInventoryTracked) {
@@ -411,7 +411,7 @@ export const reduceStock = async (reduceData) => {
 export const addStock = async (addData) => {
   const {
     storeId,
-    itemId,
+    inventoryId,  // 從 itemId 改為 inventoryId
     stockType = 'totalStock',
     quantity,
     reason,
@@ -419,7 +419,7 @@ export const addStock = async (addData) => {
   } = addData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId);
+  const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
   // 記錄先前的庫存
   const previousStock = inventoryItem[stockType];
@@ -464,14 +464,14 @@ export const addStock = async (addData) => {
 export const transferStock = async (transferData) => {
   const {
     storeId,
-    itemId,
+    inventoryId,  // 從 itemId 改為 inventoryId
     quantity,
     reason,
     adminId
   } = transferData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId);
+  const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
   // 檢查是否啟用了可用庫存功能
   if (!inventoryItem.enableAvailableStock) {
@@ -627,7 +627,7 @@ export const restoreInventoryForCancelledOrder = async (order) => {
 export const processDamage = async (damageData) => {
   const {
     storeId,
-    itemId,
+    inventoryId,  // 從 itemId 改為 inventoryId
     stockType = 'totalStock',
     quantity,
     reason,
@@ -639,7 +639,7 @@ export const processDamage = async (damageData) => {
   }
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId);
+  const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
   // 檢查庫存是否足夠
   if (inventoryItem[stockType] < quantity) {
@@ -684,13 +684,13 @@ export const processDamage = async (damageData) => {
 /**
  * 切換售完狀態
  * @param {String} storeId - 店鋪ID
- * @param {String} itemId - 項目ID
+ * @param {String} inventoryId - 庫存ID
  * @param {Boolean} isSoldOut - 是否售完
  * @param {String} adminId - 管理員ID
  * @returns {Promise<Object>} 更新後的庫存項目
  */
-export const toggleSoldOut = async (storeId, itemId, isSoldOut, adminId) => {
-  const inventoryItem = await getInventoryItem(storeId, itemId);
+export const toggleSoldOut = async (storeId, inventoryId, isSoldOut, adminId) => {
+  const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
   inventoryItem.isSoldOut = isSoldOut;
   await inventoryItem.save();
@@ -834,7 +834,10 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
 
   for (const item of items) {
     try {
-      if (!item.itemId && !item.itemName) {
+      // 適配舊的 itemId 和新的 inventoryId
+      const inventoryId = item.inventoryId || item.itemId;
+
+      if (!inventoryId && !item.itemName) {
         results.errors.push({
           item: item,
           error: '缺少必要的項目識別資訊'
@@ -845,7 +848,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
       // 嘗試查找庫存項目
       let inventoryItem = null;
       try {
-        inventoryItem = await getInventoryItem(storeId, item.itemId);
+        inventoryItem = await getInventoryItem(storeId, inventoryId);
       } catch (error) {
         // 如果找不到項目，則創建新項目
         if (error.statusCode === 404) {
@@ -859,7 +862,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
         // 更新現有項目
         await updateInventory({
           storeId,
-          itemId: item.itemId,
+          inventoryId,  // 使用 inventoryId
           stockType: item.stockType || 'totalStock',
           stock: item.stock,
           reason: item.reason || '批量更新庫存',
@@ -876,7 +879,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
           brandId: item.brandId,
           storeId,
           inventoryType: item.inventoryType || 'DishTemplate',
-          dishId: item.inventoryType === 'DishTemplate' ? item.itemId : undefined,
+          dishId: item.inventoryType === 'DishTemplate' ? inventoryId : undefined,
           itemName: item.itemName,
           initialTotalStock: item.totalStock || 0,
           initialAvailableStock: item.availableStock || 0,

@@ -342,7 +342,7 @@ const fetchInventoryDetail = async () => {
     // 獲取庫存詳情
     const response = await api.inventory.getInventoryItem({
       storeId: storeId.value,
-      itemId: itemId.value
+      inventoryId: itemId.value
     });
 
     inventoryItem.value = response.inventoryItem;
@@ -365,7 +365,7 @@ const fetchStats = async () => {
   try {
     const response = await api.inventory.getItemInventoryStats({
       storeId: storeId.value,
-      itemId: itemId.value,
+      inventoryId: itemId.value,
       inventoryType: inventoryItem.value.inventoryType
     });
     stats.value = response.stats;
@@ -379,7 +379,7 @@ const fetchRecentLogs = async () => {
   try {
     const response = await api.inventory.getInventoryLogs({
       storeId: storeId.value,
-      itemId: itemId.value,
+      inventoryId: itemId.value,
       inventoryType: inventoryItem.value.inventoryType,
       limit: 10
     });

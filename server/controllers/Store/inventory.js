@@ -29,11 +29,11 @@ export const getStoreInventory = asyncHandler(async (req, res) => {
 // 獲取單個庫存項目
 export const getInventoryItem = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
 
     const inventoryItem = await inventoryService.management.getInventoryItem(
       storeId,
-      itemId  // 這裡的 itemId 實際上是 inventory 的 _id
+      inventoryId  // 使用 inventoryId
     );
 
     res.json({
@@ -84,13 +84,13 @@ export const createInventory = asyncHandler(async (req, res) => {
 // 更新庫存項目
 export const updateInventory = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const adminId = req.adminId;
 
     const updateData = {
       ...req.body,
       storeId,
-      itemId
+      inventoryId  // 改為 inventoryId
     };
 
     const updatedInventoryItem = await inventoryService.management.updateInventory(
@@ -115,13 +115,13 @@ export const updateInventory = asyncHandler(async (req, res) => {
 // 減少庫存（訂單消耗）
 export const reduceStock = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const { quantity, reason, orderId } = req.body;
     const adminId = req.adminId;
 
     const reduceData = {
       storeId,
-      itemId,
+      inventoryId,  // 改為 inventoryId
       quantity,
       reason,
       orderId,
@@ -147,13 +147,13 @@ export const reduceStock = asyncHandler(async (req, res) => {
 // 增加庫存
 export const addStock = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const { quantity, reason, stockType = 'totalStock' } = req.body;
     const adminId = req.adminId;
 
     const addData = {
       storeId,
-      itemId,
+      inventoryId,  // 改為 inventoryId
       quantity,
       reason,
       stockType,
@@ -179,13 +179,13 @@ export const addStock = asyncHandler(async (req, res) => {
 // 庫存調撥（從總庫存到可販售）
 export const transferStock = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const { quantity, reason } = req.body;
     const adminId = req.adminId;
 
     const transferData = {
       storeId,
-      itemId,
+      inventoryId,  // 改為 inventoryId
       quantity,
       reason,
       adminId,
@@ -210,13 +210,13 @@ export const transferStock = asyncHandler(async (req, res) => {
 // 損耗處理
 export const processDamage = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const { quantity, reason, stockType = 'totalStock' } = req.body;
     const adminId = req.adminId;
 
     const damageData = {
       storeId,
-      itemId,
+      inventoryId,  // 改為 inventoryId
       quantity,
       reason,
       stockType,
@@ -267,7 +267,7 @@ export const initializeDishInventory = asyncHandler(async (req, res) => {
 // 切換庫存項目售完狀態
 export const toggleSoldOut = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const { isSoldOut } = req.body;
     const adminId = req.adminId;
 
@@ -280,7 +280,7 @@ export const toggleSoldOut = asyncHandler(async (req, res) => {
 
     const inventoryItem = await inventoryService.management.toggleSoldOut(
       storeId,
-      itemId,
+      inventoryId,  // 改為 inventoryId
       isSoldOut,
       adminId
     );
@@ -305,7 +305,7 @@ export const getInventoryLogs = asyncHandler(async (req, res) => {
     const { storeId } = req.params;
     const options = {
       storeId,
-      itemId: req.query.itemId,
+      itemId: req.query.inventoryId || req.query.itemId, // 向後兼容
       inventoryType: req.query.inventoryType,
       stockType: req.query.stockType,
       startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
@@ -334,10 +334,10 @@ export const getInventoryLogs = asyncHandler(async (req, res) => {
 // 獲取庫存趨勢
 export const getStockTrends = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const options = {
       storeId,
-      itemId,
+      itemId: inventoryId, // 服務層內部仍使用 itemId，所以這裡轉換
       inventoryType: req.query.inventoryType || 'DishTemplate',
       stockType: req.query.stockType || 'totalStock',
       days: parseInt(req.query.days, 10) || 30
@@ -361,10 +361,10 @@ export const getStockTrends = asyncHandler(async (req, res) => {
 // 獲取項目庫存統計
 export const getItemInventoryStats = asyncHandler(async (req, res) => {
   try {
-    const { storeId, itemId } = req.params;
+    const { storeId, inventoryId } = req.params; // 改為 inventoryId
     const options = {
       storeId,
-      itemId,
+      itemId: inventoryId, // 服務層內部仍使用 itemId，所以這裡轉換
       inventoryType: req.query.inventoryType || 'DishTemplate'
     };
 

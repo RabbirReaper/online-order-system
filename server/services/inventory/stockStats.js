@@ -16,8 +16,8 @@ import { getStartOfDay, getEndOfDay } from '../../utils/date.js';
 export const getInventoryLogs = async (options = {}) => {
   const {
     storeId,
-    itemId,
-    inventoryType,
+    itemId,  // 這是 inventory._id
+    inventoryType = 'DishTemplate',
     stockType,
     startDate,
     endDate,
@@ -36,11 +36,18 @@ export const getInventoryLogs = async (options = {}) => {
 
   // 篩選特定項目
   if (itemId) {
-    if (inventoryType === 'DishTemplate') {
-      query.dish = itemId;
-    } else {
-      // 對於非餐點類型，itemId 可能是項目名稱
-      query.itemName = itemId;
+    // 首先查找 inventory 項目
+    const inventory = await Inventory.findOne({
+      _id: itemId,
+      store: storeId
+    });
+
+    if (inventory) {
+      if (inventory.inventoryType === 'DishTemplate' && inventory.dish) {
+        query.dish = inventory.dish;
+      } else {
+        query.itemName = inventory.itemName;
+      }
     }
   }
 
@@ -109,7 +116,7 @@ export const getInventoryLogs = async (options = {}) => {
 export const getStockTrends = async (options = {}) => {
   const {
     storeId,
-    itemId,
+    itemId,  // 這是 inventory._id
     inventoryType = 'DishTemplate',
     stockType = 'totalStock',
     days = 30
@@ -128,10 +135,20 @@ export const getStockTrends = async (options = {}) => {
     createdAt: { $gte: startDate }
   };
 
-  if (inventoryType === 'DishTemplate' && itemId) {
-    logQuery.dish = itemId;
-  } else if (itemId) {
-    logQuery.itemName = itemId;
+  // 查找 inventory 項目以獲取正確的查詢條件
+  if (itemId) {
+    const inventory = await Inventory.findOne({
+      _id: itemId,
+      store: storeId
+    });
+
+    if (inventory) {
+      if (inventory.inventoryType === 'DishTemplate' && inventory.dish) {
+        logQuery.dish = inventory.dish;
+      } else {
+        logQuery.itemName = inventory.itemName;
+      }
+    }
   }
 
   // 查詢此期間的所有庫存日誌
@@ -224,23 +241,15 @@ export const getStockTrends = async (options = {}) => {
 export const getItemInventoryStats = async (options = {}) => {
   const {
     storeId,
-    itemId,
+    itemId,  // 這是 inventory._id
     inventoryType = 'DishTemplate'
   } = options;
 
-  // 查詢當前庫存
-  const query = {
-    store: storeId,
-    inventoryType
-  };
-
-  // if (inventoryType === 'DishTemplate') {
-  //   query.dish = itemId;
-  // } else {
-  //   query._id = itemId;
-  // }
-  query._id = itemId;
-  const inventory = await Inventory.findOne(query);
+  // 首先查找 inventory 項目
+  const inventory = await Inventory.findOne({
+    _id: itemId,
+    store: storeId
+  });
 
   if (!inventory) {
     return {
@@ -280,15 +289,16 @@ export const getItemInventoryStats = async (options = {}) => {
   const last30Days = new Date(today);
   last30Days.setDate(last30Days.getDate() - 30);
 
-  // 查詢最近 30 天的庫存變更日誌
+  // 構建查詢條件
   const logQuery = {
     store: storeId,
-    inventoryType,
+    inventoryType: inventory.inventoryType,
     createdAt: { $gte: last30Days }
   };
 
-  if (inventoryType === 'DishTemplate') {
-    logQuery.dish = itemId;
+  // 根據庫存類型設置正確的查詢條件
+  if (inventory.inventoryType === 'DishTemplate' && inventory.dish) {
+    logQuery.dish = inventory.dish;
   } else {
     logQuery.itemName = inventory.itemName;
   }
@@ -414,7 +424,7 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
     // 獲取詳細統計
     const stats = await getItemInventoryStats({
       storeId,
-      itemId: item.inventoryType === 'DishTemplate' ? item.dish._id : item._id,
+      itemId: item._id,  // 傳入 inventory._id
       inventoryType: item.inventoryType
     });
 
@@ -466,7 +476,7 @@ export const getStockChangeSummary = async (options = {}) => {
     startDate,
     endDate,
     inventoryType,
-    groupBy = 'changeType' // 'changeType', 'itemName', 'stockType'
+    groupBy = 'changeType'
   } = options;
 
   // 構建查詢條件
