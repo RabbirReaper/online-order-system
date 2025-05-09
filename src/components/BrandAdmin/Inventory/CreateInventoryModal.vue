@@ -1,93 +1,87 @@
 <template>
-  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">新增自訂義庫存</h5>
-          <button type="button" class="btn-close" @click="closeModal"></button>
+  <BModal :model-value="show" @update:model-value="emit('close')" title="新增自訂義庫存" @ok="submitForm"
+    :ok-disabled="isSubmitting" ok-title="建立庫存" cancel-title="取消">
+    <template #default>
+      <form @submit.prevent="submitForm">
+        <!-- 庫存類型 -->
+        <div class="mb-3">
+          <label class="form-label">庫存類型</label>
+          <select v-model="form.inventoryType" class="form-select" required>
+            <option value="else">其他</option>
+            <option value="dish">餐點</option>
+          </select>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitForm">
-            <!-- 庫存類型 -->
-            <div class="mb-3">
-              <label class="form-label">庫存類型</label>
-              <select v-model="form.inventoryType" class="form-select" required>
-                <option value="else">其他</option>
-                <option value="dish">餐點</option>
-              </select>
-            </div>
 
-            <!-- 項目名稱 -->
-            <div class="mb-3">
-              <label class="form-label">項目名稱</label>
-              <input type="text" v-model="form.itemName" class="form-control" required placeholder="例：外帶餐盒、餐具組等">
-            </div>
-
-            <!-- 基本設定 -->
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">初始倉庫庫存</label>
-                <input type="number" v-model.number="form.initialWarehouseStock" class="form-control" min="0" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">初始可販售庫存</label>
-                <input type="number" v-model.number="form.initialAvailableStock" class="form-control" min="0"
-                  :max="form.initialWarehouseStock" required>
-              </div>
-            </div>
-
-            <!-- 警告與限制 -->
-            <div class="row g-3 mt-3">
-              <div class="col-md-6">
-                <label class="form-label">最低庫存警告值</label>
-                <input type="number" v-model.number="form.minStockAlert" class="form-control" min="0">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">最高庫存限制</label>
-                <input type="number" v-model.number="form.maxStockAlert" class="form-control" min="0"
-                  placeholder="選填，留空表示無限制">
-              </div>
-            </div>
-
-            <!-- 追蹤設定 -->
-            <div class="mt-4">
-              <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" v-model="form.isInventoryTracked"
-                  id="isInventoryTracked">
-                <label class="form-check-label" for="isInventoryTracked">
-                  追蹤庫存
-                </label>
-              </div>
-
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" v-model="form.showAvailableStockToCustomer"
-                  id="showAvailableStockToCustomer">
-                <label class="form-check-label" for="showAvailableStockToCustomer">
-                  顯示庫存數量給客人
-                </label>
-              </div>
-            </div>
-
-            <!-- 錯誤提示 -->
-            <div v-if="error" class="alert alert-danger mt-3">
-              {{ error }}
-            </div>
-          </form>
+        <!-- 項目名稱 -->
+        <div class="mb-3">
+          <label class="form-label">項目名稱</label>
+          <input type="text" v-model="form.itemName" class="form-control" required placeholder="例：外帶餐盒、餐具組等">
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">取消</button>
-          <button type="button" class="btn btn-primary" @click="submitForm" :disabled="isSubmitting">
-            <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-            {{ isSubmitting ? '建立中...' : '建立庫存' }}
-          </button>
+
+        <!-- 基本設定 -->
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">初始倉庫庫存</label>
+            <input type="number" v-model.number="form.initialWarehouseStock" class="form-control" min="0" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">初始可販售庫存</label>
+            <input type="number" v-model.number="form.initialAvailableStock" class="form-control" min="0"
+              :max="form.initialWarehouseStock" required>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+
+        <!-- 警告與限制 -->
+        <div class="row g-3 mt-3">
+          <div class="col-md-6">
+            <label class="form-label">最低庫存警告值</label>
+            <input type="number" v-model.number="form.minStockAlert" class="form-control" min="0">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">最高庫存限制</label>
+            <input type="number" v-model.number="form.maxStockAlert" class="form-control" min="0"
+              placeholder="選填，留空表示無限制">
+          </div>
+        </div>
+
+        <!-- 追蹤設定 -->
+        <div class="mt-4">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" v-model="form.isInventoryTracked" id="isInventoryTracked">
+            <label class="form-check-label" for="isInventoryTracked">
+              追蹤庫存
+            </label>
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" v-model="form.showAvailableStockToCustomer"
+              id="showAvailableStockToCustomer">
+            <label class="form-check-label" for="showAvailableStockToCustomer">
+              顯示庫存數量給客人
+            </label>
+          </div>
+        </div>
+
+        <!-- 錯誤提示 -->
+        <div v-if="error" class="alert alert-danger mt-3">
+          {{ error }}
+        </div>
+      </form>
+    </template>
+
+    <template #modal-footer>
+      <BButton variant="secondary" @click="emit('close')">取消</BButton>
+      <BButton variant="primary" :disabled="isSubmitting" @click="submitForm">
+        <BSpinner small v-if="isSubmitting" class="me-1" />
+        {{ isSubmitting ? '建立中...' : '建立庫存' }}
+      </BButton>
+    </template>
+  </BModal>
 </template>
 
 <script setup>
 import { ref, reactive, watch } from 'vue';
+import { BModal, BButton, BSpinner } from 'bootstrap-vue-next';
 import api from '@/api';
 
 // Props
@@ -104,6 +98,9 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits(['close', 'success']);
+
+// 控制 Modal 顯示
+const show = ref(true);
 
 // 狀態
 const isSubmitting = ref(false);
@@ -162,6 +159,7 @@ const submitForm = async () => {
     });
 
     emit('success');
+    emit('close');
   } catch (err) {
     console.error('建立庫存失敗:', err);
     error.value = err.response?.data?.message || '建立庫存時發生錯誤';
@@ -169,15 +167,4 @@ const submitForm = async () => {
     isSubmitting.value = false;
   }
 };
-
-// 關閉 Modal
-const closeModal = () => {
-  emit('close');
-};
 </script>
-
-<style scoped>
-.modal {
-  display: block;
-}
-</style>

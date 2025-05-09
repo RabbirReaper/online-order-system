@@ -10,62 +10,64 @@
       </div>
       <div class="d-flex gap-2">
         <!-- 篩選按鈕 -->
-        <div class="dropdown">
-          <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        <BDropdown text="篩選" variant="outline-secondary" auto-close="outside">
+          <template #button-content>
             <i class="bi bi-filter me-1"></i>篩選
-          </button>
-          <div class="dropdown-menu p-3" style="min-width: 350px;">
-            <!-- 日期範圍 -->
-            <div class="mb-3">
-              <label class="form-label">日期範圍</label>
-              <div class="row g-2">
-                <div class="col-6">
-                  <input type="date" v-model="filters.startDate" class="form-control" @change="applyFilters">
-                </div>
-                <div class="col-6">
-                  <input type="date" v-model="filters.endDate" class="form-control" @change="applyFilters">
+          </template>
+          <template #default>
+            <div class="dropdown-menu-form p-3" style="min-width: 350px;">
+              <!-- 日期範圍 -->
+              <div class="mb-3">
+                <label class="form-label">日期範圍</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <input type="date" v-model="filters.startDate" class="form-control" @change="applyFilters">
+                  </div>
+                  <div class="col-6">
+                    <input type="date" v-model="filters.endDate" class="form-control" @change="applyFilters">
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- 庫存類型 -->
-            <div class="mb-3">
-              <label class="form-label">庫存類型</label>
-              <select v-model="filters.inventoryType" class="form-select" @change="applyFilters">
-                <option value="">全部類型</option>
-                <option value="dish">餐點</option>
-                <option value="else">其他</option>
-              </select>
-            </div>
+              <!-- 庫存類型 -->
+              <div class="mb-3">
+                <label class="form-label">庫存類型</label>
+                <select v-model="filters.inventoryType" class="form-select" @change="applyFilters">
+                  <option value="">全部類型</option>
+                  <option value="dish">餐點</option>
+                  <option value="else">其他</option>
+                </select>
+              </div>
 
-            <!-- 庫存變更類型 -->
-            <div class="mb-3">
-              <label class="form-label">庫存變更類型</label>
-              <select v-model="filters.stockType" class="form-select" @change="applyFilters">
-                <option value="">全部類型</option>
-                <option value="warehouseStock">倉庫庫存</option>
-                <option value="availableStock">可販售庫存</option>
-              </select>
-            </div>
+              <!-- 庫存變更類型 -->
+              <div class="mb-3">
+                <label class="form-label">庫存變更類型</label>
+                <select v-model="filters.stockType" class="form-select" @change="applyFilters">
+                  <option value="">全部類型</option>
+                  <option value="warehouseStock">倉庫庫存</option>
+                  <option value="availableStock">可販售庫存</option>
+                </select>
+              </div>
 
-            <!-- 變更原因 -->
-            <div class="mb-3">
-              <label class="form-label">變更原因</label>
-              <select v-model="filters.changeType" class="form-select" @change="applyFilters">
-                <option value="">全部原因</option>
-                <option value="manual_add">手動新增</option>
-                <option value="manual_subtract">手動減少</option>
-                <option value="order">訂單消耗</option>
-                <option value="system_adjustment">系統調整</option>
-                <option value="initial_stock">初始庫存</option>
-                <option value="restock">進貨</option>
-                <option value="damage">損耗</option>
-              </select>
-            </div>
+              <!-- 變更原因 -->
+              <div class="mb-3">
+                <label class="form-label">變更原因</label>
+                <select v-model="filters.changeType" class="form-select" @change="applyFilters">
+                  <option value="">全部原因</option>
+                  <option value="manual_add">手動新增</option>
+                  <option value="manual_subtract">手動減少</option>
+                  <option value="order">訂單消耗</option>
+                  <option value="system_adjustment">系統調整</option>
+                  <option value="initial_stock">初始庫存</option>
+                  <option value="restock">進貨</option>
+                  <option value="damage">損耗</option>
+                </select>
+              </div>
 
-            <button class="btn btn-sm btn-secondary w-100" @click="resetFilters">重置篩選</button>
-          </div>
-        </div>
+              <button class="btn btn-sm btn-secondary w-100" @click="resetFilters">重置篩選</button>
+            </div>
+          </template>
+        </BDropdown>
 
         <!-- 搜尋框 -->
         <div class="input-group" style="width: 300px;">
@@ -181,6 +183,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { BDropdown } from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 路由
@@ -440,5 +443,10 @@ onMounted(() => {
 
 .badge {
   font-weight: 500;
+}
+
+.dropdown-menu-form {
+  position: relative;
+  padding: 1rem;
 }
 </style>
