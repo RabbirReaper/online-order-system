@@ -9,7 +9,7 @@ export default function (apiClient) {
      * 獲取店鋪庫存
      * @param {Object} params - 查詢參數
      * @param {string} params.storeId - 店鋪ID
-     * @param {string} [params.inventoryType] - 庫存類型 ('dish' 或 'else')
+     * @param {string} [params.inventoryType] - 庫存類型 ('DishTemplate' 或 'else')
      * @param {boolean} [params.onlyAvailable] - 是否只顯示有庫存的項目
      * @param {string} [params.search] - 搜尋關鍵字
      * @returns {Promise} - API 回應
@@ -23,13 +23,10 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @param {string} params.storeId - 店鋪ID
      * @param {string} params.itemId - 項目ID (統一使用 inventory._id)
-     * @param {string} [params.inventoryType='dish'] - 庫存類型
      * @returns {Promise} - API 回應
      */
-    getInventoryItem({ storeId, itemId, inventoryType = 'dish' }) {
-      return apiClient.get(`/store/${storeId}/inventory/${itemId}`, {
-        params: { inventoryType }
-      });
+    getInventoryItem({ storeId, itemId }) {
+      return apiClient.get(`/store/${storeId}/inventory/${itemId}`);
     },
 
     /**
@@ -53,7 +50,6 @@ export default function (apiClient) {
      */
     updateInventory({ storeId, itemId, data }) {
       console.log('updateInventory called with:', { storeId, itemId, data });
-
       return apiClient.put(`/store/${storeId}/inventory/${itemId}`, data);
     },
 
@@ -62,7 +58,7 @@ export default function (apiClient) {
      * @param {Object} params - 減少參數
      * @returns {Promise} - API 回應
      */
-    reduceStock({ storeId, itemId, quantity, reason, orderId, inventoryType = 'dish' }) {
+    reduceStock({ storeId, itemId, quantity, reason, orderId, inventoryType = 'DishTemplate' }) {
       return apiClient.post(`/store/${storeId}/inventory/${itemId}/reduce`, {
         quantity,
         reason,
@@ -76,7 +72,7 @@ export default function (apiClient) {
      * @param {Object} params - 增加參數
      * @returns {Promise} - API 回應
      */
-    addStock({ storeId, itemId, quantity, reason, stockType = 'warehouseStock', inventoryType = 'dish' }) {
+    addStock({ storeId, itemId, quantity, reason, stockType = 'totalStock', inventoryType = 'DishTemplate' }) {
       return apiClient.post(`/store/${storeId}/inventory/${itemId}/add`, {
         quantity,
         reason,
@@ -86,11 +82,11 @@ export default function (apiClient) {
     },
 
     /**
-     * 庫存調撥（從倉庫到可販售）
+     * 庫存調撥（從總庫存到可販售）
      * @param {Object} params - 調撥參數
      * @returns {Promise} - API 回應
      */
-    transferStock({ storeId, itemId, quantity, reason, inventoryType = 'dish' }) {
+    transferStock({ storeId, itemId, quantity, reason, inventoryType = 'DishTemplate' }) {
       return apiClient.post(`/store/${storeId}/inventory/${itemId}/transfer`, {
         quantity,
         reason,
@@ -103,13 +99,33 @@ export default function (apiClient) {
      * @param {Object} params - 損耗參數
      * @returns {Promise} - API 回應
      */
-    processDamage({ storeId, itemId, quantity, reason, stockType = 'warehouseStock', inventoryType = 'dish' }) {
+    processDamage({ storeId, itemId, quantity, reason, stockType = 'totalStock', inventoryType = 'DishTemplate' }) {
       return apiClient.post(`/store/${storeId}/inventory/${itemId}/damage`, {
         quantity,
         reason,
         stockType,
         inventoryType
       });
+    },
+
+    /**
+     * 切換售完狀態
+     * @param {Object} params - 切換參數
+     * @returns {Promise} - API 回應
+     */
+    toggleSoldOut({ storeId, itemId, isSoldOut }) {
+      return apiClient.put(`/store/${storeId}/inventory/${itemId}/sold-out`, {
+        isSoldOut
+      });
+    },
+
+    /**
+     * 初始化餐點庫存
+     * @param {Object} params - 初始化參數
+     * @returns {Promise} - API 回應
+     */
+    initializeDishInventory({ storeId }) {
+      return apiClient.post(`/store/${storeId}/inventory/initialize-dishes`);
     },
 
     /**
@@ -126,7 +142,7 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @returns {Promise} - API 回應
      */
-    getStockTrends({ storeId, itemId, inventoryType = 'dish', stockType = 'warehouseStock', days = 30 }) {
+    getStockTrends({ storeId, itemId, inventoryType = 'DishTemplate', stockType = 'totalStock', days = 30 }) {
       return apiClient.get(`/store/${storeId}/inventory/${itemId}/trends`, {
         params: { inventoryType, stockType, days }
       });
@@ -137,7 +153,7 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @returns {Promise} - API 回應
      */
-    getItemInventoryStats({ storeId, itemId, inventoryType = 'dish' }) {
+    getItemInventoryStats({ storeId, itemId, inventoryType = 'DishTemplate' }) {
       return apiClient.get(`/store/${storeId}/inventory/${itemId}/stats`, {
         params: { inventoryType }
       });
@@ -161,6 +177,15 @@ export default function (apiClient) {
      */
     bulkUpdateInventory({ storeId, items }) {
       return apiClient.post(`/store/${storeId}/inventory/bulk`, { items });
+    },
+
+    /**
+     * 獲取庫存變更摘要
+     * @param {Object} params - 查詢參數
+     * @returns {Promise} - API 回應
+     */
+    getStockChangeSummary({ storeId, ...queryParams }) {
+      return apiClient.get(`/store/${storeId}/inventory/summary`, { params: queryParams });
     }
   };
 }

@@ -40,6 +40,9 @@ router.get('/:storeId/inventory/health', authMiddleware, permissionMiddleware(['
 router.get('/:storeId/inventory/logs', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getInventoryLogs);
 router.post('/:storeId/inventory/bulk', authMiddleware, permissionMiddleware(['order_system']), inventoryController.bulkUpdateInventory);
 
+// 初始化餐點庫存
+router.post('/:storeId/inventory/initialize-dishes', authMiddleware, permissionMiddleware(['order_system']), inventoryController.initializeDishInventory);
+
 router.put('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
 router.get('/:storeId/inventory/:itemId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
 
@@ -47,10 +50,9 @@ router.post('/:storeId/inventory/:itemId/reduce', authMiddleware, permissionMidd
 router.post('/:storeId/inventory/:itemId/add', authMiddleware, permissionMiddleware(['order_system']), inventoryController.addStock);
 router.post('/:storeId/inventory/:itemId/transfer', authMiddleware, permissionMiddleware(['order_system']), inventoryController.transferStock);
 router.post('/:storeId/inventory/:itemId/damage', authMiddleware, permissionMiddleware(['order_system']), inventoryController.processDamage);
+router.put('/:storeId/inventory/:itemId/sold-out', authMiddleware, permissionMiddleware(['order_system']), inventoryController.toggleSoldOut);
 router.get('/:storeId/inventory/:itemId/trends', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockTrends);
 router.get('/:storeId/inventory/:itemId/stats', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getItemInventoryStats);
-
-
 
 //菜單路由
 router.get('/:storeId/menu', menuController.getStoreMenu);

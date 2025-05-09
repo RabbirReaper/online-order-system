@@ -126,7 +126,7 @@ export const reduceStock = asyncHandler(async (req, res) => {
       reason,
       orderId,
       adminId,
-      inventoryType: req.body.inventoryType || 'dish'
+      inventoryType: req.body.inventoryType || 'DishTemplate'
     };
 
     await inventoryService.management.reduceStock(reduceData);
@@ -148,7 +148,7 @@ export const reduceStock = asyncHandler(async (req, res) => {
 export const addStock = asyncHandler(async (req, res) => {
   try {
     const { storeId, itemId } = req.params;
-    const { quantity, reason, stockType = 'warehouseStock' } = req.body;
+    const { quantity, reason, stockType = 'totalStock' } = req.body;
     const adminId = req.adminId;
 
     const addData = {
@@ -158,7 +158,7 @@ export const addStock = asyncHandler(async (req, res) => {
       reason,
       stockType,
       adminId,
-      inventoryType: req.body.inventoryType || 'dish'
+      inventoryType: req.body.inventoryType || 'DishTemplate'
     };
 
     await inventoryService.management.addStock(addData);
@@ -176,7 +176,7 @@ export const addStock = asyncHandler(async (req, res) => {
   }
 });
 
-// 庫存調撥（從倉庫到可販售）
+// 庫存調撥（從總庫存到可販售）
 export const transferStock = asyncHandler(async (req, res) => {
   try {
     const { storeId, itemId } = req.params;
@@ -189,7 +189,7 @@ export const transferStock = asyncHandler(async (req, res) => {
       quantity,
       reason,
       adminId,
-      inventoryType: req.body.inventoryType || 'dish'
+      inventoryType: req.body.inventoryType || 'DishTemplate'
     };
 
     await inventoryService.management.transferStock(transferData);
@@ -211,7 +211,7 @@ export const transferStock = asyncHandler(async (req, res) => {
 export const processDamage = asyncHandler(async (req, res) => {
   try {
     const { storeId, itemId } = req.params;
-    const { quantity, reason, stockType = 'warehouseStock' } = req.body;
+    const { quantity, reason, stockType = 'totalStock' } = req.body;
     const adminId = req.adminId;
 
     const damageData = {
@@ -221,7 +221,7 @@ export const processDamage = asyncHandler(async (req, res) => {
       reason,
       stockType,
       adminId,
-      inventoryType: req.body.inventoryType || 'dish'
+      inventoryType: req.body.inventoryType || 'DishTemplate'
     };
 
     await inventoryService.management.processDamage(damageData);
@@ -232,6 +232,66 @@ export const processDamage = asyncHandler(async (req, res) => {
     });
   } catch (error) {
     console.error('Error processing damage:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+});
+
+// 初始化店鋪所有餐點的庫存
+export const initializeDishInventory = asyncHandler(async (req, res) => {
+  try {
+    const { storeId } = req.params;
+    const adminId = req.adminId;
+
+    const result = await inventoryService.management.initializeDishInventory(
+      storeId,
+      adminId
+    );
+
+    res.json({
+      success: true,
+      message: '餐點庫存初始化成功',
+      result
+    });
+  } catch (error) {
+    console.error('Error initializing dish inventory:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+});
+
+// 切換庫存項目售完狀態
+export const toggleSoldOut = asyncHandler(async (req, res) => {
+  try {
+    const { storeId, itemId } = req.params;
+    const { isSoldOut } = req.body;
+    const adminId = req.adminId;
+
+    if (isSoldOut === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少參數 isSoldOut'
+      });
+    }
+
+    const inventoryItem = await inventoryService.management.toggleSoldOut(
+      storeId,
+      itemId,
+      isSoldOut,
+      adminId
+    );
+
+    res.json({
+      success: true,
+      message: `庫存項目已${isSoldOut ? '設為售完' : '取消售完'}`,
+      inventoryItem
+    });
+  } catch (error) {
+    console.error('Error toggling sold out status:', error);
     res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || 'Internal server error'
@@ -278,8 +338,8 @@ export const getStockTrends = asyncHandler(async (req, res) => {
     const options = {
       storeId,
       itemId,
-      inventoryType: req.query.inventoryType || 'dish',
-      stockType: req.query.stockType || 'warehouseStock',
+      inventoryType: req.query.inventoryType || 'DishTemplate',
+      stockType: req.query.stockType || 'totalStock',
       days: parseInt(req.query.days, 10) || 30
     };
 
@@ -305,7 +365,7 @@ export const getItemInventoryStats = asyncHandler(async (req, res) => {
     const options = {
       storeId,
       itemId,
-      inventoryType: req.query.inventoryType || 'dish'
+      inventoryType: req.query.inventoryType || 'DishTemplate'
     };
 
     const stats = await inventoryService.stats.getItemInventoryStats(options);

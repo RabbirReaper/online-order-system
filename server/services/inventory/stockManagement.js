@@ -26,7 +26,10 @@ export const getStoreInventory = async (storeId, options = {}) => {
   }
 
   if (onlyAvailable) {
-    query.availableStock = { $gt: 0 };
+    query.$or = [
+      { enableAvailableStock: true, availableStock: { $gt: 0 } },
+      { enableAvailableStock: false, totalStock: { $gt: 0 } }
+    ];
   }
 
   if (search) {
@@ -45,8 +48,7 @@ export const getStoreInventory = async (storeId, options = {}) => {
 /**
  * 獲取單個庫存項目
  * @param {String} storeId - 店鋪ID
- * @param {String} itemId - 項目ID
- * @param {String} inventoryType - 庫存類型
+ * @param {String} inventoryId - inventory ID
  * @returns {Promise<Object>} 庫存項目
  */
 export const getInventoryItem = async (storeId, inventoryId) => {
@@ -79,7 +81,7 @@ export const createInventory = async (inventoryData, adminId) => {
   }
 
   // 如果是餐點庫存，檢查餐點是否存在
-  if (inventoryData.inventoryType === 'dish') {
+  if (inventoryData.inventoryType === 'DishTemplate') {
     if (!inventoryData.dishId) {
       throw new AppError('餐點庫存必須提供餐點ID', 400);
     }
@@ -92,13 +94,16 @@ export const createInventory = async (inventoryData, adminId) => {
     // 檢查該餐點是否已有庫存記錄
     const existingInventory = await Inventory.findOne({
       store: inventoryData.storeId,
-      inventoryType: 'dish',
+      inventoryType: 'DishTemplate',
       dish: inventoryData.dishId
     });
 
     if (existingInventory) {
       throw new AppError('該餐點已有庫存記錄', 400);
     }
+
+    // 設置餐點名稱
+    inventoryData.itemName = dish.name;
   } else {
     // 檢查相同名稱的項目是否已存在
     const existingInventory = await Inventory.findOne({
@@ -119,35 +124,43 @@ export const createInventory = async (inventoryData, adminId) => {
     inventoryType: inventoryData.inventoryType,
     dish: inventoryData.dishId,
     itemName: inventoryData.itemName,
-    warehouseStock: inventoryData.initialWarehouseStock || 0,
+    totalStock: inventoryData.initialTotalStock || 0,
+    enableAvailableStock: inventoryData.enableAvailableStock || false,
     availableStock: inventoryData.initialAvailableStock || 0,
     minStockAlert: inventoryData.minStockAlert || 0,
-    maxStockAlert: inventoryData.maxStockAlert,
+    targetStockLevel: inventoryData.targetStockLevel,
     isInventoryTracked: inventoryData.isInventoryTracked !== false,
-    showAvailableStockToCustomer: inventoryData.showAvailableStockToCustomer || false
+    isSoldOut: inventoryData.isSoldOut || false
   });
 
   await newInventory.save();
 
   // 記錄初始庫存日誌
-  if (inventoryData.initialWarehouseStock > 0) {
+  if (inventoryData.initialTotalStock > 0) {
     await StockLog.create({
       brand: newInventory.brand,
       store: inventoryData.storeId,
       inventoryType: inventoryData.inventoryType,
       dish: inventoryData.dishId,
       itemName: inventoryData.itemName,
-      stockType: 'warehouseStock',
+      stockType: 'totalStock',
       previousStock: 0,
-      newStock: inventoryData.initialWarehouseStock,
-      changeAmount: inventoryData.initialWarehouseStock,
+      newStock: inventoryData.initialTotalStock,
+      changeAmount: inventoryData.initialTotalStock,
       changeType: 'initial_stock',
       reason: '初始庫存設定',
-      admin: adminId
+      admin: adminId,
+      metadata: {
+        inventorySettings: {
+          enableAvailableStock: newInventory.enableAvailableStock,
+          isInventoryTracked: newInventory.isInventoryTracked,
+          isSoldOut: newInventory.isSoldOut
+        }
+      }
     });
   }
 
-  if (inventoryData.initialAvailableStock > 0) {
+  if (inventoryData.initialAvailableStock > 0 && inventoryData.enableAvailableStock) {
     await StockLog.create({
       brand: newInventory.brand,
       store: inventoryData.storeId,
@@ -160,7 +173,14 @@ export const createInventory = async (inventoryData, adminId) => {
       changeAmount: inventoryData.initialAvailableStock,
       changeType: 'initial_stock',
       reason: '初始庫存設定',
-      admin: adminId
+      admin: adminId,
+      metadata: {
+        inventorySettings: {
+          enableAvailableStock: newInventory.enableAvailableStock,
+          isInventoryTracked: newInventory.isInventoryTracked,
+          isSoldOut: newInventory.isSoldOut
+        }
+      }
     });
   }
 
@@ -177,19 +197,19 @@ export const updateInventory = async (updateData, adminId) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
-    stockType = 'warehouseStock',
+    stockType = 'totalStock',
     stock,
     changeAmount,
     reason,
     minStockAlert,
-    maxStockAlert,
+    targetStockLevel,
     isInventoryTracked,
-    showAvailableStockToCustomer
+    enableAvailableStock,
+    isSoldOut
   } = updateData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
+  const inventoryItem = await getInventoryItem(storeId, itemId);
 
   // 記錄先前的庫存
   const previousStock = inventoryItem[stockType];
@@ -215,29 +235,39 @@ export const updateInventory = async (updateData, adminId) => {
     throw new AppError('庫存不能為負數', 400);
   }
 
-  // 確保可販售庫存不超過倉庫庫存
-  if (stockType === 'availableStock' && newStock > inventoryItem.warehouseStock) {
-    throw new AppError('可販售庫存不能超過倉庫庫存', 400);
+  // 確保可販售庫存不超過總庫存
+  if (stockType === 'availableStock' && newStock > inventoryItem.totalStock) {
+    throw new AppError('可販售庫存不能超過總庫存', 400);
   }
 
-  // 更新庫存
-  inventoryItem[stockType] = newStock;
+  // 更新庫存數量
+  if (stock !== undefined || changeAmount !== undefined) {
+    inventoryItem[stockType] = newStock;
+  }
 
   // 更新其他設定
   if (minStockAlert !== undefined) {
     inventoryItem.minStockAlert = minStockAlert;
   }
 
-  if (maxStockAlert !== undefined) {
-    inventoryItem.maxStockAlert = maxStockAlert;
+  if (targetStockLevel !== undefined) {
+    inventoryItem.targetStockLevel = targetStockLevel;
   }
 
   if (isInventoryTracked !== undefined) {
     inventoryItem.isInventoryTracked = isInventoryTracked;
   }
 
-  if (showAvailableStockToCustomer !== undefined) {
-    inventoryItem.showAvailableStockToCustomer = showAvailableStockToCustomer;
+  if (enableAvailableStock !== undefined) {
+    inventoryItem.enableAvailableStock = enableAvailableStock;
+    // 如果關閉了可用庫存功能，將可用庫存設為0
+    if (!enableAvailableStock) {
+      inventoryItem.availableStock = 0;
+    }
+  }
+
+  if (isSoldOut !== undefined) {
+    inventoryItem.isSoldOut = isSoldOut;
   }
 
   // 保存庫存項目
@@ -257,7 +287,14 @@ export const updateInventory = async (updateData, adminId) => {
       changeAmount: actualChangeAmount,
       changeType,
       reason: reason || '手動調整庫存',
-      admin: adminId
+      admin: adminId,
+      metadata: {
+        inventorySettings: {
+          enableAvailableStock: inventoryItem.enableAvailableStock,
+          isInventoryTracked: inventoryItem.isInventoryTracked,
+          isSoldOut: inventoryItem.isSoldOut
+        }
+      }
     });
   }
 
@@ -273,7 +310,6 @@ export const reduceStock = async (reduceData) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
     quantity,
     reason,
     orderId,
@@ -281,23 +317,35 @@ export const reduceStock = async (reduceData) => {
   } = reduceData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
+  const inventoryItem = await getInventoryItem(storeId, itemId);
 
   // 如果不追蹤庫存，直接返回成功
   if (!inventoryItem.isInventoryTracked) {
     return true;
   }
 
-  // 檢查可販售庫存是否足夠
-  if (inventoryItem.availableStock < quantity) {
+  // 優先從可用庫存扣除
+  let stockType = 'availableStock';
+  let previousStock = inventoryItem.availableStock;
+
+  // 如果沒啟用可用庫存功能，或可用庫存不足，從總庫存扣除
+  if (!inventoryItem.enableAvailableStock || inventoryItem.availableStock < quantity) {
+    stockType = 'totalStock';
+    previousStock = inventoryItem.totalStock;
+  }
+
+  // 檢查庫存是否足夠
+  if (inventoryItem[stockType] < quantity) {
     throw new AppError('庫存不足', 400);
   }
 
-  // 記錄先前的庫存
-  const previousAvailableStock = inventoryItem.availableStock;
+  // 更新庫存
+  inventoryItem[stockType] -= quantity;
 
-  // 更新可販售庫存
-  inventoryItem.availableStock -= quantity;
+  // 如果啟用了可用庫存，且從可用庫存扣除，則也要同步扣除總庫存
+  if (inventoryItem.enableAvailableStock && stockType === 'availableStock') {
+    inventoryItem.totalStock -= quantity;
+  }
 
   // 保存庫存項目
   await inventoryItem.save();
@@ -309,15 +357,48 @@ export const reduceStock = async (reduceData) => {
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType: 'availableStock',
-    previousStock: previousAvailableStock,
-    newStock: inventoryItem.availableStock,
+    stockType,
+    previousStock,
+    newStock: inventoryItem[stockType],
     changeAmount: -quantity,
     changeType: orderId ? 'order' : 'manual_subtract',
     reason: reason || '訂單消耗',
     order: orderId,
-    admin: adminId
+    admin: adminId,
+    metadata: {
+      inventorySettings: {
+        enableAvailableStock: inventoryItem.enableAvailableStock,
+        isInventoryTracked: inventoryItem.isInventoryTracked,
+        isSoldOut: inventoryItem.isSoldOut
+      }
+    }
   });
+
+  // 如果同時要扣總庫存，也記錄日誌
+  if (inventoryItem.enableAvailableStock && stockType === 'availableStock') {
+    await StockLog.create({
+      brand: inventoryItem.brand,
+      store: storeId,
+      inventoryType: inventoryItem.inventoryType,
+      dish: inventoryItem.dish,
+      itemName: inventoryItem.itemName,
+      stockType: 'totalStock',
+      previousStock: inventoryItem.totalStock + quantity,
+      newStock: inventoryItem.totalStock,
+      changeAmount: -quantity,
+      changeType: orderId ? 'order' : 'manual_subtract',
+      reason: reason || '訂單消耗（同步總庫存）',
+      order: orderId,
+      admin: adminId,
+      metadata: {
+        inventorySettings: {
+          enableAvailableStock: inventoryItem.enableAvailableStock,
+          isInventoryTracked: inventoryItem.isInventoryTracked,
+          isSoldOut: inventoryItem.isSoldOut
+        }
+      }
+    });
+  }
 
   return true;
 };
@@ -331,15 +412,14 @@ export const addStock = async (addData) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
-    stockType = 'warehouseStock',
+    stockType = 'totalStock',
     quantity,
     reason,
     adminId
   } = addData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
+  const inventoryItem = await getInventoryItem(storeId, itemId);
 
   // 記錄先前的庫存
   const previousStock = inventoryItem[stockType];
@@ -363,14 +443,21 @@ export const addStock = async (addData) => {
     changeAmount: quantity,
     changeType: 'manual_add',
     reason: reason || '手動增加庫存',
-    admin: adminId
+    admin: adminId,
+    metadata: {
+      inventorySettings: {
+        enableAvailableStock: inventoryItem.enableAvailableStock,
+        isInventoryTracked: inventoryItem.isInventoryTracked,
+        isSoldOut: inventoryItem.isSoldOut
+      }
+    }
   });
 
   return true;
 };
 
 /**
- * 庫存調撥（從倉庫到可販售）
+ * 庫存調撥（從總庫存到可販售）
  * @param {Object} transferData - 調撥數據
  * @returns {Promise<Boolean>} 操作是否成功
  */
@@ -378,45 +465,56 @@ export const transferStock = async (transferData) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
     quantity,
     reason,
     adminId
   } = transferData;
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
+  const inventoryItem = await getInventoryItem(storeId, itemId);
 
-  // 檢查倉庫庫存是否足夠
-  if (inventoryItem.warehouseStock < quantity) {
-    throw new AppError('倉庫庫存不足', 400);
+  // 檢查是否啟用了可用庫存功能
+  if (!inventoryItem.enableAvailableStock) {
+    throw new AppError('此項目未啟用可用庫存功能', 400);
+  }
+
+  // 檢查總庫存是否足夠
+  if (inventoryItem.totalStock < quantity) {
+    throw new AppError('總庫存不足', 400);
   }
 
   // 記錄先前的庫存
-  const previousWarehouseStock = inventoryItem.warehouseStock;
+  const previousTotalStock = inventoryItem.totalStock;
   const previousAvailableStock = inventoryItem.availableStock;
 
   // 更新庫存
-  inventoryItem.warehouseStock -= quantity;
+  inventoryItem.totalStock -= quantity;
   inventoryItem.availableStock += quantity;
 
   // 保存庫存項目
   await inventoryItem.save();
 
-  // 創建庫存日誌 - 倉庫減少
+  // 創建庫存日誌 - 總庫存減少
   await StockLog.create({
     brand: inventoryItem.brand,
     store: storeId,
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType: 'warehouseStock',
-    previousStock: previousWarehouseStock,
-    newStock: inventoryItem.warehouseStock,
+    stockType: 'totalStock',
+    previousStock: previousTotalStock,
+    newStock: inventoryItem.totalStock,
     changeAmount: -quantity,
     changeType: 'system_adjustment',
     reason: reason || '調撥至可販售庫存',
-    admin: adminId
+    admin: adminId,
+    metadata: {
+      inventorySettings: {
+        enableAvailableStock: inventoryItem.enableAvailableStock,
+        isInventoryTracked: inventoryItem.isInventoryTracked,
+        isSoldOut: inventoryItem.isSoldOut
+      }
+    }
   });
 
   // 創建庫存日誌 - 可販售增加
@@ -431,8 +529,15 @@ export const transferStock = async (transferData) => {
     newStock: inventoryItem.availableStock,
     changeAmount: quantity,
     changeType: 'system_adjustment',
-    reason: reason || '從倉庫調撥',
-    admin: adminId
+    reason: reason || '從總庫存調撥',
+    admin: adminId,
+    metadata: {
+      inventorySettings: {
+        enableAvailableStock: inventoryItem.enableAvailableStock,
+        isInventoryTracked: inventoryItem.isInventoryTracked,
+        isSoldOut: inventoryItem.isSoldOut
+      }
+    }
   });
 
   return true;
@@ -452,8 +557,7 @@ export const restoreInventoryForCancelledOrder = async (order) => {
   // 查找相關的庫存日誌
   const stockLogs = await StockLog.find({
     order: order._id,
-    changeType: 'order',
-    stockType: 'availableStock'
+    changeType: 'order'
   });
 
   // 如果沒有相關日誌，返回成功
@@ -466,8 +570,8 @@ export const restoreInventoryForCancelledOrder = async (order) => {
     // 查找庫存項目
     const inventoryItem = await Inventory.findOne({
       store: log.store,
-      dish: log.dish,
-      inventoryType: log.inventoryType
+      inventoryType: log.inventoryType,
+      dish: log.dish
     });
 
     if (!inventoryItem) {
@@ -480,10 +584,10 @@ export const restoreInventoryForCancelledOrder = async (order) => {
     }
 
     // 記錄先前的庫存
-    const previousStock = inventoryItem.availableStock;
+    const previousStock = inventoryItem[log.stockType];
 
     // 還原庫存 (因為減少庫存時 changeAmount 是負數，所以還原時取負值)
-    inventoryItem.availableStock -= log.changeAmount;
+    inventoryItem[log.stockType] -= log.changeAmount;
 
     // 保存庫存項目
     await inventoryItem.save();
@@ -495,13 +599,20 @@ export const restoreInventoryForCancelledOrder = async (order) => {
       inventoryType: log.inventoryType,
       dish: log.dish,
       itemName: log.itemName,
-      stockType: 'availableStock',
+      stockType: log.stockType,
       previousStock,
-      newStock: inventoryItem.availableStock,
+      newStock: inventoryItem[log.stockType],
       changeAmount: -log.changeAmount,
       changeType: 'system_adjustment',
       reason: `訂單取消還原庫存: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
-      order: order._id
+      order: order._id,
+      metadata: {
+        inventorySettings: {
+          enableAvailableStock: inventoryItem.enableAvailableStock,
+          isInventoryTracked: inventoryItem.isInventoryTracked,
+          isSoldOut: inventoryItem.isSoldOut
+        }
+      }
     });
   }
 
@@ -517,8 +628,7 @@ export const processDamage = async (damageData) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
-    stockType = 'warehouseStock',
+    stockType = 'totalStock',
     quantity,
     reason,
     adminId
@@ -529,7 +639,7 @@ export const processDamage = async (damageData) => {
   }
 
   // 查找庫存項目
-  const inventoryItem = await getInventoryItem(storeId, itemId, inventoryType);
+  const inventoryItem = await getInventoryItem(storeId, itemId);
 
   // 檢查庫存是否足夠
   if (inventoryItem[stockType] < quantity) {
@@ -558,10 +668,150 @@ export const processDamage = async (damageData) => {
     changeAmount: -quantity,
     changeType: 'damage',
     reason,
-    admin: adminId
+    admin: adminId,
+    metadata: {
+      inventorySettings: {
+        enableAvailableStock: inventoryItem.enableAvailableStock,
+        isInventoryTracked: inventoryItem.isInventoryTracked,
+        isSoldOut: inventoryItem.isSoldOut
+      }
+    }
   });
 
   return true;
+};
+
+/**
+ * 切換售完狀態
+ * @param {String} storeId - 店鋪ID
+ * @param {String} itemId - 項目ID
+ * @param {Boolean} isSoldOut - 是否售完
+ * @param {String} adminId - 管理員ID
+ * @returns {Promise<Object>} 更新後的庫存項目
+ */
+export const toggleSoldOut = async (storeId, itemId, isSoldOut, adminId) => {
+  const inventoryItem = await getInventoryItem(storeId, itemId);
+
+  inventoryItem.isSoldOut = isSoldOut;
+  await inventoryItem.save();
+
+  // 創建庫存日誌記錄此變更
+  await StockLog.create({
+    brand: inventoryItem.brand,
+    store: storeId,
+    inventoryType: inventoryItem.inventoryType,
+    dish: inventoryItem.dish,
+    itemName: inventoryItem.itemName,
+    stockType: inventoryItem.enableAvailableStock ? 'availableStock' : 'totalStock',
+    previousStock: inventoryItem[inventoryItem.enableAvailableStock ? 'availableStock' : 'totalStock'],
+    newStock: inventoryItem[inventoryItem.enableAvailableStock ? 'availableStock' : 'totalStock'],
+    changeAmount: 0,
+    changeType: 'system_adjustment',
+    reason: isSoldOut ? '設為售完' : '取消售完',
+    admin: adminId,
+    metadata: {
+      inventorySettings: {
+        enableAvailableStock: inventoryItem.enableAvailableStock,
+        isInventoryTracked: inventoryItem.isInventoryTracked,
+        isSoldOut: inventoryItem.isSoldOut
+      }
+    }
+  });
+
+  return inventoryItem;
+};
+
+/**
+ * 初始化店鋪所有餐點的庫存
+ * @param {String} storeId - 店鋪ID
+ * @param {String} adminId - 管理員ID
+ * @returns {Promise<Object>} 初始化結果
+ */
+export const initializeDishInventory = async (storeId, adminId) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId);
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  // 獲取品牌所有餐點
+  const dishes = await DishTemplate.find({ brand: store.brand });
+
+  // 統計結果
+  const result = {
+    total: dishes.length,
+    created: 0,
+    skipped: 0,
+    errors: []
+  };
+
+  // 逐一檢查並創建庫存
+  for (const dish of dishes) {
+    try {
+      // 檢查是否已有庫存記錄
+      const existingInventory = await Inventory.findOne({
+        store: storeId,
+        inventoryType: 'DishTemplate',
+        dish: dish._id
+      });
+
+      if (existingInventory) {
+        result.skipped++;
+        continue;
+      }
+
+      // 創建庫存記錄
+      const newInventory = new Inventory({
+        brand: store.brand,
+        store: storeId,
+        inventoryType: 'DishTemplate',
+        dish: dish._id,
+        itemName: dish.name,
+        totalStock: 0,
+        enableAvailableStock: false,
+        availableStock: 0,
+        minStockAlert: 0,
+        isInventoryTracked: false, // 預設關閉庫存追蹤
+        isSoldOut: false
+      });
+
+      await newInventory.save();
+      result.created++;
+
+      // 創建初始化日誌
+      await StockLog.create({
+        brand: store.brand,
+        store: storeId,
+        inventoryType: 'DishTemplate',
+        dish: dish._id,
+        itemName: dish.name,
+        stockType: 'totalStock',
+        previousStock: 0,
+        newStock: 0,
+        changeAmount: 0,
+        changeType: 'initial_stock',
+        reason: '自動初始化餐點庫存',
+        admin: adminId,
+        metadata: {
+          isDailyReset: false,
+          inventorySettings: {
+            enableAvailableStock: false,
+            isInventoryTracked: false,
+            isSoldOut: false
+          }
+        }
+      });
+
+    } catch (error) {
+      result.errors.push({
+        dishId: dish._id,
+        dishName: dish.name,
+        error: error.message
+      });
+    }
+  }
+
+  return result;
 };
 
 /**
@@ -595,11 +845,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
       // 嘗試查找庫存項目
       let inventoryItem = null;
       try {
-        inventoryItem = await getInventoryItem(
-          storeId,
-          item.itemId,
-          item.inventoryType || 'dish'
-        );
+        inventoryItem = await getInventoryItem(storeId, item.itemId);
       } catch (error) {
         // 如果找不到項目，則創建新項目
         if (error.statusCode === 404) {
@@ -614,14 +860,14 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
         await updateInventory({
           storeId,
           itemId: item.itemId,
-          inventoryType: item.inventoryType,
-          stockType: item.stockType || 'warehouseStock',
+          stockType: item.stockType || 'totalStock',
           stock: item.stock,
           reason: item.reason || '批量更新庫存',
           minStockAlert: item.minStockAlert,
-          maxStockAlert: item.maxStockAlert,
+          targetStockLevel: item.targetStockLevel,
           isInventoryTracked: item.isInventoryTracked,
-          showAvailableStockToCustomer: item.showAvailableStockToCustomer
+          enableAvailableStock: item.enableAvailableStock,
+          isSoldOut: item.isSoldOut
         }, adminId);
         results.updated++;
       } else {
@@ -629,15 +875,16 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
         await createInventory({
           brandId: item.brandId,
           storeId,
-          inventoryType: item.inventoryType || 'dish',
-          dishId: item.inventoryType === 'dish' ? item.itemId : undefined,
+          inventoryType: item.inventoryType || 'DishTemplate',
+          dishId: item.inventoryType === 'DishTemplate' ? item.itemId : undefined,
           itemName: item.itemName,
-          initialWarehouseStock: item.warehouseStock || 0,
+          initialTotalStock: item.totalStock || 0,
           initialAvailableStock: item.availableStock || 0,
           minStockAlert: item.minStockAlert || 0,
-          maxStockAlert: item.maxStockAlert,
+          targetStockLevel: item.targetStockLevel,
           isInventoryTracked: item.isInventoryTracked !== undefined ? item.isInventoryTracked : true,
-          showAvailableStockToCustomer: item.showAvailableStockToCustomer || false
+          enableAvailableStock: item.enableAvailableStock || false,
+          isSoldOut: item.isSoldOut || false
         }, adminId);
         results.created++;
       }

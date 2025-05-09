@@ -17,7 +17,7 @@ export const getInventoryLogs = async (options = {}) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
+    inventoryType = 'DishTemplate',
     stockType,
     startDate,
     endDate,
@@ -36,7 +36,7 @@ export const getInventoryLogs = async (options = {}) => {
 
   // 篩選特定項目
   if (itemId) {
-    if (inventoryType === 'dish') {
+    if (inventoryType === 'DishTemplate') {
       query.dish = itemId;
     } else {
       // 對於非餐點類型，itemId 可能是項目名稱
@@ -44,7 +44,7 @@ export const getInventoryLogs = async (options = {}) => {
     }
   }
 
-  // 篩選庫存類型（倉庫或可販售）
+  // 篩選庫存類型（總庫存或可販售）
   if (stockType) {
     query.stockType = stockType;
   }
@@ -110,8 +110,8 @@ export const getStockTrends = async (options = {}) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish',
-    stockType = 'warehouseStock',
+    inventoryType = 'DishTemplate',
+    stockType = 'totalStock',
     days = 30
   } = options;
 
@@ -128,7 +128,7 @@ export const getStockTrends = async (options = {}) => {
     createdAt: { $gte: startDate }
   };
 
-  if (inventoryType === 'dish' && itemId) {
+  if (inventoryType === 'DishTemplate' && itemId) {
     logQuery.dish = itemId;
   } else if (itemId) {
     logQuery.itemName = itemId;
@@ -225,7 +225,7 @@ export const getItemInventoryStats = async (options = {}) => {
   const {
     storeId,
     itemId,
-    inventoryType = 'dish'
+    inventoryType = 'DishTemplate'
   } = options;
 
   // 查詢當前庫存
@@ -234,7 +234,7 @@ export const getItemInventoryStats = async (options = {}) => {
     inventoryType
   };
 
-  if (inventoryType === 'dish') {
+  if (inventoryType === 'DishTemplate') {
     query.dish = itemId;
   } else {
     query._id = itemId;
@@ -244,17 +244,17 @@ export const getItemInventoryStats = async (options = {}) => {
 
   if (!inventory) {
     return {
-      currentWarehouseStock: 0,
+      currentTotalStock: 0,
       currentAvailableStock: 0,
       minStockAlert: 0,
-      maxStockAlert: null,
+      targetStockLevel: null,
       isTracked: false,
-      showToCustomer: false,
+      enableAvailableStock: false,
+      isSoldOut: false,
       consumptionRate: 0,
       estimatedDaysLeft: 0,
       lastUpdate: null,
       needsRestock: false,
-      isOverstock: false,
       stats: {
         last7Days: {
           consumed: 0,
@@ -287,7 +287,7 @@ export const getItemInventoryStats = async (options = {}) => {
     createdAt: { $gte: last30Days }
   };
 
-  if (inventoryType === 'dish') {
+  if (inventoryType === 'DishTemplate') {
     logQuery.dish = itemId;
   } else {
     logQuery.itemName = inventory.itemName;
@@ -345,27 +345,29 @@ export const getItemInventoryStats = async (options = {}) => {
   // 計算消耗率 (每天平均消耗量)
   const dailyConsumptionRate = stats.last30Days.consumed / 30;
 
-  // 計算預估剩餘天數（基於可販售庫存）
+  // 計算預估剩餘天數
   let estimatedDaysLeft = 0;
+  const effectiveStock = inventory.enableAvailableStock ? inventory.availableStock : inventory.totalStock;
+
   if (dailyConsumptionRate > 0) {
-    estimatedDaysLeft = Math.floor(inventory.availableStock / dailyConsumptionRate);
+    estimatedDaysLeft = Math.floor(effectiveStock / dailyConsumptionRate);
   }
 
   // 查詢最後更新時間
   const lastLog = await StockLog.findOne(logQuery).sort({ createdAt: -1 });
 
   return {
-    currentWarehouseStock: inventory.warehouseStock,
+    currentTotalStock: inventory.totalStock,
     currentAvailableStock: inventory.availableStock,
     minStockAlert: inventory.minStockAlert,
-    maxStockAlert: inventory.maxStockAlert,
+    targetStockLevel: inventory.targetStockLevel,
     isTracked: inventory.isInventoryTracked,
-    showToCustomer: inventory.showAvailableStockToCustomer,
+    enableAvailableStock: inventory.enableAvailableStock,
+    isSoldOut: inventory.isSoldOut,
     consumptionRate: dailyConsumptionRate,
     estimatedDaysLeft: estimatedDaysLeft,
     lastUpdate: lastLog ? lastLog.createdAt : null,
     needsRestock: inventory.needsRestock,
-    isOverstock: inventory.isOverstock,
     stats
   };
 };
@@ -403,7 +405,7 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
     total: inventoryItems.length,
     needsRestock: [],
     critical: [],
-    overstock: [],
+    soldOut: [],
     healthy: []
   };
 
@@ -412,7 +414,7 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
     // 獲取詳細統計
     const stats = await getItemInventoryStats({
       storeId,
-      itemId: item.inventoryType === 'dish' ? item.dish._id : item._id,
+      itemId: item.inventoryType === 'DishTemplate' ? item.dish._id : item._id,
       inventoryType: item.inventoryType
     });
 
@@ -421,14 +423,21 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
       itemType: item.inventoryType,
       itemName: item.itemName,
       dishName: item.dish?.name,
-      warehouseStock: item.warehouseStock,
+      totalStock: item.totalStock,
       availableStock: item.availableStock,
       dailyConsumption: stats.consumptionRate,
-      estimatedDaysLeft: stats.estimatedDaysLeft
+      estimatedDaysLeft: stats.estimatedDaysLeft,
+      enableAvailableStock: item.enableAvailableStock,
+      isTracked: item.isInventoryTracked,
+      isSoldOut: item.isSoldOut
     };
 
     // 分類庫存健康狀況
-    if (item.needsRestock) {
+    if (item.isSoldOut) {
+      // 售完狀態
+      healthStatus.status = 'sold_out';
+      result.soldOut.push(healthStatus);
+    } else if (item.needsRestock) {
       // 需要補貨（低於警告值）
       healthStatus.status = 'needs_restock';
       result.needsRestock.push(healthStatus);
@@ -436,10 +445,6 @@ export const getInventoryHealthReport = async (storeId, options = {}) => {
       // 庫存即將不足
       healthStatus.status = 'critical';
       result.critical.push(healthStatus);
-    } else if (item.isOverstock) {
-      // 庫存過多
-      healthStatus.status = 'overstock';
-      result.overstock.push(healthStatus);
     } else {
       // 健康庫存
       healthStatus.status = 'healthy';
