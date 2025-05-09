@@ -34,7 +34,7 @@
                 <label class="form-label">庫存類型</label>
                 <select v-model="filters.inventoryType" class="form-select" @change="applyFilters">
                   <option value="">全部類型</option>
-                  <option value="dish">餐點</option>
+                  <option value="DishTemplate">餐點</option>
                   <option value="else">其他</option>
                 </select>
               </div>
@@ -47,7 +47,7 @@
                   <option value="normal">正常</option>
                   <option value="low">低庫存</option>
                   <option value="out">缺貨</option>
-                  <option value="overstock">庫存過多</option>
+                  <option value="soldOut">售完</option>
                 </select>
               </div>
 
@@ -87,7 +87,7 @@
         </div>
       </div>
       <div class="col-md-3">
-        <div class="card bg-warning text-block">
+        <div class="card bg-warning text-dark">
           <div class="card-body">
             <h6 class="card-title">低庫存</h6>
             <h3 class="mb-0">{{ stats.lowStock }}</h3>
@@ -97,16 +97,16 @@
       <div class="col-md-3">
         <div class="card bg-danger text-white">
           <div class="card-body">
-            <h6 class="card-title">缺貨</h6>
-            <h3 class="mb-0">{{ stats.outOfStock }}</h3>
+            <h6 class="card-title">缺貨/售完</h6>
+            <h3 class="mb-0">{{ stats.outOfStock + stats.soldOut }}</h3>
           </div>
         </div>
       </div>
       <div class="col-md-3">
         <div class="card bg-info text-white">
           <div class="card-body">
-            <h6 class="card-title">庫存過多</h6>
-            <h3 class="mb-0">{{ stats.overStock }}</h3>
+            <h6 class="card-title">需要補貨</h6>
+            <h3 class="mb-0">{{ stats.needsRestock }}</h3>
           </div>
         </div>
       </div>
@@ -134,28 +134,30 @@
               <tr>
                 <th>類型</th>
                 <th>項目名稱</th>
-                <th>倉庫庫存</th>
+                <th>總庫存</th>
                 <th>可販售庫存</th>
                 <th>狀態</th>
                 <th>最低警告值</th>
-                <th>過高庫存警告</th>
-                <th>顯示給客人</th>
-                <th width="150">操作</th>
+                <th>補貨目標</th>
+                <th>追蹤庫存</th>
+                <th>售完狀態</th>
+                <th width="180">操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in inventories" :key="item._id" :class="getRowClass(item)">
                 <td>
-                  <span class="badge" :class="item.inventoryType === 'dish' ? 'bg-info' : 'bg-secondary'">
-                    {{ item.inventoryType === 'dish' ? '餐點' : '其他' }}
+                  <span class="badge" :class="item.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
+                    {{ item.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                   </span>
                 </td>
                 <td>{{ item.itemName }}</td>
                 <td>
-                  <strong>{{ item.warehouseStock }}</strong>
+                  <strong>{{ item.totalStock }}</strong>
                 </td>
                 <td>
-                  <strong>{{ item.availableStock }}</strong>
+                  <strong v-if="item.enableAvailableStock">{{ item.availableStock }}</strong>
+                  <span v-else class="text-muted">-</span>
                 </td>
                 <td>
                   <span class="badge" :class="getStatusBadgeClass(item)">
@@ -163,11 +165,16 @@
                   </span>
                 </td>
                 <td>{{ item.minStockAlert }}</td>
-                <td>{{ item.maxStockAlert || '-' }}</td>
+                <td>{{ item.targetStockLevel || '-' }}</td>
                 <td>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" :checked="item.showAvailableStockToCustomer"
-                      disabled>
+                    <input class="form-check-input" type="checkbox" :checked="item.isInventoryTracked" disabled>
+                  </div>
+                </td>
+                <td>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" :checked="item.isSoldOut"
+                      @change="toggleSoldOut(item)">
                   </div>
                 </td>
                 <td>
@@ -185,7 +192,7 @@
 
               <!-- 無資料提示 -->
               <tr v-if="!inventories || inventories.length === 0">
-                <td colspan="9" class="text-center py-4">
+                <td colspan="10" class="text-center py-4">
                   <div class="text-muted">
                     {{ searchQuery ? '沒有符合搜尋條件的庫存項目' : '尚未建立任何庫存項目' }}
                   </div>
@@ -274,7 +281,8 @@ const stats = ref({
   totalItems: 0,
   lowStock: 0,
   outOfStock: 0,
-  overStock: 0
+  soldOut: 0,
+  needsRestock: 0
 });
 
 // 計算可見頁碼
@@ -338,21 +346,41 @@ const handleAdjustSuccess = () => {
   fetchInventory();
 };
 
+// 切換售完狀態
+const toggleSoldOut = async (item) => {
+  try {
+    await api.inventory.toggleSoldOut({
+      storeId: storeId.value,
+      itemId: item._id,
+      isSoldOut: !item.isSoldOut
+    });
+
+    // 更新本地狀態
+    item.isSoldOut = !item.isSoldOut;
+    updateStats();
+  } catch (err) {
+    console.error('切換售完狀態失敗:', err);
+    error.value = err.response?.data?.message || '切換售完狀態時發生錯誤';
+  }
+};
+
 // 庫存狀態相關方法
 const getStatusText = (item) => {
+  if (item.isSoldOut) return '售完';
   if (!item.isInventoryTracked) return '不追蹤';
-  if (item.availableStock === 0) return '缺貨';
-  if (item.availableStock <= item.minStockAlert) return '低庫存';
-  if (item.maxStockAlert && item.warehouseStock > item.maxStockAlert) return '庫存過多';
+  if (item.totalStock === 0) return '缺貨';
+  if (item.needsRestock) return '需補貨';
+  if (item.totalStock <= item.minStockAlert) return '低庫存';
   return '正常';
 };
 
 const getStatusBadgeClass = (item) => {
   const status = getStatusText(item);
   switch (status) {
+    case '售完': return 'bg-danger';
     case '缺貨': return 'bg-danger';
+    case '需補貨': return 'bg-warning text-dark';
     case '低庫存': return 'bg-warning text-dark';
-    case '庫存過多': return 'bg-info';
     case '不追蹤': return 'bg-secondary';
     default: return 'bg-success';
   }
@@ -360,8 +388,8 @@ const getStatusBadgeClass = (item) => {
 
 const getRowClass = (item) => {
   const status = getStatusText(item);
-  if (status === '缺貨') return 'table-danger';
-  if (status === '低庫存') return 'table-warning';
+  if (status === '售完' || status === '缺貨') return 'table-danger';
+  if (status === '低庫存' || status === '需補貨') return 'table-warning';
   return '';
 };
 
@@ -403,9 +431,9 @@ const fetchInventory = async () => {
           const status = getStatusText(item);
           switch (filters.status) {
             case 'normal': return status === '正常';
-            case 'low': return status === '低庫存';
+            case 'low': return status === '低庫存' || status === '需補貨';
             case 'out': return status === '缺貨';
-            case 'overstock': return status === '庫存過多';
+            case 'soldOut': return status === '售完';
             default: return true;
           }
         });
@@ -420,7 +448,8 @@ const fetchInventory = async () => {
         totalItems: 0,
         lowStock: 0,
         outOfStock: 0,
-        overStock: 0
+        soldOut: 0,
+        needsRestock: 0
       };
     }
   } catch (err) {
@@ -433,7 +462,8 @@ const fetchInventory = async () => {
       totalItems: 0,
       lowStock: 0,
       outOfStock: 0,
-      overStock: 0
+      soldOut: 0,
+      needsRestock: 0
     };
   } finally {
     isLoading.value = false;
@@ -447,16 +477,24 @@ const updateStats = () => {
       totalItems: 0,
       lowStock: 0,
       outOfStock: 0,
-      overStock: 0
+      soldOut: 0,
+      needsRestock: 0
     };
     return;
   }
 
   stats.value = {
     totalItems: inventories.value.length,
-    lowStock: inventories.value.filter(item => getStatusText(item) === '低庫存').length,
-    outOfStock: inventories.value.filter(item => getStatusText(item) === '缺貨').length,
-    overStock: inventories.value.filter(item => getStatusText(item) === '庫存過多').length
+    lowStock: inventories.value.filter(item => {
+      const status = getStatusText(item);
+      return status === '低庫存';
+    }).length,
+    outOfStock: inventories.value.filter(item => {
+      const status = getStatusText(item);
+      return status === '缺貨';
+    }).length,
+    soldOut: inventories.value.filter(item => item.isSoldOut).length,
+    needsRestock: inventories.value.filter(item => item.needsRestock).length
   };
 };
 

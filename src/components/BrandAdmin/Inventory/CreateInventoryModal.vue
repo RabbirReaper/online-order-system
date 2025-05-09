@@ -8,7 +8,7 @@
           <label class="form-label">庫存類型</label>
           <select v-model="form.inventoryType" class="form-select" required>
             <option value="else">其他</option>
-            <option value="dish">餐點</option>
+            <option value="DishTemplate">餐點</option>
           </select>
         </div>
 
@@ -21,13 +21,14 @@
         <!-- 基本設定 -->
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label">初始倉庫庫存</label>
-            <input type="number" v-model.number="form.initialWarehouseStock" class="form-control" min="0" required>
+            <label class="form-label">初始總庫存</label>
+            <input type="number" v-model.number="form.initialTotalStock" class="form-control" min="0" required>
           </div>
           <div class="col-md-6">
             <label class="form-label">初始可販售庫存</label>
             <input type="number" v-model.number="form.initialAvailableStock" class="form-control" min="0"
-              :max="form.initialWarehouseStock" required>
+              :max="form.initialTotalStock" :disabled="!form.enableAvailableStock">
+            <small class="form-text text-muted" v-if="!form.enableAvailableStock">需先啟用可販售庫存功能</small>
           </div>
         </div>
 
@@ -38,9 +39,9 @@
             <input type="number" v-model.number="form.minStockAlert" class="form-control" min="0">
           </div>
           <div class="col-md-6">
-            <label class="form-label">最高庫存限制</label>
-            <input type="number" v-model.number="form.maxStockAlert" class="form-control" min="0"
-              placeholder="選填，留空表示無限制">
+            <label class="form-label">補貨目標數量</label>
+            <input type="number" v-model.number="form.targetStockLevel" class="form-control" min="0"
+              placeholder="選填，留空表示無設定">
           </div>
         </div>
 
@@ -49,15 +50,22 @@
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" v-model="form.isInventoryTracked" id="isInventoryTracked">
             <label class="form-check-label" for="isInventoryTracked">
-              追蹤庫存
+              追蹤庫存 (訂單自動扣除)
+            </label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" v-model="form.enableAvailableStock"
+              id="enableAvailableStock">
+            <label class="form-check-label" for="enableAvailableStock">
+              啟用可販售庫存 (每日限量)
             </label>
           </div>
 
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" v-model="form.showAvailableStockToCustomer"
-              id="showAvailableStockToCustomer">
-            <label class="form-check-label" for="showAvailableStockToCustomer">
-              顯示庫存數量給客人
+            <input class="form-check-input" type="checkbox" v-model="form.isSoldOut" id="isSoldOut">
+            <label class="form-check-label" for="isSoldOut">
+              設為售完狀態
             </label>
           </div>
         </div>
@@ -110,24 +118,32 @@ const error = ref('');
 const form = reactive({
   inventoryType: 'else',
   itemName: '',
-  initialWarehouseStock: 0,
+  initialTotalStock: 0,
   initialAvailableStock: 0,
   minStockAlert: 5,
-  maxStockAlert: null,
+  targetStockLevel: null,
   isInventoryTracked: true,
-  showAvailableStockToCustomer: false
+  enableAvailableStock: false,
+  isSoldOut: false
 });
 
-// 監聽倉庫庫存變化，確保可販售庫存不超過倉庫庫存
-watch(() => form.initialWarehouseStock, (newValue) => {
+// 監聽總庫存變化，確保可販售庫存不超過總庫存
+watch(() => form.initialTotalStock, (newValue) => {
   if (form.initialAvailableStock > newValue) {
     form.initialAvailableStock = newValue;
   }
 });
 
+// 監聽可販售庫存功能開關
+watch(() => form.enableAvailableStock, (newValue) => {
+  if (!newValue) {
+    form.initialAvailableStock = 0;
+  }
+});
+
 // 提交表單
 const submitForm = async (evt) => {
-  evt.preventDefault(); // 停掉 BModal 內建的 close
+  evt.preventDefault();
 
   // 驗證表單
   if (!form.itemName.trim()) {
@@ -135,8 +151,8 @@ const submitForm = async (evt) => {
     return;
   }
 
-  if (form.initialAvailableStock > form.initialWarehouseStock) {
-    error.value = '可販售庫存不能超過倉庫庫存';
+  if (form.enableAvailableStock && form.initialAvailableStock > form.initialTotalStock) {
+    error.value = '可販售庫存不能超過總庫存';
     return;
   }
 
@@ -147,12 +163,13 @@ const submitForm = async (evt) => {
     const inventoryData = {
       inventoryType: form.inventoryType,
       itemName: form.itemName.trim(),
-      initialWarehouseStock: form.initialWarehouseStock,
-      initialAvailableStock: form.initialAvailableStock,
+      initialTotalStock: form.initialTotalStock,
+      initialAvailableStock: form.enableAvailableStock ? form.initialAvailableStock : 0,
       minStockAlert: form.minStockAlert,
-      maxStockAlert: form.maxStockAlert || undefined,
+      targetStockLevel: form.targetStockLevel || undefined,
       isInventoryTracked: form.isInventoryTracked,
-      showAvailableStockToCustomer: form.showAvailableStockToCustomer
+      enableAvailableStock: form.enableAvailableStock,
+      isSoldOut: form.isSoldOut
     };
 
     await api.inventory.createInventory({

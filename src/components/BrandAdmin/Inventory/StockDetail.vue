@@ -36,8 +36,9 @@
             <div class="mb-3">
               <label class="text-muted small">項目類型</label>
               <p class="mb-0">
-                <span class="badge" :class="inventoryItem.inventoryType === 'dish' ? 'bg-info' : 'bg-secondary'">
-                  {{ inventoryItem.inventoryType === 'dish' ? '餐點' : '其他' }}
+                <span class="badge"
+                  :class="inventoryItem.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
+                  {{ inventoryItem.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                 </span>
               </p>
             </div>
@@ -54,10 +55,18 @@
               </p>
             </div>
             <div class="mb-3">
-              <label class="text-muted small">顯示庫存給客人</label>
+              <label class="text-muted small">可販售庫存功能</label>
               <p class="mb-0">
-                <span class="badge" :class="inventoryItem.showAvailableStockToCustomer ? 'bg-success' : 'bg-secondary'">
-                  {{ inventoryItem.showAvailableStockToCustomer ? '顯示' : '不顯示' }}
+                <span class="badge" :class="inventoryItem.enableAvailableStock ? 'bg-success' : 'bg-secondary'">
+                  {{ inventoryItem.enableAvailableStock ? '啟用' : '關閉' }}
+                </span>
+              </p>
+            </div>
+            <div class="mb-3">
+              <label class="text-muted small">售完狀態</label>
+              <p class="mb-0">
+                <span class="badge" :class="inventoryItem.isSoldOut ? 'bg-danger' : 'bg-success'">
+                  {{ inventoryItem.isSoldOut ? '售完' : '正常' }}
                 </span>
               </p>
             </div>
@@ -66,8 +75,8 @@
               <p class="mb-0 fw-bold">{{ inventoryItem.minStockAlert }}</p>
             </div>
             <div class="mb-3">
-              <label class="text-muted small">過高庫存警告</label>
-              <p class="mb-0 fw-bold">{{ inventoryItem.maxStockAlert || '無限制' }}</p>
+              <label class="text-muted small">補貨目標數量</label>
+              <p class="mb-0 fw-bold">{{ inventoryItem.targetStockLevel || '無設定' }}</p>
             </div>
             <div>
               <label class="text-muted small">最後更新時間</label>
@@ -89,6 +98,11 @@
               <button class="btn btn-outline-secondary" @click="openSettingsModal">
                 <i class="bi bi-gear me-1"></i>庫存設定
               </button>
+              <button class="btn" :class="inventoryItem.isSoldOut ? 'btn-success' : 'btn-danger'"
+                @click="toggleSoldOut">
+                <i class="bi me-1" :class="inventoryItem.isSoldOut ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                {{ inventoryItem.isSoldOut ? '標示為可售' : '標示為售完' }}
+              </button>
             </div>
           </div>
         </div>
@@ -105,14 +119,15 @@
             <div class="row g-4">
               <div class="col-md-6">
                 <div class="p-3 border rounded text-center">
-                  <h6 class="text-muted mb-2">倉庫庫存</h6>
-                  <h2 class="mb-0 text-primary">{{ inventoryItem.warehouseStock }}</h2>
+                  <h6 class="text-muted mb-2">總庫存</h6>
+                  <h2 class="mb-0 text-primary">{{ inventoryItem.totalStock }}</h2>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="p-3 border rounded text-center">
                   <h6 class="text-muted mb-2">可販售庫存</h6>
                   <h2 class="mb-0 text-success">{{ inventoryItem.availableStock }}</h2>
+                  <small class="text-muted" v-if="!inventoryItem.enableAvailableStock">（未啟用）</small>
                 </div>
               </div>
             </div>
@@ -127,8 +142,8 @@
               </div>
               <div class="d-flex justify-content-between text-muted small mt-1">
                 <span>0</span>
-                <span>過低警告值: {{ inventoryItem.minStockAlert }}</span>
-                <span v-if="inventoryItem.maxStockAlert">過高警告值: {{ inventoryItem.maxStockAlert }}</span>
+                <span>低庫存警告值: {{ inventoryItem.minStockAlert }}</span>
+                <span v-if="inventoryItem.targetStockLevel">補貨目標: {{ inventoryItem.targetStockLevel }}</span>
               </div>
             </div>
           </div>
@@ -144,13 +159,13 @@
               <div class="col-md-3">
                 <div class="text-center">
                   <h6 class="text-muted">總入庫</h6>
-                  <h4 class="mb-0 text-success">+{{ stats.last30Days?.added || 0 }}</h4>
+                  <h4 class="mb-0 text-success">+{{ stats.stats?.last30Days?.added || 0 }}</h4>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="text-center">
-                  <h6 class="text-muted">總出庫</h6>
-                  <h4 class="mb-0 text-danger">-{{ stats.last30Days?.consumed || 0 }}</h4>
+                  <h6 class="text-muted">總消耗</h6>
+                  <h4 class="mb-0 text-danger">-{{ stats.stats?.last30Days?.consumed || 0 }}</h4>
                 </div>
               </div>
               <div class="col-md-3">
@@ -202,7 +217,7 @@
                         {{ getChangeTypeText(log.changeType) }}
                       </span>
                     </td>
-                    <td>{{ log.stockType === 'warehouseStock' ? '倉庫' : '可販售' }}</td>
+                    <td>{{ log.stockType === 'totalStock' ? '總庫存' : '可販售' }}</td>
                     <td>{{ log.previousStock }}</td>
                     <td>{{ log.newStock }}</td>
                     <td>
@@ -230,68 +245,51 @@
       @close="showAdjustModal = false" @success="handleAdjustSuccess" />
 
     <!-- 庫存設定 Modal -->
-    <div class="modal fade" id="settingsModal" tabindex="-1" ref="settingsModalRef">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">庫存設定</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="submitSettings">
-              <div class="mb-3">
-                <label class="form-label">最低庫存警告值</label>
-                <input type="number" v-model.number="settingsForm.minStockAlert" class="form-control" min="0">
-              </div>
+    <BModal v-model="showSettingsModal" title="庫存設定" @ok="submitSettings">
+      <form @submit.prevent="submitSettings">
+        <div class="mb-3">
+          <label class="form-label">最低庫存警告值</label>
+          <input type="number" v-model.number="settingsForm.minStockAlert" class="form-control" min="0">
+        </div>
 
-              <div class="mb-3">
-                <label class="form-label">庫存過高警告值</label>
-                <input type="number" v-model.number="settingsForm.maxStockAlert" class="form-control" min="0">
-                <div class="form-text">留空表示無限制</div>
-              </div>
+        <div class="mb-3">
+          <label class="form-label">補貨目標數量</label>
+          <input type="number" v-model.number="settingsForm.targetStockLevel" class="form-control" min="0">
+          <div class="form-text">留空表示無設定</div>
+        </div>
 
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" v-model="settingsForm.isInventoryTracked"
-                    id="isInventoryTracked">
-                  <label class="form-check-label" for="isInventoryTracked">
-                    追蹤庫存
-                  </label>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" v-model="settingsForm.showAvailableStockToCustomer"
-                    id="showAvailableStockToCustomer">
-                  <label class="form-check-label" for="showAvailableStockToCustomer">
-                    顯示庫存數量給客人
-                  </label>
-                </div>
-              </div>
-
-              <div v-if="settingsError" class="alert alert-danger">
-                {{ settingsError }}
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="submitSettings" :disabled="isSavingSettings">
-              <span v-if="isSavingSettings" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isSavingSettings ? '儲存中...' : '儲存設定' }}
-            </button>
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" v-model="settingsForm.isInventoryTracked"
+              id="isInventoryTracked">
+            <label class="form-check-label" for="isInventoryTracked">
+              追蹤庫存 (訂單自動扣除)
+            </label>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" v-model="settingsForm.enableAvailableStock"
+              id="enableAvailableStock">
+            <label class="form-check-label" for="enableAvailableStock">
+              啟用可販售庫存 (每日限量)
+            </label>
+          </div>
+        </div>
+
+        <div v-if="settingsError" class="alert alert-danger">
+          {{ settingsError }}
+        </div>
+      </form>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Modal } from 'bootstrap';
+import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
 import StockAdjustModal from './StockAdjustModal.vue';
 
@@ -311,13 +309,12 @@ const stats = ref(null);
 
 // Modal相關
 const showAdjustModal = ref(false);
-const settingsModalRef = ref(null);
-const settingsModal = ref(null);
+const showSettingsModal = ref(false);
 const settingsForm = ref({
   minStockAlert: 0,
-  maxStockAlert: null,
+  targetStockLevel: null,
   isInventoryTracked: true,
-  showAvailableStockToCustomer: false
+  enableAvailableStock: false
 });
 const isSavingSettings = ref(false);
 const settingsError = ref('');
@@ -337,21 +334,20 @@ const formatDate = (dateString) => {
 
 // 獲取庫存百分比
 const getStockPercentage = () => {
-  if (!inventoryItem.value || !inventoryItem.value.maxStockAlert) {
+  if (!inventoryItem.value || !inventoryItem.value.targetStockLevel) {
     return 100;
   }
-  return Math.min(100, (inventoryItem.value.availableStock / inventoryItem.value.maxStockAlert) * 100);
+  return Math.min(100, (inventoryItem.value.totalStock / inventoryItem.value.targetStockLevel) * 100);
 };
 
 // 獲取進度條樣式
 const getProgressBarClass = () => {
   if (!inventoryItem.value) return 'bg-secondary';
 
-  if (inventoryItem.value.availableStock === 0) return 'bg-danger';
-  if (inventoryItem.value.availableStock <= inventoryItem.value.minStockAlert) return 'bg-warning text-dark';
-  if (inventoryItem.value.maxStockAlert && inventoryItem.value.warehouseStock > inventoryItem.value.maxStockAlert) {
-    return 'bg-info';
-  }
+  if (inventoryItem.value.isSoldOut) return 'bg-danger';
+  if (inventoryItem.value.totalStock === 0) return 'bg-danger';
+  if (inventoryItem.value.needsRestock) return 'bg-warning text-dark';
+  if (inventoryItem.value.totalStock <= inventoryItem.value.minStockAlert) return 'bg-warning text-dark';
   return 'bg-success';
 };
 
@@ -359,11 +355,10 @@ const getProgressBarClass = () => {
 const getStatusText = () => {
   if (!inventoryItem.value) return '';
 
-  if (inventoryItem.value.availableStock === 0) return '缺貨';
-  if (inventoryItem.value.availableStock <= inventoryItem.value.minStockAlert) return '低庫存';
-  if (inventoryItem.value.maxStockAlert && inventoryItem.value.warehouseStock > inventoryItem.value.maxStockAlert) {
-    return '庫存過多';
-  }
+  if (inventoryItem.value.isSoldOut) return '售完';
+  if (inventoryItem.value.totalStock === 0) return '缺貨';
+  if (inventoryItem.value.needsRestock) return '需要補貨';
+  if (inventoryItem.value.totalStock <= inventoryItem.value.minStockAlert) return '低庫存';
   return '正常';
 };
 
@@ -400,7 +395,9 @@ const getDaysRemaining = () => {
   if (!inventoryItem.value || !stats.value || stats.value.consumptionRate === 0) {
     return '無法計算';
   }
-  const days = Math.floor(inventoryItem.value.availableStock / stats.value.consumptionRate);
+  const effectiveStock = inventoryItem.value.enableAvailableStock ?
+    inventoryItem.value.availableStock : inventoryItem.value.totalStock;
+  const days = Math.floor(effectiveStock / stats.value.consumptionRate);
   return days > 0 ? `${days} 天` : '即將耗盡';
 };
 
@@ -409,7 +406,9 @@ const getDaysRemainingClass = () => {
   if (!inventoryItem.value || !stats.value || stats.value.consumptionRate === 0) {
     return '';
   }
-  const days = Math.floor(inventoryItem.value.availableStock / stats.value.consumptionRate);
+  const effectiveStock = inventoryItem.value.enableAvailableStock ?
+    inventoryItem.value.availableStock : inventoryItem.value.totalStock;
+  const days = Math.floor(effectiveStock / stats.value.consumptionRate);
   if (days <= 3) return 'text-danger';
   if (days <= 7) return 'text-warning';
   return 'text-success';
@@ -421,11 +420,10 @@ const fetchInventoryDetail = async () => {
   error.value = '';
 
   try {
-    // 獲取庫存詳情 - 現在直接使用 itemId，不再需要區分類型
+    // 獲取庫存詳情
     const response = await api.inventory.getInventoryItem({
       storeId: storeId.value,
-      itemId: itemId.value,
-      inventoryType: route.query.type || 'dish'
+      itemId: itemId.value
     });
 
     inventoryItem.value = response.inventoryItem;
@@ -433,9 +431,9 @@ const fetchInventoryDetail = async () => {
     // 初始化設定表單
     settingsForm.value = {
       minStockAlert: inventoryItem.value.minStockAlert,
-      maxStockAlert: inventoryItem.value.maxStockAlert,
+      targetStockLevel: inventoryItem.value.targetStockLevel,
       isInventoryTracked: inventoryItem.value.isInventoryTracked,
-      showAvailableStockToCustomer: inventoryItem.value.showAvailableStockToCustomer
+      enableAvailableStock: inventoryItem.value.enableAvailableStock
     };
 
     // 獲取統計數據
@@ -493,7 +491,23 @@ const handleAdjustSuccess = () => {
 
 // 打開設定Modal
 const openSettingsModal = () => {
-  settingsModal.value.show();
+  showSettingsModal.value = true;
+};
+
+// 切換售完狀態
+const toggleSoldOut = async () => {
+  try {
+    await api.inventory.toggleSoldOut({
+      storeId: storeId.value,
+      itemId: itemId.value,
+      isSoldOut: !inventoryItem.value.isSoldOut
+    });
+
+    inventoryItem.value.isSoldOut = !inventoryItem.value.isSoldOut;
+  } catch (err) {
+    console.error('切換售完狀態失敗:', err);
+    error.value = err.response?.data?.message || '切換售完狀態時發生錯誤';
+  }
 };
 
 // 提交設定
@@ -504,21 +518,22 @@ const submitSettings = async () => {
   try {
     const data = {
       minStockAlert: settingsForm.value.minStockAlert,
-      maxStockAlert: settingsForm.value.maxStockAlert || undefined,
+      targetStockLevel: settingsForm.value.targetStockLevel || undefined,
       isInventoryTracked: settingsForm.value.isInventoryTracked,
-      showAvailableStockToCustomer: settingsForm.value.showAvailableStockToCustomer
+      enableAvailableStock: settingsForm.value.enableAvailableStock,
+      reason: '修改庫存設定'
     };
 
     await api.inventory.updateInventory({
       storeId: storeId.value,
-      itemId: itemId.value, // 現在統一使用 itemId (即 inventory._id)
+      itemId: itemId.value,
       data: {
         ...data,
         inventoryType: inventoryItem.value.inventoryType
       }
     });
 
-    settingsModal.value.hide();
+    showSettingsModal.value = false;
     fetchInventoryDetail();
   } catch (err) {
     console.error('更新設定失敗:', err);
@@ -530,12 +545,6 @@ const submitSettings = async () => {
 
 // 生命週期
 onMounted(() => {
-  // 初始化 Modal
-  if (settingsModalRef.value) {
-    settingsModal.value = new Modal(settingsModalRef.value);
-  }
-
-  // 載入數據
   fetchInventoryDetail();
 });
 </script>
