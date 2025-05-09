@@ -295,6 +295,19 @@ const hasActiveFilters = () => {
     filters.stockType || filters.changeType;
 };
 
+const fetchStoreInfo = async () => {
+  if (!storeId.value) return;
+
+  try {
+    const response = await api.store.getStoreById(storeId.value);
+    if (response && response.store) {
+      storeName.value = response.store.name;
+    }
+  } catch (err) {
+    console.error('獲取店鋪資訊失敗:', err);
+  }
+};
+
 // 獲取庫存日誌
 const fetchStockLogs = async () => {
   // 如果沒有有效的 storeId，跳過請求
@@ -338,9 +351,6 @@ const fetchStockLogs = async () => {
       pagination.total = response.pagination?.total || response.total || 0;
       pagination.totalPages = response.pagination?.totalPages || response.totalPages ||
         Math.ceil(pagination.total / pagination.limit);
-      if (stockLogs.value) {
-        storeName.value = stockLogs.value[0].store.name
-      }
     } else {
       stockLogs.value = [];
       pagination.total = 0;
@@ -415,6 +425,7 @@ onMounted(() => {
   // 只有在有有效的 storeId 時才獲取日誌
   if (storeId.value) {
     fetchStockLogs();
+    fetchStoreInfo();
   } else {
     isLoading.value = false;
     error.value = '請選擇店鋪以查看庫存變更記錄';
