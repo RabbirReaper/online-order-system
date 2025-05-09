@@ -62,7 +62,7 @@ const stockLogSchema = new mongoose.Schema({
   // 變更類型
   changeType: {
     type: String,
-    enum: ['manual_add', 'manual_subtract', 'order', 'system_adjustment', 'initial_stock', 'restock', 'damage', 'daily_reset'],  // 添加 daily_reset 用於重置可用庫存
+    enum: ['manual_add', 'manual_subtract', 'order', 'system_adjustment', 'initial_stock', 'restock', 'damage'],
     required: true
   },
 
