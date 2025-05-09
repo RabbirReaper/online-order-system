@@ -173,8 +173,9 @@
                 </td>
                 <td>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" :checked="item.isSoldOut"
-                      @change="toggleSoldOut(item)">
+                    <input v-if="item.inventoryType === 'DishTemplate'" class="form-check-input" type="checkbox"
+                      :checked="item.isSoldOut" @change="toggleSoldOut(item)">
+                    <input v-else class="form-check-input" type="checkbox" disabled>
                   </div>
                 </td>
                 <td>
