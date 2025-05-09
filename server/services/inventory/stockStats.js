@@ -17,7 +17,7 @@ export const getInventoryLogs = async (options = {}) => {
   const {
     storeId,
     itemId,  // 這是 inventory._id
-    inventoryType = 'DishTemplate',
+    inventoryType,
     stockType,
     startDate,
     endDate,
