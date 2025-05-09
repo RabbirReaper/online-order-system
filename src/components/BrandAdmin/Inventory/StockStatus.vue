@@ -141,7 +141,7 @@
                 <th>補貨目標</th>
                 <th>追蹤庫存</th>
                 <th>售完狀態</th>
-                <th width="180">操作</th>
+                <th width="250">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -157,7 +157,7 @@
                 </td>
                 <td>
                   <strong v-if="item.enableAvailableStock">{{ item.availableStock }}</strong>
-                  <span v-else class="text-muted">-</span>
+                  <span v-else class="text-muted">未啟用</span>
                 </td>
                 <td>
                   <span class="badge" :class="getStatusBadgeClass(item)">
@@ -181,6 +181,9 @@
                   <BButtonGroup size="sm">
                     <BButton variant="outline-primary" @click="openAdjustModal(item)">
                       <i class="bi bi-pencil"></i> 調整
+                    </BButton>
+                    <BButton variant="outline-secondary" @click="openShowSettingModal(item)">
+                      <i class="bi bi-gear me-1"></i> 設定
                     </BButton>
                     <BButton variant="outline-secondary"
                       :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`">
@@ -230,6 +233,10 @@
     <!-- 庫存調整 Modal -->
     <StockAdjustModal v-if="showAdjustModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
       @close="showAdjustModal = false" @success="handleAdjustSuccess" />
+
+    <!-- 庫存設定 -->
+    <StockSettingModal v-if="showSettingModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
+      @close="showSettingModal = false" @success="handleSettingSuccess" />
   </div>
 </template>
 
@@ -241,6 +248,7 @@ import api from '@/api';
 import InitializeDishInventoryModal from './InitializeDishInventoryModal.vue';
 import CreateInventoryModal from './CreateInventoryModal.vue';
 import StockAdjustModal from './StockAdjustModal.vue';
+import StockSettingModal from './StockSettingModal.vue';
 
 // 路由
 const route = useRoute();
@@ -261,6 +269,7 @@ const showInitializeModal = ref(false);
 const showCreateModal = ref(false);
 const showAdjustModal = ref(false);
 const selectedItem = ref(null);
+const showSettingModal = ref(false);
 
 // 篩選條件
 const filters = reactive({
@@ -330,6 +339,11 @@ const openAdjustModal = (item) => {
   showAdjustModal.value = true;
 };
 
+const openShowSettingModal = (item) => {
+  selectedItem.value = item;
+  showSettingModal.value = true;
+};
+
 const handleInitializeSuccess = () => {
   showInitializeModal.value = false;
   fetchInventory();
@@ -342,6 +356,13 @@ const handleCreateSuccess = () => {
 
 const handleAdjustSuccess = () => {
   showAdjustModal.value = false;
+  selectedItem.value = null;
+  fetchInventory();
+};
+
+// 處理設定成功
+const handleSettingSuccess = () => {
+  showSettingModal.value = false;
   selectedItem.value = null;
   fetchInventory();
 };
