@@ -84,28 +84,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 快速操作 -->
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">快速操作</h5>
-          </div>
-          <div class="card-body">
-            <div class="d-grid gap-2">
-              <button class="btn btn-primary" @click="openAdjustModal">
-                <i class="bi bi-pencil me-1"></i>調整庫存
-              </button>
-              <button class="btn btn-outline-secondary" @click="openSettingsModal">
-                <i class="bi bi-gear me-1"></i>庫存設定
-              </button>
-              <button class="btn" :class="inventoryItem.isSoldOut ? 'btn-success' : 'btn-danger'"
-                @click="toggleSoldOut">
-                <i class="bi me-1" :class="inventoryItem.isSoldOut ? 'bi-check-circle' : 'bi-x-circle'"></i>
-                {{ inventoryItem.isSoldOut ? '標示為可售' : '標示為售完' }}
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- 右側：庫存統計與趨勢 -->
@@ -239,63 +217,16 @@
         </div>
       </div>
     </div>
-
-    <!-- 調整庫存 Modal -->
-    <StockAdjustModal v-if="showAdjustModal" :item="inventoryItem" :store-id="storeId" :brand-id="brandId"
-      @close="showAdjustModal = false" @success="handleAdjustSuccess" />
-
-    <!-- 庫存設定 Modal -->
-    <BModal v-model="showSettingsModal" title="庫存設定" @ok="submitSettings">
-      <form @submit.prevent="submitSettings">
-        <div class="mb-3">
-          <label class="form-label">最低庫存警告值</label>
-          <input type="number" v-model.number="settingsForm.minStockAlert" class="form-control" min="0">
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">補貨目標數量</label>
-          <input type="number" v-model.number="settingsForm.targetStockLevel" class="form-control" min="0">
-          <div class="form-text">留空表示無設定</div>
-        </div>
-
-        <div class="mb-3">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" v-model="settingsForm.isInventoryTracked"
-              id="isInventoryTracked">
-            <label class="form-check-label" for="isInventoryTracked">
-              追蹤庫存 (訂單自動扣除)
-            </label>
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" v-model="settingsForm.enableAvailableStock"
-              id="enableAvailableStock">
-            <label class="form-check-label" for="enableAvailableStock">
-              啟用可販售庫存 (每日限量)
-            </label>
-          </div>
-        </div>
-
-        <div v-if="settingsError" class="alert alert-danger">
-          {{ settingsError }}
-        </div>
-      </form>
-    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { BModal } from 'bootstrap-vue-next';
+import { useRoute } from 'vue-router';
 import api from '@/api';
-import StockAdjustModal from './StockAdjustModal.vue';
 
 // 路由
 const route = useRoute();
-const router = useRouter();
 const brandId = computed(() => route.params.brandId);
 const storeId = computed(() => route.params.storeId);
 const itemId = computed(() => route.params.id);
@@ -306,18 +237,6 @@ const error = ref('');
 const inventoryItem = ref(null);
 const recentLogs = ref([]);
 const stats = ref(null);
-
-// Modal相關
-const showAdjustModal = ref(false);
-const showSettingsModal = ref(false);
-const settingsForm = ref({
-  minStockAlert: 0,
-  targetStockLevel: null,
-  isInventoryTracked: true,
-  enableAvailableStock: false
-});
-const isSavingSettings = ref(false);
-const settingsError = ref('');
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -428,14 +347,6 @@ const fetchInventoryDetail = async () => {
 
     inventoryItem.value = response.inventoryItem;
 
-    // 初始化設定表單
-    settingsForm.value = {
-      minStockAlert: inventoryItem.value.minStockAlert,
-      targetStockLevel: inventoryItem.value.targetStockLevel,
-      isInventoryTracked: inventoryItem.value.isInventoryTracked,
-      enableAvailableStock: inventoryItem.value.enableAvailableStock
-    };
-
     // 獲取統計數據
     await fetchStats();
 
@@ -475,71 +386,6 @@ const fetchRecentLogs = async () => {
     recentLogs.value = response.logs;
   } catch (err) {
     console.error('獲取變更記錄失敗:', err);
-  }
-};
-
-// 打開調整Modal
-const openAdjustModal = () => {
-  showAdjustModal.value = true;
-};
-
-// 處理調整成功
-const handleAdjustSuccess = () => {
-  showAdjustModal.value = false;
-  fetchInventoryDetail();
-};
-
-// 打開設定Modal
-const openSettingsModal = () => {
-  showSettingsModal.value = true;
-};
-
-// 切換售完狀態
-const toggleSoldOut = async () => {
-  try {
-    await api.inventory.toggleSoldOut({
-      storeId: storeId.value,
-      itemId: itemId.value,
-      isSoldOut: !inventoryItem.value.isSoldOut
-    });
-
-    inventoryItem.value.isSoldOut = !inventoryItem.value.isSoldOut;
-  } catch (err) {
-    console.error('切換售完狀態失敗:', err);
-    error.value = err.response?.data?.message || '切換售完狀態時發生錯誤';
-  }
-};
-
-// 提交設定
-const submitSettings = async () => {
-  isSavingSettings.value = true;
-  settingsError.value = '';
-
-  try {
-    const data = {
-      minStockAlert: settingsForm.value.minStockAlert,
-      targetStockLevel: settingsForm.value.targetStockLevel || undefined,
-      isInventoryTracked: settingsForm.value.isInventoryTracked,
-      enableAvailableStock: settingsForm.value.enableAvailableStock,
-      reason: '修改庫存設定'
-    };
-
-    await api.inventory.updateInventory({
-      storeId: storeId.value,
-      itemId: itemId.value,
-      data: {
-        ...data,
-        inventoryType: inventoryItem.value.inventoryType
-      }
-    });
-
-    showSettingsModal.value = false;
-    fetchInventoryDetail();
-  } catch (err) {
-    console.error('更新設定失敗:', err);
-    settingsError.value = err.response?.data?.message || '更新設定時發生錯誤';
-  } finally {
-    isSavingSettings.value = false;
   }
 };
 
