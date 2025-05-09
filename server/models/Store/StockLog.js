@@ -34,13 +34,6 @@ const stockLogSchema = new mongoose.Schema({
     required: true
   },
 
-  // 庫存變更類型：總庫存或可用庫存
-  stockType: {
-    type: String,
-    enum: ['totalStock', 'availableStock'],  // 改為與 inventory 一致
-    required: true
-  },
-
   // 變更前的庫存
   previousStock: {
     type: Number,
@@ -82,21 +75,6 @@ const stockLogSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin'
   },
-
-  // 記錄操作時的相關標記
-  metadata: {
-    // 是否為可用庫存的每日重置
-    isDailyReset: {
-      type: Boolean,
-      default: false
-    },
-    // 操作時 inventory 的相關設定（用於歷史記錄參考）
-    inventorySettings: {
-      enableAvailableStock: Boolean,
-      isInventoryTracked: Boolean,
-      isSoldOut: Boolean
-    }
-  }
 
 }, { timestamps: true });
 
