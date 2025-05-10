@@ -174,7 +174,8 @@
                 <td>
                   <div class="form-check form-switch">
                     <input v-if="item.inventoryType === 'DishTemplate'" class="form-check-input" type="checkbox"
-                      :checked="item.isSoldOut" @change="toggleSoldOut(item)">
+                      v-model="item.isSoldOut" @change="toggleSoldOut(item)"
+                      :disabled="pendingSoldOutItem && pendingSoldOutItem._id === item._id">
                     <input v-else class="form-check-input" type="checkbox" disabled>
                   </div>
                 </td>
@@ -239,12 +240,21 @@
     <StockSettingModal v-if="showSettingModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
       @close="showSettingModal = false" @success="handleSettingSuccess" />
   </div>
+  <!-- 確認售完狀態變更 Modal -->
+  <BModal v-model="showSoldOutConfirm" title="確認變更售完狀態" @ok="confirmSoldOutChange" @cancel="cancelSoldOutChange">
+    <p v-if="!pendingSoldOutItem?.isSoldOut">
+      確定要將「{{ pendingSoldOutItem?.itemName }}」設為售完嗎？設為售完後，顧客將無法點餐此項目。
+    </p>
+    <p v-else>
+      確定要將「{{ pendingSoldOutItem?.itemName }}」恢復為正常狀態嗎？恢復後，顧客將可以正常點餐此項目。
+    </p>
+  </BModal>
 </template>
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { BDropdown, BDropdownItem, BButton, BButtonGroup } from 'bootstrap-vue-next';
+import { BDropdown, BDropdownItem, BButton, BButtonGroup, BModal } from 'bootstrap-vue-next';
 import api from '@/api';
 import InitializeDishInventoryModal from './InitializeDishInventoryModal.vue';
 import CreateInventoryModal from './CreateInventoryModal.vue';
@@ -264,6 +274,8 @@ const inventories = ref([]);
 const searchQuery = ref('');
 const currentPage = ref(1);
 const storeName = ref('');
+const showSoldOutConfirm = ref(false);
+const pendingSoldOutItem = ref(null);
 
 // Modal 狀態
 const showInitializeModal = ref(false);
@@ -271,7 +283,6 @@ const showCreateModal = ref(false);
 const showAdjustModal = ref(false);
 const selectedItem = ref(null);
 const showSettingModal = ref(false);
-
 // 篩選條件
 const filters = reactive({
   inventoryType: '',
@@ -368,22 +379,50 @@ const handleSettingSuccess = () => {
   fetchInventory();
 };
 
-// 切換售完狀態
-const toggleSoldOut = async (item) => {
+const toggleSoldOut = (item) => {
+  // 立即恢復原始狀態，等待用戶確認
+  pendingSoldOutItem.value = { ...item };
+  showSoldOutConfirm.value = true;
+};
+
+const confirmSoldOutChange = async () => {
+  if (!pendingSoldOutItem.value) return;
+
   try {
     await api.inventory.toggleSoldOut({
       storeId: storeId.value,
-      itemId: item._id,
-      isSoldOut: !item.isSoldOut
+      itemId: pendingSoldOutItem.value._id,
+      isSoldOut: pendingSoldOutItem.value.isSoldOut
     });
 
-    // 更新本地狀態
-    item.isSoldOut = !item.isSoldOut;
+    // API 成功，更新統計
     updateStats();
   } catch (err) {
     console.error('切換售完狀態失敗:', err);
     error.value = err.response?.data?.message || '切換售完狀態時發生錯誤';
+
+    // 失敗時恢復原始狀態
+    const index = inventories.value.findIndex(item => item._id === pendingSoldOutItem.value._id);
+    if (index !== -1) {
+      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut;
+    }
+  } finally {
+    showSoldOutConfirm.value = false;
+    pendingSoldOutItem.value = null;
   }
+};
+
+const cancelSoldOutChange = () => {
+  // 取消時恢復原始狀態
+  if (pendingSoldOutItem.value) {
+    const index = inventories.value.findIndex(item => item._id === pendingSoldOutItem.value._id);
+    if (index !== -1) {
+      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut;
+    }
+  }
+
+  showSoldOutConfirm.value = false;
+  pendingSoldOutItem.value = null;
 };
 
 // 庫存狀態相關方法
