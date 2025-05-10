@@ -391,7 +391,7 @@ const confirmSoldOutChange = async () => {
   try {
     await api.inventory.toggleSoldOut({
       storeId: storeId.value,
-      itemId: pendingSoldOutItem.value._id,
+      inventoryId: pendingSoldOutItem.value._id,
       isSoldOut: pendingSoldOutItem.value.isSoldOut
     });
 
