@@ -14,7 +14,7 @@
           <div class="form-text">留空表示無設定</div>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" v-if="item.inventoryType === 'DishTemplate'">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" v-model="settingsForm.isInventoryTracked"
               id="isInventoryTracked" @change="confirmInventoryTracking">
@@ -24,7 +24,7 @@
           </div>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-3" v-if="item.inventoryType === 'DishTemplate'">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" v-model="settingsForm.enableAvailableStock"
               id="enableAvailableStock" @change="confirmAvailableStock">
