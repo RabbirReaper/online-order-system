@@ -37,6 +37,10 @@
                 <i class="bi bi-plus-circle me-2"></i>
                 新增店鋪
               </router-link>
+              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/inventory`">
+                <i class="bi bi-box2 me-2"></i>
+                庫存狀態
+              </router-link>
             </CollapsibleSection>
           </div>
 
@@ -78,24 +82,6 @@
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/options`">
                 <i class="bi bi-list-check me-2"></i>
                 選項管理
-              </router-link>
-            </CollapsibleSection>
-          </div>
-
-          <!-- 庫存管理 -->
-          <div class="mb-1">
-            <CollapsibleSection title="庫存管理" :initialExpanded="isExpanded('inventoryManagement')"
-              @toggle="(expanded) => handleSectionToggle('inventoryManagement', expanded)">
-              <template #icon><i class="bi bi-box-seam me-2"></i></template>
-
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/inventory`">
-                <i class="bi bi-box2 me-2"></i>
-                庫存狀態
-              </router-link>
-
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/inventory/logs`">
-                <i class="bi bi-clock-history me-2"></i>
-                變更記錄
               </router-link>
             </CollapsibleSection>
           </div>
