@@ -196,10 +196,9 @@ export const createInventory = async (inventoryData, adminId) => {
 export const updateInventory = async (updateData, adminId) => {
   const {
     storeId,
-    inventoryId,  // 從 itemId 改為 inventoryId
-    stockType = 'totalStock',
+    inventoryId,
+    stockType = 'both', // 改為 'both', 'totalStock', 'availableStock'
     stock,
-    changeAmount,
     reason,
     minStockAlert,
     targetStockLevel,
@@ -211,38 +210,75 @@ export const updateInventory = async (updateData, adminId) => {
   // 查找庫存項目
   const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
-  // 記錄先前的庫存
-  const previousStock = inventoryItem[stockType];
-  let newStock = previousStock;
-  let actualChangeAmount = 0;
-  let changeType = '';
-
-  // 如果提供了新庫存量
+  // 處理庫存數量更新
   if (stock !== undefined) {
-    newStock = stock;
-    actualChangeAmount = newStock - previousStock;
-    changeType = actualChangeAmount > 0 ? 'manual_add' : 'manual_subtract';
-  }
-  // 如果提供了變化量
-  else if (changeAmount !== undefined) {
-    actualChangeAmount = changeAmount;
-    newStock = previousStock + changeAmount;
-    changeType = changeAmount > 0 ? 'manual_add' : 'manual_subtract';
-  }
+    // 根據 stockType 更新對應的庫存
+    if (stockType === 'totalStock' || stockType === 'both') {
+      const previousTotalStock = inventoryItem.totalStock;
+      inventoryItem.totalStock = stock;
+      const actualChangeAmount = stock - previousTotalStock;
 
-  // 確保庫存不為負數
-  if (newStock < 0) {
-    throw new AppError('庫存不能為負數', 400);
-  }
+      // 創建總庫存日誌
+      await StockLog.create({
+        brand: inventoryItem.brand,
+        store: storeId,
+        inventoryType: inventoryItem.inventoryType,
+        dish: inventoryItem.dish,
+        itemName: inventoryItem.itemName,
+        stockType: 'totalStock',
+        previousStock: previousTotalStock,
+        newStock: stock,
+        changeAmount: actualChangeAmount,
+        changeType: actualChangeAmount > 0 ? 'manual_add' : 'manual_subtract',
+        reason: reason || '手動調整庫存',
+        admin: adminId,
+        metadata: {
+          inventorySettings: {
+            enableAvailableStock: inventoryItem.enableAvailableStock,
+            isInventoryTracked: inventoryItem.isInventoryTracked,
+            isSoldOut: inventoryItem.isSoldOut
+          }
+        }
+      });
+    }
 
-  // 確保可販售庫存不超過總庫存
-  if (stockType === 'availableStock' && newStock > inventoryItem.totalStock) {
-    throw new AppError('可販售庫存不能超過總庫存', 400);
-  }
+    if ((stockType === 'availableStock' || stockType === 'both') && inventoryItem.enableAvailableStock) {
+      // 如果是單獨設定 availableStock，使用傳入的值
+      // 如果是 both，則使用傳入的 stock 值
+      const newAvailableStock = updateData.availableStock !== undefined ? updateData.availableStock : stock;
 
-  // 更新庫存數量
-  if (stock !== undefined || changeAmount !== undefined) {
-    inventoryItem[stockType] = newStock;
+      // 確保可販售庫存不超過總庫存
+      if (newAvailableStock > inventoryItem.totalStock) {
+        throw new AppError('可販售庫存不能超過總庫存', 400);
+      }
+
+      const previousAvailableStock = inventoryItem.availableStock;
+      inventoryItem.availableStock = newAvailableStock;
+      const actualChangeAmount = newAvailableStock - previousAvailableStock;
+
+      // 創建可販售庫存日誌
+      await StockLog.create({
+        brand: inventoryItem.brand,
+        store: storeId,
+        inventoryType: inventoryItem.inventoryType,
+        dish: inventoryItem.dish,
+        itemName: inventoryItem.itemName,
+        stockType: 'availableStock',
+        previousStock: previousAvailableStock,
+        newStock: newAvailableStock,
+        changeAmount: actualChangeAmount,
+        changeType: actualChangeAmount > 0 ? 'manual_add' : 'manual_subtract',
+        reason: reason || '手動調整可販售庫存',
+        admin: adminId,
+        metadata: {
+          inventorySettings: {
+            enableAvailableStock: inventoryItem.enableAvailableStock,
+            isInventoryTracked: inventoryItem.isInventoryTracked,
+            isSoldOut: inventoryItem.isSoldOut
+          }
+        }
+      });
+    }
   }
 
   // 更新其他設定
@@ -273,31 +309,6 @@ export const updateInventory = async (updateData, adminId) => {
   // 保存庫存項目
   await inventoryItem.save();
 
-  // 如果庫存有變化，創建庫存日誌
-  if (actualChangeAmount !== 0) {
-    await StockLog.create({
-      brand: inventoryItem.brand,
-      store: storeId,
-      inventoryType: inventoryItem.inventoryType,
-      dish: inventoryItem.dish,
-      itemName: inventoryItem.itemName,
-      stockType,
-      previousStock,
-      newStock,
-      changeAmount: actualChangeAmount,
-      changeType,
-      reason: reason || '手動調整庫存',
-      admin: adminId,
-      metadata: {
-        inventorySettings: {
-          enableAvailableStock: inventoryItem.enableAvailableStock,
-          isInventoryTracked: inventoryItem.isInventoryTracked,
-          isSoldOut: inventoryItem.isSoldOut
-        }
-      }
-    });
-  }
-
   return inventoryItem;
 };
 
@@ -309,7 +320,7 @@ export const updateInventory = async (updateData, adminId) => {
 export const reduceStock = async (reduceData) => {
   const {
     storeId,
-    inventoryId,  // 從 itemId 改為 inventoryId
+    inventoryId,
     quantity,
     reason,
     orderId,
@@ -324,42 +335,37 @@ export const reduceStock = async (reduceData) => {
     return true;
   }
 
-  // 優先從可用庫存扣除
-  let stockType = 'availableStock';
-  let previousStock = inventoryItem.availableStock;
-
-  // 如果沒啟用可用庫存功能，或可用庫存不足，從總庫存扣除
-  if (!inventoryItem.enableAvailableStock || inventoryItem.availableStock < quantity) {
-    stockType = 'totalStock';
-    previousStock = inventoryItem.totalStock;
-  }
-
-  // 檢查庫存是否足夠
-  if (inventoryItem[stockType] < quantity) {
+  // 檢查總庫存是否足夠
+  if (inventoryItem.totalStock < quantity) {
     throw new AppError('庫存不足', 400);
   }
 
-  // 更新庫存
-  inventoryItem[stockType] -= quantity;
+  // 記錄先前的庫存
+  const previousTotalStock = inventoryItem.totalStock;
+  const previousAvailableStock = inventoryItem.availableStock;
 
-  // 如果啟用了可用庫存，且從可用庫存扣除，則也要同步扣除總庫存
-  if (inventoryItem.enableAvailableStock && stockType === 'availableStock') {
-    inventoryItem.totalStock -= quantity;
+  // 扣減總庫存
+  inventoryItem.totalStock -= quantity;
+
+  // 如果啟用可用庫存，同時扣減可用庫存
+  if (inventoryItem.enableAvailableStock) {
+    // 確保可用庫存不會為負數
+    inventoryItem.availableStock = Math.max(0, inventoryItem.availableStock - quantity);
   }
 
   // 保存庫存項目
   await inventoryItem.save();
 
-  // 創建庫存日誌
+  // 創建總庫存日誌
   await StockLog.create({
     brand: inventoryItem.brand,
     store: storeId,
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType,
-    previousStock,
-    newStock: inventoryItem[stockType],
+    stockType: 'totalStock',
+    previousStock: previousTotalStock,
+    newStock: inventoryItem.totalStock,
     changeAmount: -quantity,
     changeType: orderId ? 'order' : 'manual_subtract',
     reason: reason || '訂單消耗',
@@ -374,20 +380,20 @@ export const reduceStock = async (reduceData) => {
     }
   });
 
-  // 如果同時要扣總庫存，也記錄日誌
-  if (inventoryItem.enableAvailableStock && stockType === 'availableStock') {
+  // 如果啟用可用庫存，創建可用庫存日誌
+  if (inventoryItem.enableAvailableStock) {
     await StockLog.create({
       brand: inventoryItem.brand,
       store: storeId,
       inventoryType: inventoryItem.inventoryType,
       dish: inventoryItem.dish,
       itemName: inventoryItem.itemName,
-      stockType: 'totalStock',
-      previousStock: inventoryItem.totalStock + quantity,
-      newStock: inventoryItem.totalStock,
-      changeAmount: -quantity,
+      stockType: 'availableStock',
+      previousStock: previousAvailableStock,
+      newStock: inventoryItem.availableStock,
+      changeAmount: previousAvailableStock - inventoryItem.availableStock,
       changeType: orderId ? 'order' : 'manual_subtract',
-      reason: reason || '訂單消耗（同步總庫存）',
+      reason: reason || '訂單消耗（同步可用庫存）',
       order: orderId,
       admin: adminId,
       metadata: {
@@ -411,7 +417,7 @@ export const reduceStock = async (reduceData) => {
 export const addStock = async (addData) => {
   const {
     storeId,
-    inventoryId,  // 從 itemId 改為 inventoryId
+    inventoryId,
     stockType = 'totalStock',
     quantity,
     reason,
@@ -425,7 +431,17 @@ export const addStock = async (addData) => {
   const previousStock = inventoryItem[stockType];
 
   // 更新庫存
-  inventoryItem[stockType] += quantity;
+  if (stockType === 'totalStock') {
+    inventoryItem.totalStock += quantity;
+  } else if (stockType === 'availableStock' && inventoryItem.enableAvailableStock) {
+    // 確保可用庫存不超過總庫存
+    if (inventoryItem.availableStock + quantity > inventoryItem.totalStock) {
+      throw new AppError('可用庫存不能超過總庫存', 400);
+    }
+    inventoryItem.availableStock += quantity;
+  } else {
+    throw new AppError('無效的庫存類型或未啟用可用庫存', 400);
+  }
 
   // 保存庫存項目
   await inventoryItem.save();
@@ -457,67 +473,37 @@ export const addStock = async (addData) => {
 };
 
 /**
- * 庫存調撥（從總庫存到可販售）
- * @param {Object} transferData - 調撥數據
- * @returns {Promise<Boolean>} 操作是否成功
+ * 設定可用庫存
+ * @param {Object} setData - 設定數據
+ * @returns {Promise<Object>} 更新後的庫存項目
  */
-export const transferStock = async (transferData) => {
+export const setAvailableStock = async (setData) => {
   const {
     storeId,
-    inventoryId,  // 從 itemId 改為 inventoryId
-    quantity,
+    inventoryId,
+    availableStock,
     reason,
     adminId
-  } = transferData;
+  } = setData;
 
   // 查找庫存項目
   const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
-  // 檢查是否啟用了可用庫存功能
   if (!inventoryItem.enableAvailableStock) {
     throw new AppError('此項目未啟用可用庫存功能', 400);
   }
 
-  // 檢查總庫存是否足夠
-  if (inventoryItem.totalStock < quantity) {
-    throw new AppError('總庫存不足', 400);
+  if (availableStock > inventoryItem.totalStock) {
+    throw new AppError('可用庫存不能超過總庫存', 400);
   }
 
-  // 記錄先前的庫存
-  const previousTotalStock = inventoryItem.totalStock;
   const previousAvailableStock = inventoryItem.availableStock;
-
-  // 更新庫存
-  inventoryItem.totalStock -= quantity;
-  inventoryItem.availableStock += quantity;
+  inventoryItem.availableStock = availableStock;
 
   // 保存庫存項目
   await inventoryItem.save();
 
-  // 創建庫存日誌 - 總庫存減少
-  await StockLog.create({
-    brand: inventoryItem.brand,
-    store: storeId,
-    inventoryType: inventoryItem.inventoryType,
-    dish: inventoryItem.dish,
-    itemName: inventoryItem.itemName,
-    stockType: 'totalStock',
-    previousStock: previousTotalStock,
-    newStock: inventoryItem.totalStock,
-    changeAmount: -quantity,
-    changeType: 'system_adjustment',
-    reason: reason || '調撥至可販售庫存',
-    admin: adminId,
-    metadata: {
-      inventorySettings: {
-        enableAvailableStock: inventoryItem.enableAvailableStock,
-        isInventoryTracked: inventoryItem.isInventoryTracked,
-        isSoldOut: inventoryItem.isSoldOut
-      }
-    }
-  });
-
-  // 創建庫存日誌 - 可販售增加
+  // 創建庫存日誌
   await StockLog.create({
     brand: inventoryItem.brand,
     store: storeId,
@@ -526,10 +512,10 @@ export const transferStock = async (transferData) => {
     itemName: inventoryItem.itemName,
     stockType: 'availableStock',
     previousStock: previousAvailableStock,
-    newStock: inventoryItem.availableStock,
-    changeAmount: quantity,
+    newStock: availableStock,
+    changeAmount: availableStock - previousAvailableStock,
     changeType: 'system_adjustment',
-    reason: reason || '從總庫存調撥',
+    reason: reason || '設定可用庫存',
     admin: adminId,
     metadata: {
       inventorySettings: {
@@ -540,7 +526,7 @@ export const transferStock = async (transferData) => {
     }
   });
 
-  return true;
+  return inventoryItem;
 };
 
 /**
@@ -627,7 +613,7 @@ export const restoreInventoryForCancelledOrder = async (order) => {
 export const processDamage = async (damageData) => {
   const {
     storeId,
-    inventoryId,  // 從 itemId 改為 inventoryId
+    inventoryId,
     stockType = 'totalStock',
     quantity,
     reason,
@@ -862,7 +848,7 @@ export const bulkUpdateInventory = async (storeId, items, adminId) => {
         // 更新現有項目
         await updateInventory({
           storeId,
-          inventoryId,  // 使用 inventoryId
+          inventoryId,
           stockType: item.stockType || 'totalStock',
           stock: item.stock,
           reason: item.reason || '批量更新庫存',

@@ -46,9 +46,11 @@ router.post('/:storeId/inventory/initialize-dishes', authMiddleware, permissionM
 router.put('/:storeId/inventory/:inventoryId', authMiddleware, permissionMiddleware(['order_system']), inventoryController.updateInventory);
 router.get('/:storeId/inventory/:inventoryId', authMiddleware, permissionMiddleware(['order_system', 'view_reports']), inventoryController.getInventoryItem);
 
+// 新增設定可用庫存
+router.put('/:storeId/inventory/:inventoryId/available-stock', authMiddleware, permissionMiddleware(['order_system']), inventoryController.setAvailableStock);
+
 router.post('/:storeId/inventory/:inventoryId/reduce', authMiddleware, permissionMiddleware(['order_system']), inventoryController.reduceStock);
 router.post('/:storeId/inventory/:inventoryId/add', authMiddleware, permissionMiddleware(['order_system']), inventoryController.addStock);
-router.post('/:storeId/inventory/:inventoryId/transfer', authMiddleware, permissionMiddleware(['order_system']), inventoryController.transferStock);
 router.post('/:storeId/inventory/:inventoryId/damage', authMiddleware, permissionMiddleware(['order_system']), inventoryController.processDamage);
 router.put('/:storeId/inventory/:inventoryId/sold-out', authMiddleware, permissionMiddleware(['order_system']), inventoryController.toggleSoldOut);
 router.get('/:storeId/inventory/:inventoryId/trends', authMiddleware, permissionMiddleware(['view_reports']), inventoryController.getStockTrends);

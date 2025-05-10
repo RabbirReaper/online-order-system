@@ -53,6 +53,18 @@ export default function (apiClient) {
     },
 
     /**
+     * 設定可用庫存
+     * @param {Object} params - 設定參數
+     * @returns {Promise} - API 回應
+     */
+    setAvailableStock({ storeId, inventoryId, availableStock, reason }) {
+      return apiClient.put(`/store/${storeId}/inventory/${inventoryId}/available-stock`, {
+        availableStock,
+        reason
+      });
+    },
+
+    /**
      * 減少庫存（訂單消耗）
      * @param {Object} params - 減少參數
      * @returns {Promise} - API 回應
@@ -76,19 +88,6 @@ export default function (apiClient) {
         quantity,
         reason,
         stockType,
-        inventoryType
-      });
-    },
-
-    /**
-     * 庫存調撥（從總庫存到可販售）
-     * @param {Object} params - 調撥參數
-     * @returns {Promise} - API 回應
-     */
-    transferStock({ storeId, inventoryId, quantity, reason, inventoryType = 'DishTemplate' }) {
-      return apiClient.post(`/store/${storeId}/inventory/${inventoryId}/transfer`, {
-        quantity,
-        reason,
         inventoryType
       });
     },

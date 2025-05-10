@@ -171,7 +171,7 @@ const submitSettings = async (evt) => {
 
     await api.inventory.updateInventory({
       storeId: props.storeId,
-      itemId: props.item._id,
+      inventoryId: props.item._id,
       data: {
         ...data,
         inventoryType: props.item.inventoryType || 'DishTemplate'
@@ -185,41 +185,6 @@ const submitSettings = async (evt) => {
     error.value = err.response?.data?.message || '更新設定時發生錯誤';
   } finally {
     isSubmitting.value = false;
-  }
-};
-
-// 獲取庫存詳情
-const fetchInventoryDetail = async () => {
-  isLoading.value = true;
-  error.value = '';
-
-  try {
-    // 獲取庫存詳情
-    const response = await api.inventory.getInventoryItem({
-      storeId: props.storeId,
-      itemId: props.itemId
-    });
-
-    inventoryItem.value = response.inventoryItem;
-
-    // 初始化設定表單
-    settingsForm.value = {
-      minStockAlert: inventoryItem.value.minStockAlert,
-      targetStockLevel: inventoryItem.value.targetStockLevel,
-      isInventoryTracked: inventoryItem.value.isInventoryTracked,
-      enableAvailableStock: inventoryItem.value.enableAvailableStock
-    };
-
-    // 獲取統計數據
-    await fetchStats();
-
-    // 獲取最近變更記錄
-    await fetchRecentLogs();
-  } catch (err) {
-    console.error('獲取庫存詳情失敗:', err);
-    error.value = err.response?.data?.message || '獲取庫存詳情時發生錯誤';
-  } finally {
-    isLoading.value = false;
   }
 };
 

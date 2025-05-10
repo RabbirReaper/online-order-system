@@ -29,11 +29,11 @@ export const getStoreInventory = asyncHandler(async (req, res) => {
 // 獲取單個庫存項目
 export const getInventoryItem = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
 
     const inventoryItem = await inventoryService.management.getInventoryItem(
       storeId,
-      inventoryId  // 使用 inventoryId
+      inventoryId
     );
 
     res.json({
@@ -84,13 +84,13 @@ export const createInventory = asyncHandler(async (req, res) => {
 // 更新庫存項目
 export const updateInventory = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const adminId = req.adminId;
 
     const updateData = {
       ...req.body,
       storeId,
-      inventoryId  // 改為 inventoryId
+      inventoryId
     };
 
     const updatedInventoryItem = await inventoryService.management.updateInventory(
@@ -112,16 +112,47 @@ export const updateInventory = asyncHandler(async (req, res) => {
   }
 });
 
+// 設定可用庫存
+export const setAvailableStock = asyncHandler(async (req, res) => {
+  try {
+    const { storeId, inventoryId } = req.params;
+    const { availableStock, reason } = req.body;
+    const adminId = req.adminId;
+
+    const setData = {
+      storeId,
+      inventoryId,
+      availableStock,
+      reason,
+      adminId
+    };
+
+    const updatedInventoryItem = await inventoryService.management.setAvailableStock(setData);
+
+    res.json({
+      success: true,
+      message: '可用庫存設定成功',
+      inventoryItem: updatedInventoryItem
+    });
+  } catch (error) {
+    console.error('Error setting available stock:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+});
+
 // 減少庫存（訂單消耗）
 export const reduceStock = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const { quantity, reason, orderId } = req.body;
     const adminId = req.adminId;
 
     const reduceData = {
       storeId,
-      inventoryId,  // 改為 inventoryId
+      inventoryId,
       quantity,
       reason,
       orderId,
@@ -147,13 +178,13 @@ export const reduceStock = asyncHandler(async (req, res) => {
 // 增加庫存
 export const addStock = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const { quantity, reason, stockType = 'totalStock' } = req.body;
     const adminId = req.adminId;
 
     const addData = {
       storeId,
-      inventoryId,  // 改為 inventoryId
+      inventoryId,
       quantity,
       reason,
       stockType,
@@ -176,47 +207,16 @@ export const addStock = asyncHandler(async (req, res) => {
   }
 });
 
-// 庫存調撥（從總庫存到可販售）
-export const transferStock = asyncHandler(async (req, res) => {
-  try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
-    const { quantity, reason } = req.body;
-    const adminId = req.adminId;
-
-    const transferData = {
-      storeId,
-      inventoryId,  // 改為 inventoryId
-      quantity,
-      reason,
-      adminId,
-      inventoryType: req.body.inventoryType || 'DishTemplate'
-    };
-
-    await inventoryService.management.transferStock(transferData);
-
-    res.json({
-      success: true,
-      message: '庫存調撥成功'
-    });
-  } catch (error) {
-    console.error('Error transferring stock:', error);
-    res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Internal server error'
-    });
-  }
-});
-
 // 損耗處理
 export const processDamage = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const { quantity, reason, stockType = 'totalStock' } = req.body;
     const adminId = req.adminId;
 
     const damageData = {
       storeId,
-      inventoryId,  // 改為 inventoryId
+      inventoryId,
       quantity,
       reason,
       stockType,
@@ -267,7 +267,7 @@ export const initializeDishInventory = asyncHandler(async (req, res) => {
 // 切換庫存項目售完狀態
 export const toggleSoldOut = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const { isSoldOut } = req.body;
     const adminId = req.adminId;
 
@@ -280,7 +280,7 @@ export const toggleSoldOut = asyncHandler(async (req, res) => {
 
     const inventoryItem = await inventoryService.management.toggleSoldOut(
       storeId,
-      inventoryId,  // 改為 inventoryId
+      inventoryId,
       isSoldOut,
       adminId
     );
@@ -334,7 +334,7 @@ export const getInventoryLogs = asyncHandler(async (req, res) => {
 // 獲取庫存趨勢
 export const getStockTrends = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const options = {
       storeId,
       itemId: inventoryId, // 服務層內部仍使用 itemId，所以這裡轉換
@@ -361,7 +361,7 @@ export const getStockTrends = asyncHandler(async (req, res) => {
 // 獲取項目庫存統計
 export const getItemInventoryStats = asyncHandler(async (req, res) => {
   try {
-    const { storeId, inventoryId } = req.params; // 改為 inventoryId
+    const { storeId, inventoryId } = req.params;
     const options = {
       storeId,
       itemId: inventoryId, // 服務層內部仍使用 itemId，所以這裡轉換

@@ -1,179 +1,98 @@
 <template>
-  <BModal :model-value="show" @update:model-value="emit('close')" title="調整庫存" @ok="submitAdjustment"
-    :ok-disabled="isSubmitting" ok-title="確認調整" cancel-title="取消" no-close-on-backdrop>
-    <template #default>
-      <div v-if="item">
-        <h6 class="mb-3">{{ item.itemName }}</h6>
-
-        <!-- 調整類型選擇 -->
-        <div class="mb-3">
-          <label class="form-label">調整類型</label>
-          <select v-model="adjustForm.type" class="form-select" @change="resetForm">
-            <option value="add">增加庫存</option>
-            <option value="subtract">減少庫存</option>
-            <option value="transfer">轉移到可販售</option>
-            <option value="damage">損耗處理</option>
-            <option value="settings">修改設定</option>
-          </select>
+  <BModal v-model="isModalOpen" title="調整庫存" size="lg" @ok="handleSubmit" @cancel="handleCancel">
+    <div class="mb-3">
+      <h6 class="mb-2">{{ item.itemName }}</h6>
+      <div class="d-flex gap-3">
+        <div>
+          <span class="text-muted">總庫存：</span>
+          <strong>{{ item.totalStock }}</strong>
         </div>
-
-        <!-- 當前庫存顯示 -->
-        <div class="row g-3 mb-3">
-          <div class="col-6">
-            <div class="bg-light p-3 rounded">
-              <small class="text-muted">當前總庫存</small>
-              <h5 class="mb-0">{{ item.totalStock || 0 }}</h5>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="bg-light p-3 rounded">
-              <small class="text-muted">當前可販售庫存</small>
-              <h5 class="mb-0">{{ item.availableStock || 0 }}</h5>
-              <small class="text-muted" v-if="!item.enableAvailableStock">（未啟用）</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- 增加/減少庫存 -->
-        <div v-if="adjustForm.type === 'add' || adjustForm.type === 'subtract'">
-          <div class="mb-3">
-            <label class="form-label">選擇庫存類型</label>
-            <select v-model="adjustForm.stockType" class="form-select">
-              <option value="totalStock">總庫存</option>
-              <option value="availableStock" :disabled="!item.enableAvailableStock">可販售庫存</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">{{ adjustForm.type === 'add' ? '增加' : '減少' }}數量</label>
-            <input type="number" v-model.number="adjustForm.quantity" class="form-control" min="1"
-              :max="adjustForm.type === 'subtract' ? item[adjustForm.stockType] : undefined">
-            <div class="form-text text-muted" v-if="adjustForm.type === 'subtract'">
-              最多可減少: {{ item[adjustForm.stockType] }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 轉移數量 -->
-        <div v-if="adjustForm.type === 'transfer'" class="mb-3">
-          <div class="alert alert-info mb-3">
-            <i class="bi bi-info-circle me-1"></i>
-            將總庫存轉移到可販售庫存
-          </div>
-          <label class="form-label">轉移數量</label>
-          <input type="number" v-model.number="adjustForm.transferQuantity" class="form-control" min="1"
-            :max="Math.max(0, item.totalStock - item.availableStock)" :disabled="!item.enableAvailableStock">
-          <div class="form-text text-muted">
-            {{ item.enableAvailableStock ? `最多可轉移: ${Math.max(0, item.totalStock - item.availableStock)}` :
-              '請先啟用可販售庫存功能' }}
-          </div>
-        </div>
-
-        <!-- 損耗處理 -->
-        <div v-if="adjustForm.type === 'damage'">
-          <div class="mb-3">
-            <label class="form-label">損耗來源</label>
-            <select v-model="adjustForm.damageFrom" class="form-select">
-              <option value="totalStock">總庫存</option>
-              <option value="availableStock" :disabled="!item.enableAvailableStock">可販售庫存</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">損耗數量</label>
-            <input type="number" v-model.number="adjustForm.damageQuantity" class="form-control" min="1"
-              :max="getDamageMaxQuantity()">
-            <div class="form-text text-muted">
-              最多可處理: {{ getDamageMaxQuantity() }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 庫存設定 -->
-        <div v-if="adjustForm.type === 'settings'">
-          <div class="mb-3">
-            <label class="form-label">最低庫存警告值</label>
-            <input type="number" v-model.number="adjustForm.minStockAlert" class="form-control" min="0">
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">庫存補貨目標</label>
-            <input type="number" v-model.number="adjustForm.targetStockLevel" class="form-control" min="0">
-            <div class="form-text">留空表示無設定</div>
-          </div>
-
-          <div class="mb-3">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" v-model="adjustForm.isInventoryTracked"
-                id="isInventoryTracked" @change="confirmInventoryTracking">
-              <label class="form-check-label" for="isInventoryTracked">
-                追蹤庫存 (自動扣除)
-              </label>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" v-model="adjustForm.enableAvailableStock"
-                id="enableAvailableStock" @change="confirmAvailableStock">
-              <label class="form-check-label" for="enableAvailableStock">
-                啟用可販售庫存 (每日限量)
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 原因輸入 -->
-        <div class="mb-3">
-          <label class="form-label">調整原因</label>
-          <textarea v-model="adjustForm.reason" class="form-control" rows="2" required
-            :placeholder="getReasonPlaceholder()"></textarea>
-        </div>
-
-        <!-- 錯誤提示 -->
-        <div v-if="error" class="alert alert-danger">
-          {{ error }}
+        <div v-if="item.enableAvailableStock">
+          <span class="text-muted">可販售庫存：</span>
+          <strong>{{ item.availableStock }}</strong>
         </div>
       </div>
-    </template>
+    </div>
 
-    <template #modal-footer>
-      <BButton variant="secondary" @click="emit('close')">取消</BButton>
-      <BButton variant="primary" :disabled="isSubmitting" @click="submitAdjustment">
-        <BSpinner small v-if="isSubmitting" class="me-1" />
-        {{ isSubmitting ? '處理中...' : '確認調整' }}
-      </BButton>
-    </template>
-  </BModal>
+    <!-- 調整類型選擇 -->
+    <div class="mb-3">
+      <label class="form-label">調整類型</label>
+      <select v-model="adjustmentType" class="form-select" @change="handleTypeChange">
+        <option value="set">設定新值</option>
+        <option value="add">增加庫存</option>
+        <option value="reduce">減少庫存</option>
+      </select>
+    </div>
 
-  <!-- 確認啟用/關閉庫存追蹤 Modal -->
-  <BModal v-model="showInventoryTrackingConfirm" title="確認變更" @ok="confirmInventoryTrackingChange"
-    @cancel="cancelInventoryTrackingChange">
-    <p v-if="adjustForm.isInventoryTracked">
-      確定要啟用庫存追蹤嗎？啟用後，訂單確認時將自動扣除庫存。
-    </p>
-    <p v-else>
-      確定要關閉庫存追蹤嗎？關閉後，訂單將不會自動扣除庫存。
-    </p>
-  </BModal>
+    <!-- 庫存類型選擇 -->
+    <div class="mb-3">
+      <label class="form-label">庫存類型</label>
+      <select v-model="stockType" class="form-select">
+        <option value="totalStock">總庫存</option>
+        <option v-if="item.enableAvailableStock" value="availableStock">可販售庫存</option>
+        <option v-if="item.enableAvailableStock && adjustmentType === 'set'" value="both">同時設定</option>
+      </select>
+    </div>
 
-  <!-- 確認啟用/關閉可販售庫存 Modal -->
-  <BModal v-model="showAvailableStockConfirm" title="確認變更" @ok="confirmAvailableStockChange"
-    @cancel="cancelAvailableStockChange">
-    <p v-if="adjustForm.enableAvailableStock">
-      確定要啟用可販售庫存功能嗎？啟用後可以設定每日限量販售。
-    </p>
-    <p v-else>
-      確定要關閉可販售庫存功能嗎？關閉後將不再顯示可販售數量。
-    </p>
+    <!-- 如果是設定新值 -->
+    <div v-if="adjustmentType === 'set'">
+      <div class="mb-3">
+        <label class="form-label">
+          {{ stockType === 'both' ? '新的總庫存' : '新的庫存值' }}
+        </label>
+        <input v-model.number="newStock" type="number" class="form-control" min="0" required>
+      </div>
+
+      <!-- 如果是同時設定，還需要輸入可販售庫存 -->
+      <div v-if="stockType === 'both'" class="mb-3">
+        <label class="form-label">新的可販售庫存</label>
+        <input v-model.number="newAvailableStock" type="number" class="form-control" min="0" :max="newStock" required>
+        <div class="form-text">可販售庫存不能超過總庫存</div>
+      </div>
+
+      <!-- 顯示差異 -->
+      <div v-if="newStock !== null" class="alert alert-info">
+        <div v-if="stockType !== 'both'">
+          現有{{ stockTypeLabel }}：{{ currentStock }}
+          <br>
+          新{{ stockTypeLabel }}：{{ newStock }}
+          <br>
+          <strong>差異：{{ stockDifference }}</strong>
+          <span v-if="stockDifference > 0" class="text-success">（增加）</span>
+          <span v-else-if="stockDifference < 0" class="text-danger">（減少）</span>
+        </div>
+        <div v-else>
+          <div>總庫存差異：{{ totalStockDifference }}
+            <span v-if="totalStockDifference > 0" class="text-success">（增加）</span>
+            <span v-else-if="totalStockDifference < 0" class="text-danger">（減少）</span>
+          </div>
+          <div>可販售庫存差異：{{ availableStockDifference }}
+            <span v-if="availableStockDifference > 0" class="text-success">（增加）</span>
+            <span v-else-if="availableStockDifference < 0" class="text-danger">（減少）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 如果是增加或減少 -->
+    <div v-else class="mb-3">
+      <label class="form-label">{{ adjustmentType === 'add' ? '增加數量' : '減少數量' }}</label>
+      <input v-model.number="adjustmentQuantity" type="number" class="form-control" min="1" required>
+    </div>
+
+    <!-- 調整原因（可選） -->
+    <div class="mb-3">
+      <label class="form-label">調整原因（選填）</label>
+      <textarea v-model="reason" class="form-control" rows="3" placeholder="例如：定期盤點、實際清點差異等"></textarea>
+    </div>
   </BModal>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue';
-import { BModal, BButton, BSpinner } from 'bootstrap-vue-next';
+import { ref, computed, watch } from 'vue';
+import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
 
-// Props
 const props = defineProps({
   item: {
     type: Object,
@@ -189,208 +108,143 @@ const props = defineProps({
   }
 });
 
-// Emits
 const emit = defineEmits(['close', 'success']);
 
-// 控制 Modal 顯示
-const show = ref(true);
-
-// 狀態
+const isModalOpen = ref(true);
+const adjustmentType = ref('set'); // set, add, reduce
+const stockType = ref('totalStock'); // totalStock, availableStock, both
+const newStock = ref(null);
+const newAvailableStock = ref(null);
+const adjustmentQuantity = ref(1);
+const reason = ref('');
 const isSubmitting = ref(false);
-const error = ref('');
 
-// 確認 Modal
-const showInventoryTrackingConfirm = ref(false);
-const showAvailableStockConfirm = ref(false);
-const tempInventoryTracked = ref(false);
-const tempEnableAvailableStock = ref(false);
-
-// 調整表單
-const adjustForm = ref({
-  type: 'add',
-  stockType: 'totalStock',
-  quantity: 1,
-  transferQuantity: 1,
-  damageFrom: 'totalStock',
-  damageQuantity: 1,
-  minStockAlert: 0,
-  targetStockLevel: null,
-  isInventoryTracked: false,
-  enableAvailableStock: false,
-  reason: ''
+// 計算屬性
+const currentStock = computed(() => {
+  return stockType.value === 'availableStock' ? props.item.availableStock : props.item.totalStock;
 });
 
-// 初始化表單值
-const initForm = () => {
-  if (props.item) {
-    adjustForm.value.minStockAlert = props.item.minStockAlert || 0;
-    adjustForm.value.targetStockLevel = props.item.targetStockLevel;
-    adjustForm.value.isInventoryTracked = props.item.isInventoryTracked || false;
-    adjustForm.value.enableAvailableStock = props.item.enableAvailableStock || false;
+const stockTypeLabel = computed(() => {
+  return stockType.value === 'availableStock' ? '可販售庫存' : '總庫存';
+});
+
+const stockDifference = computed(() => {
+  if (adjustmentType.value === 'set' && newStock.value !== null) {
+    return newStock.value - currentStock.value;
+  }
+  return 0;
+});
+
+const totalStockDifference = computed(() => {
+  if (adjustmentType.value === 'set' && stockType.value === 'both' && newStock.value !== null) {
+    return newStock.value - props.item.totalStock;
+  }
+  return 0;
+});
+
+const availableStockDifference = computed(() => {
+  if (adjustmentType.value === 'set' && stockType.value === 'both' && newAvailableStock.value !== null) {
+    return newAvailableStock.value - props.item.availableStock;
+  }
+  return 0;
+});
+
+// 監聽調整類型變化
+const handleTypeChange = () => {
+  // 重置值
+  newStock.value = null;
+  newAvailableStock.value = null;
+  adjustmentQuantity.value = 1;
+
+  // 如果選擇設定新值，設定預設值為當前庫存
+  if (adjustmentType.value === 'set') {
+    newStock.value = currentStock.value;
+    if (stockType.value === 'both') {
+      newAvailableStock.value = props.item.availableStock;
+    }
   }
 };
 
-// 重置表單
-const resetForm = () => {
-  adjustForm.value.reason = '';
-  adjustForm.value.quantity = 1;
-  adjustForm.value.transferQuantity = 1;
-  adjustForm.value.damageQuantity = 1;
-  adjustForm.value.stockType = 'totalStock';
-  adjustForm.value.damageFrom = 'totalStock';
-  initForm();
-};
-
-// 獲取損耗最大數量
-const getDamageMaxQuantity = () => {
-  if (!props.item) return 0;
-  return props.item[adjustForm.value.damageFrom] || 0;
-};
-
-// 獲取原因占位符
-const getReasonPlaceholder = () => {
-  switch (adjustForm.value.type) {
-    case 'add':
-      return '例：進貨、補貨';
-    case 'subtract':
-      return '例：盤點差異、過期';
-    case 'transfer':
-      return '例：移至前台銷售';
-    case 'damage':
-      return '例：破損、過期';
-    case 'settings':
-      return '例：調整庫存管理設定';
-    default:
-      return '請輸入調整原因';
+// 監聽庫存類型變化
+watch(stockType, () => {
+  if (adjustmentType.value === 'set') {
+    newStock.value = currentStock.value;
+    if (stockType.value === 'both') {
+      newAvailableStock.value = props.item.availableStock;
+    }
   }
-};
+});
 
-// 確認庫存追蹤變更
-const confirmInventoryTracking = () => {
-  tempInventoryTracked.value = adjustForm.value.isInventoryTracked;
-  showInventoryTrackingConfirm.value = true;
-};
-
-const confirmInventoryTrackingChange = () => {
-  showInventoryTrackingConfirm.value = false;
-};
-
-const cancelInventoryTrackingChange = () => {
-  adjustForm.value.isInventoryTracked = !adjustForm.value.isInventoryTracked;
-  showInventoryTrackingConfirm.value = false;
-};
-
-// 確認可販售庫存變更
-const confirmAvailableStock = () => {
-  tempEnableAvailableStock.value = adjustForm.value.enableAvailableStock;
-  showAvailableStockConfirm.value = true;
-};
-
-const confirmAvailableStockChange = () => {
-  showAvailableStockConfirm.value = false;
-};
-
-const cancelAvailableStockChange = () => {
-  adjustForm.value.enableAvailableStock = !adjustForm.value.enableAvailableStock;
-  showAvailableStockConfirm.value = false;
-};
-
-// 提交調整
-const submitAdjustment = async (evt) => {
-  evt.preventDefault();
-
-  if (!props.item || !adjustForm.value.reason.trim()) {
-    error.value = '請填寫調整原因';
-    return;
-  }
-
-  isSubmitting.value = true;
-  error.value = '';
+// 提交處理
+const handleSubmit = async () => {
+  if (isSubmitting.value) return;
 
   try {
-    const itemId = props.item._id;
-    const inventoryType = props.item.inventoryType || 'DishTemplate';
+    isSubmitting.value = true;
 
-    switch (adjustForm.value.type) {
-      case 'add':
-        await api.inventory.addStock({
-          storeId: props.storeId,
-          itemId,
-          quantity: adjustForm.value.quantity,
-          reason: adjustForm.value.reason,
-          stockType: adjustForm.value.stockType,
-          inventoryType
-        });
-        break;
+    if (adjustmentType.value === 'set') {
+      // 設定新值
+      const updateData = {
+        stockType: stockType.value,
+        stock: newStock.value,
+        reason: reason.value || undefined
+      };
 
-      case 'subtract':
-        // 使用手動減少，而不是訂單消耗
-        await api.inventory.updateInventory({
-          storeId: props.storeId,
-          itemId,
-          data: {
-            inventoryType,
-            stockType: adjustForm.value.stockType,
-            changeAmount: -adjustForm.value.quantity,
-            reason: adjustForm.value.reason
-          }
-        });
-        break;
+      // 如果是同時設定，添加可販售庫存
+      if (stockType.value === 'both') {
+        updateData.availableStock = newAvailableStock.value;
+      }
 
-      case 'transfer':
-        await api.inventory.transferStock({
-          storeId: props.storeId,
-          itemId,
-          quantity: adjustForm.value.transferQuantity,
-          reason: adjustForm.value.reason,
-          inventoryType
-        });
-        break;
-
-      case 'damage':
-        await api.inventory.processDamage({
-          storeId: props.storeId,
-          itemId,
-          quantity: adjustForm.value.damageQuantity,
-          reason: adjustForm.value.reason,
-          stockType: adjustForm.value.damageFrom,
-          inventoryType
-        });
-        break;
-
-      case 'settings':
-        await api.inventory.updateInventory({
-          storeId: props.storeId,
-          itemId,
-          data: {
-            inventoryType,
-            minStockAlert: adjustForm.value.minStockAlert,
-            targetStockLevel: adjustForm.value.targetStockLevel || undefined,
-            isInventoryTracked: adjustForm.value.isInventoryTracked,
-            enableAvailableStock: adjustForm.value.enableAvailableStock,
-            reason: adjustForm.value.reason
-          }
-        });
-        break;
+      await api.inventory.updateInventory({
+        storeId: props.storeId,
+        inventoryId: props.item._id,
+        data: updateData
+      });
+    } else if (adjustmentType.value === 'add') {
+      // 增加庫存
+      await api.inventory.addStock({
+        storeId: props.storeId,
+        inventoryId: props.item._id,
+        quantity: adjustmentQuantity.value,
+        stockType: stockType.value,
+        reason: reason.value || undefined
+      });
+    } else if (adjustmentType.value === 'reduce') {
+      // 減少庫存
+      await api.inventory.reduceStock({
+        storeId: props.storeId,
+        inventoryId: props.item._id,
+        quantity: adjustmentQuantity.value,
+        reason: reason.value || undefined
+      });
     }
 
     emit('success');
-    emit('close');
-  } catch (err) {
-    console.error('調整庫存失敗:', err);
-    error.value = err.response?.data?.message || '調整庫存時發生錯誤';
+    handleCancel();
+  } catch (error) {
+    console.error('庫存調整失敗:', error);
+    alert(error.response?.data?.message || '庫存調整時發生錯誤');
   } finally {
     isSubmitting.value = false;
   }
 };
 
-// 監聽 item 變化
-watch(() => props.item, () => {
-  initForm();
-});
+const handleCancel = () => {
+  isModalOpen.value = false;
+  emit('close');
+};
 
-// 生命週期
-onMounted(() => {
-  initForm();
-});
+// 初始化
+handleTypeChange();
 </script>
+
+<style scoped>
+.form-text {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.alert {
+  margin-bottom: 0;
+}
+</style>
