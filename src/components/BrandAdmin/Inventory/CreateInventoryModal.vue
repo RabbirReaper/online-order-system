@@ -1,6 +1,6 @@
 <template>
   <BModal :model-value="show" @update:model-value="emit('close')" title="新增自訂義庫存" @ok="submitForm"
-    :ok-disabled="isSubmitting" ok-title="建立庫存" cancel-title="取消">
+    :ok-disabled="isSubmitting" ok-title="建立庫存" cancel-title="取消" no-close-on-backdrop>
     <template #default>
       <form @submit.prevent="submitForm">
         <!-- 項目名稱 -->

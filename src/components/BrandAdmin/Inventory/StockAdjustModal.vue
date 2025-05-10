@@ -1,5 +1,5 @@
 <template>
-  <BModal v-model="isModalOpen" title="調整庫存" size="lg" @ok="handleSubmit" @cancel="handleCancel">
+  <BModal v-model="isModalOpen" title="調整庫存" size="lg" @ok="handleSubmit" @cancel="handleCancel" no-close-on-backdrop>
     <div class="mb-3">
       <h6 class="mb-2">{{ item.itemName }}</h6>
       <div class="d-flex gap-3">
