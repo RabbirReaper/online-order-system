@@ -242,7 +242,7 @@
   </div>
   <!-- 確認售完狀態變更 Modal -->
   <BModal v-model="showSoldOutConfirm" title="確認變更售完狀態" @ok="confirmSoldOutChange" @cancel="cancelSoldOutChange">
-    <p v-if="!pendingSoldOutItem?.isSoldOut">
+    <p v-if="pendingSoldOutItem?.isSoldOut">
       確定要將「{{ pendingSoldOutItem?.itemName }}」設為售完嗎？設為售完後，顧客將無法點餐此項目。
     </p>
     <p v-else>
