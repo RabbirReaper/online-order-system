@@ -321,14 +321,21 @@ const router = createRouter({
           props: true,
           meta: { requiresAuth: true, title: '優惠券詳情' }
         },
+        // 在路由配置中加入
         {
-          path: 'point-rules',
-          name: 'brand-admin-point-rules',
-          component: Placeholder,
-          props: {
-            title: '點數規則功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          path: '/admin/:brandId/point-rules',
+          name: 'PointRuleList',
+          component: () => import('@/components/BrandAdmin/Promotion/PointRule/List.vue')
+        },
+        {
+          path: '/admin/:brandId/point-rules/create',
+          name: 'PointRuleCreate',
+          component: () => import('@/components/BrandAdmin/Promotion/PointRule/Form.vue')
+        },
+        {
+          path: '/admin/:brandId/point-rules/edit/:id',
+          name: 'PointRuleEdit',
+          component: () => import('@/components/BrandAdmin/Promotion/PointRule/Form.vue')
         },
         // 用戶管理（預留）
         {

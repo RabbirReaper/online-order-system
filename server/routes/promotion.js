@@ -26,8 +26,8 @@ router.post('/coupons/redeem', userAuthMiddleware, couponInstanceController.rede
 // router.get('/coupons/available', userAuthMiddleware, couponTemplateController.getAvailableCouponTemplates);
 
 // 點數規則路由 (後台) - 由品牌管理員或老闆管理
-router.get('/points/rules', authMiddleware, permissionMiddleware(['edit_backend']), pointRuleController.getAllPointRules);
-router.get('/points/rules/:id', authMiddleware, permissionMiddleware(['edit_backend']), pointRuleController.getPointRuleById);
+router.get('/points/rules', authMiddleware, roleMiddleware(['boss', 'brand_admin', 'store_admin']), brandMiddleware, pointRuleController.getAllPointRules);
+router.get('/points/rules/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin', 'store_admin']), brandMiddleware, pointRuleController.getPointRuleById);
 router.post('/points/rules', authMiddleware, roleMiddleware(['boss', 'brand_admin']), brandMiddleware, pointRuleController.createPointRule);
 router.put('/points/rules/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), brandMiddleware, pointRuleController.updatePointRule);
 router.delete('/points/rules/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), brandMiddleware, pointRuleController.deletePointRule);
