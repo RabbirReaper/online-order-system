@@ -97,9 +97,9 @@ const fetchPreviewData = async () => {
 
     const allDishes = dishResponse.templates || [];
     const existingInventory = inventoryResponse.inventory || [];
-
+    console.log(existingInventory)
     // 計算已存在的餐點庫存
-    const existingDishIds = existingInventory.map(inv => inv.dish?._id || inv.dish);
+    const existingDishIds = existingInventory.map(inv => inv.dish?._id);
     const toCreate = allDishes.filter(dish => !existingDishIds.includes(dish._id));
 
     previewData.value = {
