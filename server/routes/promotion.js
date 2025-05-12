@@ -23,7 +23,7 @@ router.post('/coupons/instances/issue', authMiddleware, permissionMiddleware(['e
 // 優惠券路由 (用戶)
 router.get('/coupons', userAuthMiddleware, couponInstanceController.getUserCoupons);
 router.post('/coupons/redeem', userAuthMiddleware, couponInstanceController.redeemCoupon);
-router.get('/coupons/available', userAuthMiddleware, couponTemplateController.getAvailableCouponTemplates);
+// router.get('/coupons/available', userAuthMiddleware, couponTemplateController.getAvailableCouponTemplates);
 
 // 點數規則路由 (後台) - 由品牌管理員或老闆管理
 router.get('/points/rules', authMiddleware, permissionMiddleware(['edit_backend']), pointRuleController.getAllPointRules);

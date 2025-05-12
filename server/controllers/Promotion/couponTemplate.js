@@ -12,8 +12,7 @@ export const getAllCouponTemplates = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個獲取所有優惠券模板的方法
-  const templates = await couponService.getAllCouponTemplates(brandId);
+  const templates = await couponService.coupon.getAllCouponTemplates(brandId);
 
   res.json({
     success: true,
@@ -33,8 +32,7 @@ export const getCouponTemplateById = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個獲取單個優惠券模板的方法
-  const template = await couponService.getCouponTemplateById(id, brandId);
+  const template = await couponService.coupon.getCouponTemplateById(id, brandId);
 
   res.json({
     success: true,
@@ -56,8 +54,7 @@ export const createCouponTemplate = asyncHandler(async (req, res) => {
   const templateData = req.body;
   templateData.brand = brandId;
 
-  // 假設在服務層中有一個創建優惠券模板的方法
-  const newTemplate = await couponService.createCouponTemplate(templateData);
+  const newTemplate = await couponService.coupon.createCouponTemplate(templateData);
 
   res.status(201).json({
     success: true,
@@ -80,8 +77,7 @@ export const updateCouponTemplate = asyncHandler(async (req, res) => {
 
   const updateData = req.body;
 
-  // 假設在服務層中有一個更新優惠券模板的方法
-  const updatedTemplate = await couponService.updateCouponTemplate(id, updateData, brandId);
+  const updatedTemplate = await couponService.coupon.updateCouponTemplate(id, updateData, brandId);
 
   res.json({
     success: true,
@@ -102,31 +98,10 @@ export const deleteCouponTemplate = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個刪除優惠券模板的方法
-  await couponService.deleteCouponTemplate(id, brandId);
+  await couponService.coupon.deleteCouponTemplate(id, brandId);
 
   res.json({
     success: true,
     message: '優惠券模板刪除成功'
-  });
-});
-
-// 獲取可用的優惠券模板（前台使用）
-export const getAvailableCouponTemplates = asyncHandler(async (req, res) => {
-  const userId = req.userId;
-  const { brandId, storeId } = req.query;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: 'brandId 為必須參數'
-    });
-  }
-
-  const templates = await couponService.coupon.getAvailableCouponTemplates(brandId, storeId);
-
-  res.json({
-    success: true,
-    templates
   });
 });
