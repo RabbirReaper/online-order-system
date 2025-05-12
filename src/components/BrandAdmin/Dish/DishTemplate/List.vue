@@ -32,7 +32,7 @@
     </div>
 
     <!-- 餐點模板卡片列表 -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
       <div class="col" v-for="dish in dishes" :key="dish._id">
         <div class="card h-100 dish-card">
           <div class="card-img-top position-relative overflow-hidden" style="height: 180px;">
@@ -377,6 +377,26 @@ onMounted(() => {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
+}
+
+.dish-card .card-img-top {
+  position: relative;
+  width: 100%;
+  /* 16:9 比例 = 9/16 = 0.5625 = 56.25% */
+  padding-top: 56.25%;
+  background-color: #f8f9fa;
+}
+
+.dish-card .card-img-top img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 使用 contain 避免圖片被裁切 */
+  object-fit: contain;
+  /* 為了較小的圖片，加入背景色 */
+  background-color: #f8f9fa;
 }
 
 .dish-card:hover {
