@@ -24,7 +24,7 @@
     </BAlert>
 
     <!-- 品牌卡片列表 -->
-    <BRow class="g-4">
+    <BRow class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
       <BCol cols="12" md="6" xl="4" v-for="brand in brands" :key="brand._id">
         <BCard class="h-100">
           <div class="position-relative overflow-hidden" style="height: 200px;">

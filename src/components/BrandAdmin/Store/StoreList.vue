@@ -33,7 +33,7 @@
     </BAlert>
 
     <!-- 店鋪卡片列表 -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
       <div class="col" v-for="store in stores" :key="store._id">
         <div class="card h-100 store-card">
           <div class="card-img-top position-relative overflow-hidden" style="height: 180px;">

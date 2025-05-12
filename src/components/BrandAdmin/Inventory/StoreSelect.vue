@@ -19,7 +19,7 @@
     </div>
 
     <!-- 店鋪列表 -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" v-if="!isLoading">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4" v-if="!isLoading">
       <div class="col" v-for="store in stores" :key="store._id">
         <div class="card h-100 store-card" @mouseenter="fetchStoreStats(store)">
           <div class="card-img-top position-relative overflow-hidden" style="height: 180px;">

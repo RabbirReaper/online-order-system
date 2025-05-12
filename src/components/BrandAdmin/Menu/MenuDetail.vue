@@ -85,7 +85,7 @@
                 <!-- 分類餐點 -->
                 <div class="category-dishes">
                   <div v-if="category.dishes && category.dishes.length > 0"
-                    class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                    class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
                     <div v-for="dish in sortDishes(category.dishes)" :key="dish._id" class="col">
                       <div class="card h-100 dish-card" :class="{ 'dish-disabled': !dish.isPublished }">
                         <!-- 餐點圖片 -->
