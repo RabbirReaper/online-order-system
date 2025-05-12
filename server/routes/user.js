@@ -2,7 +2,7 @@ import express from 'express';
 import * as userController from '../controllers/User/user.js';
 import * as adminController from '../controllers/User/admin.js';
 import { authMiddleware } from '../middlewares/auth.js';
-import { permissionMiddleware, roleMiddleware } from '../middlewares/permission.js';
+import { permissionMiddleware, roleMiddleware, brandMiddleware } from '../middlewares/permission.js';
 import { userAuthMiddleware } from '../middlewares/userAuth.js';
 
 const router = express.Router();
@@ -27,7 +27,7 @@ router.get('/admin', authMiddleware, roleMiddleware(['boss', 'brand_admin']), ad
 router.get('/admin/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), adminController.getAdminById);
 router.put('/admin/:id', authMiddleware, roleMiddleware(['boss']), adminController.updateAdmin); // 只有老闆可以更新管理員基本資料
 router.put('/admin/:id/status', authMiddleware, roleMiddleware(['boss']), adminController.toggleAdminStatus); // 只有老闆可以停用管理員
-router.put('/admin/:id/permissions', authMiddleware, roleMiddleware(['boss', 'brand_admin']), adminController.updateAdminPermissions); // 品牌管理員可以修改所屬店鋪管理員的權限
+router.put('/admin/:id/permissions', authMiddleware, roleMiddleware(['boss', 'brand_admin']), brandMiddleware, adminController.updateAdminPermissions); // 品牌管理員可以修改所屬店鋪管理員的權限
 
 // 用戶管理路由 (後台)
 router.get('/all', authMiddleware, permissionMiddleware(['view_reports']), userController.getAllUsers);
