@@ -12,6 +12,7 @@ import userApi from './modules/user';
 import orderApi from './modules/order';
 import promotionApi from './modules/promotion';
 import pointRulesApi from './modules/pointRules';
+import adminApi from './modules/admin';
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -56,7 +57,8 @@ export default {
   user: userApi(apiClient),
   order: orderApi(apiClient),
   promotion: promotionApi(apiClient),
-  pointRules: pointRulesApi(apiClient), // 新增點數規則模組
+  pointRules: pointRulesApi(apiClient),
+  admin: adminApi(apiClient),
   // 導出 axios 實例，方便直接使用
   client: apiClient,
 };
