@@ -90,24 +90,3 @@ export const toggleAdminStatus = asyncHandler(async (req, res) => {
     admin
   });
 });
-
-// 更新管理員權限
-export const updateAdminPermissions = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const manageData = req.body;
-
-  if (!Array.isArray(manageData)) {
-    return res.status(400).json({
-      success: false,
-      message: '權限數據必須是陣列格式'
-    });
-  }
-
-  const admin = await adminService.updateAdminPermissions(id, manageData);
-
-  res.json({
-    success: true,
-    message: '管理員權限更新成功',
-    admin
-  });
-});
