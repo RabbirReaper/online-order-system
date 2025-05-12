@@ -12,8 +12,7 @@ export const getAllPointRules = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個獲取點數規則的方法
-  const rules = await pointService.getAllPointRules(brandId);
+  const rules = await pointService.pointRule.getAllPointRules(brandId);
 
   res.json({
     success: true,
@@ -33,8 +32,7 @@ export const getPointRuleById = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個獲取單個點數規則的方法
-  const rule = await pointService.getPointRuleById(id, brandId);
+  const rule = await pointService.pointRule.getPointRuleById(id, brandId);
 
   res.json({
     success: true,
@@ -56,8 +54,7 @@ export const createPointRule = asyncHandler(async (req, res) => {
   const ruleData = req.body;
   ruleData.brand = brandId;
 
-  // 假設在服務層中有一個創建點數規則的方法
-  const newRule = await pointService.createPointRule(ruleData);
+  const newRule = await pointService.pointRule.createPointRule(ruleData);
 
   res.status(201).json({
     success: true,
@@ -80,8 +77,7 @@ export const updatePointRule = asyncHandler(async (req, res) => {
 
   const updateData = req.body;
 
-  // 假設在服務層中有一個更新點數規則的方法
-  const updatedRule = await pointService.updatePointRule(id, updateData, brandId);
+  const updatedRule = await pointService.pointRule.updatePointRule(id, updateData, brandId);
 
   res.json({
     success: true,
@@ -102,8 +98,7 @@ export const deletePointRule = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個刪除點數規則的方法
-  await pointService.deletePointRule(id, brandId);
+  await pointService.pointRule.deletePointRule(id, brandId);
 
   res.json({
     success: true,
