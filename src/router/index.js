@@ -294,15 +294,32 @@ const router = createRouter({
             message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
-        // 促銷管理（預留）
+        // 促銷管理 - 優惠券
         {
           path: 'coupons',
           name: 'brand-admin-coupons',
-          component: Placeholder,
-          props: {
-            title: '優惠券功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Promotion/Coupon/List.vue'),
+          meta: { requiresAuth: true, title: '優惠券管理' }
+        },
+        {
+          path: 'coupons/create',
+          name: 'brand-admin-coupon-create',
+          component: () => import('@/components/BrandAdmin/Promotion/Coupon/Form.vue'),
+          meta: { requiresAuth: true, title: '新增優惠券' }
+        },
+        {
+          path: 'coupons/edit/:id',
+          name: 'brand-admin-coupon-edit',
+          component: () => import('@/components/BrandAdmin/Promotion/Coupon/Form.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '編輯優惠券' }
+        },
+        {
+          path: 'coupons/detail/:id',
+          name: 'brand-admin-coupon-detail',
+          component: () => import('@/components/BrandAdmin/Promotion/Coupon/Detail.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '優惠券詳情' }
         },
         {
           path: 'point-rules',
