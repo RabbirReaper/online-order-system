@@ -67,20 +67,10 @@ const couponTemplateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Store'
   }], // 適用店鋪 (空陣列表示所有店鋪適用)
-  startDate: {
-    type: Date,
-    default: Date.now
-  }, // 開始提供日期
-  endDate: {
-    type: Date
-  }, // 結束提供日期 (如果有)
   totalIssued: {
     type: Number,
     default: 0
   }, // 已發行總數
-  maxIssuance: {
-    type: Number
-  }, // 最大發行數量 (如果有限制)
 }, { timestamps: true });
 
 couponTemplateSchema.index({ brand: 1 });
