@@ -40,7 +40,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createAdmin(data) {
-      return apiClient.post('/auth/admin', data);
+      return apiClient.post('/admin', data);
     },
 
     /**

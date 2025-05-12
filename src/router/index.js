@@ -321,7 +321,7 @@ const router = createRouter({
           props: true,
           meta: { requiresAuth: true, title: '優惠券詳情' }
         },
-        // 在路由配置中加入
+        // 點數規則
         {
           path: '/admin/:brandId/point-rules',
           name: 'PointRuleList',
@@ -338,14 +338,25 @@ const router = createRouter({
           component: () => import('@/components/BrandAdmin/Promotion/PointRule/Form.vue')
         },
         // 用戶管理（預留）
+        // 管理員管理
         {
-          path: 'store-admins',
-          name: 'brand-admin-store-admins',
-          component: Placeholder,
-          props: {
-            title: '店鋪管理員功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          path: 'admins',
+          name: 'brand-admin-admins',
+          component: () => import('@/components/BrandAdmin/AdminManager/List.vue'),
+          meta: { requiresAuth: true, title: '管理員管理' }
+        },
+        {
+          path: 'admins/create',
+          name: 'brand-admin-admin-create',
+          component: () => import('@/components/BrandAdmin/AdminManager/Form.vue'),
+          meta: { requiresAuth: true, title: '新增管理員' }
+        },
+        {
+          path: 'admins/edit/:id',
+          name: 'brand-admin-admin-edit',
+          component: () => import('@/components/BrandAdmin/AdminManager/Form.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '編輯管理員' }
         },
         {
           path: 'customers',

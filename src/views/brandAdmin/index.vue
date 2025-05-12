@@ -128,7 +128,7 @@
               @toggle="(expanded) => handleSectionToggle('userManagement', expanded)">
               <template #icon><i class="bi bi-people me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/store-admins`">
+              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/admins`">
                 <i class="bi bi-person-workspace me-2"></i>
                 店鋪管理員
               </router-link>
