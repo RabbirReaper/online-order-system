@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const menuSchema = new mongoose.Schema({
   name: {
     type: String,
+    trim: true,
     required: true
   }, // 菜單名稱
   store: {
@@ -16,7 +17,7 @@ const menuSchema = new mongoose.Schema({
     required: true
   }, // 所屬品牌
   categories: [{
-    name: { type: String, required: true }, // 分類名稱
+    name: { type: String, trim: true, required: true }, // 分類名稱
     description: { type: String }, // 分類描述
     order: { type: Number, default: 0 }, // 分類順序
     dishes: [{

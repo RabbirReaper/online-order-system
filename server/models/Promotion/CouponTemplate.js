@@ -9,6 +9,7 @@ const couponTemplateSchema = new mongoose.Schema({
   }, // 所屬品牌
   name: {
     type: String,
+    trim: true,
     required: true
   }, // 優惠券名稱
   description: {

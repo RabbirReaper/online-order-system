@@ -9,6 +9,7 @@ const pointRuleSchema = new mongoose.Schema({
   }, // 所屬品牌
   name: {
     type: String,
+    trim: true,
     required: true
   }, // 規則名稱
   description: {

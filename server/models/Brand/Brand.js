@@ -4,7 +4,8 @@ const brandSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   }, // 品牌名稱
   description: {
     type: String

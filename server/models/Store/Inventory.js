@@ -31,6 +31,7 @@ const inventorySchema = new mongoose.Schema({
   // 庫存項目名稱（餐點名稱或原料名稱）
   itemName: {
     type: String,
+    trim: true,
     required: true
   },
 

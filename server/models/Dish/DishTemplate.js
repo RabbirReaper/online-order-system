@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 // DishTemplate 模型
 const DishTemplateSchema = new mongoose.Schema({
   brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand', required: true },
-  name: { type: String, required: true },
+  name: { type: String, trim: true, required: true },
   basePrice: { type: Number, required: true },
   optionCategories: [{
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'OptionCategory' },

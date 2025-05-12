@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const storeSchema = new mongoose.Schema({
   name: {
     type: String,
+    trim: true,
     required: true
   }, // 店家名稱
   brand: {
