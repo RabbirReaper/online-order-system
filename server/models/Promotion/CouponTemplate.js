@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { C } from 'vitest/dist/chunks/reporters.d.CfRkRKN2';
 
 // 優惠券模板 (CouponTemplate)
 const couponTemplateSchema = new mongoose.Schema({
