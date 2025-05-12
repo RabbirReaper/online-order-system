@@ -10,8 +10,8 @@ import { userAuthMiddleware } from '../middlewares/userAuth.js';
 const router = express.Router();
 
 // 優惠券模板路由 (後台) - 由品牌管理員或老闆管理
-router.get('/coupons/templates', authMiddleware, permissionMiddleware(['edit_backend']), couponTemplateController.getAllCouponTemplates);
-router.get('/coupons/templates/:id', authMiddleware, permissionMiddleware(['edit_backend']), couponTemplateController.getCouponTemplateById);
+router.get('/coupons/templates', authMiddleware, roleMiddleware(['boss', 'brand_admin']), couponTemplateController.getAllCouponTemplates);
+router.get('/coupons/templates/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), couponTemplateController.getCouponTemplateById);
 router.post('/coupons/templates', authMiddleware, roleMiddleware(['boss', 'brand_admin']), couponTemplateController.createCouponTemplate);
 router.put('/coupons/templates/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), couponTemplateController.updateCouponTemplate);
 router.delete('/coupons/templates/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), couponTemplateController.deleteCouponTemplate);

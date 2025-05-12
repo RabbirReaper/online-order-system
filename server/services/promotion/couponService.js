@@ -9,6 +9,17 @@ import CouponInstance from '../../models/Promotion/CouponInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import * as pointService from './pointService.js';
 
+
+
+export const getAllCouponTemplates = async (brandId) => {
+  // 查詢所有優惠券模板
+  const templates = await CouponTemplate.find({ brand: brandId })
+    .populate('exchangeInfo.items.dishTemplate')
+
+  console.log('templates', templates);
+  return templates;
+}
+
 /**
  * 獲取可用的優惠券模板
  * @param {String} brandId - 品牌ID

@@ -13,6 +13,7 @@ export const point = pointService;
 
 // 簡單導出，方便直接調用
 export const {
+  getAllCouponTemplates,
   getAvailableCouponTemplates,
   redeemCoupon,
   applyCouponToOrder,

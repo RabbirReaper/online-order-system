@@ -3,7 +3,7 @@ import authRoutes from './auth.js';
 import dishRoutes from './dish.js';
 import storeRoutes from './store.js';
 // import orderRoutes from './order.js';
-// import promotionRoutes from './promotion.js';
+import promotionRoutes from './promotion.js';
 // import userRoutes from './user.js';
 import { errorHandler, notFoundHandler } from '../middlewares/error.js';
 
@@ -15,7 +15,7 @@ apiRouter.use('/auth', authRoutes);
 apiRouter.use('/dish', dishRoutes);
 apiRouter.use('/store', storeRoutes);
 // apiRouter.use('/order', orderRoutes);
-// apiRouter.use('/promotion', promotionRoutes);
+apiRouter.use('/promotion', promotionRoutes);
 // apiRouter.use('/user', userRoutes);
 
 // 錯誤處理中介軟體
