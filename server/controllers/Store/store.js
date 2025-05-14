@@ -5,7 +5,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 export const getAllStores = asyncHandler(async (req, res) => {
   try {
     const options = {
-      brandId: req.query.brandId,
+      brandId: req.brandId,
       activeOnly: req.query.activeOnly === 'true'
     };
 

@@ -54,7 +54,7 @@ export const createInventory = asyncHandler(async (req, res) => {
   try {
     const { storeId } = req.params;
     const adminId = req.adminId;
-    const brandId = req.adminBrand;
+    const brandId = req.brandId;
 
     const inventoryData = {
       ...req.body,

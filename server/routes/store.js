@@ -1,22 +1,11 @@
 import express from 'express';
 import * as storeController from '../controllers/Store/store.js';
 import * as inventoryController from '../controllers/Store/inventory.js';
-import * as brandController from '../controllers/Brand/brand.js';
 import * as menuController from '../controllers/Store/menu.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { permissionMiddleware, roleMiddleware, brandMiddleware } from '../middlewares/permission.js';
 
 const router = express.Router();
-
-// 保留品牌路由 - 這是我們目前需要的功能
-router.get('/brands', brandController.getAllBrands);
-router.get('/brands/:id', brandController.getBrandById);
-router.post('/brands', authMiddleware, roleMiddleware(['boss']), brandController.createBrand);
-router.put('/brands/:id', authMiddleware, roleMiddleware(['boss']), brandController.updateBrand);
-router.delete('/brands/:id', authMiddleware, roleMiddleware(['boss']), brandController.deleteBrand);
-router.get('/brands/:id/stores', brandController.getBrandStores);
-router.put('/brands/:id/toggle', authMiddleware, roleMiddleware(['boss']), brandController.toggleBrandActive);
-// router.get('/brands/:id/stats', brandController.getBrandStats);
 
 // 店鋪基本操作
 router.get('/', storeController.getAllStores);
