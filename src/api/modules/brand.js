@@ -10,7 +10,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllBrands() {
-      return apiClient.get('/store/brands');
+      return apiClient.get('/brand');
     },
 
     /**
@@ -19,7 +19,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getBrandById(id) {
-      return apiClient.get(`/store/brands/${id}`);
+      return apiClient.get(`/brand/${id}`);
     },
 
     /**
@@ -32,7 +32,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createBrand(data) {
-      return apiClient.post('/store/brands', data);
+      return apiClient.post('/brand', data);
     },
 
     /**
@@ -46,7 +46,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateBrand({ id, data }) {
-      return apiClient.put(`/store/brands/${id}`, data);
+      return apiClient.put(`/brand/${id}`, data);
     },
 
     /**
@@ -55,29 +55,27 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteBrand(id) {
-      return apiClient.delete(`/store/brands/${id}`);
+      return apiClient.delete(`/brand/${id}`);
     },
 
     /**
      * 獲取品牌下的所有店鋪
      * @param {Object} params - 查詢參數
-     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.id - 品牌ID
      * @param {boolean} [params.activeOnly] - 是否只顯示啟用的店鋪
      * @returns {Promise} - API 回應
      */
-    getBrandStores(params) {
-      return apiClient.get(`/store/brands/${params.brandId}/stores`, {
-        params: { activeOnly: params.activeOnly }
-      });
-    },
+    // getBrandStores({ id, ...queryParams }) {
+    //   return apiClient.get(`/brand/${id}/stores`, { params: queryParams });
+    // },
 
     /**
      * 獲取品牌統計數據
-     * @param {string} brandId - 品牌ID
+     * @param {string} id - 品牌ID
      * @returns {Promise} - API 回應
      */
-    getBrandStats(brandId) {
-      return apiClient.get(`/store/brands/${brandId}/stats`);
+    getBrandStats(id) {
+      return apiClient.get(`/brand/${id}/stats`);
     },
 
     /**
@@ -88,7 +86,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleBrandActive({ id, isActive }) {
-      return apiClient.put(`/store/brands/${id}/toggle`, { isActive });
+      return apiClient.put(`/brand/${id}/toggle`, { isActive });
     }
   };
 }

@@ -17,19 +17,6 @@ export default function (apiClient) {
     },
 
     /**
-     * 建立新管理員帳號（需要高級權限）
-     * @param {Object} params - 管理員資料
-     * @param {string} params.name - 用戶名
-     * @param {string} params.password - 密碼
-     * @param {string} params.role - 角色
-     * @param {Array} params.manage - 管理權限
-     * @returns {Promise} - API 回應
-     */
-    createAdmin(params) {
-      return apiClient.post('/auth/admin', params);
-    },
-
-    /**
      * 登出
      * @returns {Promise} - API 回應
      */
@@ -52,12 +39,29 @@ export default function (apiClient) {
     },
 
     /**
-     * 檢查登入狀態
+     * 檢查管理員登入狀態
      * @returns {Promise<Object>} - 登入狀態信息
      */
     async checkAdminStatus() {
       try {
         const res = await apiClient.get('/auth/check-admin-status');
+        return {
+          loggedIn: res.loggedIn,
+          role: res.role,
+          manage: res.manage || []
+        };
+      } catch (error) {
+        return { loggedIn: false, role: null, manage: [] };
+      }
+    },
+
+    /**
+     * 檢查顧客登入狀態
+     * @returns {Promise<Object>} - 登入狀態信息
+     */
+    async checkUserStatus() {
+      try {
+        const res = await apiClient.get('/auth/check-user-status');
         return {
           loggedIn: res.loggedIn,
           role: res.role,
