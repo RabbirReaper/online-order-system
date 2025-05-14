@@ -3,7 +3,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取所有點數規則
 export const getAllPointRules = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -23,7 +23,7 @@ export const getAllPointRules = asyncHandler(async (req, res) => {
 // 獲取單個點數規則
 export const getPointRuleById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -42,7 +42,7 @@ export const getPointRuleById = asyncHandler(async (req, res) => {
 
 // 創建點數規則
 export const createPointRule = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.body.brand : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -66,7 +66,7 @@ export const createPointRule = asyncHandler(async (req, res) => {
 // 更新點數規則
 export const updatePointRule = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.body.brand || req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -89,7 +89,7 @@ export const updatePointRule = asyncHandler(async (req, res) => {
 // 刪除點數規則
 export const deletePointRule = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({

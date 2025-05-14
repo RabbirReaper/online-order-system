@@ -3,7 +3,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取所有優惠券模板
 export const getAllCouponTemplates = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -23,7 +23,7 @@ export const getAllCouponTemplates = asyncHandler(async (req, res) => {
 // 獲取單個優惠券模板
 export const getCouponTemplateById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -42,7 +42,7 @@ export const getCouponTemplateById = asyncHandler(async (req, res) => {
 
 // 創建優惠券模板
 export const createCouponTemplate = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.body.brand : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -66,7 +66,7 @@ export const createCouponTemplate = asyncHandler(async (req, res) => {
 // 更新優惠券模板
 export const updateCouponTemplate = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.body.brand || req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -89,7 +89,7 @@ export const updateCouponTemplate = asyncHandler(async (req, res) => {
 // 刪除優惠券模板
 export const deleteCouponTemplate = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
