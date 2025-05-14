@@ -38,10 +38,7 @@ export const roleMiddleware = (allowedRoles) => async (req, res, next) => {
   }
 };
 
-/**
- * 品牌中間件
- * 處理品牌權限和設置品牌ID到請求對象
- */
+// 品牌驗證中間件
 export const brandMiddleware = async (req, res, next) => {
   try {
     // 確認使用者已通過驗證
@@ -52,45 +49,45 @@ export const brandMiddleware = async (req, res, next) => {
       });
     }
 
-    // 如果是boss角色，需要提供品牌ID參數
-    if (req.adminRole === 'boss') {
-      const brandId = req.query.brandId || req.body.brand;
-      if (!brandId) {
-        return res.status(400).json({
-          success: false,
-          message: 'boss角色必須提供品牌ID參數'
-        });
-      }
+    // 從 URL 參數中獲取 brandId
+    const brandId = req.params.brandId;
 
-      // 設置品牌ID到請求對象，方便後續使用
-      req.adminBrand = brandId;
+    if (!brandId) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少品牌ID參數'
+      });
+    }
+
+    // 如果是 boss 角色，允許訪問所有品牌
+    if (req.adminRole === 'boss') {
+      req.brandId = brandId;
       return next();
     }
 
-    // 如果是brand_admin或store_admin角色，獲取其所屬品牌
-    const admin = await Admin.findById(req.adminId);
+    // 其他角色需要檢查是否有該品牌的權限
+    const admin = await Admin.findById(req.adminId).select('brand');
+
     if (!admin || !admin.brand) {
       return res.status(403).json({
         success: false,
-        message: '管理員帳號未正確設置品牌資訊'
+        message: '管理員帳號未設置品牌資訊'
+      });
+    }
+
+    // 檢查管理員的品牌是否與請求的品牌匹配
+    if (admin.brand.toString() !== brandId) {
+      return res.status(403).json({
+        success: false,
+        message: '無權訪問此品牌的資源'
       });
     }
 
     // 設置品牌ID到請求對象
-    req.adminBrand = admin.brand;
-
-    // 如果有品牌參數，確認是否匹配管理員的品牌
-    const requestedBrandId = req.query.brandId || req.body.brand;
-    if (requestedBrandId && requestedBrandId !== admin.brand.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: '無權訪問其他品牌的資源'
-      });
-    }
-
+    req.brandId = brandId;
     return next();
   } catch (error) {
-    console.error('Brand check error:', error);
+    console.error('Brand validation error:', error);
     return res.status(500).json({
       success: false,
       message: '伺服器錯誤'
@@ -117,7 +114,7 @@ export const permissionMiddleware = (requiredPermissions, requireAllPermissions 
     // 規範化所需權限為陣列
     const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
 
-    // 檢查店鋪參數
+    // 獲取店鋪參數（可能來自 URL 參數或請求體）
     const storeId = req.params.storeId || req.body.storeId;
 
     // 如果是 boss 角色，直接通過權限檢查
@@ -125,14 +122,14 @@ export const permissionMiddleware = (requiredPermissions, requireAllPermissions 
       return next();
     }
 
-    // 如果是 brand_admin 角色，檢查其管理的店鋪
+    // 如果是 brand_admin 角色
     if (req.adminRole === 'brand_admin') {
-      // 如果沒有特定店鋪參數，只要是 brand_admin 就允許操作
+      // 如果沒有特定店鋪參數，允許品牌管理員操作其品牌下的所有資源
       if (!storeId) {
         return next();
       }
 
-      // 檢查指定的店鋪是否屬於此 brand_admin 的品牌
+      // 如果有店鋪參數，檢查店鋪是否屬於該品牌
       const store = await Store.findById(storeId).select('brand');
       if (!store) {
         return res.status(404).json({
@@ -141,11 +138,13 @@ export const permissionMiddleware = (requiredPermissions, requireAllPermissions 
         });
       }
 
-      // 從管理員中獲取品牌ID (已在brandMiddleware中設置)
-      if (store.brand.toString() !== req.adminBrand.toString()) {
+      // 從 URL 中獲取的 brandId（由 brandMiddleware 設置）
+      const brandId = req.brandId || req.params.brandId;
+
+      if (store.brand.toString() !== brandId) {
         return res.status(403).json({
           success: false,
-          message: '沒有操作此店鋪的權限'
+          message: '無權操作此店鋪'
         });
       }
 
@@ -205,6 +204,50 @@ export const permissionMiddleware = (requiredPermissions, requireAllPermissions 
 
   } catch (error) {
     console.error('Permission check error:', error);
+    return res.status(500).json({
+      success: false,
+      message: '伺服器錯誤'
+    });
+  }
+};
+
+/**
+ * 店鋪驗證中間件
+ * 驗證店鋪是否屬於指定品牌
+ */
+export const storeMiddleware = async (req, res, next) => {
+  try {
+    const storeId = req.params.storeId;
+    const brandId = req.params.brandId || req.brandId;
+
+    if (!storeId || !brandId) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少必要參數'
+      });
+    }
+
+    // 檢查店鋪是否存在且屬於指定品牌
+    const store = await Store.findById(storeId).select('brand');
+
+    if (!store) {
+      return res.status(404).json({
+        success: false,
+        message: '店鋪不存在'
+      });
+    }
+
+    if (store.brand.toString() !== brandId) {
+      return res.status(403).json({
+        success: false,
+        message: '店鋪不屬於指定品牌'
+      });
+    }
+
+    req.store = store;
+    return next();
+  } catch (error) {
+    console.error('Store validation error:', error);
     return res.status(500).json({
       success: false,
       message: '伺服器錯誤'
