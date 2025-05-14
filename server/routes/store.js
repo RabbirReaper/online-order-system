@@ -17,7 +17,7 @@ const router = express.Router();
 router.get('/brands/:brandId', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, storeController.getAllStores);
 
 // 獲取單個店鋪
-router.get('/brands/:brandId/:id', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, storeController.getStoreById);
+router.get('/brands/:brandId/:id', storeController.getStoreById);
 
 // 創建店鋪（僅限 boss 和 brand_admin）
 router.post('/brands/:brandId', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, storeController.createStore);
@@ -30,7 +30,7 @@ router.delete('/brands/:brandId/:id', authenticate('admin'), requireRole('boss')
 
 // 店鋪狀態與詳情路由
 // 獲取店鋪營業時間
-router.get('/brands/:brandId/:id/business-hours', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, storeController.getStoreBusinessHours);
+router.get('/brands/:brandId/:id/business-hours', storeController.getStoreBusinessHours);
 
 // 更新店鋪營業時間
 router.put('/brands/:brandId/:id/business-hours', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('edit_backend'), storeController.updateStoreBusinessHours);
@@ -39,7 +39,7 @@ router.put('/brands/:brandId/:id/business-hours', authenticate('admin'), require
 router.put('/brands/:brandId/:id/announcements', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('edit_backend'), storeController.updateStoreAnnouncements);
 
 // 獲取店鋪當前狀態
-router.get('/brands/:brandId/:id/status', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, storeController.getStoreCurrentStatus);
+router.get('/brands/:brandId/:id/status', storeController.getStoreCurrentStatus);
 
 // 庫存路由
 // 獲取店鋪庫存
@@ -92,7 +92,7 @@ router.get('/brands/:brandId/:storeId/inventory/:inventoryId/stats', authenticat
 
 // 菜單路由
 // 獲取店鋪菜單
-router.get('/brands/:brandId/:storeId/menu', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, menuController.getStoreMenu);
+router.get('/brands/:brandId/:storeId/menu', menuController.getStoreMenu);
 
 // 創建菜單（僅限 boss 和 brand_admin）
 router.post('/brands/:brandId/:storeId/menu', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, requireStoreAccess, menuController.createMenu);
