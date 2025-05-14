@@ -29,7 +29,7 @@
             <input class="form-check-input" type="checkbox" v-model="settingsForm.enableAvailableStock"
               id="enableAvailableStock" @change="confirmAvailableStock">
             <label class="form-check-label" for="enableAvailableStock">
-              啟用可販售庫存 (每日限量)
+              啟用可販售庫存 (處理限量商品)
             </label>
           </div>
         </div>
