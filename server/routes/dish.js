@@ -13,10 +13,10 @@ const router = express.Router();
 
 // 餐點模板路由
 // 獲取品牌的所有餐點模板
-router.get('/brands/:brandId/templates', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, dishTemplateController.getAllDishTemplates);
+router.get('/brands/:brandId/templates', dishTemplateController.getAllDishTemplates);
 
 // 獲取單個餐點模板
-router.get('/brands/:brandId/templates/:id', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, dishTemplateController.getDishTemplateById);
+router.get('/brands/:brandId/templates/:id', dishTemplateController.getDishTemplateById);
 
 // 創建餐點模板（僅限 boss 和 brand_admin）
 router.post('/brands/:brandId/templates', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, dishTemplateController.createDishTemplate);
@@ -28,14 +28,14 @@ router.put('/brands/:brandId/templates/:id', authenticate('admin'), requireRole(
 router.delete('/brands/:brandId/templates/:id', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, dishTemplateController.deleteDishTemplate);
 
 // 獲取餐點模板的選項類別
-router.get('/brands/:brandId/templates/:id/options', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, dishTemplateController.getDishTemplateOptions);
+router.get('/brands/:brandId/templates/:id/options', dishTemplateController.getDishTemplateOptions);
 
 // 選項類別路由
 // 獲取所有選項類別
-router.get('/brands/:brandId/option-categories', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, optionCategoryController.getAllOptionCategories);
+router.get('/brands/:brandId/option-categories', optionCategoryController.getAllOptionCategories);
 
 // 獲取單個選項類別
-router.get('/brands/:brandId/option-categories/:id', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, optionCategoryController.getOptionCategoryById);
+router.get('/brands/:brandId/option-categories/:id', optionCategoryController.getOptionCategoryById);
 
 // 創建選項類別（僅限 boss 和 brand_admin）
 router.post('/brands/:brandId/option-categories', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, optionCategoryController.createOptionCategory);
@@ -48,10 +48,10 @@ router.delete('/brands/:brandId/option-categories/:id', authenticate('admin'), r
 
 // 選項路由
 // 獲取所有選項
-router.get('/brands/:brandId/options', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, optionController.getAllOptions);
+router.get('/brands/:brandId/options', optionController.getAllOptions);
 
 // 獲取單個選項
-router.get('/brands/:brandId/options/:id', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, optionController.getOptionById);
+router.get('/brands/:brandId/options/:id', optionController.getOptionById);
 
 // 創建選項（僅限 boss 和 brand_admin）
 router.post('/brands/:brandId/options', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, optionController.createOption);
@@ -63,6 +63,6 @@ router.put('/brands/:brandId/options/:id', authenticate('admin'), requireRole('b
 router.delete('/brands/:brandId/options/:id', authenticate('admin'), requireRole('boss', 'brand_admin'), requireBrandAccess, optionController.deleteOption);
 
 // 獲取類別下的所有選項
-router.get('/brands/:brandId/category/:categoryId/options', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, optionController.getOptionsByCategory);
+router.get('/brands/:brandId/category/:categoryId/options', optionController.getOptionsByCategory);
 
 export default router;
