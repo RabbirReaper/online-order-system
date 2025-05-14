@@ -38,7 +38,10 @@ export const roleMiddleware = (allowedRoles) => async (req, res, next) => {
   }
 };
 
-// 品牌驗證中間件
+/**
+ * 品牌中間件
+ * 處理品牌權限和設置品牌ID到請求對象
+ */
 export const brandMiddleware = async (req, res, next) => {
   try {
     // 確認使用者已通過驗證
