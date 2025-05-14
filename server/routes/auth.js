@@ -25,9 +25,6 @@ router.post('/logout', logout);
 router.get('/check-admin-status', checkAdminLoginStatus);
 router.get('/check-user-status', checkUserLoginStatus);
 
-// 建立管理員帳號（需要管理員權限和員工管理權限）
-router.post('/admin', authenticate('admin'), requireRole('boss'), createAdmin);
-
 // 修改密碼（需要認證）
 router.post('/change-password', authenticate('admin'), changePassword);
 

@@ -53,8 +53,8 @@ export const getInventoryItem = asyncHandler(async (req, res) => {
 export const createInventory = asyncHandler(async (req, res) => {
   try {
     const { storeId } = req.params;
-    const adminId = req.adminId;
-    const brandId = req.brandId;
+    const adminId = req.auth.id; // 使用新的 auth 物件
+    const brandId = req.brandId; // 從 requireBrandAccess middleware 取得
 
     const inventoryData = {
       ...req.body,
