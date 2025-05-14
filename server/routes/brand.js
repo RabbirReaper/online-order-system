@@ -1,17 +1,31 @@
 import express from 'express';
 import * as brandController from '../controllers/Brand/brand.js';
-import { authMiddleware } from '../middlewares/auth.js';
-import { roleMiddleware } from '../middlewares/permission.js';
+import {
+  authenticate,
+  requireRole
+} from '../middlewares/auth/index.js';
 
 const router = express.Router();
 
-// 保留品牌路由 - 這是我們目前需要的功能
-router.get('/', authMiddleware, roleMiddleware(['boss']), brandController.getAllBrands);
-router.get('/:id', authMiddleware, roleMiddleware(['boss']), brandController.getBrandById);
-router.post('/', authMiddleware, roleMiddleware(['boss']), brandController.createBrand);
-router.put('/:id', authMiddleware, roleMiddleware(['boss']), brandController.updateBrand);
-router.delete('/:id', authMiddleware, roleMiddleware(['boss']), brandController.deleteBrand);
-router.get('/:id/stores', authMiddleware, roleMiddleware(['boss']), brandController.getBrandStores);
-router.put('/:id/toggle', authMiddleware, roleMiddleware(['boss']), brandController.toggleBrandActive);
+// 獲取所有品牌（僅限 boss）
+router.get('/', authenticate('admin'), requireRole('boss'), brandController.getAllBrands);
 
-// router.get('/brands/:id/stats',authMiddleware, roleMiddleware(['boss']), brandController.getBrandStats);
+// 獲取單個品牌（僅限 boss）
+router.get('/:id', authenticate('admin'), requireRole('boss'), brandController.getBrandById);
+
+// 創建品牌（僅限 boss）
+router.post('/', authenticate('admin'), requireRole('boss'), brandController.createBrand);
+
+// 更新品牌（僅限 boss）
+router.put('/:id', authenticate('admin'), requireRole('boss'), brandController.updateBrand);
+
+// 刪除品牌（僅限 boss）
+router.delete('/:id', authenticate('admin'), requireRole('boss'), brandController.deleteBrand);
+
+// 獲取品牌下的店舖（僅限 boss）
+router.get('/:id/stores', authenticate('admin'), requireRole('boss'), brandController.getBrandStores);
+
+// 切換品牌啟用狀態（僅限 boss）
+router.put('/:id/toggle', authenticate('admin'), requireRole('boss'), brandController.toggleBrandActive);
+
+export default router;

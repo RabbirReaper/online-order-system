@@ -1,7 +1,7 @@
 import express from 'express';
 import * as userController from '../controllers/User/user.js';
 import * as adminController from '../controllers/User/admin.js';
-import { authMiddleware } from '../middlewares/auth.js';
+import { authMiddleware } from '../middlewares/auth/authentication.js';
 import { permissionMiddleware, roleMiddleware, brandMiddleware } from '../middlewares/permission.js';
 import { userAuthMiddleware } from '../middlewares/userAuth.js';
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import * as orderController from '../controllers/Order/order.js';
-import { authMiddleware } from '../middlewares/auth.js';
+import { authMiddleware } from '../middlewares/auth/authentication.js';
 import { permissionMiddleware } from '../middlewares/permission.js';
 import { userAuthMiddleware } from '../middlewares/userAuth.js';
 

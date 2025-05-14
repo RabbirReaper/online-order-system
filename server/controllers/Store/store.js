@@ -43,10 +43,13 @@ export const getStoreById = asyncHandler(async (req, res) => {
 // 創建店家
 export const createStore = asyncHandler(async (req, res) => {
   try {
-    // 圖片數據直接從請求體中獲取
-    // req.body.imageData 應該包含 Base64 編碼的圖片數據
+    // 使用從 middleware 設置的 brandId
+    const storeData = {
+      ...req.body,
+      brand: req.brandId // 從 requireBrandAccess middleware 取得
+    };
 
-    const newStore = await storeService.createStore(req.body);
+    const newStore = await storeService.createStore(storeData);
 
     res.json({
       success: true,
@@ -66,9 +69,6 @@ export const createStore = asyncHandler(async (req, res) => {
 export const updateStore = asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
-
-    // 圖片數據直接從請求體中獲取
-    // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
     const updatedStore = await storeService.updateStore(id, req.body);
 

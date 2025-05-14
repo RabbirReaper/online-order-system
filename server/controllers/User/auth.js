@@ -1,13 +1,12 @@
 import bcrypt from 'bcrypt';
 import Admin from '../../models/User/Admin.js';
-import mongoose from 'mongoose';
+import User from '../../models/User/User.js';
 
 // 管理員登入
 export const authLogin = async (req, res) => {
   try {
     const { name, password } = req.body;
 
-    // lean() 加快查詢，避免不必要 Mongoose 實例開銷
     const admin = await Admin.findOne({ name }).select('+password').lean();
 
     if (!admin) {
@@ -19,21 +18,14 @@ export const authLogin = async (req, res) => {
       return res.status(401).json({ success: false, message: '用戶名或密碼錯誤' });
     }
 
-    // 安全處理 manage 欄位
-    const manageInfo = Array.isArray(admin.manage)
-      ? admin.manage.map(m => ({
-        store: m.store,
-        permission: m.permission
-      }))
-      : [];
-
-    // 建立 Session
+    // 設置 session
     req.session.adminId = admin._id;
     req.session.adminRole = admin.role;
-    req.session.adminManage = manageInfo;
 
     return res.json({
       success: true,
+      message: '登入成功',
+      role: admin.role
     });
 
   } catch (error) {
@@ -45,7 +37,7 @@ export const authLogin = async (req, res) => {
 // 創建管理員帳號
 export const createAdmin = async (req, res) => {
   try {
-    const { name, password, role, manage } = req.body;
+    const { name, password, role, brand, manage } = req.body;
 
     // 檢查必要欄位
     if (!name || !password || !role) {
@@ -64,8 +56,8 @@ export const createAdmin = async (req, res) => {
       });
     }
 
-    // 檢查角色是否有效
-    const validRoles = ['boss', 'brain_admin', 'store_admin'];
+    // 驗證角色
+    const validRoles = ['boss', 'brand_admin', 'store_admin'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({
         success: false,
@@ -73,55 +65,20 @@ export const createAdmin = async (req, res) => {
       });
     }
 
-    // 檢查 manage 欄位
-    if (role !== 'boss' && (!manage || !Array.isArray(manage) || manage.length === 0)) {
+    // 如果不是 boss，需要指定品牌
+    if (role !== 'boss' && !brand) {
       return res.status(400).json({
         success: false,
-        message: '非 boss 角色必須指定管理的店舖'
+        message: '非 boss 角色必須指定品牌'
       });
     }
-
-    // 驗證每個 manage 項目
-    if (Array.isArray(manage)) {
-      for (const item of manage) {
-        // 檢查 store 是否為有效的 ObjectId
-        if (!item.store || !mongoose.Types.ObjectId.isValid(item.store)) {
-          return res.status(400).json({
-            success: false,
-            message: '無效的店舖 ID'
-          });
-        }
-
-        // 檢查權限
-        if (!item.permission || !Array.isArray(item.permission) || item.permission.length === 0) {
-          return res.status(400).json({
-            success: false,
-            message: '必須指定至少一個權限'
-          });
-        }
-
-        // 檢查每個權限是否有效
-        const validPermissions = ['order_system', 'view_reports', 'edit_backend', 'manage_staff'];
-        for (const perm of item.permission) {
-          if (!validPermissions.includes(perm)) {
-            return res.status(400).json({
-              success: false,
-              message: `無效的權限: ${perm}`
-            });
-          }
-        }
-      }
-    }
-
-    // 密碼加密
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(password, salt);
 
     // 創建管理員
     const newAdmin = new Admin({
       name,
-      password: hashedPassword,
+      password,
       role,
+      brand: role === 'boss' ? undefined : brand,
       manage: manage || []
     });
 
@@ -149,7 +106,6 @@ export const createAdmin = async (req, res) => {
 // 登出
 export const logout = async (req, res) => {
   try {
-    // 清除 session
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({
@@ -158,7 +114,6 @@ export const logout = async (req, res) => {
         });
       }
 
-      // 清除 cookie
       res.clearCookie('connect.sid');
 
       return res.json({
@@ -179,17 +134,8 @@ export const logout = async (req, res) => {
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const adminId = req.session.user_id;
+    const adminId = req.auth.id; // 從新的 auth 物件取得
 
-    // 檢查用戶是否已登入
-    if (!adminId) {
-      return res.status(401).json({
-        success: false,
-        message: '請先登入'
-      });
-    }
-
-    // 檢查請求是否包含必要欄位
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -197,7 +143,6 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // 檢查新密碼長度與複雜度
     if (newPassword.length < 8) {
       return res.status(400).json({
         success: false,
@@ -205,7 +150,6 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // 查詢管理員資料（需要包含密碼欄位）
     const admin = await Admin.findById(adminId).select('+password');
     if (!admin) {
       return res.status(404).json({
@@ -214,7 +158,6 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // 驗證當前密碼是否正確
     const validPassword = await bcrypt.compare(currentPassword, admin.password);
     if (!validPassword) {
       return res.status(401).json({
@@ -223,7 +166,6 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // 確保新舊密碼不同
     const isSamePassword = await bcrypt.compare(newPassword, admin.password);
     if (isSamePassword) {
       return res.status(400).json({
@@ -232,12 +174,7 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // 加密新密碼
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-    // 更新密碼
-    admin.password = hashedPassword;
+    admin.password = newPassword;
     await admin.save();
 
     return res.json({
@@ -253,26 +190,25 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// 檢查admin狀態
+// 檢查管理員登入狀態
 export const checkAdminLoginStatus = async (req, res) => {
   try {
     if (req.session.adminId) {
-      // 管理員登入
-      return res.json({
-        success: true,
-        loggedIn: true,
-        role: req.session.adminRole,
-        manage: req.session.adminManage || []
-      });
-    } else {
-      // 未登入
-      return res.json({
-        success: true,
-        loggedIn: false,
-        role: null,
-        manage: []
-      });
+      const admin = await Admin.findById(req.session.adminId).select('role');
+      if (admin) {
+        return res.json({
+          success: true,
+          loggedIn: true,
+          role: admin.role
+        });
+      }
     }
+
+    return res.json({
+      success: true,
+      loggedIn: false,
+      role: null
+    });
   } catch (error) {
     console.error('Check status error:', error);
     return res.status(500).json({
@@ -282,25 +218,22 @@ export const checkAdminLoginStatus = async (req, res) => {
   }
 };
 
-// 檢查user用戶狀態
+// 檢查用戶登入狀態
 export const checkUserLoginStatus = async (req, res) => {
   try {
     if (req.session.userId) {
-      // 客戶登入
       return res.json({
         success: true,
         loggedIn: true,
-        role: 'customer',
-      });
-    } else {
-      // 未登入
-      return res.json({
-        success: true,
-        loggedIn: false,
-        role: null,
-        manage: []
+        role: 'customer'
       });
     }
+
+    return res.json({
+      success: true,
+      loggedIn: false,
+      role: null
+    });
   } catch (error) {
     console.error('Check status error:', error);
     return res.status(500).json({
