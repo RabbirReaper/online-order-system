@@ -451,7 +451,7 @@ const loadData = async () => {
     }
 
     // 獲取店鋪列表
-    const storesResponse = await api.brand.getBrandStores({ brandId: brandId.value });
+    const storesResponse = await api.store.getAllStores({ brandId: brandId.value });
     if (storesResponse && storesResponse.stores) {
       stores.value = storesResponse.stores.slice(0, 5); // 僅顯示前5間店鋪
 
@@ -518,13 +518,6 @@ const simulateData = () => {
   // 依照時間排序，最新的在前
   recentOrders.value.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
-
-// 監聽品牌ID變化
-watch(() => brandId.value, (newId, oldId) => {
-  if (newId !== oldId) {
-    loadData();
-  }
-});
 
 // 生命週期鉤子
 onMounted(() => {

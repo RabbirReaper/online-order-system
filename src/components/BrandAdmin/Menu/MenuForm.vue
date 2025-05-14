@@ -270,7 +270,7 @@ const fetchStoreData = async () => {
   if (!storeId.value) return;
 
   try {
-    const response = await api.store.getStoreById(storeId.value);
+    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
     if (response && response.store) {
       store.value = response.store;
 
@@ -304,7 +304,7 @@ const fetchMenuData = async () => {
   if (!isEditMode.value || !storeId.value || !menuId.value) return;
 
   try {
-    const response = await api.menu.getStoreMenu(storeId.value);
+    const response = await api.menu.getStoreMenu({ brandId: brandId.value, storeId: storeId.value });
 
     if (response && response.menu && response.menu._id === menuId.value) {
       const menu = response.menu;

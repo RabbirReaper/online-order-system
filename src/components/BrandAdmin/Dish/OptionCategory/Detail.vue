@@ -284,7 +284,7 @@ const fetchOptionDetails = async () => {
     const validOptionIds = optionIds.filter(id => id && typeof id === 'string');
 
     // 單個獲取每個選項詳情
-    const promises = validOptionIds.map(id => api.dish.getOptionById(id, brandId.value));
+    const promises = validOptionIds.map(id => api.dish.getOptionById({ id: id, brandId: brandId.value }));
     const responses = await Promise.all(promises);
 
     // 整理選項詳情

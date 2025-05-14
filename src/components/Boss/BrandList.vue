@@ -137,7 +137,7 @@ const fetchBrands = async () => {
       // 獲取每個品牌的店鋪數量
       for (let brand of brands.value) {
         try {
-          const storesResponse = await api.brand.getBrandStores({ brandId: brand._id });
+          const storesResponse = await api.store.getAllStores({ brandId: brand._id });
           brand.storesCount = storesResponse.stores?.length || 0;
         } catch (error) {
           console.error(`獲取品牌 ${brand.name} 的店鋪列表失敗:`, error);

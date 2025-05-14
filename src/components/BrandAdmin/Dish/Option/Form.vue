@@ -202,7 +202,7 @@ const fetchOptionData = async () => {
   if (!isEditMode.value || !route.params.id) return;
 
   try {
-    const response = await api.dish.getOptionById(route.params.id, brandId.value);
+    const response = await api.dish.getOptionById({ id: route.params.id, brandId: brandId.value });
     if (response && response.option) {
       const option = response.option;
       formData.name = option.name;

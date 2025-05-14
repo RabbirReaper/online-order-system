@@ -171,7 +171,7 @@ const fetchOptions = async () => {
   errorMessage.value = '';
 
   try {
-    const response = await api.dish.getAllOptions(brandId.value);
+    const response = await api.dish.getAllOptions({ brandId: brandId.value });
     if (response && response.options) {
       options.value = response.options;
     }

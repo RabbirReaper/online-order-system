@@ -545,7 +545,7 @@ const fetchStoreData = async () => {
   if (!isEditMode.value || !route.params.id) return;
 
   try {
-    const response = await api.store.getStoreById(route.params.id);
+    const response = await api.store.getStoreById({ brandId: brandId.value, id: route.params.id });
     if (response && response.store) {
       const store = response.store;
       formData.name = store.name;

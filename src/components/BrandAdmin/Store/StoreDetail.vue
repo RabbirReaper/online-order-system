@@ -388,7 +388,7 @@ const fetchStoreData = async () => {
   error.value = '';
 
   try {
-    const response = await api.store.getStoreById(storeId.value);
+    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
 
     if (response && response.store) {
       store.value = response.store;

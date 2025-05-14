@@ -214,7 +214,7 @@ const fetchBrandData = async () => {
       brand.value = response.brand;
 
       // 獲取品牌下的店鋪
-      const storesResponse = await api.brand.getBrandStores({
+      const storesResponse = await api.store.getAllStores({
         brandId: route.params.id
       });
 

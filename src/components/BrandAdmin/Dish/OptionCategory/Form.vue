@@ -369,7 +369,7 @@ const fetchCategoryData = async () => {
 // 獲取所有選項
 const fetchAllOptions = async () => {
   try {
-    const response = await api.dish.getAllOptions(brandId.value);
+    const response = await api.dish.getAllOptions({ brandId: brandId.value });
     if (response && response.options) {
       allOptions.value = response.options;
       updateAvailableOptions();

@@ -13,7 +13,7 @@ export default function (apiClient) {
      * @param {boolean} [params.includeUnpublished] - 是否包含未發布的項目（可選）
      * @returns {Promise} - API 回應
      */
-    getStoreMenu({ brandId, storeId, includeUnpublished = false }) {
+    getStoreMenu({ brandId, storeId, includeUnpublished = true }) {
       return apiClient.get(`/store/brands/${brandId}/${storeId}/menu`, {
         params: { includeUnpublished }
       });

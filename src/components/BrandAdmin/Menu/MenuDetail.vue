@@ -317,7 +317,7 @@ const fetchData = async () => {
 
   try {
     // 1. 獲取店鋪資料
-    const storeResponse = await api.store.getStoreById(storeId.value);
+    const storeResponse = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
     if (storeResponse && storeResponse.store) {
       store.value = storeResponse.store;
       storeName.value = storeResponse.store.name;
@@ -329,7 +329,7 @@ const fetchData = async () => {
     await fetchDishTemplates();
 
     // 3. 獲取菜單資料
-    const menuResponse = await api.menu.getStoreMenu(storeId.value);
+    const menuResponse = await api.menu.getStoreMenu({ brandId: brandId.value, storeId: storeId.value });
     if (menuResponse && menuResponse.menu && menuResponse.menu._id === menuId.value) {
       menu.value = menuResponse.menu;
     } else {

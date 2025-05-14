@@ -413,7 +413,7 @@ const fetchDishData = async () => {
   if (!isEditMode.value || !route.params.id) return;
 
   try {
-    const response = await api.dish.getDishTemplateById(route.params.id, brandId.value);
+    const response = await api.dish.getDishTemplateById({ id: route.params.id, brandId: brandId.value });
     if (response && response.template) {
       const template = response.template;
       formData.name = template.name;
