@@ -441,7 +441,10 @@ const submitForm = async () => {
       successMessage.value = '管理員更新成功！';
     } else {
       // 創建新管理員
-      response = await api.admin.createAdmin(submitData);
+      response = await api.admin.createAdmin({
+        brandId: brandId.value,
+        data: submitData
+      });
       successMessage.value = '管理員創建成功！';
     }
 

@@ -313,10 +313,7 @@ const fetchAdmins = async () => {
 
   try {
     const params = {};
-    // 如果當前不是 boss 角色，添加品牌篩選
-    if (brandId.value) {
-      params.brandId = brandId.value;
-    }
+    params.brandId = brandId.value;
 
     const response = await api.admin.getAllAdmins(params);
     if (response && response.admins) {
