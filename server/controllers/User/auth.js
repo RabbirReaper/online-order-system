@@ -34,6 +34,33 @@ export const authLogin = async (req, res) => {
   }
 };
 
+// 登出
+export const logout = async (req, res) => {
+  try {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: '登出失敗'
+        });
+      }
+
+      res.clearCookie('connect.sid');
+
+      return res.json({
+        success: true,
+        message: '登出成功'
+      });
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({
+      success: false,
+      message: '伺服器錯誤'
+    });
+  }
+};
+
 // 修改密碼
 export const changePassword = async (req, res) => {
   try {

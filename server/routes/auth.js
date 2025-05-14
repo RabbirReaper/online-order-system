@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   authLogin,
-  createAdmin,
   logout,
   changePassword,
   checkAdminLoginStatus,
