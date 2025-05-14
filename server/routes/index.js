@@ -2,7 +2,7 @@ import express from 'express';
 import authRoutes from './auth.js';
 import dishRoutes from './dish.js';
 import storeRoutes from './store.js';
-// import brandRoutes from './brand.js';
+import brandRoutes from './brand.js';
 // import orderRoutes from './order.js';
 import promotionRoutes from './promotion.js';
 // import userRoutes from './user.js';
