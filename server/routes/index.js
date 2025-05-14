@@ -15,7 +15,7 @@ const apiRouter = express.Router();
 // 將所有路由掛載到 API 路由器上
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/dish', dishRoutes);
-apiRouter.use('/store/brands/:brandId', storeRoutes);
+apiRouter.use('/store', storeRoutes);
 apiRouter.use('/brand', brandRoutes);
 // apiRouter.use('/order', orderRoutes);
 apiRouter.use('/promotion', promotionRoutes);
