@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 // 獲取所有選項類別
 export const getAllOptionCategories = asyncHandler(async (req, res) => {
   // 從當前登入的管理員中獲取品牌ID
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -24,7 +24,7 @@ export const getAllOptionCategories = asyncHandler(async (req, res) => {
 // 獲取單個選項類別
 export const getOptionCategoryById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -44,7 +44,7 @@ export const getOptionCategoryById = asyncHandler(async (req, res) => {
 
 // 創建新選項類別
 export const createOptionCategory = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.body.brand : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -65,7 +65,7 @@ export const createOptionCategory = asyncHandler(async (req, res) => {
 // 更新選項類別
 export const updateOptionCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.body.brand || req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -86,7 +86,7 @@ export const updateOptionCategory = asyncHandler(async (req, res) => {
 // 刪除選項類別
 export const deleteOptionCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({

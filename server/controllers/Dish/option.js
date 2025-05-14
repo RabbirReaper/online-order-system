@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 // 獲取所有選項
 export const getAllOptions = asyncHandler(async (req, res) => {
   // 從當前登入的管理員中獲取品牌ID
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -28,7 +28,7 @@ export const getAllOptions = asyncHandler(async (req, res) => {
 // 獲取單個選項
 export const getOptionById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -47,7 +47,7 @@ export const getOptionById = asyncHandler(async (req, res) => {
 
 // 創建新選項
 export const createOption = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.body.brand : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -68,7 +68,7 @@ export const createOption = asyncHandler(async (req, res) => {
 // 更新選項
 export const updateOption = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.body.brand || req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -89,7 +89,7 @@ export const updateOption = asyncHandler(async (req, res) => {
 // 刪除選項
 export const deleteOption = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -109,7 +109,7 @@ export const deleteOption = asyncHandler(async (req, res) => {
 // 獲取類別下的所有選項
 export const getOptionsByCategory = asyncHandler(async (req, res) => {
   const { categoryId } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
+  const brandId = req.brandId;
 
   if (!brandId) {
     return res.status(400).json({
