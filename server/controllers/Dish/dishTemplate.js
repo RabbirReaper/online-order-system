@@ -3,15 +3,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取所有餐點模板
 export const getAllDishTemplates = asyncHandler(async (req, res) => {
-  // 從當前登入的管理員中獲取品牌ID
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: 'brandId 為必須參數'
-    });
-  }
+  const brandId = req.brandId || req.params.brandId;
 
   const options = {
     query: req.query.query || '',
@@ -29,14 +21,7 @@ export const getAllDishTemplates = asyncHandler(async (req, res) => {
 // 獲取單個餐點模板
 export const getDishTemplateById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: 'brandId 為必須參數'
-    });
-  }
+  const brandId = req.brandId || req.params.brandId;
 
   const template = await dishTemplateService.getTemplateById(id, brandId);
 
@@ -48,17 +33,7 @@ export const getDishTemplateById = asyncHandler(async (req, res) => {
 
 // 創建新餐點模板
 export const createDishTemplate = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.body.brand : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: '品牌ID為必須參數'
-    });
-  }
-
-  // 圖片數據直接從請求體中獲取
-  // req.body.imageData 應該包含 Base64 編碼的圖片數據
+  const brandId = req.brandId || req.params.brandId;
 
   const newTemplate = await dishTemplateService.createTemplate(req.body, brandId);
 
@@ -72,17 +47,7 @@ export const createDishTemplate = asyncHandler(async (req, res) => {
 // 更新餐點模板
 export const updateDishTemplate = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.body.brand || req.query.brandId : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: '品牌ID為必須參數'
-    });
-  }
-
-  // 圖片數據直接從請求體中獲取
-  // req.body.imageData 應該包含 Base64 編碼的圖片數據
+  const brandId = req.brandId || req.params.brandId;
 
   const updatedTemplate = await dishTemplateService.updateTemplate(id, req.body, brandId);
 
@@ -96,14 +61,7 @@ export const updateDishTemplate = asyncHandler(async (req, res) => {
 // 刪除餐點模板
 export const deleteDishTemplate = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: '品牌ID為必須參數'
-    });
-  }
+  const brandId = req.brandId || req.params.brandId;
 
   await dishTemplateService.deleteTemplate(id, brandId);
 
@@ -116,14 +74,7 @@ export const deleteDishTemplate = asyncHandler(async (req, res) => {
 // 獲取餐點模板的選項類別
 export const getDishTemplateOptions = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: '品牌ID為必須參數'
-    });
-  }
+  const brandId = req.brandId || req.params.brandId;
 
   const options = await dishTemplateService.getTemplateOptions(id, brandId);
 
