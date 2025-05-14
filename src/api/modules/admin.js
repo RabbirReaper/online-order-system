@@ -3,7 +3,7 @@
  * @param {Object} apiClient - Axios 實例
  * @returns {Object} - 管理員相關 API 方法
  */
-export default function (apiClient) {
+export default function (apiClient) { // 這邊預計要重構 分成總管理員 與品牌管理員
   return {
     /**
      * 獲取所有管理員（不帶brandId時）
