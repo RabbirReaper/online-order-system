@@ -3,7 +3,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取所有餐點模板
 export const getAllDishTemplates = asyncHandler(async (req, res) => {
-  const brandId = req.brandId; // 從 requireBrandAccess middleware 取得
+  const brandId = req.brandId || req.params.brandId; // 從 requireBrandAccess middleware 取得
 
   const options = {
     query: req.query.query || '',
@@ -21,7 +21,7 @@ export const getAllDishTemplates = asyncHandler(async (req, res) => {
 // 獲取單個餐點模板
 export const getDishTemplateById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.brandId; // 從 requireBrandAccess middleware 取得
+  const brandId = req.brandId || req.params.brandId; // 從 requireBrandAccess middleware 取得
 
   const template = await dishTemplateService.getTemplateById(id, brandId);
 

@@ -24,8 +24,10 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
-    maxAge: 30 * 60 * 1000 // 30 分鐘後過期
+    maxAge: 30 * 60 * 1000, // 30 分鐘後過期
+    sameSite: 'lax'
   }
 }));
 

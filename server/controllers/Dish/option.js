@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 // 獲取所有選項
 export const getAllOptions = asyncHandler(async (req, res) => {
   // 從當前登入的管理員中獲取品牌ID
-  const brandId = req.brandId;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
@@ -28,7 +28,7 @@ export const getAllOptions = asyncHandler(async (req, res) => {
 // 獲取單個選項
 export const getOptionById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.brandId;
+  const brandId = req.brandId || req.params.brandId;
 
   if (!brandId) {
     return res.status(400).json({
