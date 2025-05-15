@@ -5,10 +5,13 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 創建訂單
 export const createOrder = asyncHandler(async (req, res) => {
-  const orderData = req.body;
+  const { brandId, storeId } = req.params;
 
-  // 訂單處理邏輯（在實際實現中需要處理庫存、點數等）
-  // 這裡假設訂單數據已經過驗證
+  const orderData = {
+    ...req.body,
+    brand: brandId,
+    store: storeId
+  };
 
   // 獲取訂單編號
   const orderNumber = await orderService.orderManagement.generateOrderNumber();
@@ -23,7 +26,6 @@ export const createOrder = asyncHandler(async (req, res) => {
   orderData.total = amounts.total;
 
   // 創建訂單
-  // 假設在服務層中有一個創建訂單的方法
   const order = await orderService.createOrder(orderData);
 
   res.status(201).json({
@@ -46,7 +48,6 @@ export const getStoreOrders = asyncHandler(async (req, res) => {
     limit: parseInt(req.query.limit, 10) || 20
   };
 
-  // 假設在服務層中有一個獲取訂單列表的方法
   const result = await orderService.getStoreOrders(storeId, options);
 
   res.json({
@@ -60,7 +61,6 @@ export const getStoreOrders = asyncHandler(async (req, res) => {
 export const getOrderById = asyncHandler(async (req, res) => {
   const { storeId, orderId } = req.params;
 
-  // 假設在服務層中有一個獲取訂單詳情的方法
   const order = await orderService.getOrderById(storeId, orderId);
 
   res.json({
@@ -71,9 +71,9 @@ export const getOrderById = asyncHandler(async (req, res) => {
 
 // 更新訂單狀態（後台）
 export const updateOrderStatus = asyncHandler(async (req, res) => {
-  const { storeId, orderId } = req.params;
+  const { orderId } = req.params;
   const { status } = req.body;
-  const adminId = req.adminId; // 從中間件獲取管理員ID
+  const adminId = req.auth.id; // 從中間件獲取管理員ID
 
   if (!status) {
     return res.status(400).json({
@@ -93,9 +93,9 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
 // 取消訂單（後台）
 export const cancelOrder = asyncHandler(async (req, res) => {
-  const { storeId, orderId } = req.params;
+  const { orderId } = req.params;
   const { reason } = req.body;
-  const adminId = req.adminId; // 從中間件獲取管理員ID
+  const adminId = req.auth.id; // 從中間件獲取管理員ID
 
   if (!reason) {
     return res.status(400).json({
@@ -115,12 +115,11 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 
 // 用戶取消訂單
 export const userCancelOrder = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
+  const { brandId, orderId } = req.params;
   const { reason } = req.body;
-  const userId = req.userId; // 從中間件獲取用戶ID
+  const userId = req.auth.id; // 從中間件獲取用戶ID
 
   // 確認訂單屬於該用戶
-  // 假設在服務層中有一個確認訂單所有權的方法
   const isOwner = await orderService.verifyOrderOwnership(orderId, userId);
 
   if (!isOwner) {
@@ -141,9 +140,11 @@ export const userCancelOrder = asyncHandler(async (req, res) => {
 
 // 獲取用戶訂單列表
 export const getUserOrders = asyncHandler(async (req, res) => {
-  const userId = req.userId; // 從中間件獲取用戶ID
+  const { brandId } = req.params;
+  const userId = req.auth.id; // 從中間件獲取用戶ID
 
   const options = {
+    brandId,
     page: parseInt(req.query.page, 10) || 1,
     limit: parseInt(req.query.limit, 10) || 10,
     sortBy: req.query.sortBy || 'createdAt',
@@ -162,7 +163,7 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 // 獲取用戶訂單詳情
 export const getUserOrderById = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
-  const userId = req.userId; // 從中間件獲取用戶ID
+  const userId = req.auth.id; // 從中間件獲取用戶ID
 
   // 確認訂單屬於該用戶
   const isOwner = await orderService.verifyOrderOwnership(orderId, userId);
@@ -174,7 +175,6 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個獲取訂單詳情的方法
   const order = await orderService.getUserOrderById(orderId);
 
   res.json({
@@ -185,7 +185,7 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
 
 // 獲取訪客訂單詳情（不需登入）
 export const getGuestOrderById = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
+  const { brandId, orderId } = req.params;
   const { phone, orderNumber } = req.body;
 
   if (!phone || !orderNumber) {
@@ -195,7 +195,6 @@ export const getGuestOrderById = asyncHandler(async (req, res) => {
     });
   }
 
-  // 假設在服務層中有一個獲取訪客訂單的方法
   const order = await orderService.getGuestOrderById(orderId, phone, orderNumber);
 
   res.json({
@@ -206,10 +205,9 @@ export const getGuestOrderById = asyncHandler(async (req, res) => {
 
 // 處理支付
 export const processPayment = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
+  const { brandId, orderId } = req.params;
   const paymentData = req.body;
 
-  // 假設在服務層中有一個處理支付的方法
   const result = await orderService.processPayment(orderId, paymentData);
 
   res.json({
@@ -221,10 +219,9 @@ export const processPayment = asyncHandler(async (req, res) => {
 
 // 支付回調
 export const paymentCallback = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
+  const { brandId, orderId } = req.params;
   const callbackData = req.body;
 
-  // 假設在服務層中有一個處理支付回調的方法
   const result = await orderService.handlePaymentCallback(orderId, callbackData);
 
   res.json({

@@ -3,8 +3,13 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 用戶註冊
 export const register = asyncHandler(async (req, res) => {
-  const userData = req.body;
-  const user = await userService.register(userData);
+  const { brandId } = req.params;
+  const userData = {
+    ...req.body,
+    brand: brandId
+  };
+
+  const user = await userService.auth.register(userData);
 
   res.status(201).json({
     success: true,
@@ -15,8 +20,13 @@ export const register = asyncHandler(async (req, res) => {
 
 // 用戶登入
 export const login = asyncHandler(async (req, res) => {
-  const credentials = req.body;
-  const user = await userService.login(credentials, req.session);
+  const { brandId } = req.params;
+  const credentials = {
+    ...req.body,
+    brand: brandId
+  };
+
+  const user = await userService.auth.login(credentials, req.session);
 
   res.json({
     success: true,
@@ -27,7 +37,7 @@ export const login = asyncHandler(async (req, res) => {
 
 // 用戶登出
 export const logout = asyncHandler(async (req, res) => {
-  const result = await userService.logout(req.session);
+  const result = await userService.auth.logout(req.session);
 
   res.json({
     success: true,
@@ -37,8 +47,10 @@ export const logout = asyncHandler(async (req, res) => {
 
 // 忘記密碼
 export const forgotPassword = asyncHandler(async (req, res) => {
+  const { brandId } = req.params;
   const { email } = req.body;
-  const result = await userService.forgotPassword(email);
+
+  const result = await userService.auth.forgotPassword(email, brandId);
 
   res.json({
     success: true,
@@ -48,8 +60,10 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
 // 重設密碼
 export const resetPassword = asyncHandler(async (req, res) => {
+  const { brandId } = req.params;
   const { token, newPassword } = req.body;
-  const result = await userService.resetPassword(token, newPassword);
+
+  const result = await userService.auth.resetPassword(token, newPassword, brandId);
 
   res.json({
     success: true,
@@ -60,9 +74,9 @@ export const resetPassword = asyncHandler(async (req, res) => {
 // 更改密碼
 export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  const userId = req.userId; // 從中間件獲取，確保已驗證
+  const userId = req.auth.id; // 從中間件獲取
 
-  const result = await userService.changePassword(userId, currentPassword, newPassword);
+  const result = await userService.auth.changePassword(userId, currentPassword, newPassword);
 
   res.json({
     success: true,
@@ -72,9 +86,9 @@ export const changePassword = asyncHandler(async (req, res) => {
 
 // 獲取用戶資料
 export const getUserProfile = asyncHandler(async (req, res) => {
-  const userId = req.userId; // 從中間件獲取，確保已驗證
+  const userId = req.auth.id; // 從中間件獲取
 
-  const profile = await userService.getUserProfile(userId);
+  const profile = await userService.profile.getUserProfile(userId);
 
   res.json({
     success: true,
@@ -84,10 +98,10 @@ export const getUserProfile = asyncHandler(async (req, res) => {
 
 // 更新用戶資料
 export const updateUserProfile = asyncHandler(async (req, res) => {
-  const userId = req.userId; // 從中間件獲取，確保已驗證
+  const userId = req.auth.id; // 從中間件獲取
   const updateData = req.body;
 
-  const updatedProfile = await userService.updateUserProfile(userId, updateData);
+  const updatedProfile = await userService.profile.updateUserProfile(userId, updateData);
 
   res.json({
     success: true,
@@ -98,10 +112,10 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 
 // 添加地址
 export const addAddress = asyncHandler(async (req, res) => {
-  const userId = req.userId; // 從中間件獲取，確保已驗證
+  const userId = req.auth.id; // 從中間件獲取
   const addressData = req.body;
 
-  const user = await userService.addUserAddress(userId, addressData);
+  const user = await userService.profile.addUserAddress(userId, addressData);
 
   res.json({
     success: true,
@@ -112,11 +126,11 @@ export const addAddress = asyncHandler(async (req, res) => {
 
 // 更新地址
 export const updateAddress = asyncHandler(async (req, res) => {
-  const userId = req.userId; // 從中間件獲取，確保已驗證
+  const userId = req.auth.id; // 從中間件獲取
   const { addressId } = req.params;
   const updateData = req.body;
 
-  const user = await userService.updateUserAddress(userId, addressId, updateData);
+  const user = await userService.profile.updateUserAddress(userId, addressId, updateData);
 
   res.json({
     success: true,
@@ -127,10 +141,10 @@ export const updateAddress = asyncHandler(async (req, res) => {
 
 // 刪除地址
 export const deleteAddress = asyncHandler(async (req, res) => {
-  const userId = req.userId; // 從中間件獲取，確保已驗證
+  const userId = req.auth.id; // 從中間件獲取
   const { addressId } = req.params;
 
-  const user = await userService.deleteUserAddress(userId, addressId);
+  const user = await userService.profile.deleteUserAddress(userId, addressId);
 
   res.json({
     success: true,
@@ -141,14 +155,17 @@ export const deleteAddress = asyncHandler(async (req, res) => {
 
 // 獲取所有用戶 (admin功能)
 export const getAllUsers = asyncHandler(async (req, res) => {
+  const { brandId } = req.params;
+
   const options = {
+    brandId,
     search: req.query.search,
     activeOnly: req.query.activeOnly === 'true',
     page: parseInt(req.query.page, 10) || 1,
     limit: parseInt(req.query.limit, 10) || 20
   };
 
-  const result = await userService.getAllUsers(options);
+  const result = await userService.profile.getAllUsers(options);
 
   res.json({
     success: true,
@@ -161,7 +178,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 export const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const user = await userService.getUserById(id);
+  const user = await userService.profile.getUserById(id);
 
   res.json({
     success: true,
@@ -181,7 +198,7 @@ export const toggleUserStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  const user = await userService.toggleUserStatus(id, isActive);
+  const user = await userService.profile.toggleUserStatus(id, isActive);
 
   res.json({
     success: true,

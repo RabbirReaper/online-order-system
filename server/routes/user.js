@@ -1,37 +1,57 @@
 import express from 'express';
 import * as userController from '../controllers/User/user.js';
-import * as adminController from '../controllers/User/admin.js';
-import { authMiddleware } from '../middlewares/auth/authentication.js';
-import { permissionMiddleware, roleMiddleware, brandMiddleware } from '../middlewares/permission.js';
-import { userAuthMiddleware } from '../middlewares/userAuth.js';
+import {
+  authenticate,
+  requireRole,
+  requireBrandAccess,
+  requirePermission
+} from '../middlewares/auth/index.js';
 
 const router = express.Router();
 
-// 用戶註冊和認證路由
-router.post('/register', userController.register);
-router.post('/login', userController.login);
-router.post('/logout', userController.logout);
-router.post('/forgot-password', userController.forgotPassword);
-router.post('/reset-password', userController.resetPassword);
+// 用戶認證路由（公開）
+router.post('/brands/:brandId/register', userController.register);
+router.post('/brands/:brandId/login', userController.login);
+router.post('/brands/:brandId/logout', userController.logout);
+router.post('/brands/:brandId/forgot-password', userController.forgotPassword);
+router.post('/brands/:brandId/reset-password', userController.resetPassword);
 
-// 用戶資料管理路由
-router.get('/profile', userAuthMiddleware, userController.getUserProfile);
-router.put('/profile', userAuthMiddleware, userController.updateUserProfile);
-router.post('/profile/password', userAuthMiddleware, userController.changePassword);
-router.post('/profile/address', userAuthMiddleware, userController.addAddress);
-router.put('/profile/address/:addressId', userAuthMiddleware, userController.updateAddress);
-router.delete('/profile/address/:addressId', userAuthMiddleware, userController.deleteAddress);
+// 用戶個人資料管理（需要用戶認證）
+router.get('/brands/:brandId/profile', authenticate('user'), userController.getUserProfile);
+router.put('/brands/:brandId/profile', authenticate('user'), userController.updateUserProfile);
+router.post('/brands/:brandId/change-password', authenticate('user'), userController.changePassword);
 
-// 管理員管理路由 (後台) - 老闆管理所有管理員，品牌管理員只管理所屬品牌的店鋪管理員
-router.get('/admin', authMiddleware, roleMiddleware(['boss', 'brand_admin']), adminController.getAllAdmins);
-router.get('/admin/:id', authMiddleware, roleMiddleware(['boss', 'brand_admin']), adminController.getAdminById);
-router.put('/admin/:id', authMiddleware, roleMiddleware(['boss']), adminController.updateAdmin); // 只有老闆可以更新管理員基本資料
-router.put('/admin/:id/status', authMiddleware, roleMiddleware(['boss']), adminController.toggleAdminStatus); // 只有老闆可以停用管理員
-router.put('/admin/:id/permissions', authMiddleware, roleMiddleware(['boss', 'brand_admin']), brandMiddleware, adminController.updateAdminPermissions); // 品牌管理員可以修改所屬店鋪管理員的權限
+// 地址管理（需要用戶認證）
+router.post('/brands/:brandId/addresses', authenticate('user'), userController.addAddress);
+router.put('/brands/:brandId/addresses/:addressId', authenticate('user'), userController.updateAddress);
+router.delete('/brands/:brandId/addresses/:addressId', authenticate('user'), userController.deleteAddress);
 
-// 用戶管理路由 (後台)
-router.get('/all', authMiddleware, permissionMiddleware(['view_reports']), userController.getAllUsers);
-router.get('/:id', authMiddleware, permissionMiddleware(['view_reports']), userController.getUserById);
-router.put('/:id/status', authMiddleware, permissionMiddleware(['edit_backend']), userController.toggleUserStatus);
+// 用戶管理路由（後台管理員功能）
+// 按品牌獲取用戶
+router.get('/brands/:brandId/users',
+  authenticate('admin'),
+  requireRole('boss', 'brand_admin', 'store_admin'),
+  requireBrandAccess,
+  requirePermission('view_reports'),
+  userController.getAllUsers
+);
+
+// 獲取特定用戶
+router.get('/brands/:brandId/users/:id',
+  authenticate('admin'),
+  requireRole('boss', 'brand_admin', 'store_admin'),
+  requireBrandAccess,
+  requirePermission('view_reports'),
+  userController.getUserById
+);
+
+// 切換用戶狀態
+router.patch('/brands/:brandId/users/:id/status',
+  authenticate('admin'),
+  requireRole('boss', 'brand_admin'),
+  requireBrandAccess,
+  requirePermission('edit_backend'),
+  userController.toggleUserStatus
+);
 
 export default router;
