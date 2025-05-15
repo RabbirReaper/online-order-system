@@ -243,7 +243,13 @@ export const getTemplateOptions = async (templateId, brandId) => {
   const categories = await OptionCategory.find({
     _id: { $in: categoryIds },
     brand: brandId
-  }).populate('options.refOption');
+  }).populate({
+    path: 'options.refOption',
+    populate: {
+      path: 'refDishTemplate',
+      select: 'name' // 只選擇需要的欄位
+    }
+  });
 
   // 組織返回數據結構
   const result = [];

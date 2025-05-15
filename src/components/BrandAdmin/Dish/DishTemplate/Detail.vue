@@ -127,7 +127,7 @@
                             <span v-else>-</span>
                           </td>
                           <td>
-                            <span v-if="option.refDishTemplate">{{ option.refDishTemplate }}</span>
+                            <span v-if="option.refDishTemplate">{{ option.refDishTemplate.name }}</span>
                             <span v-else class="text-muted">-</span>
                           </td>
                         </tr>
