@@ -99,10 +99,6 @@
             <div class="card-body">
               <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
                 <span>選項類別</span>
-                <router-link :to="`/admin/${brandId}/dishes/template/edit/${dish._id}`"
-                  class="btn btn-sm btn-outline-primary">
-                  <i class="bi bi-pencil me-1"></i>編輯選項
-                </router-link>
               </h5>
 
               <div v-if="!isLoadingOptions && dishOptions.length > 0">
@@ -131,7 +127,7 @@
                             <span v-else>-</span>
                           </td>
                           <td>
-                            <span v-if="option.refDishTemplate">{{ option.refDishTemplate.name }}</span>
+                            <span v-if="option.refDishTemplate">{{ option.refDishTemplate }}</span>
                             <span v-else class="text-muted">-</span>
                           </td>
                         </tr>
@@ -263,7 +259,7 @@ const fetchDishData = async () => {
   error.value = '';
 
   try {
-    const response = await api.dish.getDishTemplateById(dishId.value, brandId.value);
+    const response = await api.dish.getDishTemplateById({ id: dishId.value, brandId: brandId.value });
 
     if (response && response.template) {
       dish.value = response.template;
@@ -288,7 +284,7 @@ const fetchDishOptions = async () => {
   isLoadingOptions.value = true;
 
   try {
-    const response = await api.dish.getTemplateOptions(dishId.value, brandId.value);
+    const response = await api.dish.getTemplateOptions({ id: dishId.value, brandId: brandId.value });
 
     if (response && response.options) {
       dishOptions.value = response.options;

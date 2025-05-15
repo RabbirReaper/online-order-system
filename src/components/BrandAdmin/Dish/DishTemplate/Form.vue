@@ -578,7 +578,7 @@ const submitForm = async () => {
 
     if (isEditMode.value) {
       // 更新餐點
-      response = await api.dish.updateDishTemplate(route.params.id, submitData);
+      response = await api.dish.updateDishTemplate({ id: route.params.id, data: submitData, brandId: brandId.value });
       successMessage.value = '餐點更新成功！';
     } else {
       // 創建新餐點

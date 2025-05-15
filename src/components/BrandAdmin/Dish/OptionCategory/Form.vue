@@ -342,7 +342,7 @@ const fetchCategoryData = async () => {
   if (!isEditMode.value || !route.params.id) return;
 
   try {
-    const response = await api.dish.getOptionCategoryById(route.params.id, brandId.value, true);
+    const response = await api.dish.getOptionCategoryById({ id: route.params.id, brandId: brandId.value, includeOptions: true });
     if (response && response.category) {
       const category = response.category;
       formData.name = category.name;

@@ -74,7 +74,7 @@ export const deleteDishTemplate = asyncHandler(async (req, res) => {
 // 獲取餐點模板的選項類別
 export const getDishTemplateOptions = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const brandId = req.brandId; // 從 requireBrandAccess middleware 取得
+  const brandId = req.brandId || req.params.brandId; // 從 requireBrandAccess middleware 取得
 
   const options = await dishTemplateService.getTemplateOptions(id, brandId);
 

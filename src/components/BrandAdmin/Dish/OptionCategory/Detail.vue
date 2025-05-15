@@ -243,7 +243,7 @@ const fetchCategoryData = async () => {
   error.value = '';
 
   try {
-    const response = await api.dish.getOptionCategoryById(categoryId.value, brandId.value, true);
+    const response = await api.dish.getOptionCategoryById({ id: categoryId.value, brandId: brandId.value, includeOptions: true });
 
     if (response && response.category) {
       category.value = response.category;
