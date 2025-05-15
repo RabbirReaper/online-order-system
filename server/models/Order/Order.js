@@ -69,6 +69,10 @@ const orderSchema = new mongoose.Schema({
       required: true
     }, // 折抵金額
   }], // 折扣資訊
+  manualAdjustment: {
+    type: Number,
+    default: 0
+  }, // 手動調整金額
   totalDiscount: {
     type: Number,
     default: 0
