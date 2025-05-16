@@ -11,6 +11,7 @@ export default function (apiClient) {
      * @param {string} params.brandId - 品牌ID
      * @param {string} params.storeId - 店鋪ID
      * @param {Object} params.orderData - 訂單資料
+     * @param {number} [params.orderData.manualAdjustment] - 手動調整金額（可正可負）
      * @returns {Promise} - API 回應
      */
     createOrder({ brandId, storeId, orderData }) {
@@ -132,6 +133,19 @@ export default function (apiClient) {
      */
     updateOrderStatus({ brandId, storeId, orderId, status }) {
       return apiClient.patch(`/order/brands/${brandId}/stores/${storeId}/orders/${orderId}/status`, { status });
+    },
+
+    /**
+     * 更新訂單手動調整金額 (管理員功能)
+     * @param {Object} params - 更新參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.orderId - 訂單ID
+     * @param {number} params.manualAdjustment - 手動調整金額
+     * @returns {Promise} - API 回應
+     */
+    updateOrderManualAdjustment({ brandId, storeId, orderId, manualAdjustment }) {
+      return apiClient.patch(`/order/brands/${brandId}/stores/${storeId}/orders/${orderId}/adjustment`, { manualAdjustment });
     },
 
     /**

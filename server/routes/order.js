@@ -20,6 +20,9 @@ router.get('/brands/:brandId/stores/:storeId/orders/:orderId', authenticate('adm
 // 更新訂單狀態
 router.patch('/brands/:brandId/stores/:storeId/orders/:orderId/status', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('order_system'), orderController.updateOrderStatus);
 
+// 更新訂單手動調整金額
+router.patch('/brands/:brandId/stores/:storeId/orders/:orderId/adjustment', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('order_system'), orderController.updateOrderManualAdjustment);
+
 // 取消訂單（後台）
 router.post('/brands/:brandId/stores/:storeId/orders/:orderId/cancel', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('order_system'), orderController.cancelOrder);
 

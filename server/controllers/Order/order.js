@@ -4,7 +4,6 @@ import * as pointService from '../../services/promotion/index.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
 // 創建訂單
-// 創建訂單
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params;
 
@@ -92,6 +91,28 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '訂單狀態更新成功',
+    order: updatedOrder
+  });
+});
+
+// 更新訂單手動調整金額（後台）
+export const updateOrderManualAdjustment = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const { manualAdjustment } = req.body;
+  const adminId = req.auth.id; // 從中間件獲取管理員ID
+
+  if (manualAdjustment === undefined) {
+    return res.status(400).json({
+      success: false,
+      message: '缺少手動調整金額參數'
+    });
+  }
+
+  const updatedOrder = await orderService.orderManagement.updateOrderManualAdjustment(orderId, manualAdjustment, adminId);
+
+  res.json({
+    success: true,
+    message: '手動調整金額更新成功',
     order: updatedOrder
   });
 });

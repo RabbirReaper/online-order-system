@@ -10,6 +10,46 @@ import * as inventoryService from '../inventory/stockManagement.js';
 import * as pointService from '../promotion/pointService.js';
 
 /**
+ * 更新訂單手動調整金額
+ * @param {String} orderId - 訂單ID
+ * @param {Number} manualAdjustment - 手動調整金額
+ * @param {String} adminId - 管理員ID
+ * @returns {Promise<Object>} 更新後的訂單
+ */
+export const updateOrderManualAdjustment = async (orderId, manualAdjustment, adminId) => {
+  // 查找訂單
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  // 檢查訂單狀態
+  if (order.status === 'cancelled') {
+    throw new AppError('已取消的訂單無法更改', 400);
+  }
+
+  if (order.status === 'completed') {
+    throw new AppError('已完成的訂單無法更改', 400);
+  }
+
+  // 更新手動調整金額
+  order.manualAdjustment = manualAdjustment;
+
+  // 重新計算訂單總額
+  const updated = updateOrderAmounts(order);
+
+  if (!updated) {
+    throw new AppError('訂單金額計算失敗', 500);
+  }
+
+  // 保存訂單
+  await order.save();
+
+  return order;
+};
+
+/**
  * 取消訂單
  * @param {String} orderId - 訂單ID
  * @param {String} reason - 取消原因
