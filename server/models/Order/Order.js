@@ -3,14 +3,6 @@ import { DateTime } from 'luxon';
 
 // 訂單模型
 const orderSchema = new mongoose.Schema({
-  orderDateCode: {
-    type: String,
-    required: true
-  }, // 例如 '240410'
-  sequence: {
-    type: Number,
-    required: true
-  },  // 當天第幾筆訂單
   store: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Store',
@@ -21,6 +13,23 @@ const orderSchema = new mongoose.Schema({
     ref: 'Brand',
     required: true
   }, // 關聯品牌
+  orderDateCode: {
+    type: String,
+    required: true
+  }, // 例如 '240410'
+  sequence: {
+    type: Number,
+    required: true
+  },  // 當天第幾筆訂單
+  deliveryPlatform: {
+    type: String,
+    enum: ['', 'foodpanda', 'ubereats', 'other'],
+    default: ''
+  },
+  platformOrderId: {
+    type: String,
+    default: ''
+  },// 外送平台訂單ID
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
