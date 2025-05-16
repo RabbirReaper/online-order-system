@@ -388,7 +388,77 @@ const router = createRouter({
         }
       ]
     },
+    // 菜單頁面
+    {
+      path: '/stores/:brandId/:storeId',
+      name: 'menu',
+      component: () => import('@/views/customer/MenuView.vue')
+    },
 
+    // 餐點詳情頁面
+    {
+      path: '/stores/:brandId/:storeId/dish/:dishId',
+      name: 'dish-detail',
+      component: () => import('@/views/customer/DishDetailView.vue')
+    },
+
+    // 購物車頁面
+    {
+      path: '/cart',
+      name: 'cart',
+      component: () => import('@/views/customer/CartView.vue')
+    },
+
+    // 訂單確認頁面
+    {
+      path: '/stores/:brandId/:storeId/confirm',
+      name: 'order-confirm',
+      component: () => import('@/views/customer/OrderConfirmView.vue')
+    },
+
+    // // 會員登入頁面 (未來實現)
+    // {
+    //   path: '/login',
+    //   name: 'login',
+    //   component: () => import('@/views/customer/LoginView.vue')
+    // },
+
+    // // 會員註冊頁面 (未來實現)
+    // {
+    //   path: '/register',
+    //   name: 'register',
+    //   component: () => import('@/views/customer/RegisterView.vue')
+    // },
+
+    // // 會員中心頁面 (未來實現)
+    // {
+    //   path: '/account',
+    //   name: 'account',
+    //   component: () => import('@/views/customer/AccountView.vue'),
+    //   meta: { requiresAuth: true },
+    //   children: [
+    //     {
+    //       path: 'orders',
+    //       name: 'account-orders',
+    //       component: () => import('@/views/customer/OrderHistoryView.vue')
+    //     },
+    //     {
+    //       path: 'points',
+    //       name: 'account-points',
+    //       component: () => import('@/views/customer/PointsView.vue')
+    //     },
+    //     {
+    //       path: 'coupons',
+    //       name: 'account-coupons',
+    //       component: () => import('@/views/customer/CouponsView.vue')
+    //     },
+    //     {
+    //       path: 'settings',
+    //       name: 'account-settings',
+    //       component: () => import('@/views/customer/AccountSettingsView.vue')
+    //     }
+    //   ]
+    // },
     // 404 頁面
     {
       path: '/:pathMatch(.*)*',
