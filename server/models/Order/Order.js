@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { DateTime } from 'luxon';
 
 // 訂單模型
 const orderSchema = new mongoose.Schema({
