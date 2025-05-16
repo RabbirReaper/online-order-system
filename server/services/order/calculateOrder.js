@@ -109,10 +109,11 @@ export const calculateTotalDiscount = (discounts = []) => {
  * @param {Number} serviceCharge - 服務費
  * @param {Number} deliveryFee - 外送費用
  * @param {Number} totalDiscount - 折扣總額
+ * @param {Number} manualAdjustment - 手動調整金額（可正可負）
  * @returns {Number} 計算後的訂單總金額
  */
-export const calculateOrderTotal = (subtotal, serviceCharge = 0, deliveryFee = 0, totalDiscount = 0) => {
-  const total = subtotal + serviceCharge + deliveryFee - totalDiscount;
+export const calculateOrderTotal = (subtotal, serviceCharge = 0, deliveryFee = 0, totalDiscount = 0, manualAdjustment = 0) => {
+  const total = subtotal - serviceCharge + deliveryFee - totalDiscount + manualAdjustment;
   return Math.max(0, total); // 確保總金額至少為 0
 };
 
@@ -129,6 +130,7 @@ export const calculateAllOrderAmounts = (order) => {
       serviceCharge: 0,
       deliveryFee: 0,
       totalDiscount: 0,
+      manualAdjustment: 0,
       total: 0
     };
   }
@@ -137,7 +139,7 @@ export const calculateAllOrderAmounts = (order) => {
   const subtotal = calculateOrderSubtotal(order.items);
 
   // 計算服務費 (預設10%)
-  // const serviceCharge = calculateServiceCharge(subtotal, 0.1);
+  const serviceCharge = calculateServiceCharge(subtotal, 0.1);
 
   // 計算外送費
   const deliveryFee = order.orderType === 'delivery' && order.deliveryInfo ?
@@ -146,14 +148,18 @@ export const calculateAllOrderAmounts = (order) => {
   // 計算折扣總額
   const totalDiscount = calculateTotalDiscount(order.discounts);
 
+  // 獲取手動調整金額
+  const manualAdjustment = order.manualAdjustment || 0;
+
   // 計算最終總額
-  const total = calculateOrderTotal(subtotal, serviceCharge, deliveryFee, totalDiscount);
+  const total = calculateOrderTotal(subtotal, serviceCharge, deliveryFee, totalDiscount, manualAdjustment);
 
   return {
     subtotal,
     serviceCharge,
     deliveryFee,
     totalDiscount,
+    manualAdjustment,
     total
   };
 };
@@ -169,7 +175,7 @@ export const updateOrderAmounts = (order) => {
   }
 
   // 計算所有金額
-  const { subtotal, serviceCharge, deliveryFee, totalDiscount, total } = calculateAllOrderAmounts(order);
+  const { subtotal, serviceCharge, deliveryFee, totalDiscount, manualAdjustment, total } = calculateAllOrderAmounts(order);
 
   // 更新訂單對象
   order.subtotal = subtotal;
@@ -181,6 +187,7 @@ export const updateOrderAmounts = (order) => {
   }
 
   order.totalDiscount = totalDiscount;
+  order.manualAdjustment = manualAdjustment || 0;
   order.total = total;
 
   return true;

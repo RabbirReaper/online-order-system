@@ -4,6 +4,7 @@ import * as pointService from '../../services/promotion/index.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
 // 創建訂單
+// 創建訂單
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params;
 
@@ -18,11 +19,15 @@ export const createOrder = asyncHandler(async (req, res) => {
   orderData.orderDateCode = orderNumber.orderDateCode;
   orderData.sequence = orderNumber.sequence;
 
+  // 確保 manualAdjustment 字段存在
+  orderData.manualAdjustment = orderData.manualAdjustment || 0;
+
   // 計算訂單金額
   const amounts = orderService.calculateOrder.calculateAllOrderAmounts(orderData);
   orderData.subtotal = amounts.subtotal;
   orderData.serviceCharge = amounts.serviceCharge;
   orderData.totalDiscount = amounts.totalDiscount;
+  orderData.manualAdjustment = amounts.manualAdjustment;
   orderData.total = amounts.total;
 
   // 創建訂單
