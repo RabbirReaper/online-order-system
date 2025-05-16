@@ -1,6 +1,4 @@
 import * as orderService from '../../services/order/index.js';
-import * as inventoryService from '../../services/inventory/index.js';
-import * as pointService from '../../services/promotion/index.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
 // 創建訂單
@@ -18,19 +16,8 @@ export const createOrder = asyncHandler(async (req, res) => {
   orderData.orderDateCode = orderNumber.orderDateCode;
   orderData.sequence = orderNumber.sequence;
 
-  // 確保 manualAdjustment 字段存在
-  orderData.manualAdjustment = orderData.manualAdjustment || 0;
-
-  // 計算訂單金額
-  const amounts = orderService.calculateOrder.calculateAllOrderAmounts(orderData);
-  orderData.subtotal = amounts.subtotal;
-  orderData.serviceCharge = amounts.serviceCharge;
-  orderData.totalDiscount = amounts.totalDiscount;
-  orderData.manualAdjustment = amounts.manualAdjustment;
-  orderData.total = amounts.total;
-
   // 創建訂單
-  const order = await orderService.createOrder(orderData);
+  const order = await orderService.orderCore.createOrder(orderData);
 
   res.status(201).json({
     success: true,
@@ -52,7 +39,7 @@ export const getStoreOrders = asyncHandler(async (req, res) => {
     limit: parseInt(req.query.limit, 10) || 20
   };
 
-  const result = await orderService.getStoreOrders(storeId, options);
+  const result = await orderService.orderCore.getStoreOrders(storeId, options);
 
   res.json({
     success: true,
@@ -65,7 +52,7 @@ export const getStoreOrders = asyncHandler(async (req, res) => {
 export const getOrderById = asyncHandler(async (req, res) => {
   const { storeId, orderId } = req.params;
 
-  const order = await orderService.getOrderById(storeId, orderId);
+  const order = await orderService.orderCore.getOrderById(orderId, { storeId });
 
   res.json({
     success: true,
@@ -77,7 +64,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const { status } = req.body;
-  const adminId = req.auth.id; // 從中間件獲取管理員ID
+  const adminId = req.auth.id;
 
   if (!status) {
     return res.status(400).json({
@@ -99,7 +86,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 export const updateOrderManualAdjustment = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const { manualAdjustment } = req.body;
-  const adminId = req.auth.id; // 從中間件獲取管理員ID
+  const adminId = req.auth.id;
 
   if (manualAdjustment === undefined) {
     return res.status(400).json({
@@ -121,7 +108,7 @@ export const updateOrderManualAdjustment = asyncHandler(async (req, res) => {
 export const cancelOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const { reason } = req.body;
-  const adminId = req.auth.id; // 從中間件獲取管理員ID
+  const adminId = req.auth.id;
 
   if (!reason) {
     return res.status(400).json({
@@ -143,10 +130,10 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 export const userCancelOrder = asyncHandler(async (req, res) => {
   const { brandId, orderId } = req.params;
   const { reason } = req.body;
-  const userId = req.auth.id; // 從中間件獲取用戶ID
+  const userId = req.auth.id;
 
   // 確認訂單屬於該用戶
-  const isOwner = await orderService.verifyOrderOwnership(orderId, userId);
+  const isOwner = await orderService.orderCore.verifyOrderOwnership(orderId, userId);
 
   if (!isOwner) {
     return res.status(403).json({
@@ -167,7 +154,7 @@ export const userCancelOrder = asyncHandler(async (req, res) => {
 // 獲取用戶訂單列表
 export const getUserOrders = asyncHandler(async (req, res) => {
   const { brandId } = req.params;
-  const userId = req.auth.id; // 從中間件獲取用戶ID
+  const userId = req.auth.id;
 
   const options = {
     brandId,
@@ -189,10 +176,10 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 // 獲取用戶訂單詳情
 export const getUserOrderById = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
-  const userId = req.auth.id; // 從中間件獲取用戶ID
+  const userId = req.auth.id;
 
   // 確認訂單屬於該用戶
-  const isOwner = await orderService.verifyOrderOwnership(orderId, userId);
+  const isOwner = await orderService.orderCore.verifyOrderOwnership(orderId, userId);
 
   if (!isOwner) {
     return res.status(403).json({
@@ -201,7 +188,7 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
     });
   }
 
-  const order = await orderService.getUserOrderById(orderId);
+  const order = await orderService.orderCore.getUserOrderById(orderId);
 
   res.json({
     success: true,
@@ -221,7 +208,7 @@ export const getGuestOrderById = asyncHandler(async (req, res) => {
     });
   }
 
-  const order = await orderService.getGuestOrderById(orderId, phone, orderNumber);
+  const order = await orderService.orderCore.getGuestOrderById(orderId, phone, orderNumber);
 
   res.json({
     success: true,
@@ -234,7 +221,7 @@ export const processPayment = asyncHandler(async (req, res) => {
   const { brandId, orderId } = req.params;
   const paymentData = req.body;
 
-  const result = await orderService.processPayment(orderId, paymentData);
+  const result = await orderService.orderPayment.processPayment(orderId, paymentData);
 
   res.json({
     success: true,
@@ -248,7 +235,7 @@ export const paymentCallback = asyncHandler(async (req, res) => {
   const { brandId, orderId } = req.params;
   const callbackData = req.body;
 
-  const result = await orderService.handlePaymentCallback(orderId, callbackData);
+  const result = await orderService.orderPayment.handlePaymentCallback(orderId, callbackData);
 
   res.json({
     success: true,

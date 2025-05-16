@@ -35,7 +35,7 @@ router.get('/brands/:brandId/stores/:storeId/stats/monthly', authenticate('admin
 
 // 用戶訂單路由（前台）
 // 創建訂單（公開，可匿名訪問）
-router.post('/brands/:brandId/create', orderController.createOrder);
+router.post('/brands/:brandId/stores/:storeId/create', orderController.createOrder);
 
 // 個人訂單列表（需要用戶認證）
 router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.getUserOrders);
@@ -51,9 +51,9 @@ router.post('/brands/:brandId/guest/:orderId', orderController.getGuestOrderById
 
 // 支付相關路由
 // 處理支付
-router.post('/brands/:brandId/:orderId/payment', orderController.processPayment);
+router.post('/brands/:brandId/orders/:orderId/payment', orderController.processPayment);
 
 // 支付回調
-router.post('/brands/:brandId/:orderId/payment/callback', orderController.paymentCallback);
+router.post('/brands/:brandId/orders/:orderId/payment/callback', orderController.paymentCallback);
 
 export default router;

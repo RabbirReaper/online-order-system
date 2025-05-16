@@ -3,52 +3,49 @@
  * 匯總並導出所有訂單相關服務
  */
 
-// 導入訂單計算服務
-import * as calculateService from './calculateOrder.js';
-import * as managementService from './orderManagement.js';
-import * as statsService from './orderStats.js';
-import * as orderService from './orderService.js'; // 新增的服務文件
+// 導入各模組
+import * as orderCore from './orderCore.js';
+import * as orderManagement from './orderManagement.js';
+import * as orderPayment from './orderPayment.js';
+import * as orderStats from './orderStats.js';
 
-// 導出所有訂單服務
-export const calculateOrder = calculateService;
-export const orderManagement = managementService;
-export const orderStats = statsService;
-export const order = orderService; // 新增導出
+// 導出所有服務
+export {
+  orderCore,
+  orderManagement,
+  orderPayment,
+  orderStats
+};
 
-// 簡單導出，方便直接調用
+// 簡單導出核心功能，方便直接調用
 export const {
-  calculateItemSubtotal,
-  calculateOrderSubtotal,
-  calculateServiceCharge,
-  calculateDiscountAmount,
-  calculateTotalDiscount,
-  calculateOrderTotal,
-  calculateAllOrderAmounts,
+  createOrder,
+  getOrderById,
+  getStoreOrders,
+  verifyOrderOwnership,
+  getUserOrderById,
+  getGuestOrderById,
+  calculateOrderAmounts,
   updateOrderAmounts
-} = calculateService;
+} = orderCore;
 
 export const {
-  cancelOrder,
+  generateOrderNumber,
   updateOrderStatus,
+  updateOrderManualAdjustment,
+  cancelOrder,
   confirmOrder,
-  completeOrder,
-  updateOrderManualAdjustment
-} = managementService;
+  completeOrder
+} = orderManagement;
+
+export const {
+  processPayment,
+  handlePaymentCallback
+} = orderPayment;
 
 export const {
   getDailyOrderStats,
   getMonthlyOrderStats,
-  getUserOrderHistory
-} = statsService;
-
-// 新增的服務方法導出
-export const {
-  createOrder,
-  getStoreOrders,
-  getOrderById,
-  verifyOrderOwnership,
-  getUserOrderById,
-  getGuestOrderById,
-  processPayment,
-  handlePaymentCallback
-} = orderService;
+  getUserOrderHistory,
+  getPopularDishes
+} = orderStats;

@@ -1,13 +1,12 @@
 /**
- * 訂單基本操作服務
- * 處理訂單創建、查詢等基本操作
+ * 訂單核心服務
+ * 處理訂單基本操作和計算
  */
 
 import Order from '../../models/Order/Order.js';
 import DishInstance from '../../models/Dish/DishInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import * as inventoryService from '../inventory/stockManagement.js';
-import * as calculateService from './calculateOrder.js';
 
 /**
  * 創建訂單
@@ -16,10 +15,8 @@ import * as calculateService from './calculateOrder.js';
  */
 export const createOrder = async (orderData) => {
   try {
-    // 如果沒有 manualAdjustment，設為 0
-    if (orderData.manualAdjustment === undefined) {
-      orderData.manualAdjustment = 0;
-    }
+    // 設置預設手動調整金額
+    orderData.manualAdjustment = orderData.manualAdjustment || 0;
 
     // 創建訂單的餐點實例
     const items = [];
@@ -51,12 +48,7 @@ export const createOrder = async (orderData) => {
     const order = new Order(orderData);
 
     // 確保訂單金額計算正確
-    calculateService.updateOrderAmounts(order);
-
-    // 如果是登入用戶，處理點數
-    if (order.user) {
-      // 這裡可以添加點數處理邏輯
-    }
+    updateOrderAmounts(order);
 
     // 扣除庫存
     await inventoryService.reduceInventoryForOrder(order);
@@ -65,14 +57,41 @@ export const createOrder = async (orderData) => {
     return order;
   } catch (error) {
     console.error('創建訂單錯誤:', error);
-
-    // 確保在失敗時回滾資源
-    if (error.resourcesCreated && error.resourcesCreated.length > 0) {
-      // 這裡可以添加資源回滾的邏輯
-    }
-
     throw error;
   }
+};
+
+/**
+ * 獲取訂單詳情
+ * @param {String} orderId - 訂單ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 訂單詳情
+ */
+export const getOrderById = async (orderId, options = {}) => {
+  const { storeId, populateItems = true, populateUser = false } = options;
+
+  const query = { _id: orderId };
+  if (storeId) query.store = storeId;
+
+  const populateOptions = [];
+
+  if (populateItems) {
+    populateOptions.push({ path: 'items.dishInstance', select: 'name price options' });
+  }
+
+  if (populateUser) {
+    populateOptions.push({ path: 'user', select: 'name email phone' });
+  }
+
+  const order = await Order.findOne(query)
+    .populate(populateOptions)
+    .lean();
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  return order;
 };
 
 /**
@@ -141,25 +160,6 @@ export const getStoreOrders = async (storeId, options = {}) => {
 };
 
 /**
- * 獲取訂單詳情
- * @param {String} storeId - 店鋪ID
- * @param {String} orderId - 訂單ID
- * @returns {Promise<Object>} 訂單詳情
- */
-export const getOrderById = async (storeId, orderId) => {
-  const order = await Order.findOne({ _id: orderId, store: storeId })
-    .populate('items.dishInstance', 'name price options')
-    .populate('user', 'name email phone')
-    .lean();
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
-  }
-
-  return order;
-};
-
-/**
  * 驗證訂單所有權
  * @param {String} orderId - 訂單ID
  * @param {String} userId - 用戶ID
@@ -221,73 +221,89 @@ export const getGuestOrderById = async (orderId, phone, orderNumber) => {
 };
 
 /**
- * 處理支付
- * @param {String} orderId - 訂單ID
- * @param {Object} paymentData - 支付數據
- * @returns {Promise<Object>} 支付結果
+ * 計算訂單所有金額
+ * @param {Object} order - 訂單對象或訂單數據
+ * @returns {Object} 包含所有計算結果的對象
  */
-export const processPayment = async (orderId, paymentData) => {
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
+export const calculateOrderAmounts = (order) => {
+  // 防止空訂單
+  if (!order || !Array.isArray(order.items)) {
+    return {
+      subtotal: 0,
+      serviceCharge: 0,
+      deliveryFee: 0,
+      totalDiscount: 0,
+      manualAdjustment: 0,
+      total: 0
+    };
   }
 
-  // 根據支付方式處理
-  switch (paymentData.method) {
-    case 'cash':
-      // 現金支付處理
-      order.paymentMethod = 'cash';
-      break;
-    case 'credit_card':
-      // 信用卡支付處理
-      order.paymentMethod = 'credit_card';
-      break;
-    case 'line_pay':
-      // LINE Pay 支付處理
-      order.paymentMethod = 'line_pay';
-      order.onlinePaymentCode = paymentData.paymentCode || '';
-      break;
-    default:
-      order.paymentMethod = 'other';
-  }
+  // 計算訂單小計
+  const subtotal = order.items.reduce((total, item) => {
+    if (!item || typeof item.subtotal !== 'number' || typeof item.quantity !== 'number') {
+      return total;
+    }
+    return total + item.subtotal;
+  }, 0);
 
-  await order.save();
+  // 計算服務費 (預設10%)
+  const serviceCharge = Math.round(subtotal * 0.1);
+
+  // 計算外送費
+  const deliveryFee = order.orderType === 'delivery' && order.deliveryInfo ?
+    (order.deliveryInfo.deliveryFee || 0) : 0;
+
+  // 計算折扣總額
+  const totalDiscount = Array.isArray(order.discounts) ?
+    order.discounts.reduce((total, discount) => {
+      if (!discount || typeof discount.amount !== 'number') {
+        return total;
+      }
+      return total + discount.amount;
+    }, 0) : 0;
+
+  // 獲取手動調整金額
+  const manualAdjustment = order.manualAdjustment || 0;
+
+  // 計算最終總額
+  const total = Math.max(0, subtotal + serviceCharge + deliveryFee - totalDiscount + manualAdjustment);
 
   return {
-    success: true,
-    orderId: order._id,
-    paymentMethod: order.paymentMethod
+    subtotal,
+    serviceCharge,
+    deliveryFee,
+    totalDiscount,
+    manualAdjustment,
+    total
   };
 };
 
 /**
- * 處理支付回調
- * @param {String} orderId - 訂單ID
- * @param {Object} callbackData - 回調數據
- * @returns {Promise<Object>} 處理結果
+ * 更新訂單金額
+ * @param {Object} order - Order 模型實例
+ * @returns {Boolean} 更新是否成功
  */
-export const handlePaymentCallback = async (orderId, callbackData) => {
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
+export const updateOrderAmounts = (order) => {
+  // 確保是有效的訂單對象
+  if (!order || !Array.isArray(order.items)) {
+    return false;
   }
 
-  // 處理支付結果
-  if (callbackData.status === 'success') {
-    // 支付成功
-    order.status = 'confirmed';
-  } else {
-    // 支付失敗
-    // 這裡可以添加處理邏輯
+  // 計算所有金額
+  const { subtotal, serviceCharge, deliveryFee, totalDiscount, manualAdjustment, total } = calculateOrderAmounts(order);
+
+  // 更新訂單對象
+  order.subtotal = subtotal;
+  order.serviceCharge = serviceCharge;
+
+  // 如果是外送訂單，更新運費
+  if (order.orderType === 'delivery' && order.deliveryInfo) {
+    order.deliveryInfo.deliveryFee = deliveryFee;
   }
 
-  await order.save();
+  order.totalDiscount = totalDiscount;
+  order.manualAdjustment = manualAdjustment || 0;
+  order.total = total;
 
-  return {
-    success: true,
-    orderId: order._id,
-    status: order.status
-  };
+  return true;
 };

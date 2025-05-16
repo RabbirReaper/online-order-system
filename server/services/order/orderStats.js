@@ -1,356 +1,147 @@
 /**
- * 訂單統計服務
- * 處理訂單數據統計和分析
+ * 訂單核心服務
+ * 處理訂單基本操作和計算
  */
 
 import Order from '../../models/Order/Order.js';
-import { getStartOfDay, getEndOfDay, getStartOfMonth, getEndOfMonth } from '../../utils/date.js';
+import DishInstance from '../../models/Dish/DishInstance.js';
+import { AppError } from '../../middlewares/error.js';
+import * as inventoryService from '../inventory/stockManagement.js';
 
 /**
- * 獲取每日訂單統計數據
- * @param {String} storeId - 店鋪ID
- * @param {Date} date - 日期 (默認今天)
- * @returns {Promise<Object>} 統計數據
+ * 創建訂單
+ * @param {Object} orderData - 訂單數據
+ * @returns {Promise<Object>} 創建的訂單
  */
-export const getDailyOrderStats = async (storeId, date = new Date()) => {
-  // 計算日期範圍
-  const startDate = getStartOfDay(date).toJSDate();
-  const endDate = getEndOfDay(date).toJSDate();
+export const createOrder = async (orderData) => {
+  try {
+    // 設置預設手動調整金額
+    orderData.manualAdjustment = orderData.manualAdjustment || 0;
 
-  // 查詢條件
-  const matchStage = {
-    $match: {
-      store: storeId,
-      createdAt: { $gte: startDate, $lte: endDate }
+    // 創建訂單的餐點實例
+    const items = [];
+    for (const item of orderData.items) {
+      // 建立餐點實例
+      const dishInstance = new DishInstance({
+        templateId: item.templateId,
+        name: item.name,
+        price: item.price,
+        options: item.options || [],
+        specialInstructions: item.specialInstructions || ''
+      });
+
+      // 保存餐點實例
+      await dishInstance.save();
+
+      // 將餐點實例ID添加到訂單項目
+      items.push({
+        dishInstance: dishInstance._id,
+        quantity: item.quantity,
+        subtotal: item.subtotal
+      });
     }
-  };
 
-  // 分組和統計
-  const groupStage = {
-    $group: {
-      _id: null,
-      totalOrders: { $sum: 1 },
-      completedOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$status", "completed"] }, 1, 0]
-        }
-      },
-      cancelledOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0]
-        }
-      },
-      totalRevenue: {
-        $sum: {
-          $cond: [
-            { $ne: ["$status", "cancelled"] },
-            "$total",
-            0
-          ]
-        }
-      },
-      avgOrderValue: {
-        $avg: {
-          $cond: [
-            { $ne: ["$status", "cancelled"] },
-            "$total",
-            null
-          ]
-        }
-      },
-      // 訂單類型分布
-      dineInOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$orderType", "dine_in"] }, 1, 0]
-        }
-      },
-      takeoutOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$orderType", "takeout"] }, 1, 0]
-        }
-      },
-      deliveryOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$orderType", "delivery"] }, 1, 0]
-        }
-      }
-    }
-  };
+    // 更新訂單數據
+    orderData.items = items;
 
-  // 執行聚合查詢
-  const result = await Order.aggregate([
-    matchStage,
-    groupStage
-  ]);
+    // 創建並保存訂單
+    const order = new Order(orderData);
 
-  // 如果沒有訂單，返回默認數據
-  if (result.length === 0) {
-    return {
-      date: startDate,
-      totalOrders: 0,
-      completedOrders: 0,
-      cancelledOrders: 0,
-      totalRevenue: 0,
-      avgOrderValue: 0,
-      dineInOrders: 0,
-      takeoutOrders: 0,
-      deliveryOrders: 0,
-      hourlyDistribution: [],
-      paymentMethodDistribution: {}
-    };
+    // 確保訂單金額計算正確
+    updateOrderAmounts(order);
+
+    // 扣除庫存
+    await inventoryService.reduceInventoryForOrder(order);
+
+    await order.save();
+    return order;
+  } catch (error) {
+    console.error('創建訂單錯誤:', error);
+    throw error;
   }
-
-  // 獲取每小時訂單分布
-  const hourlyDistribution = await Order.aggregate([
-    matchStage,
-    {
-      $group: {
-        _id: { $hour: "$createdAt" },
-        count: { $sum: 1 },
-        revenue: {
-          $sum: {
-            $cond: [
-              { $ne: ["$status", "cancelled"] },
-              "$total",
-              0
-            ]
-          }
-        }
-      }
-    },
-    { $sort: { _id: 1 } }
-  ]);
-
-  // 獲取支付方式分布
-  const paymentMethodDistribution = await Order.aggregate([
-    matchStage,
-    {
-      $group: {
-        _id: "$paymentMethod",
-        count: { $sum: 1 },
-        revenue: {
-          $sum: {
-            $cond: [
-              { $ne: ["$status", "cancelled"] },
-              "$total",
-              0
-            ]
-          }
-        }
-      }
-    }
-  ]);
-
-  // 整理支付方式數據
-  const paymentMethods = {};
-  paymentMethodDistribution.forEach(item => {
-    paymentMethods[item._id] = {
-      count: item.count,
-      revenue: item.revenue
-    };
-  });
-
-  // 返回統計結果
-  return {
-    date: startDate,
-    ...result[0],
-    hourlyDistribution: hourlyDistribution.map(item => ({
-      hour: item._id,
-      count: item.count,
-      revenue: item.revenue
-    })),
-    paymentMethodDistribution: paymentMethods
-  };
 };
 
 /**
- * 獲取月度訂單統計數據
- * @param {String} storeId - 店鋪ID
- * @param {Number} year - 年份
- * @param {Number} month - 月份 (1-12)
- * @returns {Promise<Object>} 統計數據
- */
-export const getMonthlyOrderStats = async (storeId, year, month) => {
-  // 創建日期對象
-  const date = new Date(year, month - 1, 1);
-
-  // 計算月份的開始和結束時間
-  const startDate = getStartOfMonth(date).toJSDate();
-  const endDate = getEndOfMonth(date).toJSDate();
-
-  // 查詢條件
-  const matchStage = {
-    $match: {
-      store: storeId,
-      createdAt: { $gte: startDate, $lte: endDate }
-    }
-  };
-
-  // 分組和統計
-  const groupStage = {
-    $group: {
-      _id: null,
-      totalOrders: { $sum: 1 },
-      completedOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$status", "completed"] }, 1, 0]
-        }
-      },
-      cancelledOrders: {
-        $sum: {
-          $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0]
-        }
-      },
-      totalRevenue: {
-        $sum: {
-          $cond: [
-            { $ne: ["$status", "cancelled"] },
-            "$total",
-            0
-          ]
-        }
-      },
-      avgOrderValue: {
-        $avg: {
-          $cond: [
-            { $ne: ["$status", "cancelled"] },
-            "$total",
-            null
-          ]
-        }
-      }
-    }
-  };
-
-  // 執行聚合查詢
-  const result = await Order.aggregate([
-    matchStage,
-    groupStage
-  ]);
-
-  // 如果沒有訂單，返回默認數據
-  if (result.length === 0) {
-    return {
-      year,
-      month,
-      totalOrders: 0,
-      completedOrders: 0,
-      cancelledOrders: 0,
-      totalRevenue: 0,
-      avgOrderValue: 0,
-      dailyDistribution: [],
-      orderTypeDistribution: {
-        dine_in: 0,
-        takeout: 0,
-        delivery: 0
-      }
-    };
-  }
-
-  // 獲取每日訂單分布
-  const dailyDistribution = await Order.aggregate([
-    matchStage,
-    {
-      $group: {
-        _id: { $dayOfMonth: "$createdAt" },
-        count: { $sum: 1 },
-        revenue: {
-          $sum: {
-            $cond: [
-              { $ne: ["$status", "cancelled"] },
-              "$total",
-              0
-            ]
-          }
-        }
-      }
-    },
-    { $sort: { _id: 1 } }
-  ]);
-
-  // 獲取訂單類型分布
-  const orderTypeDistribution = await Order.aggregate([
-    matchStage,
-    {
-      $group: {
-        _id: "$orderType",
-        count: { $sum: 1 },
-        revenue: {
-          $sum: {
-            $cond: [
-              { $ne: ["$status", "cancelled"] },
-              "$total",
-              0
-            ]
-          }
-        }
-      }
-    }
-  ]);
-
-  // 整理訂單類型數據
-  const orderTypes = {
-    dine_in: 0,
-    takeout: 0,
-    delivery: 0
-  };
-
-  orderTypeDistribution.forEach(item => {
-    if (orderTypes.hasOwnProperty(item._id)) {
-      orderTypes[item._id] = item.count;
-    }
-  });
-
-  // 返回統計結果
-  return {
-    year,
-    month,
-    ...result[0],
-    dailyDistribution: dailyDistribution.map(item => ({
-      day: item._id,
-      count: item.count,
-      revenue: item.revenue
-    })),
-    orderTypeDistribution: orderTypes
-  };
-};
-
-/**
- * 獲取用戶訂單歷史
- * @param {String} userId - 用戶ID
+ * 獲取訂單詳情
+ * @param {String} orderId - 訂單ID
  * @param {Object} options - 查詢選項
- * @param {Number} options.page - 頁碼 (默認 1)
- * @param {Number} options.limit - 每頁數量 (默認 10)
- * @param {String} options.sortBy - 排序欄位 (默認 'createdAt')
- * @param {String} options.sortOrder - 排序方向 (默認 'desc')
- * @returns {Promise<Object>} 用戶訂單歷史
+ * @returns {Promise<Object>} 訂單詳情
  */
-export const getUserOrderHistory = async (userId, options = {}) => {
-  const page = options.page || 1;
-  const limit = options.limit || 10;
+export const getOrderById = async (orderId, options = {}) => {
+  const { storeId, populateItems = true, populateUser = false } = options;
+
+  const query = { _id: orderId };
+  if (storeId) query.store = storeId;
+
+  const populateOptions = [];
+
+  if (populateItems) {
+    populateOptions.push({ path: 'items.dishInstance', select: 'name price options' });
+  }
+
+  if (populateUser) {
+    populateOptions.push({ path: 'user', select: 'name email phone' });
+  }
+
+  const order = await Order.findOne(query)
+    .populate(populateOptions)
+    .lean();
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  return order;
+};
+
+/**
+ * 獲取店鋪訂單列表
+ * @param {String} storeId - 店鋪ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 訂單列表和分頁信息
+ */
+export const getStoreOrders = async (storeId, options = {}) => {
+  const { status, orderType, fromDate, toDate, page = 1, limit = 20 } = options;
+
+  // 構建查詢條件
+  const query = { store: storeId };
+
+  if (status) {
+    query.status = status;
+  }
+
+  if (orderType) {
+    query.orderType = orderType;
+  }
+
+  if (fromDate || toDate) {
+    query.createdAt = {};
+
+    if (fromDate) {
+      query.createdAt.$gte = fromDate;
+    }
+
+    if (toDate) {
+      query.createdAt.$lte = toDate;
+    }
+  }
+
+  // 計算分頁
   const skip = (page - 1) * limit;
-  const sortBy = options.sortBy || 'createdAt';
-  const sortOrder = options.sortOrder || 'desc';
 
-  // 構建排序對象
-  const sort = {};
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
-
-  // 查詢條件
-  const query = { user: userId };
-
-  // 查詢總數
+  // 獲取總數
   const total = await Order.countDocuments(query);
 
   // 查詢訂單
   const orders = await Order.find(query)
-    .sort(sort)
+    .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate('items.dishInstance', 'name')
-    .select('-__v');
+    .populate('items.dishInstance', 'name price options')
+    .populate('user', 'name email phone')
+    .lean();
 
-  // 處理分頁信息
+  // 構建分頁信息
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
@@ -369,106 +160,150 @@ export const getUserOrderHistory = async (userId, options = {}) => {
 };
 
 /**
- * 獲取熱門餐點統計
- * @param {String} storeId - 店鋪ID
- * @param {Object} options - 查詢選項
- * @param {Date} options.startDate - 開始日期
- * @param {Date} options.endDate - 結束日期
- * @param {Number} options.limit - 最大餐點數量 (默認 10)
- * @returns {Promise<Array>} 熱門餐點統計
+ * 驗證訂單所有權
+ * @param {String} orderId - 訂單ID
+ * @param {String} userId - 用戶ID
+ * @returns {Promise<Boolean>} 是否是訂單擁有者
  */
-export const getPopularDishes = async (storeId, options = {}) => {
-  const limit = options.limit || 10;
-  let startDate = options.startDate;
-  let endDate = options.endDate;
+export const verifyOrderOwnership = async (orderId, userId) => {
+  const order = await Order.findById(orderId);
 
-  // 如果沒有提供日期範圍，默認查詢過去 30 天
-  if (!startDate) {
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
   }
 
-  if (!endDate) {
-    endDate = new Date();
+  return order.user && order.user.toString() === userId;
+};
+
+/**
+ * 獲取用戶訂單詳情
+ * @param {String} orderId - 訂單ID
+ * @returns {Promise<Object>} 訂單詳情
+ */
+export const getUserOrderById = async (orderId) => {
+  const order = await Order.findById(orderId)
+    .populate('items.dishInstance', 'name price options')
+    .populate('store', 'name')
+    .lean();
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
   }
 
-  // 查詢條件
-  const matchStage = {
-    $match: {
-      store: storeId,
-      createdAt: { $gte: startDate, $lte: endDate },
-      status: { $ne: 'cancelled' }
+  return order;
+};
+
+/**
+ * 獲取訪客訂單詳情
+ * @param {String} orderId - 訂單ID
+ * @param {String} phone - 電話號碼
+ * @param {String} orderNumber - 訂單編號
+ * @returns {Promise<Object>} 訂單詳情
+ */
+export const getGuestOrderById = async (orderId, phone, orderNumber) => {
+  const order = await Order.findById(orderId)
+    .populate('items.dishInstance', 'name price options')
+    .populate('store', 'name')
+    .lean();
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  // 驗證訪客信息
+  if (!order.customerInfo ||
+    order.customerInfo.phone !== phone ||
+    `${order.orderDateCode}${order.sequence}` !== orderNumber) {
+    throw new AppError('驗證資訊不正確', 403);
+  }
+
+  return order;
+};
+
+/**
+ * 計算訂單所有金額
+ * @param {Object} order - 訂單對象或訂單數據
+ * @returns {Object} 包含所有計算結果的對象
+ */
+export const calculateOrderAmounts = (order) => {
+  // 防止空訂單
+  if (!order || !Array.isArray(order.items)) {
+    return {
+      subtotal: 0,
+      serviceCharge: 0,
+      deliveryFee: 0,
+      totalDiscount: 0,
+      manualAdjustment: 0,
+      total: 0
+    };
+  }
+
+  // 計算訂單小計
+  const subtotal = order.items.reduce((total, item) => {
+    if (!item || typeof item.subtotal !== 'number' || typeof item.quantity !== 'number') {
+      return total;
     }
+    return total + item.subtotal;
+  }, 0);
+
+  // 計算服務費 (預設10%)
+  const serviceCharge = Math.round(subtotal * 0.1);
+
+  // 計算外送費
+  const deliveryFee = order.orderType === 'delivery' && order.deliveryInfo ?
+    (order.deliveryInfo.deliveryFee || 0) : 0;
+
+  // 計算折扣總額
+  const totalDiscount = Array.isArray(order.discounts) ?
+    order.discounts.reduce((total, discount) => {
+      if (!discount || typeof discount.amount !== 'number') {
+        return total;
+      }
+      return total + discount.amount;
+    }, 0) : 0;
+
+  // 獲取手動調整金額
+  const manualAdjustment = order.manualAdjustment || 0;
+
+  // 計算最終總額
+  const total = Math.max(0, subtotal + serviceCharge + deliveryFee - totalDiscount + manualAdjustment);
+
+  return {
+    subtotal,
+    serviceCharge,
+    deliveryFee,
+    totalDiscount,
+    manualAdjustment,
+    total
   };
+};
 
-  // 解構訂單項目
-  const unwindStage = {
-    $unwind: '$items'
-  };
+/**
+ * 更新訂單金額
+ * @param {Object} order - Order 模型實例
+ * @returns {Boolean} 更新是否成功
+ */
+export const updateOrderAmounts = (order) => {
+  // 確保是有效的訂單對象
+  if (!order || !Array.isArray(order.items)) {
+    return false;
+  }
 
-  // 查詢和關聯餐點
-  const lookupStage = {
-    $lookup: {
-      from: 'dishinstances',
-      localField: 'items.dishInstance',
-      foreignField: '_id',
-      as: 'dishDetail'
-    }
-  };
+  // 計算所有金額
+  const { subtotal, serviceCharge, deliveryFee, totalDiscount, manualAdjustment, total } = calculateOrderAmounts(order);
 
-  // 解構餐點詳情
-  const unwindDishStage = {
-    $unwind: '$dishDetail'
-  };
+  // 更新訂單對象
+  order.subtotal = subtotal;
+  order.serviceCharge = serviceCharge;
 
-  // 關聯餐點模板
-  const lookupTemplateStage = {
-    $lookup: {
-      from: 'dishtemplates',
-      localField: 'dishDetail.templateId',
-      foreignField: '_id',
-      as: 'template'
-    }
-  };
+  // 如果是外送訂單，更新運費
+  if (order.orderType === 'delivery' && order.deliveryInfo) {
+    order.deliveryInfo.deliveryFee = deliveryFee;
+  }
 
-  // 解構模板
-  const unwindTemplateStage = {
-    $unwind: '$template'
-  };
+  order.totalDiscount = totalDiscount;
+  order.manualAdjustment = manualAdjustment || 0;
+  order.total = total;
 
-  // 分組和統計
-  const groupStage = {
-    $group: {
-      _id: '$template._id',
-      dishName: { $first: '$template.name' },
-      totalOrdered: { $sum: '$items.quantity' },
-      totalRevenue: { $sum: { $multiply: ['$items.quantity', '$items.subtotal'] } },
-      avgPrice: { $avg: '$items.subtotal' }
-    }
-  };
-
-  // 排序
-  const sortStage = {
-    $sort: { totalOrdered: -1 }
-  };
-
-  // 限制數量
-  const limitStage = {
-    $limit: limit
-  };
-
-  // 執行聚合查詢
-  const popularDishes = await Order.aggregate([
-    matchStage,
-    unwindStage,
-    lookupStage,
-    unwindDishStage,
-    lookupTemplateStage,
-    unwindTemplateStage,
-    groupStage,
-    sortStage,
-    limitStage
-  ]);
-
-  return popularDishes;
+  return true;
 };
