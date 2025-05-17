@@ -57,7 +57,10 @@ const orderSchema = new mongoose.Schema({
     subtotal: {
       type: Number,
       required: true
-    } // 小計金額
+    }, // 小計金額
+    note: {
+      type: String
+    }
   }], // 訂單餐點
   subtotal: {
     type: Number,
