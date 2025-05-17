@@ -6,7 +6,7 @@
         <nav class="navbar navbar-expand-lg navbar-light">
           <div class="container-fluid">
             <a class="navbar-brand" href="#" style="font-weight: bold;">
-              <i class="bi bi-fire brand-icon me-2"></i>奔野牛排 {{ storeName }}
+              <i class="bi bi-fire brand-icon me-2"></i>{{ storeName }}
             </a>
             <div class="nav-icons">
               <template v-if="isLoggedIn">
@@ -47,8 +47,8 @@
             :alt="storeImage && storeImage.alt ? storeImage.alt : '店家圖片'" class="banner-img">
           <div class="banner-overlay"></div>
           <div class="banner-content">
-            <h1 class="banner-title">奔野牛排 {{ storeName }}</h1>
-            <p class="banner-subtitle">優質美食，精心烹調</p>
+            <h1 class="banner-title">{{ storeName }}</h1>
+            <br>
           </div>
         </div>
       </div>
