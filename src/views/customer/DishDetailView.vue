@@ -21,8 +21,8 @@
 
         <!-- Image -->
         <div class="image-container" style="height: 240px; overflow: hidden; position: relative;">
-          <img :src="dish.image && dish.image.url ? dish.image.url : '/placeholder.jpg'" :alt="dish.name"
-            class="w-100 h-100" style="object-fit: cover;">
+          <img :src="dish.image && dish.image.url ? dish.image.url : ''" :alt="dish.name" class="w-100 h-100"
+            style="object-fit: cover;">
         </div>
 
         <!-- Item name and price -->

@@ -63,18 +63,11 @@ const cart = computed(() => {
 const loadStoreData = async () => {
   try {
     const storeData = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+    // console.log('Loaded store data:', storeData);
 
     if (storeData && storeData.success) { // 添加對 success 的檢查
       store.value = storeData.store;
-      // 確保圖片URL是正確的
-      if (!store.value.image || !store.value.image.url) {
-        console.warn('Store image URL is missing or invalid:', store.value.image);
-        // 設置默認圖片
-        store.value.image = {
-          url: '/placeholder.jpg',
-          alt: '店家圖片'
-        };
-      }
+
     } else {
       console.error('無效的店鋪數據或 API 呼叫失敗:', storeData);
     }

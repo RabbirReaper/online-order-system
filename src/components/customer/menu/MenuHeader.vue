@@ -43,7 +43,7 @@
     <div class="banner-container">
       <div class="content-wrapper p-0">
         <div class="store-banner">
-          <img :src="storeImage && storeImage.url ? storeImage.url : '/placeholder.jpg'"
+          <img :src="storeImage && storeImage.url ? storeImage.url : ''"
             :alt="storeImage && storeImage.alt ? storeImage.alt : '店家圖片'" class="banner-img">
           <div class="banner-overlay"></div>
           <div class="banner-content">

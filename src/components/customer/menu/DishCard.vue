@@ -1,7 +1,7 @@
 <template>
   <div class="menu-item-card" @click="$emit('select-item', item)">
     <div class="item-img-container">
-      <img :src="item.image && item.image.url ? item.image.url : '/placeholder.jpg'" :alt="item.name" class="item-img">
+      <img :src="item.image && item.image.url ? item.image.url : ''" :alt="item.name" class="item-img">
       <div class="item-img-overlay"></div>
     </div>
     <div class="item-content">
