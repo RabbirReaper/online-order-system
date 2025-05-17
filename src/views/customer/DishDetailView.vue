@@ -1,3 +1,6 @@
+// src/views/customer/DishDetailView.vue
+// 修正版本
+
 <template>
   <div class="dish-detail-view">
     <div class="container-wrapper">
@@ -92,24 +95,54 @@ const loadDishData = async () => {
 
         // 依照原始順序排序選項類別
         optionCategories.value = categories
-          .filter(category => category && category.success) // 確保 API 回應成功
-          .map(category => category.data || category) // 根據實際 API 回應結構調整
-          .filter(Boolean)
-          .map(category => {
+          .filter(response => response && response.success) // 確保 API 回應成功
+          .map(response => {
+            // 正確獲取 category 物件，它在 response.category 中
+            const categoryData = response.category;
+
+            if (!categoryData || !categoryData._id) {
+              console.warn('Invalid category data structure:', response);
+              return null;
+            }
+
             // 獲取類別在餐點中的順序
             const categoryConfig = dish.value.optionCategories.find(
-              c => c.categoryId === category._id
+              c => c.categoryId === categoryData._id
             );
 
+            // 處理選項資料 - 從 refOption 中提取
+            let options = [];
+            if (categoryData.options && Array.isArray(categoryData.options)) {
+              options = categoryData.options.map(opt => {
+                // 獲取真正的選項資料 (在 refOption 中)
+                if (opt.refOption) {
+                  return {
+                    _id: opt.refOption._id,
+                    name: opt.refOption.name,
+                    price: opt.refOption.price || 0,
+                    order: opt.order || 0
+                  };
+                } else {
+                  return {
+                    _id: opt._id,
+                    name: opt.name || '未命名選項',
+                    price: opt.price || 0,
+                    order: opt.order || 0
+                  };
+                }
+              }).sort((a, b) => a.order - b.order);
+            }
+
             return {
-              ...category,
+              _id: categoryData._id,
+              name: categoryData.name,
+              inputType: categoryData.inputType,
               order: categoryConfig ? categoryConfig.order : 0,
-              options: category.options ? category.options.map(opt => ({
-                ...opt.refOption,
-                order: opt.order
-              })).sort((a, b) => a.order - b.order) : []
+              options: options
             };
-          }).sort((a, b) => a.order - b.order);
+          })
+          .filter(Boolean) // 移除無效項目
+          .sort((a, b) => a.order - b.order);
       }
     } else {
       console.error('無效的餐點數據或 API 呼叫失敗:', dishData);
@@ -127,9 +160,14 @@ const goBack = () => {
 
 const addToCart = (dishInstance) => {
   cartStore.addItem(dishInstance);
+
+  // 修正：使用 .value 獲取 computed 屬性的值
   router.push({
     name: 'menu',
-    params: { brandId, storeId }
+    params: {
+      brandId: brandId.value,
+      storeId: storeId.value
+    }
   });
 };
 
@@ -147,7 +185,7 @@ onMounted(async () => {
 }
 
 .container-wrapper {
-  max-width: 540px;
+  max-width: 736px;
   width: 100%;
   background-color: white;
   min-height: 100vh;

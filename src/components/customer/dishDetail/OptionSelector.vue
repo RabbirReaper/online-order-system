@@ -1,3 +1,6 @@
+// src/components/customer/dishDetail/OptionSelector.vue
+// 修正版本
+
 <template>
   <div class="option-selector">
     <!-- Options section -->
@@ -82,16 +85,41 @@ const multiSelectedOptions = ref({});
 
 // 設置默認選項值
 const initializeOptions = () => {
+  // 清空先前選擇
+  selectedOptions.value = {};
+  multiSelectedOptions.value = {};
+
+  // 確保 optionCategories 是有效的陣列
+  if (!Array.isArray(props.optionCategories)) {
+    console.warn('optionCategories is not an array:', props.optionCategories);
+    return;
+  }
+
   props.optionCategories.forEach(category => {
+    if (!category || !category._id) {
+      console.warn('Invalid category object:', category);
+      return;
+    }
+
+    // 確保選項是有效的陣列
+    const options = category.options || [];
+    if (!Array.isArray(options) || options.length === 0) {
+      console.warn(`No options found for category ${category.name}:`, options);
+      return;
+    }
+
     if (category.inputType === 'single') {
       // 單選類型，默認選擇第一個選項
-      if (category.options && category.options.length > 0) {
-        selectedOptions.value[category._id] = category.options[0]._id;
-      }
+      selectedOptions.value[category._id] = options[0]._id;
     } else if (category.inputType === 'multiple') {
       // 多選類型，初始化為空數組
       multiSelectedOptions.value[category._id] = [];
     }
+  });
+
+  console.log('初始化選項：', {
+    single: selectedOptions.value,
+    multiple: multiSelectedOptions.value
   });
 };
 
@@ -232,6 +260,7 @@ const addToCart = () => {
 
 // 監聽 dish 變化
 watch(() => props.dish, () => {
+  console.log('Dish changed:', props.dish);
   // 當餐點變化時，重置表單狀態
   quantity.value = 1;
   remarks.value = '';
@@ -240,10 +269,24 @@ watch(() => props.dish, () => {
 
 // 監聽 optionCategories 變化
 watch(() => props.optionCategories, () => {
+  console.log('Option categories changed:', props.optionCategories);
   initializeOptions();
 }, { immediate: true });
 
+// 監聽選項變更（用於調試）
+watch(
+  [selectedOptions, multiSelectedOptions],
+  ([newSelected, newMultiSelected]) => {
+    console.log('Options changed:', {
+      single: newSelected,
+      multiple: newMultiSelected
+    });
+  },
+  { deep: true }
+);
+
 onMounted(() => {
+  console.log('Component mounted, initializing options...');
   initializeOptions();
 });
 </script>
