@@ -269,7 +269,7 @@ onMounted(() => {
   position: fixed;
   top: 0;
   width: 100%;
-  max-width: 540px;
+  max-width: 736px;
   z-index: 1030;
   left: 50%;
   transform: translateX(-50%);

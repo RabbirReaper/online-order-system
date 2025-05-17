@@ -202,7 +202,7 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   width: 100%;
-  max-width: 540px;
+  max-width: 736px;
   background-color: #fff;
   z-index: 99;
 }

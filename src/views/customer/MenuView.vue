@@ -64,7 +64,7 @@ const loadStoreData = async () => {
   try {
     const storeData = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
 
-    if (storeData) {
+    if (storeData && storeData.success) { // 添加對 success 的檢查
       store.value = storeData.store;
       // 確保圖片URL是正確的
       if (!store.value.image || !store.value.image.url) {
@@ -76,7 +76,7 @@ const loadStoreData = async () => {
         };
       }
     } else {
-      console.error('No store data returned from API');
+      console.error('無效的店鋪數據或 API 呼叫失敗:', storeData);
     }
   } catch (error) {
     console.error('無法載入店鋪數據:', error);
@@ -99,11 +99,18 @@ const loadMenuData = async () => {
         categoryId: category._id,
         description: category.description,
         order: category.order,
-        items: category.dishes.map(dish => ({
-          itemId: dish.dishTemplate,
-          order: dish.order,
-          price: dish.price
-        })).filter(item => item.itemId)
+        items: category.dishes.map(dish => {
+          // 檢查 dishTemplate 是否為物件，若是則獲取其 _id
+          const dishId = typeof dish.dishTemplate === 'object' && dish.dishTemplate !== null
+            ? dish.dishTemplate._id  // 若是物件則取其 _id
+            : dish.dishTemplate;     // 否則直接使用
+
+          return {
+            itemId: dishId,
+            order: dish.order,
+            price: dish.price
+          };
+        }).filter(item => item.itemId)
       })).sort((a, b) => a.order - b.order);
 
       // 載入所有餐點詳情
@@ -126,7 +133,10 @@ const loadMenuItems = async () => {
     );
 
     // 使用唯一ID避免重複請求
-    const uniqueDishIds = [...new Set(dishIds)];
+    const uniqueDishIds = [...new Set(dishIds)].filter(id =>
+      typeof id === 'string' && id.trim() !== ''
+    );
+
     console.log('Loading dish details for IDs:', uniqueDishIds);
 
     if (uniqueDishIds.length === 0) {
@@ -137,43 +147,50 @@ const loadMenuItems = async () => {
     // 獲取所有餐點詳情
     const dishDetails = await Promise.all(
       uniqueDishIds.map(id =>
-        api.dish.getDishTemplateById({ brandId, id })
+        api.dish.getDishTemplateById({
+          brandId: brandId.value,
+          id: id
+        })
       )
     );
 
     console.log('Loaded dish details:', dishDetails);
 
     // 將價格資訊從菜單中合併到餐點詳情
-    menuItems.value = dishDetails.filter(Boolean).map(dish => {
-      // 確保圖片URL是正確的
-      if (!dish.image || !dish.image.url) {
-        console.warn(`Dish image URL is missing for ${dish.name}:`, dish.image);
-        dish.image = {
-          url: '/placeholder.jpg',
-          alt: dish.name
-        };
-      }
-
-      // 在所有類別中查找該餐點
-      for (const category of menu.value.list) {
-        const menuItem = category.items.find(item => item.itemId === dish._id);
-        if (menuItem) {
-          // 如果菜單中有特定價格，則使用菜單價格
-          return {
-            ...dish,
-            price: menuItem.price || dish.basePrice,
-            _id: dish._id
+    menuItems.value = dishDetails
+      .filter(dish => dish && dish.success) // 確保 API 回應成功
+      .map(dish => dish.template) // 修改這裡：正確使用 template 欄位而不是 data
+      .filter(Boolean)
+      .map(dish => {
+        // 確保圖片URL是正確的
+        if (!dish.image || !dish.image.url) {
+          console.warn(`Dish image URL is missing for ${dish.name}:`, dish.image);
+          dish.image = {
+            url: '/placeholder.jpg',
+            alt: dish.name
           };
         }
-      }
 
-      // 如果在菜單中未找到，使用基本價格
-      return {
-        ...dish,
-        price: dish.basePrice,
-        _id: dish._id
-      };
-    });
+        // 在所有類別中查找該餐點
+        for (const category of menu.value.list) {
+          const menuItem = category.items.find(item => item.itemId === dish._id);
+          if (menuItem) {
+            // 如果菜單中有特定價格，則使用菜單價格
+            return {
+              ...dish,
+              price: menuItem.price || dish.basePrice,
+              _id: dish._id
+            };
+          }
+        }
+
+        // 如果在菜單中未找到，使用基本價格
+        return {
+          ...dish,
+          price: dish.basePrice,
+          _id: dish._id
+        };
+      });
 
     console.log('Final menuItems data:', menuItems.value);
   } catch (error) {
@@ -266,7 +283,7 @@ onMounted(async () => {
 }
 
 .container-wrapper {
-  max-width: 540px;
+  max-width: 736px;
   width: 100%;
   background-color: #fff;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
