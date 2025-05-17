@@ -91,7 +91,7 @@ const loadMenuData = async () => {
       includeUnpublished: false
     });
 
-    console.log('Loaded menu data:', menuData);
+    // console.log('Loaded menu data:', menuData);
 
     if (menuData.success && menuData.menu) {
       menu.value.list = menuData.menu.categories.map(category => ({
@@ -137,7 +137,7 @@ const loadMenuItems = async () => {
       typeof id === 'string' && id.trim() !== ''
     );
 
-    console.log('Loading dish details for IDs:', uniqueDishIds);
+    // console.log('Loading dish details for IDs:', uniqueDishIds);
 
     if (uniqueDishIds.length === 0) {
       console.warn('No dish IDs found in menu');
@@ -154,7 +154,7 @@ const loadMenuItems = async () => {
       )
     );
 
-    console.log('Loaded dish details:', dishDetails);
+    // console.log('Loaded dish details:', dishDetails);
 
     // 將價格資訊從菜單中合併到餐點詳情
     menuItems.value = dishDetails
@@ -192,7 +192,7 @@ const loadMenuItems = async () => {
         };
       });
 
-    console.log('Final menuItems data:', menuItems.value);
+    // console.log('Final menuItems data:', menuItems.value);
   } catch (error) {
     console.error('無法載入餐點詳情:', error);
   }
