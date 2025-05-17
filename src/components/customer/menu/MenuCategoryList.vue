@@ -121,5 +121,6 @@ const getItemsInCategory = (category) => {
 .content-wrapper {
   width: 100%;
   padding: 0 15px;
+  padding-top: 0px !important;
 }
 </style>
