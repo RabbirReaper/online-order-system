@@ -1,178 +1,303 @@
 <template>
   <div class="option-selector">
-    <h5 class="option-category-name">
-      {{ category.name }}
-      <span v-if="isRequired" class="required-badge">必選</span>
-    </h5>
+    <!-- Options section -->
+    <div class="options p-3 border-bottom">
+      <!-- 遍歷選項類別 -->
+      <div v-for="category in optionCategories" :key="category._id" class="mb-4">
+        <h5 class="fw-bold mb-3">{{ category.name }}</h5>
 
-    <p v-if="category.description" class="option-category-description text-muted">
-      {{ category.description }}
-    </p>
+        <!-- 單選類型 -->
+        <div v-if="category.inputType === 'single'" class="d-flex flex-wrap">
+          <div v-for="option in category.options" :key="option._id" class="form-check me-4 mb-3">
+            <input class="form-check-input" type="radio" :id="'option-' + option._id"
+              v-model="selectedOptions[category._id]" :value="option._id" :name="'category-' + category._id">
+            <label class="form-check-label fs-5" :for="'option-' + option._id">
+              {{ option.name }}
+              <span v-if="option.price > 0">(+${{ option.price }})</span>
+            </label>
+          </div>
+        </div>
 
-    <div class="option-selection-hint mb-2">
-      <small class="text-muted">
-        {{ selectionHint }}
-      </small>
+        <!-- 多選類型 -->
+        <div v-else-if="category.inputType === 'multiple'" class="d-flex flex-wrap">
+          <div v-for="option in category.options" :key="option._id" class="form-check me-4 mb-3">
+            <input class="form-check-input" type="checkbox" :id="'option-' + option._id"
+              v-model="multiSelectedOptions[category._id]" :value="option._id">
+            <label class="form-check-label fs-5" :for="'option-' + option._id">
+              {{ option.name }}
+              <span v-if="option.price > 0">(+${{ option.price }})</span>
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 單選選項 -->
-    <div v-if="category.inputType === 'single'" class="single-options">
-      <BFormRadioGroup v-model="selectedValue" :name="`option-${category._id}`" stacked>
-        <BFormRadio v-for="option in options" :key="option._id" :value="option._id" class="option-radio mb-2">
-          <div class="d-flex justify-content-between align-items-center w-100">
-            <span>{{ option.name }}</span>
-            <span v-if="option.price > 0" class="option-price">+${{ option.price }}</span>
-          </div>
-        </BFormRadio>
-      </BFormRadioGroup>
+    <!-- Remarks section -->
+    <div class="p-3 border-bottom">
+      <h5 class="fw-bold mb-3">特殊要求</h5>
+      <textarea class="form-control fs-5" v-model="remarks" rows="3" placeholder="例如：不要洋蔥..."></textarea>
     </div>
 
-    <!-- 多選選項 -->
-    <div v-else class="multiple-options">
-      <BFormCheckboxGroup v-model="selectedValues" :name="`option-${category._id}`" stacked>
-        <BFormCheckbox v-for="option in options" :key="option._id" :value="option._id" class="option-checkbox mb-2">
-          <div class="d-flex justify-content-between align-items-center w-100">
-            <span>{{ option.name }}</span>
-            <span v-if="option.price > 0" class="option-price">+${{ option.price }}</span>
-          </div>
-        </BFormCheckbox>
-      </BFormCheckboxGroup>
+    <!-- Quantity section -->
+    <div class="p-3 d-flex align-items-center justify-content-between">
+      <h5 class="fw-bold mb-0">數量</h5>
+      <div class="input-group" style="width: 160px;">
+        <button class="btn btn-outline-secondary fs-5" @click="decreaseQuantity">-</button>
+        <span class="form-control text-center fs-5">{{ quantity }}</span>
+        <button class="btn btn-outline-secondary fs-5" @click="increaseQuantity">+</button>
+      </div>
+    </div>
+
+    <!-- Add to cart button -->
+    <div class="p-3 position-sticky bottom-0 bg-white border-top">
+      <button type="button" class="btn btn-primary w-100 py-3 fs-4" @click="addToCart">
+        加入購物車 - ${{ calculateItemTotal() }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 
-// 定義 props
 const props = defineProps({
-  category: {
+  dish: {
     type: Object,
     required: true
   },
-  options: {
+  optionCategories: {
     type: Array,
-    default: () => []
-  },
-  modelValue: {
-    type: [String, Array],
+    required: true,
     default: () => []
   }
 });
 
-// 定義 emits
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['add-to-cart']);
 
-// 計算是否為必選
-const isRequired = computed(() => {
-  // 通常餐飲系統中，如果是單選類別，就是必選項
-  return props.category.inputType === 'single';
-});
+// 表單狀態
+const quantity = ref(1);
+const remarks = ref('');
+const selectedOptions = ref({});
+const multiSelectedOptions = ref({});
 
-// 顯示選擇提示文字
-const selectionHint = computed(() => {
-  if (props.category.inputType === 'single') {
-    return '請選擇 1 項';
-  } else {
-    return '可複選多項';
+// 設置默認選項值
+const initializeOptions = () => {
+  props.optionCategories.forEach(category => {
+    if (category.inputType === 'single') {
+      // 單選類型，默認選擇第一個選項
+      if (category.options && category.options.length > 0) {
+        selectedOptions.value[category._id] = category.options[0]._id;
+      }
+    } else if (category.inputType === 'multiple') {
+      // 多選類型，初始化為空數組
+      multiSelectedOptions.value[category._id] = [];
+    }
+  });
+};
+
+// 數量控制
+const increaseQuantity = () => {
+  quantity.value++;
+};
+
+const decreaseQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--;
   }
-});
+};
 
-// 單選值
-const selectedValue = computed({
-  get() {
-    return typeof props.modelValue === 'string' ? props.modelValue : '';
-  },
-  set(value) {
-    emit('update:modelValue', value);
-  }
-});
+// 計算總價
+const calculateItemTotal = () => {
+  let total = props.dish.basePrice;
 
-// 多選值
-const selectedValues = computed({
-  get() {
-    return Array.isArray(props.modelValue) ? props.modelValue : [];
-  },
-  set(value) {
-    emit('update:modelValue', value);
-  }
-});
+  // 添加單選選項的價格
+  Object.keys(selectedOptions.value).forEach(categoryId => {
+    const optionId = selectedOptions.value[categoryId];
+    const category = props.optionCategories.find(c => c._id === categoryId);
+    if (category) {
+      const option = category.options.find(o => o._id === optionId);
+      if (option && option.price) {
+        total += option.price;
+      }
+    }
+  });
 
-// 監聽 category 變化，重設選擇
-watch(() => props.category, () => {
-  if (props.category.inputType === 'single') {
-    selectedValue.value = '';
-  } else {
-    selectedValues.value = [];
-  }
-}, { deep: true });
+  // 添加多選選項的價格
+  Object.keys(multiSelectedOptions.value).forEach(categoryId => {
+    const selectedOptionIds = multiSelectedOptions.value[categoryId];
+    const category = props.optionCategories.find(c => c._id === categoryId);
+    if (category) {
+      selectedOptionIds.forEach(optionId => {
+        const option = category.options.find(o => o._id === optionId);
+        if (option && option.price) {
+          total += option.price;
+        }
+      });
+    }
+  });
+
+  // 乘以數量
+  return (total * quantity.value);
+};
+
+// 獲取所有選項詳情
+const getSelectedOptionDetails = () => {
+  const result = [];
+
+  // 單選選項
+  Object.keys(selectedOptions.value).forEach(categoryId => {
+    const optionId = selectedOptions.value[categoryId];
+    const category = props.optionCategories.find(c => c._id === categoryId);
+
+    if (category) {
+      const option = category.options.find(o => o._id === optionId);
+      if (option) {
+        result.push({
+          _id: false, // 符合DishInstance模型要求
+          optionCategoryId: category._id,
+          optionCategoryName: category.name,
+          selections: [{
+            optionId: option._id,
+            name: option.name,
+            price: option.price || 0
+          }]
+        });
+      }
+    }
+  });
+
+  // 多選選項
+  Object.keys(multiSelectedOptions.value).forEach(categoryId => {
+    const selectedOptionIds = multiSelectedOptions.value[categoryId];
+
+    if (selectedOptionIds.length > 0) {
+      const category = props.optionCategories.find(c => c._id === categoryId);
+
+      if (category) {
+        const selections = selectedOptionIds.map(optionId => {
+          const option = category.options.find(o => o._id === optionId);
+          return {
+            optionId: option._id,
+            name: option.name,
+            price: option.price || 0
+          };
+        });
+
+        result.push({
+          _id: false, // 符合DishInstance模型要求
+          optionCategoryId: category._id,
+          optionCategoryName: category.name,
+          selections: selections
+        });
+      }
+    }
+  });
+
+  return result;
+};
+
+// 計算最終價格（基本價格 + 選項價格）
+const calculateFinalPrice = () => {
+  let totalOptionPrice = 0;
+
+  // 計算所有選項的額外價格
+  const allSelectedOptions = getSelectedOptionDetails();
+  allSelectedOptions.forEach(category => {
+    category.selections.forEach(selection => {
+      totalOptionPrice += selection.price;
+    });
+  });
+
+  return props.dish.basePrice + totalOptionPrice;
+};
+
+// 添加到購物車
+const addToCart = () => {
+  // 創建餐點實例物件
+  const dishInstance = {
+    _id: Date.now().toString(), // 臨時ID，實際應用中應該由後端生成
+    templateId: props.dish._id,
+    name: props.dish.name,
+    basePrice: props.dish.basePrice,
+    options: getSelectedOptionDetails(),
+    specialInstructions: remarks.value,
+    finalPrice: calculateFinalPrice(),
+    quantity: quantity.value,
+    subtotal: calculateItemTotal()
+  };
+
+  // 發出事件
+  emit('add-to-cart', dishInstance);
+};
+
+// 監聽 dish 變化
+watch(() => props.dish, () => {
+  // 當餐點變化時，重置表單狀態
+  quantity.value = 1;
+  remarks.value = '';
+  initializeOptions();
+}, { immediate: true });
+
+// 監聽 optionCategories 變化
+watch(() => props.optionCategories, () => {
+  initializeOptions();
+}, { immediate: true });
+
+onMounted(() => {
+  initializeOptions();
+});
 </script>
 
 <style scoped>
 .option-selector {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.option-category-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  flex: 1;
 }
 
-.required-badge {
-  font-size: 0.75rem;
-  background-color: #dc3545;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 8px;
+.options {
+  overflow-y: auto;
 }
 
-.option-category-description {
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
+.form-check-input {
+  border: 2px solid #495057;
+  box-shadow: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 0.25em;
 }
 
-.option-radio,
-.option-checkbox {
-  padding: 8px 12px;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  transition: all 0.2s;
+/* When focused */
+.form-check-input:focus {
+  border-color: #212529;
+  box-shadow: 0 0 0 0.25rem rgba(33, 37, 41, 0.25);
 }
 
-.option-radio label,
-.option-checkbox label {
-  width: 100%;
-  margin-bottom: 0;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-}
-
-.option-price {
-  font-weight: 600;
-  color: #e74c3c;
-}
-
-/* 自定義單選框和多選框樣式 */
+/* When checked */
 .form-check-input:checked {
   background-color: #0d6efd;
   border-color: #0d6efd;
 }
 
-.form-check-input:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+/* Increase overall font size */
+.form-control,
+.btn {
+  font-size: 1.1rem;
 }
 
-.option-radio:has(.form-check-input:checked),
-.option-checkbox:has(.form-check-input:checked) {
-  border-color: #0d6efd;
-  background-color: rgba(13, 110, 253, 0.05);
+/* Increase spacing for better readability */
+.form-check {
+  padding-left: 2em;
+}
+
+/* Button style */
+.btn-primary {
+  background-color: #d35400;
+  border-color: #d35400;
+}
+
+.btn-primary:hover {
+  background-color: #e67e22;
+  border-color: #e67e22;
 }
 </style>

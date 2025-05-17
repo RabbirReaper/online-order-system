@@ -1,390 +1,282 @@
 <template>
   <div class="menu-view">
-    <!-- 隱藏/顯示的頂部導航欄 -->
-    <div class="navbar-container" :class="{ 'navbar-hidden': isNavbarHidden }">
-      <BNavbar toggleable="lg" type="dark" variant="dark" class="fixed-top">
-        <BNavbarBrand href="#">
-          <img src="@/assets/logo.svg" alt="Logo" height="30" class="d-inline-block align-top">
-          {{ store?.name || '餐廳菜單' }}
-        </BNavbarBrand>
-        <BNavbarToggle target="nav-collapse"></BNavbarToggle>
-        <BCollapse id="nav-collapse" is-nav>
-          <BNavbarNav class="ml-auto">
-            <BNavItem to="/cart" :active="false">
-              <BButton variant="outline-light" class="position-relative">
-                <i class="bi bi-cart"></i>
-                <Bbadge v-if="itemCount > 0" variant="danger" pill
-                  class="position-absolute top-0 start-100 translate-middle">
-                  {{ itemCount }}
-                </Bbadge>
-              </BButton>
-            </BNavItem>
-          </BNavbarNav>
-        </BCollapse>
-      </BNavbar>
-    </div>
+    <div class="container-wrapper">
+      <MenuHeader :store-name="store.name" :store-image="store.image" :announcements="store.announcements"
+        :is-logged-in="isLoggedIn" :customer-name="customerName" @login="handleLogin" @account="handleAccount"
+        @logout="handleLogout" />
 
-    <!-- 店家圖片和基本信息 -->
-    <MenuHeader :store="store" :isLoading="isLoading" :isOpen="isStoreOpen"
-      @view-hours="showBusinessHoursModal = true" />
+      <CategoryNavigator v-if="menu.list && menu.list.length > 0" :categories="menu.list" />
 
-    <!-- 主內容區 -->
-    <div class="container mt-4 mb-5 pb-5">
-      <div class="row">
-        <!-- 左側類別導航（大螢幕上顯示） -->
-        <div class="col-lg-3 d-none d-lg-block">
-          <CategoryNavigator :categories="menu?.categories || []" :activeCategory="activeCategory"
-            @select-category="scrollToCategory" />
-        </div>
+      <MenuCategoryList :menu-list="menu.list" :menu-items="menuItems" @select-item="selectItem" />
 
-        <!-- 右側菜單內容 -->
-        <div class="col-lg-9">
-          <!-- 頂部粘性類別欄（小螢幕上顯示） -->
-          <div ref="stickyNav" class="d-lg-none sticky-top bg-white py-2 shadow-sm category-scroll-container">
-            <div class="container">
-              <div class="scrolling-wrapper">
-                <BButton v-for="(category, index) in menu?.categories" :key="index"
-                  :variant="activeCategory === category.name ? 'primary' : 'outline-secondary'" class="me-2 my-1"
-                  @click="scrollToCategory(category.name)">
-                  {{ category.name }}
-                </BButton>
-              </div>
-            </div>
-          </div>
-
-          <!-- 菜單類別和商品 -->
-          <div v-if="isLoading" class="text-center py-5">
-            <BSpinner label="載入中..."></BSpinner>
-            <p class="mt-3">載入菜單中，請稍候...</p>
-          </div>
-
-          <div v-else-if="!menu || menu.categories.length === 0" class="text-center py-5">
-            <i class="bi bi-exclamation-circle text-warning display-1"></i>
-            <p class="mt-3 h5">目前沒有可用的菜單</p>
-          </div>
-
-          <MenuCategoryList v-else :categories="menu.categories" @view-dish="navigateToDish" />
-
-          <!-- 購物車提示 -->
-          <div v-if="itemCount > 0" class="cart-button-container">
-            <BButton variant="primary" size="lg" block class="position-relative" @click="$router.push('/cart')">
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="cart-count">
-                  <i class="bi bi-cart-fill me-2"></i>
-                  {{ itemCount }} 項商品
-                </span>
-                <span class="cart-total">{{ formatPrice(subtotal) }}</span>
-              </div>
-            </BButton>
-          </div>
+      <!-- Shopping Cart Button -->
+      <div v-if="cart.length > 0" class="position-fixed bottom-0 start-50 translate-middle-x mb-4"
+        style="z-index: 1030; width: 100%; max-width: 540px;">
+        <div class="container-fluid px-3">
+          <button class="btn btn-primary rounded-pill shadow-lg px-4 py-2 w-100" @click="goToCart">
+            <i class="bi bi-cart-fill me-2"></i>
+            {{ getTotalItems() }} 項商品 - ${{ calculateTotal() }}
+          </button>
         </div>
       </div>
     </div>
-
-    <!-- 營業時間彈窗 -->
-    <BModal v-model="showBusinessHoursModal" title="營業時間" hide-footer centered>
-      <div v-if="store">
-        <div v-for="(hours, index) in formattedBusinessHours" :key="index"
-          class="d-flex justify-content-between mb-2 py-2 border-bottom">
-          <div :class="{ 'font-weight-bold': isToday(hours.day) }">{{ hours.dayName }}</div>
-          <div v-if="hours.isClosed" class="text-danger">休息</div>
-          <div v-else>
-            <span v-for="(period, pIndex) in hours.periods" :key="pIndex">
-              {{ period.open }} - {{ period.close }}
-              <span v-if="pIndex < hours.periods.length - 1" class="mx-2">|</span>
-            </span>
-          </div>
-        </div>
-      </div>
-    </BModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
-import { useCartStore } from '@/stores/cart';
-
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api from '@/api';
 import MenuHeader from '@/components/customer/menu/MenuHeader.vue';
 import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue';
 import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue';
+import { useCartStore } from '@/stores/cart';
 
-import api from '@/api';
-
-// 路由相關
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
+const cartStore = useCartStore();
 
-// 獲取品牌和店鋪 ID
+// 獲取路由參數
 const brandId = computed(() => route.params.brandId);
 const storeId = computed(() => route.params.storeId);
 
-// 購物車 store
-const cartStore = useCartStore();
-const { itemCount, subtotal } = storeToRefs(cartStore);
-
-// 狀態變數
+// 響應式數據
+const store = ref({
+  name: '',
+  image: null,
+  announcements: []
+});
+const menu = ref({
+  list: []
+});
+const menuItems = ref([]);
 const isLoading = ref(true);
-const menu = ref(null);
-const store = ref(null);
-const error = ref(null);
-const showBusinessHoursModal = ref(false);
-const isNavbarHidden = ref(false);
-const lastScrollPosition = ref(0);
-const activeCategory = ref('');
-const categoryRefs = ref({});
-const observer = ref(null);
-const stickyNav = ref(null);
+const isLoggedIn = ref(false);
+const customerName = ref('');
 
-// 載入店鋪和菜單數據
+// 計算屬性
+const cart = computed(() => {
+  return cartStore.items;
+});
+
+// 方法
 const loadStoreData = async () => {
-  if (!brandId.value || !storeId.value) {
-    error.value = '無效的店鋪或品牌 ID';
-    isLoading.value = false;
-    return;
-  }
-
   try {
-    // 先獲取店鋪信息
-    const storeResponse = await api.store.getStoreById({
+    const storeData = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+
+    if (storeData) {
+      store.value = storeData.store;
+      // 確保圖片URL是正確的
+      if (!store.value.image || !store.value.image.url) {
+        console.warn('Store image URL is missing or invalid:', store.value.image);
+        // 設置默認圖片
+        store.value.image = {
+          url: '/placeholder.jpg',
+          alt: '店家圖片'
+        };
+      }
+    } else {
+      console.error('No store data returned from API');
+    }
+  } catch (error) {
+    console.error('無法載入店鋪數據:', error);
+  }
+};
+
+const loadMenuData = async () => {
+  try {
+    const menuData = await api.menu.getStoreMenu({
       brandId: brandId.value,
-      id: storeId.value
+      storeId: storeId.value,
+      includeUnpublished: false
     });
 
-    if (storeResponse && storeResponse.store) {
-      store.value = storeResponse.store;
+    console.log('Loaded menu data:', menuData);
 
-      // 然後獲取菜單
-      const menuResponse = await api.menu.getStoreMenu({
-        brandId: brandId.value,
-        storeId: storeId.value,
-        includeUnpublished: false
-      });
+    if (menuData.success && menuData.menu) {
+      menu.value.list = menuData.menu.categories.map(category => ({
+        categoryName: category.name,
+        categoryId: category._id,
+        description: category.description,
+        order: category.order,
+        items: category.dishes.map(dish => ({
+          itemId: dish.dishTemplate,
+          order: dish.order,
+          price: dish.price
+        })).filter(item => item.itemId)
+      })).sort((a, b) => a.order - b.order);
 
-      if (menuResponse && menuResponse.menu) {
-        menu.value = menuResponse.menu;
-
-        // 如果有類別，設置第一個為活動類別
-        if (menuResponse.menu.categories && menuResponse.menu.categories.length > 0) {
-          activeCategory.value = menuResponse.menu.categories[0].name;
-        }
-      }
+      // 載入所有餐點詳情
+      await loadMenuItems();
+    } else {
+      console.error('Invalid menu data structure:', menuData);
     }
-
-    // 設置購物車品牌和店鋪
-    cartStore.setBrandAndStore(brandId.value, storeId.value);
-
-  } catch (err) {
-    console.error('獲取店鋪和菜單數據失敗', err);
-    error.value = '獲取店鋪和菜單數據失敗，請稍後再試';
+  } catch (error) {
+    console.error('無法載入菜單數據:', error);
   } finally {
     isLoading.value = false;
   }
 };
 
-// 判斷店鋪是否營業中
-const isStoreOpen = computed(() => {
-  if (!store.value || !store.value.businessHours) return false;
+const loadMenuItems = async () => {
+  try {
+    // 收集需要獲取詳情的所有餐點ID
+    const dishIds = menu.value.list.flatMap(category =>
+      category.items.map(item => item.itemId)
+    );
 
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0-6, 0 是星期日
-  const currentHour = now.getHours();
-  const currentMinutes = now.getMinutes();
-  const currentTime = `${currentHour.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+    // 使用唯一ID避免重複請求
+    const uniqueDishIds = [...new Set(dishIds)];
+    console.log('Loading dish details for IDs:', uniqueDishIds);
 
-  // 查找當天的營業時間
-  const todayHours = store.value.businessHours.find(hours => hours.day === dayOfWeek);
+    if (uniqueDishIds.length === 0) {
+      console.warn('No dish IDs found in menu');
+      return;
+    }
 
-  if (!todayHours || todayHours.isClosed) return false;
+    // 獲取所有餐點詳情
+    const dishDetails = await Promise.all(
+      uniqueDishIds.map(id =>
+        api.dish.getDishTemplateById({ brandId, id })
+      )
+    );
 
-  // 檢查是否在任何一個營業時段內
-  return todayHours.periods.some(period => {
-    return currentTime >= period.open && currentTime <= period.close;
-  });
-});
+    console.log('Loaded dish details:', dishDetails);
 
-// 格式化營業時間顯示
-const formattedBusinessHours = computed(() => {
-  if (!store.value || !store.value.businessHours) return [];
+    // 將價格資訊從菜單中合併到餐點詳情
+    menuItems.value = dishDetails.filter(Boolean).map(dish => {
+      // 確保圖片URL是正確的
+      if (!dish.image || !dish.image.url) {
+        console.warn(`Dish image URL is missing for ${dish.name}:`, dish.image);
+        dish.image = {
+          url: '/placeholder.jpg',
+          alt: dish.name
+        };
+      }
 
-  const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      // 在所有類別中查找該餐點
+      for (const category of menu.value.list) {
+        const menuItem = category.items.find(item => item.itemId === dish._id);
+        if (menuItem) {
+          // 如果菜單中有特定價格，則使用菜單價格
+          return {
+            ...dish,
+            price: menuItem.price || dish.basePrice,
+            _id: dish._id
+          };
+        }
+      }
 
-  // 按日期順序排序
-  const sortedHours = [...store.value.businessHours].sort((a, b) => a.day - b.day);
+      // 如果在菜單中未找到，使用基本價格
+      return {
+        ...dish,
+        price: dish.basePrice,
+        _id: dish._id
+      };
+    });
 
-  return sortedHours.map(hours => ({
-    day: hours.day,
-    dayName: dayNames[hours.day],
-    isClosed: hours.isClosed,
-    periods: hours.periods || []
-  }));
-});
-
-// 判斷是否為今天
-const isToday = (day) => {
-  return new Date().getDay() === day;
-};
-
-// 處理頁面滾動
-const handleScroll = () => {
-  const currentScrollPosition = window.pageYOffset;
-
-  // 控制導航欄隱藏/顯示
-  if (currentScrollPosition < 0) {
-    return;
-  }
-
-  // 向下滾動時隱藏，向上滾動時顯示
-  if (currentScrollPosition > 100) {
-    isNavbarHidden.value = currentScrollPosition > lastScrollPosition.value;
-  } else {
-    isNavbarHidden.value = false;
-  }
-
-  lastScrollPosition.value = currentScrollPosition;
-};
-
-// 滾動到特定類別
-const scrollToCategory = (categoryName) => {
-  const element = document.getElementById(`category-${categoryName}`);
-  if (element) {
-    const yOffset = -100; // 頂部導航欄的高度
-    const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-    activeCategory.value = categoryName;
+    console.log('Final menuItems data:', menuItems.value);
+  } catch (error) {
+    console.error('無法載入餐點詳情:', error);
   }
 };
 
-// 導航到餐點詳情頁
-const navigateToDish = (dish) => {
+// 登入相關方法（僅包含基本結構，實際邏輯待實現）
+const handleLogin = () => {
+  // 實際應用中應該導航到登入頁面或顯示登入模態框
+  console.log('導航到登入頁面');
+};
+
+const handleAccount = () => {
+  // 導航到會員中心
+  console.log('導航到會員中心');
+};
+
+const handleLogout = async () => {
+  try {
+    await api.auth.logout();
+    isLoggedIn.value = false;
+    customerName.value = '';
+    // 可能需要重置某些數據或狀態
+  } catch (error) {
+    console.error('登出失敗:', error);
+  }
+};
+
+// 購物車相關方法
+const selectItem = (item) => {
   router.push({
     name: 'dish-detail',
     params: {
-      brandId: brandId.value,
-      storeId: storeId.value,
-      dishId: dish._id
+      brandId,
+      storeId,
+      dishId: item._id
     }
   });
 };
 
-// 格式化價格顯示
-const formatPrice = (price) => {
-  return `$${price.toLocaleString('zh-TW')}`;
+const goToCart = () => {
+  router.push({ name: 'cart' });
 };
 
-// 設置 Intersection Observer 監控類別滾動
-const setupIntersectionObserver = () => {
-  if (typeof IntersectionObserver === 'undefined') return;
+const getTotalItems = () => {
+  return cartStore.itemCount;
+};
 
-  // 如果已有 observer，先斷開連接
-  if (observer.value) {
-    observer.value.disconnect();
-  }
-
-  observer.value = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const categoryId = entry.target.id;
-        if (categoryId.startsWith('category-')) {
-          activeCategory.value = categoryId.replace('category-', '');
-        }
-      }
-    });
-  }, {
-    rootMargin: '-100px 0px -80% 0px', // 根據導航欄高度調整
-    threshold: 0
-  });
-
-  // 監控所有類別元素
-  const categoryElements = document.querySelectorAll('[id^="category-"]');
-  categoryElements.forEach(element => {
-    observer.value.observe(element);
-  });
+const calculateTotal = () => {
+  return cartStore.total;
 };
 
 // 生命週期鉤子
-onMounted(() => {
-  loadStoreData();
-  window.addEventListener('scroll', handleScroll);
-
-  // 等待 DOM 渲染後設置 Intersection Observer
-  setTimeout(() => {
-    setupIntersectionObserver();
-  }, 1000);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-
-  // 斷開 observer 連接
-  if (observer.value) {
-    observer.value.disconnect();
+onMounted(async () => {
+  // 檢查登入狀態
+  try {
+    const status = await api.auth.checkUserStatus();
+    isLoggedIn.value = status.loggedIn;
+    if (status.loggedIn && status.user) {
+      customerName.value = status.user.name;
+    }
+  } catch (error) {
+    console.error('檢查登入狀態失敗:', error);
   }
-});
 
-// 監聽菜單數據變化，更新 Intersection Observer
-watch(() => menu.value, () => {
-  if (menu.value) {
-    // 等待 DOM 渲染後設置 observer
-    setTimeout(() => {
-      setupIntersectionObserver();
-    }, 500);
+  // 載入數據
+  try {
+    await Promise.all([
+      loadStoreData(),
+      loadMenuData()
+    ]);
+
+    // 設置品牌和商店ID到購物車
+    cartStore.setBrandAndStore(brandId, storeId);
+  } catch (error) {
+    console.error('載入數據失敗:', error);
   }
 });
 </script>
 
 <style scoped>
-.navbar-container {
-  height: 56px;
-  transition: transform 0.3s;
+.menu-view {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding-bottom: 80px;
+  /* 為底部購物車按鈕預留空間 */
+  display: flex;
+  justify-content: center;
 }
 
-.navbar-hidden {
-  transform: translateY(-100%);
+.container-wrapper {
+  max-width: 540px;
+  width: 100%;
+  background-color: #fff;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  min-height: 100vh;
+  position: relative;
 }
 
-.category-scroll-container {
-  z-index: 1020;
-  padding: 8px 0;
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.scrolling-wrapper {
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 5px;
-  scrollbar-width: thin;
-}
-
-.scrolling-wrapper::-webkit-scrollbar {
-  height: 4px;
-}
-
-.scrolling-wrapper::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-}
-
-.cart-button-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px;
-  background-color: white;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.cart-count {
-  font-weight: 500;
-}
-
-.cart-total {
-  font-weight: bold;
-  font-size: 1.1rem;
+@media (max-width: 576px) {
+  .container-wrapper {
+    max-width: 100%;
+  }
 }
 </style>
