@@ -65,8 +65,6 @@
               <p class="mb-0" v-for="(hours, index) in formattedBusinessHours" :key="index">
                 {{ hours }}
               </p>
-              <p class="mb-0">午間：11:30 ~ 13:30</p>
-              <p v-if="!businessHours || businessHours.length === 0" class="mb-0">晚間：17:00 ~ 20:30</p>
             </div>
           </div>
           <div class="divider-vertical"></div>
@@ -149,15 +147,20 @@ const formattedBusinessHours = computed(() => {
   const daysOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 
   return props.businessHours.map(hours => {
-    const day = daysOfWeek[hours.dayOfWeek];
-    const openTime = formatTime(hours.openTime);
-    const closeTime = formatTime(hours.closeTime);
+    const day = daysOfWeek[hours.day];
 
     if (hours.isClosed) {
       return `${day}: 公休`;
     }
 
-    return `${day}: ${openTime} ~ ${closeTime}`;
+    // 處理多個營業時段
+    const periodsText = hours.periods.map(period => {
+      const openTime = formatTime(period.open);
+      const closeTime = formatTime(period.close);
+      return `${openTime} ~ ${closeTime}`;
+    }).join(', ');
+
+    return `${day}: ${periodsText}`;
   });
 });
 

@@ -2,8 +2,8 @@
   <div class="menu-view">
     <div class="container-wrapper">
       <MenuHeader :store-name="store.name" :store-image="store.image" :announcements="store.announcements"
-        :is-logged-in="isLoggedIn" :customer-name="customerName" @login="handleLogin" @account="handleAccount"
-        @logout="handleLogout" />
+        :business-hours="store.businessHours" :is-logged-in="isLoggedIn" :customer-name="customerName"
+        @login="handleLogin" @account="handleAccount" @logout="handleLogout" />
 
       <CategoryNavigator v-if="menu.list && menu.list.length > 0" :categories="menu.list" />
 
