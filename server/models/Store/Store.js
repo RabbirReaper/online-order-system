@@ -33,6 +33,10 @@ const storeSchema = new mongoose.Schema({
     key: { type: String, required: true },    // 儲存在 R2 的 object key（等同於檔名，可用於刪除）
     alt: { type: String }                     // 可選：給前端 img alt 屬性
   }, // 店家圖片
+  address: {
+    type: String,
+    required: true
+  }, // 店家地址
   isActive: {
     type: Boolean,
     default: true
