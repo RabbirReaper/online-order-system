@@ -221,13 +221,13 @@ const handleLogout = async () => {
 };
 
 // 購物車相關方法
-const selectItem = (item) => {
+const selectItem = (dishId) => {
   router.push({
     name: 'dish-detail',
     params: {
-      brandId,
-      storeId,
-      dishId: item._id
+      brandId: brandId.value,
+      storeId: storeId.value,
+      dishId: dishId
     }
   });
 };

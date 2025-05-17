@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/api';
 import OptionSelector from '@/components/customer/dishDetail/OptionSelector.vue';
@@ -46,7 +46,9 @@ const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
 
-const { brandId, storeId, dishId } = route.params;
+const brandId = computed(() => route.params.brandId);
+const storeId = computed(() => route.params.storeId);
+const dishId = computed(() => route.params.dishId);
 
 const dish = ref({});
 const optionCategories = ref([]);
@@ -54,13 +56,63 @@ const isLoading = ref(true);
 
 const loadDishData = async () => {
   try {
+    // 確保 dishId 是字串而且有效
+    if (typeof dishId.value !== 'string' || dishId.value.trim() === '') {
+      console.error('無效的餐點 ID:', dishId.value);
+      isLoading.value = false;
+      return;
+    }
     // 獲取餐點詳情
-    const dishData = await api.dish.getDishTemplateById({ brandId, id: dishId });
+    const dishData = await api.dish.getDishTemplateById({
+      brandId: brandId.value,
+      id: dishId.value
+    });
+
     if (dishData && dishData.success) {
-      dish.value = dishData.template; // 修改這裡：使用 template 而不是 data
+      dish.value = dishData.template; // 使用 template 欄位
       console.log('Loaded dish data:', dishData);
 
-      // 其餘代碼不變...
+      // 確保圖片URL是正確的
+      if (!dish.value.image || !dish.value.image.url) {
+        console.warn('Dish image URL is missing or invalid:', dish.value.image);
+      }
+
+      // 獲取關聯的選項類別
+      if (dish.value.optionCategories && dish.value.optionCategories.length > 0) {
+        const categoryPromises = dish.value.optionCategories.map(category =>
+          api.dish.getOptionCategoryById({
+            brandId: brandId.value,
+            id: category.categoryId,
+            includeOptions: true
+          })
+        );
+
+        const categories = await Promise.all(categoryPromises);
+        console.log('Loaded option categories:', categories);
+
+        // 依照原始順序排序選項類別
+        optionCategories.value = categories
+          .filter(category => category && category.success) // 確保 API 回應成功
+          .map(category => category.data || category) // 根據實際 API 回應結構調整
+          .filter(Boolean)
+          .map(category => {
+            // 獲取類別在餐點中的順序
+            const categoryConfig = dish.value.optionCategories.find(
+              c => c.categoryId === category._id
+            );
+
+            return {
+              ...category,
+              order: categoryConfig ? categoryConfig.order : 0,
+              options: category.options ? category.options.map(opt => ({
+                ...opt.refOption,
+                order: opt.order
+              })).sort((a, b) => a.order - b.order) : []
+            };
+          }).sort((a, b) => a.order - b.order);
+      }
+    } else {
+      console.error('無效的餐點數據或 API 呼叫失敗:', dishData);
     }
   } catch (error) {
     console.error('無法載入餐點詳情:', error);

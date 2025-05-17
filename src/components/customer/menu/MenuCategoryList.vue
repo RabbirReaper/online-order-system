@@ -13,7 +13,7 @@
         </div>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
           <div v-for="item in getItemsInCategory(category)" :key="item._id" class="col">
-            <DishCard :item="item" @select-item="$emit('select-item', item)" />
+            <DishCard :item="item" @select-item="$emit('select-item', item._id)" />
           </div>
         </div>
       </div>
