@@ -287,11 +287,11 @@ const submitForm = async () => {
 
     if (isEditMode.value) {
       // 更新選項
-      response = await api.dish.updateOption(route.params.id, submitData);
+      response = await api.dish.updateOption({ id: route.params.id, data: submitData, brandId: brandId.value });
       successMessage.value = '選項更新成功！';
     } else {
       // 創建新選項
-      response = await api.dish.createOption(submitData);
+      response = await api.dish.createOption({ data: submitData, brandId: brandId.value });
       successMessage.value = '選項創建成功！';
     }
 

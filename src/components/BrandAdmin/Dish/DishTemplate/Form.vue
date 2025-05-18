@@ -582,7 +582,7 @@ const submitForm = async () => {
       successMessage.value = '餐點更新成功！';
     } else {
       // 創建新餐點
-      response = await api.dish.createDishTemplate(submitData);
+      response = await api.dish.createDishTemplate({ data: submitData, brandId: brandId.value });
       successMessage.value = '餐點創建成功！';
     }
 

@@ -412,11 +412,11 @@ const submitForm = async () => {
 
     if (isEditMode.value) {
       // 更新選項類別
-      response = await api.dish.updateOptionCategory(route.params.id, submitData);
+      response = await api.dish.updateOptionCategory({ id: route.params.id, data: submitData, brandId: brandId.value });
       successMessage.value = '選項類別更新成功！';
     } else {
       // 創建新選項類別
-      response = await api.dish.createOptionCategory(submitData);
+      response = await api.dish.createOptionCategory({ data: submitData, brandId: brandId.value });
       successMessage.value = '選項類別創建成功！';
     }
 
