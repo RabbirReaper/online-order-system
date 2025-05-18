@@ -326,6 +326,7 @@ watch(selectedCoupon, (newValue) => {
 
 // 生命週期鉤子
 onMounted(() => {
+  window.scrollTo(0, 0)
   // 設置默認預約時間
   const date = new Date();
   date.setMinutes(date.getMinutes() + 30);
