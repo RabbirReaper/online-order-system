@@ -16,8 +16,8 @@
         </template>
 
         <!-- 特殊要求 -->
-        <p class="card-text small mb-1" v-if="item.dishInstance.specialInstructions">
-          備註: {{ item.dishInstance.specialInstructions }}
+        <p class="card-text small mb-1" v-if="item.dishInstance.note">
+          備註: {{ item.dishInstance.note }}
         </p>
       </div>
 
@@ -26,7 +26,7 @@
           <button class="btn btn-sm btn-outline-danger me-2" @click="$emit('remove', index)">
             <i class="bi bi-trash"></i>
           </button>
-          <button class="btn btn-sm btn-outline-secondary" @click="$emit('edit', index)">
+          <button class="btn btn-sm btn-outline-secondary" @click="editItem">
             <i class="bi bi-pencil"></i>
           </button>
         </div>
@@ -43,6 +43,12 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
+import { useCartStore } from '@/stores/cart';
+
+const router = useRouter();
+const cartStore = useCartStore();
+
 const props = defineProps({
   item: {
     type: Object,
@@ -67,6 +73,35 @@ const formatSelections = (selections) => {
     }
     return text;
   }).join(', ');
+};
+
+// 修正後的 editItem 函數
+const editItem = () => {
+  const item = props.item;
+
+  // 確保有品牌和店鋪ID
+  if (!cartStore.currentBrand || !cartStore.currentStore) {
+    console.error('缺少品牌或店鋪ID:', {
+      brandId: cartStore.currentBrand,
+      storeId: cartStore.currentStore
+    });
+    alert('無法編輯商品：缺少必要資訊');
+    return;
+  }
+
+  // 導航到商品詳情頁面進行編輯，傳遞編輯模式參數
+  router.push({
+    name: 'dish-detail',
+    params: {
+      brandId: cartStore.currentBrand,
+      storeId: cartStore.currentStore,
+      dishId: item.dishInstance.templateId || item.dishInstance._id
+    },
+    query: {
+      edit: 'true',
+      editIndex: props.index.toString()
+    }
+  });
 };
 </script>
 

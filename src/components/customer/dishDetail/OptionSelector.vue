@@ -1,6 +1,3 @@
-// src/components/customer/dishDetail/OptionSelector.vue
-// 修正版本 - 統一使用 note 作為餐點備註
-
 <template>
   <div class="option-selector">
     <!-- Options section -->
@@ -51,10 +48,13 @@
       </div>
     </div>
 
-    <!-- Add to cart button -->
+    <!-- Add to cart / Update cart button -->
     <div class="p-3 position-sticky bottom-0 bg-white border-top">
-      <button type="button" class="btn btn-primary w-100 py-3 fs-4" @click="addToCart">
+      <button v-if="!isEditMode" type="button" class="btn btn-primary w-100 py-3 fs-4" @click="addToCart">
         加入購物車 - ${{ calculateItemTotal() }}
+      </button>
+      <button v-else type="button" class="btn btn-success w-100 py-3 fs-4" @click="updateCart">
+        確認修改 - ${{ calculateItemTotal() }}
       </button>
     </div>
   </div>
@@ -72,14 +72,22 @@ const props = defineProps({
     type: Array,
     required: true,
     default: () => []
+  },
+  isEditMode: {
+    type: Boolean,
+    default: false
+  },
+  existingItem: {
+    type: Object,
+    default: null
   }
 });
 
-const emit = defineEmits(['add-to-cart']);
+const emit = defineEmits(['add-to-cart', 'update-cart']);
 
-// 表單狀態 - 修正：使用 note 而非 remarks/specialInstructions
+// 表單狀態
 const quantity = ref(1);
-const note = ref(''); // 修正：統一使用 note
+const note = ref('');
 const selectedOptions = ref({});
 const multiSelectedOptions = ref({});
 
@@ -92,6 +100,12 @@ const initializeOptions = () => {
   // 確保 optionCategories 是有效的陣列
   if (!Array.isArray(props.optionCategories)) {
     console.warn('optionCategories is not an array:', props.optionCategories);
+    return;
+  }
+
+  // 如果是編輯模式且有現有項目，載入現有的選項
+  if (props.isEditMode && props.existingItem) {
+    loadExistingOptions();
     return;
   }
 
@@ -116,7 +130,49 @@ const initializeOptions = () => {
       multiSelectedOptions.value[category._id] = [];
     }
   });
+};
 
+// 載入現有選項（編輯模式）
+const loadExistingOptions = () => {
+  const existingOptions = props.existingItem.dishInstance.options || [];
+
+  // 載入數量和備註
+  quantity.value = props.existingItem.quantity;
+  note.value = props.existingItem.dishInstance.note || '';
+
+  console.log('載入現有選項:', existingOptions);
+
+  // 初始化所有類別
+  props.optionCategories.forEach(category => {
+    if (category.inputType === 'single') {
+      selectedOptions.value[category._id] = null;
+    } else if (category.inputType === 'multiple') {
+      multiSelectedOptions.value[category._id] = [];
+    }
+  });
+
+  // 設置現有的選項
+  existingOptions.forEach(existingCategory => {
+    const categoryId = existingCategory.optionCategoryId;
+    const category = props.optionCategories.find(c => c._id === categoryId);
+
+    if (category) {
+      if (category.inputType === 'single' && existingCategory.selections.length > 0) {
+        // 單選類型，取第一個選項
+        selectedOptions.value[categoryId] = existingCategory.selections[0].optionId;
+      } else if (category.inputType === 'multiple') {
+        // 多選類型，取所有選項
+        multiSelectedOptions.value[categoryId] = existingCategory.selections.map(s => s.optionId);
+      }
+    }
+  });
+
+  console.log('載入完成的選項:', {
+    selectedOptions: selectedOptions.value,
+    multiSelectedOptions: multiSelectedOptions.value,
+    quantity: quantity.value,
+    note: note.value
+  });
 };
 
 // 數量控制
@@ -177,7 +233,7 @@ const getSelectedOptionDetails = () => {
       const option = category.options.find(o => o._id === optionId);
       if (option) {
         result.push({
-          _id: false, // 符合DishInstance模型要求
+          _id: false,
           optionCategoryId: category._id,
           optionCategoryName: category.name,
           selections: [{
@@ -208,7 +264,7 @@ const getSelectedOptionDetails = () => {
         });
 
         result.push({
-          _id: false, // 符合DishInstance模型要求
+          _id: false,
           optionCategoryId: category._id,
           optionCategoryName: category.name,
           selections: selections
@@ -235,16 +291,16 @@ const calculateFinalPrice = () => {
   return props.dish.basePrice + totalOptionPrice;
 };
 
-// 添加到購物車
+// 添加到購物車（新增模式）
 const addToCart = () => {
-  // 創建餐點實例物件 - 修正：使用 note 而非 specialInstructions
+  // 創建餐點實例物件
   const dishInstance = {
-    _id: Date.now().toString(), // 臨時ID，實際應用中應該由後端生成
+    _id: Date.now().toString(),
     templateId: props.dish._id,
     name: props.dish.name,
     basePrice: props.dish.basePrice,
     options: getSelectedOptionDetails(),
-    note: note.value, // 修正：統一使用 note
+    note: note.value,
     finalPrice: calculateFinalPrice(),
     quantity: quantity.value,
     subtotal: calculateItemTotal()
@@ -254,16 +310,37 @@ const addToCart = () => {
   emit('add-to-cart', dishInstance);
 };
 
+// 更新購物車（編輯模式）
+const updateCart = () => {
+  // 創建餐點實例物件
+  const dishInstance = {
+    _id: Date.now().toString(),
+    templateId: props.dish._id,
+    name: props.dish.name,
+    basePrice: props.dish.basePrice,
+    options: getSelectedOptionDetails(),
+    note: note.value,
+    finalPrice: calculateFinalPrice(),
+    quantity: quantity.value,
+    subtotal: calculateItemTotal()
+  };
+
+  console.log('更新餐點實例:', dishInstance);
+
+  // 發出更新事件
+  emit('update-cart', dishInstance);
+};
+
 watch(
-  [() => props.dish, () => props.optionCategories],
-  ([newDish, newCategories], [oldDish, oldCategories]) => {
-    // 只有當 dish 改變時才重置表單狀態
-    if (newDish !== oldDish) {
+  [() => props.dish, () => props.optionCategories, () => props.existingItem],
+  ([newDish, newCategories, newExistingItem], [oldDish, oldCategories, oldExistingItem]) => {
+    // 只有當 dish 改變時才重置表單狀態（非編輯模式）
+    if (newDish !== oldDish && !props.isEditMode) {
       quantity.value = 1;
       note.value = '';
     }
 
-    // 當 dish 或 optionCategories 任一改變時都重新初始化選項
+    // 當 dish、optionCategories 或 existingItem 任一改變時都重新初始化選項
     initializeOptions();
   },
   { immediate: true }
@@ -321,5 +398,15 @@ watch(
 .btn-primary:hover {
   background-color: #e67e22;
   border-color: #e67e22;
+}
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
 }
 </style>

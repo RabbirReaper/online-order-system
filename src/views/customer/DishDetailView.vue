@@ -1,6 +1,3 @@
-// src/views/customer/DishDetailView.vue
-// 修正版本
-
 <template>
   <div class="dish-detail-view">
     <div class="container-wrapper">
@@ -17,6 +14,9 @@
             style="background-color: rgba(255, 255, 255, 0.8); width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;">
             <i class="bi bi-arrow-left fs-3"></i>
           </button>
+          <h5 v-if="isEditMode" class="ms-3 mb-0 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+            編輯餐點
+          </h5>
         </div>
 
         <!-- Image -->
@@ -32,7 +32,8 @@
           <p class="text-muted fs-5" style="white-space: pre-line">{{ dish.description }}</p>
         </div>
 
-        <OptionSelector :dish="dish" :option-categories="optionCategories" @add-to-cart="addToCart" />
+        <OptionSelector :dish="dish" :option-categories="optionCategories" :is-edit-mode="isEditMode"
+          :existing-item="existingItem" @add-to-cart="addToCart" @update-cart="updateCart" />
       </div>
     </div>
   </div>
@@ -53,9 +54,14 @@ const brandId = computed(() => route.params.brandId);
 const storeId = computed(() => route.params.storeId);
 const dishId = computed(() => route.params.dishId);
 
+// 編輯模式相關
+const isEditMode = computed(() => route.query.edit === 'true');
+const editIndex = computed(() => parseInt(route.query.editIndex) || 0);
+
 const dish = ref({});
 const optionCategories = ref([]);
 const isLoading = ref(true);
+const existingItem = ref(null);
 
 const loadDishData = async () => {
   try {
@@ -65,6 +71,7 @@ const loadDishData = async () => {
       isLoading.value = false;
       return;
     }
+
     // 獲取餐點詳情
     const dishData = await api.dish.getDishTemplateById({
       brandId: brandId.value,
@@ -72,8 +79,7 @@ const loadDishData = async () => {
     });
 
     if (dishData && dishData.success) {
-      dish.value = dishData.template; // 使用 template 欄位
-      // console.log('Loaded dish data:', dishData);
+      dish.value = dishData.template;
 
       // 確保圖片URL是正確的
       if (!dish.value.image || !dish.value.image.url) {
@@ -91,13 +97,11 @@ const loadDishData = async () => {
         );
 
         const categories = await Promise.all(categoryPromises);
-        // console.log('Loaded option categories:', categories);
 
         // 依照原始順序排序選項類別
         optionCategories.value = categories
-          .filter(response => response && response.success) // 確保 API 回應成功
+          .filter(response => response && response.success)
           .map(response => {
-            // 正確獲取 category 物件，它在 response.category 中
             const categoryData = response.category;
 
             if (!categoryData || !categoryData._id) {
@@ -141,8 +145,13 @@ const loadDishData = async () => {
               options: options
             };
           })
-          .filter(Boolean) // 移除無效項目
+          .filter(Boolean)
           .sort((a, b) => a.order - b.order);
+      }
+
+      // 如果是編輯模式，載入現有的餐點資料
+      if (isEditMode.value) {
+        loadExistingItem();
       }
     } else {
       console.error('無效的餐點數據或 API 呼叫失敗:', dishData);
@@ -154,6 +163,15 @@ const loadDishData = async () => {
   }
 };
 
+// 載入現有的餐點資料（編輯模式）
+const loadExistingItem = () => {
+  const cartItems = cartStore.items;
+  if (editIndex.value >= 0 && editIndex.value < cartItems.length) {
+    existingItem.value = cartItems[editIndex.value];
+    console.log('載入現有餐點資料:', existingItem.value);
+  }
+};
+
 const goBack = () => {
   router.go(-1);
 };
@@ -161,7 +179,7 @@ const goBack = () => {
 const addToCart = (dishInstance) => {
   cartStore.addItem(dishInstance);
 
-  // 修正：使用 .value 獲取 computed 屬性的值
+  // 返回菜單頁面
   router.push({
     name: 'menu',
     params: {
@@ -169,6 +187,20 @@ const addToCart = (dishInstance) => {
       storeId: storeId.value
     }
   });
+};
+
+const updateCart = (dishInstance) => {
+  // 更新購物車項目（編輯模式）
+  console.log('更新購物車項目:', { editIndex: editIndex.value, dishInstance });
+
+  // 刪除原本的項目
+  cartStore.removeItem(editIndex.value);
+
+  // 添加修改後的項目
+  cartStore.addItem(dishInstance);
+
+  // 返回購物車頁面
+  router.push({ name: 'cart' });
 };
 
 onMounted(async () => {

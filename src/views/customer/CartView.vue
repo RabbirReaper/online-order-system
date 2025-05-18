@@ -187,7 +187,17 @@ const isFormValid = computed(() => {
 
 // 方法
 const goBack = () => {
-  router.go(-1);
+  if (cartStore.currentBrand && cartStore.currentStore) {
+    router.push({
+      name: 'menu',
+      params: {
+        brandId: cartStore.currentBrand,
+        storeId: cartStore.currentStore
+      }
+    });
+  } else {
+    router.go(-1);
+  }
 };
 
 const removeFromCart = (index) => {
