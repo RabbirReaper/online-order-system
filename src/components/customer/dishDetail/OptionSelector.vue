@@ -293,42 +293,51 @@ const calculateFinalPrice = () => {
 
 // 添加到購物車（新增模式）
 const addToCart = () => {
-  // 創建餐點實例物件
+  // 創建 DishInstance (只包含 DishInstance 模型的欄位)
   const dishInstance = {
-    _id: Date.now().toString(),
     templateId: props.dish._id,
     name: props.dish.name,
     basePrice: props.dish.basePrice,
     options: getSelectedOptionDetails(),
-    note: note.value,
-    finalPrice: calculateFinalPrice(),
+    finalPrice: calculateFinalPrice()
+    // 注意：移除了 note, quantity, subtotal，這些屬於 Order 層級
+  };
+
+  // 創建完整的訂單項目 (符合前端購物車結構)
+  const cartItem = {
+    dishInstance: dishInstance,
     quantity: quantity.value,
+    note: note.value,
     subtotal: calculateItemTotal()
   };
 
-  // 發出事件
-  emit('add-to-cart', dishInstance);
+  // 發出事件，傳遞完整的購物車項目
+  emit('add-to-cart', cartItem);
 };
 
 // 更新購物車（編輯模式）
 const updateCart = () => {
-  // 創建餐點實例物件
+  // 創建 DishInstance (只包含 DishInstance 模型的欄位)
   const dishInstance = {
-    _id: Date.now().toString(),
     templateId: props.dish._id,
     name: props.dish.name,
     basePrice: props.dish.basePrice,
     options: getSelectedOptionDetails(),
-    note: note.value,
-    finalPrice: calculateFinalPrice(),
+    finalPrice: calculateFinalPrice()
+  };
+
+  // 創建完整的訂單項目
+  const cartItem = {
+    dishInstance: dishInstance,
     quantity: quantity.value,
+    note: note.value,
     subtotal: calculateItemTotal()
   };
 
-  // console.log('更新餐點實例:', dishInstance);
+  console.log('更新餐點項目:', cartItem);
 
   // 發出更新事件
-  emit('update-cart', dishInstance);
+  emit('update-cart', cartItem);
 };
 
 watch(

@@ -103,67 +103,54 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   // 修正後的 addItem 方法，使資料結構符合 DishInstance Model
-  function addItem(dishInstance, quantity = 1) {
-    if (!dishInstance || !dishInstance._id) {
-      console.error('無效的餐點:', dishInstance);
+  function addItem(cartItem) {
+    // cartItem 結構：{ dishInstance, quantity, note, subtotal }
+    if (!cartItem || !cartItem.dishInstance || !cartItem.dishInstance.templateId) {
+      console.error('無效的購物車項目:', cartItem);
       return;
     }
 
-    if (quantity <= 0) {
-      console.error('無效的數量:', quantity);
+    if (cartItem.quantity <= 0) {
+      console.error('無效的數量:', cartItem.quantity);
       return;
     }
 
-    // 提取選項資料，符合後端 DishInstance Model 的結構
-    const options = dishInstance.options || [];
-
-    // 計算選項價格
-    let optionsPrice = 0;
-    options.forEach(category => {
-      if (category.selections) {
-        category.selections.forEach(selection => {
-          optionsPrice += selection.price || 0;
-        });
-      }
-    });
-
-    // 生成購物車項目的唯一鍵值
-    const itemKey = generateItemKey(dishInstance._id, options, dishInstance.specialInstructions);
+    // 生成購物車項目的唯一鍵值 (包含 note)
+    const itemKey = generateItemKey(cartItem.dishInstance.templateId, cartItem.dishInstance.options, cartItem.note);
 
     // 檢查購物車中是否已有相同的餐點及選項
-    const existingItemIndex = items.value.findIndex(
-      item => item.key === itemKey
-    );
+    const existingItemIndex = items.value.findIndex(item => item.key === itemKey);
 
     if (existingItemIndex !== -1) {
       // 如果餐點已存在，更新數量
-      const newQuantity = items.value[existingItemIndex].quantity + quantity;
+      const newQuantity = items.value[existingItemIndex].quantity + cartItem.quantity;
       updateItemQuantity(existingItemIndex, newQuantity);
     } else {
-      // 添加新餐點到購物車，結構符合後端期望
+      // 添加新餐點到購物車，結構符合前端需求
       const newItem = {
         key: itemKey,
         dishInstance: {
-          _id: dishInstance._id,
-          templateId: dishInstance.templateId,
-          name: dishInstance.name,
-          basePrice: dishInstance.basePrice,
-          finalPrice: dishInstance.finalPrice || dishInstance.basePrice,
-          options: options, // 符合 DishInstance Model 的 options 結構
-          specialInstructions: dishInstance.specialInstructions || ''
+          templateId: cartItem.dishInstance.templateId,
+          name: cartItem.dishInstance.name,
+          basePrice: cartItem.dishInstance.basePrice,
+          finalPrice: cartItem.dishInstance.finalPrice,
+          options: cartItem.dishInstance.options
+          // 注意：移除了 note，因為它屬於訂單項目層級
         },
-        quantity: quantity,
-        subtotal: dishInstance.finalPrice * quantity
+        quantity: cartItem.quantity,
+        note: cartItem.note || '', // note 在訂單項目層級
+        subtotal: cartItem.subtotal
       };
 
       items.value.push(newItem);
     }
 
-    // console.log('添加到購物車:', { itemKey, optionsPrice, totalItems: items.value.length });
+    console.log('添加到購物車:', { itemKey, totalItems: items.value.length });
   }
 
+
   // 生成基於餐點ID、選項和特殊要求的唯一鍵值
-  function generateItemKey(dishId, options, specialInstructions = '') {
+  function generateItemKey(templateId, options, note = '') {
     // 將選項轉換為字符串以生成唯一鍵值
     let optionsKey = '';
     if (options && options.length > 0) {
@@ -173,8 +160,9 @@ export const useCartStore = defineStore('cart', () => {
       }).sort().join('|');
     }
 
-    const instructionsKey = specialInstructions ? `:${specialInstructions}` : '';
-    return `${dishId}:${optionsKey}${instructionsKey}`;
+    // 包含備註在鍵值中，確保不同備註的相同餐點被視為不同項目
+    const noteKey = note ? `:${note}` : '';
+    return `${templateId}:${optionsKey}${noteKey}`;
   }
 
   function removeItem(index) {
@@ -372,17 +360,16 @@ export const useCartStore = defineStore('cart', () => {
       // 準備訂單資料，符合後端 Order Model 期望的格式
       const orderData = {
         items: items.value.map(item => ({
-          dishInstance: {
-            templateId: item.dishInstance.templateId,
-            name: item.dishInstance.name,
-            basePrice: item.dishInstance.basePrice,
-            options: item.dishInstance.options,
-            specialInstructions: item.dishInstance.specialInstructions,
-            finalPrice: item.dishInstance.finalPrice
-          },
+          // 這裡不需要包含完整的 dishInstance 物件
+          // 後端會根據 templateId 和 options 創建 DishInstance
+          dishTemplate: item.dishInstance.templateId,
+          dishName: item.dishInstance.name,
+          basePrice: item.dishInstance.basePrice,
+          finalPrice: item.dishInstance.finalPrice,
+          options: item.dishInstance.options,
           quantity: item.quantity,
-          subtotal: item.subtotal,
-          note: item.dishInstance.specialInstructions
+          note: item.note,
+          subtotal: item.subtotal
         })),
         orderType: orderType.value,
         subtotal: subtotal.value,
