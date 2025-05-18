@@ -145,7 +145,7 @@ export const useCartStore = defineStore('cart', () => {
       items.value.push(newItem);
     }
 
-    console.log('添加到購物車:', { itemKey, totalItems: items.value.length });
+    // console.log('添加到購物車:', { itemKey, totalItems: items.value.length });
   }
 
 
