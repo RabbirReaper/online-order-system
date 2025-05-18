@@ -87,7 +87,7 @@
 
       <!-- Fixed Bottom Button -->
       <div v-if="cartItems.length > 0"
-        class="checkout-button position-fixed bottom-0 start-50 translate-middle-x mb-4 w-100 bg-white p-3 shadow-lg d-flex justify-content-center"
+        class="checkout-button position-fixed bottom-0 start-50 translate-middle-x w-100 bg-white p-3 shadow-lg d-flex justify-content-center"
         style="max-width: 540px;">
         <div class="container-button" style="max-width: 540px;">
           <button class="btn w-100 py-2 checkout-btn" @click="checkout" :disabled="!isFormValid">
