@@ -1,5 +1,5 @@
 // src/components/customer/dishDetail/OptionSelector.vue
-// 修正版本
+// 修正版本 - 統一使用 note 作為餐點備註
 
 <template>
   <div class="option-selector">
@@ -38,7 +38,7 @@
     <!-- Remarks section -->
     <div class="p-3 border-bottom">
       <h5 class="fw-bold mb-3">特殊要求</h5>
-      <textarea class="form-control fs-5" v-model="remarks" rows="3" placeholder="例如：不要洋蔥..."></textarea>
+      <textarea class="form-control fs-5" v-model="note" rows="3" placeholder="例如：不要洋蔥..."></textarea>
     </div>
 
     <!-- Quantity section -->
@@ -77,9 +77,9 @@ const props = defineProps({
 
 const emit = defineEmits(['add-to-cart']);
 
-// 表單狀態
+// 表單狀態 - 修正：使用 note 而非 remarks/specialInstructions
 const quantity = ref(1);
-const remarks = ref('');
+const note = ref(''); // 修正：統一使用 note
 const selectedOptions = ref({});
 const multiSelectedOptions = ref({});
 
@@ -241,14 +241,14 @@ const calculateFinalPrice = () => {
 
 // 添加到購物車
 const addToCart = () => {
-  // 創建餐點實例物件
+  // 創建餐點實例物件 - 修正：使用 note 而非 specialInstructions
   const dishInstance = {
     _id: Date.now().toString(), // 臨時ID，實際應用中應該由後端生成
     templateId: props.dish._id,
     name: props.dish.name,
     basePrice: props.dish.basePrice,
     options: getSelectedOptionDetails(),
-    specialInstructions: remarks.value,
+    note: note.value, // 修正：統一使用 note
     finalPrice: calculateFinalPrice(),
     quantity: quantity.value,
     subtotal: calculateItemTotal()
@@ -263,7 +263,7 @@ watch(() => props.dish, () => {
   console.log('Dish changed:', props.dish);
   // 當餐點變化時，重置表單狀態
   quantity.value = 1;
-  remarks.value = '';
+  note.value = ''; // 修正：使用 note
   initializeOptions();
 }, { immediate: true });
 

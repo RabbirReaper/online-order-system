@@ -70,8 +70,9 @@
                     <br v-if="optIdx < item.options.length - 1">
                   </span>
                 </p>
-                <p class="text-muted small mb-0" v-if="item.specialInstructions">
-                  備註: {{ item.specialInstructions }}
+                <!-- 餐點備註 - 修正：使用 note 而非 specialInstructions -->
+                <p class="text-muted small mb-0" v-if="item.note">
+                  備註: {{ item.note }}
                 </p>
               </div>
               <div class="text-end">
@@ -209,7 +210,7 @@ const fetchOrderDetails = async () => {
       quantity: item.quantity,
       subtotal: item.subtotal,
       options: item.options || [],
-      specialInstructions: item.specialInstructions
+      note: item.note || '' // 修正：使用 note 而非 specialInstructions
     })),
     notes: cartStore.notes,
     dineInInfo: cartStore.dineInInfo,

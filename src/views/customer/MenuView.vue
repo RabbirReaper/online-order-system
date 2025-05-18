@@ -258,7 +258,7 @@ onMounted(async () => {
     ]);
 
     // 設置品牌和商店ID到購物車
-    cartStore.setBrandAndStore(brandId, storeId);
+    cartStore.setBrandAndStore(brandId.value, storeId.value);
   } catch (error) {
     console.error('載入數據失敗:', error);
   }

@@ -15,9 +15,8 @@
           </p>
         </template>
 
-        <!-- 特殊要求 -->
-        <p class="card-text small mb-1" v-if="item.specialInstructions">
-          備註: {{ item.specialInstructions }}
+        <p class="card-text small mb-1" v-if="item.note">
+          備註: {{ item.note }}
         </p>
       </div>
 

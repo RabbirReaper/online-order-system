@@ -194,16 +194,22 @@ const removeFromCart = (index) => {
   cartStore.removeItem(index);
 };
 
+// 修正後的 editItem 函數
 const editItem = (index) => {
   const item = cartItems.value[index];
+
+  // 確保我們有必要的資料
+  console.log('編輯項目:', item);
+  console.log('當前品牌:', cartStore.currentBrand.value);
+  console.log('當前店鋪:', cartStore.currentStore.value);
+
   // 導航到商品詳情頁面進行編輯
-  // 實際應用中應保存當前購物車狀態
   router.push({
     name: 'dish-detail',
     params: {
       dishId: item.dishInstance._id,
-      brandId: cartStore.currentBrand,
-      storeId: cartStore.currentStore
+      brandId: cartStore.currentBrand.value, // 修正：使用 .value 獲取 ref 的值
+      storeId: cartStore.currentStore.value   // 修正：使用 .value 獲取 ref 的值
     }
   });
 };
@@ -349,7 +355,7 @@ onMounted(() => {
 .divider {
   height: 8px;
   background-color: #f0f0f0;
-  margin-bottom: 10px;
+  margin: 0;
   width: 100%
 }
 

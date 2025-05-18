@@ -1,4 +1,6 @@
 // src/stores/cart.js
+// 修正版本 - 添加餐點備註傳送
+
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import api from '@/api';
@@ -146,7 +148,8 @@ export const useCartStore = defineStore('cart', () => {
         options: options,
         optionsPrice: optionsPrice,
         quantity: quantity,
-        subtotal: (finalPrice + optionsPrice) * quantity
+        subtotal: (finalPrice + optionsPrice) * quantity,
+        note: dishInstance.note || '' // 修正：添加餐點備註
       });
     }
   }
@@ -352,12 +355,13 @@ export const useCartStore = defineStore('cart', () => {
     try {
       isSubmitting.value = true;
 
-      // 準備訂單資料
+      // 準備訂單資料 - 修正：添加餐點備註
       const orderData = {
         items: items.value.map(item => ({
           dishInstance: item.dishInstance._id,
           quantity: item.quantity,
           subtotal: item.subtotal,
+          note: item.note || '', // 修正：添加餐點備註
           options: item.options.map(opt => opt._id)
         })),
         orderType: orderType.value,
