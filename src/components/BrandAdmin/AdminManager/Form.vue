@@ -24,7 +24,7 @@
             <input type="password" class="form-control" id="adminPassword" v-model="formData.password"
               :class="{ 'is-invalid': errors.password }" required />
             <div class="invalid-feedback" v-if="errors.password">{{ errors.password }}</div>
-            <div class="form-text">密碼長度至少 6 個字元</div>
+            <div class="form-text">密碼長度至少 8 個字元</div>
           </div>
 
           <!-- 角色 -->

@@ -495,13 +495,14 @@ const submitForm = async () => {
     if (isEditMode.value) {
       // 更新優惠券
       response = await api.promotion.updateCouponTemplate({
+        brandId: brandId.value,
         id: route.params.id,
         data: submitData
       });
       successMessage.value = '優惠券更新成功！';
     } else {
       // 創建新優惠券
-      response = await api.promotion.createCouponTemplate(submitData);
+      response = await api.promotion.createCouponTemplate({ data: submitData, brandId: brandId.value });
       successMessage.value = '優惠券創建成功！';
     }
 

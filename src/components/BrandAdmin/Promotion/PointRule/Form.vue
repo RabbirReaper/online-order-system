@@ -307,13 +307,14 @@ const submitForm = async () => {
     if (isEditMode.value) {
       // 更新規則
       response = await api.pointRules.updatePointRule({
+        brandId: brandId.value,
         id: route.params.id,
         data: submitData
       });
       successMessage.value = '點數規則更新成功！';
     } else {
       // 創建新規則
-      response = await api.pointRules.createPointRule(submitData);
+      response = await api.pointRules.createPointRule({ brandId: brandId.value, data: submitData });
       successMessage.value = '點數規則創建成功！';
     }
 
