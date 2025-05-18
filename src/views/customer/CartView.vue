@@ -370,7 +370,7 @@ onMounted(() => {
 .divider {
   height: 8px;
   background-color: #f0f0f0;
-  margin: 0;
+  margin-bottom: 15px;
   width: 100%
 }
 
