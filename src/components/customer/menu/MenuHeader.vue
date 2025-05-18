@@ -72,7 +72,7 @@
             <i class="bi bi-geo-alt location-icon"></i>
             <div>
               <h6 class="mb-1">地點</h6>
-              <p class="mb-0">{{ storeName }} 分店</p>
+              <p class="mb-0">{{ storeName }}</p>
               <p v-if="storeAddress" class="mb-0 small text-muted">{{ storeAddress }}</p>
             </div>
           </div>
