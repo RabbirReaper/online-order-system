@@ -400,7 +400,7 @@ const addDish = (category) => {
   }
 
   category.dishes.push({
-    dishTemplate: '',
+    dishTemplate: { _id: '' },  // 改為對象，包含 _id 屬性
     price: null,
     isPublished: true,
     order: category.dishes.length
