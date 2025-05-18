@@ -432,8 +432,8 @@ onMounted(() => {
 
 .divider-vertical {
   width: 1px;
-  height: 50px;
-  background-color: #e9ecef;
+  align-self: stretch;
+  background-color: #dee2e6;
 }
 
 /* 公告樣式 */
