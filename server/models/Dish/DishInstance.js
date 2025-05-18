@@ -21,7 +21,6 @@ const DishInstanceSchema = new mongoose.Schema({
       price: { type: Number, default: 0 }
     }]
   }],
-  specialInstructions: { type: String, maxlength: 200 }, // 特殊要求
   finalPrice: { type: Number, required: true }, // 計算後的最終價格
 }, { timestamps: true });
 
