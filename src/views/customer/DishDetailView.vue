@@ -168,7 +168,7 @@ const loadExistingItem = () => {
   const cartItems = cartStore.items;
   if (editIndex.value >= 0 && editIndex.value < cartItems.length) {
     existingItem.value = cartItems[editIndex.value];
-    console.log('載入現有餐點資料:', existingItem.value);
+    // console.log('載入現有餐點資料:', existingItem.value);
   }
 };
 
@@ -191,7 +191,7 @@ const addToCart = (dishInstance) => {
 
 const updateCart = (dishInstance) => {
   // 更新購物車項目（編輯模式）
-  console.log('更新購物車項目:', { editIndex: editIndex.value, dishInstance });
+  // console.log('更新購物車項目:', { editIndex: editIndex.value, dishInstance });
 
   // 刪除原本的項目
   cartStore.removeItem(editIndex.value);

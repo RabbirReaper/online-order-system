@@ -140,7 +140,7 @@ const loadExistingOptions = () => {
   quantity.value = props.existingItem.quantity;
   note.value = props.existingItem.dishInstance.note || '';
 
-  console.log('載入現有選項:', existingOptions);
+  // console.log('載入現有選項:', existingOptions);
 
   // 初始化所有類別
   props.optionCategories.forEach(category => {
@@ -167,12 +167,12 @@ const loadExistingOptions = () => {
     }
   });
 
-  console.log('載入完成的選項:', {
-    selectedOptions: selectedOptions.value,
-    multiSelectedOptions: multiSelectedOptions.value,
-    quantity: quantity.value,
-    note: note.value
-  });
+  // console.log('載入完成的選項:', {
+  //   selectedOptions: selectedOptions.value,
+  //   multiSelectedOptions: multiSelectedOptions.value,
+  //   quantity: quantity.value,
+  //   note: note.value
+  // });
 };
 
 // 數量控制
@@ -325,7 +325,7 @@ const updateCart = () => {
     subtotal: calculateItemTotal()
   };
 
-  console.log('更新餐點實例:', dishInstance);
+  // console.log('更新餐點實例:', dishInstance);
 
   // 發出更新事件
   emit('update-cart', dishInstance);

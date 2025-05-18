@@ -159,7 +159,7 @@ export const useCartStore = defineStore('cart', () => {
       items.value.push(newItem);
     }
 
-    console.log('添加到購物車:', { itemKey, optionsPrice, totalItems: items.value.length });
+    // console.log('添加到購物車:', { itemKey, optionsPrice, totalItems: items.value.length });
   }
 
   // 生成基於餐點ID、選項和特殊要求的唯一鍵值
