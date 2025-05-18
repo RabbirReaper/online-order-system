@@ -656,7 +656,7 @@ const submitForm = async () => {
       successMessage.value = '店鋪更新成功！';
     } else {
       // 創建新店鋪
-      response = await api.store.createStore(submitData);
+      response = await api.store.createStore({ data: submitData, brandId: brandId.value });
       successMessage.value = '店鋪創建成功！';
     }
 
