@@ -56,6 +56,10 @@ yarn test:e2e
 yarn lint
 ```
 
+# License
+
+This project is licensed under a [Modified MIT License](./LICENSE) — for non-commercial use only.
+
 # 命名風格
 
 ## **資料夾命名規則**
