@@ -117,10 +117,6 @@ const initializeOptions = () => {
     }
   });
 
-  console.log('初始化選項：', {
-    single: selectedOptions.value,
-    multiple: multiSelectedOptions.value
-  });
 };
 
 // 數量控制
@@ -258,37 +254,20 @@ const addToCart = () => {
   emit('add-to-cart', dishInstance);
 };
 
-// 監聽 dish 變化
-watch(() => props.dish, () => {
-  console.log('Dish changed:', props.dish);
-  // 當餐點變化時，重置表單狀態
-  quantity.value = 1;
-  note.value = ''; // 修正：使用 note
-  initializeOptions();
-}, { immediate: true });
-
-// 監聽 optionCategories 變化
-watch(() => props.optionCategories, () => {
-  console.log('Option categories changed:', props.optionCategories);
-  initializeOptions();
-}, { immediate: true });
-
-// 監聽選項變更（用於調試）
 watch(
-  [selectedOptions, multiSelectedOptions],
-  ([newSelected, newMultiSelected]) => {
-    console.log('Options changed:', {
-      single: newSelected,
-      multiple: newMultiSelected
-    });
-  },
-  { deep: true }
-);
+  [() => props.dish, () => props.optionCategories],
+  ([newDish, newCategories], [oldDish, oldCategories]) => {
+    // 只有當 dish 改變時才重置表單狀態
+    if (newDish !== oldDish) {
+      quantity.value = 1;
+      note.value = '';
+    }
 
-onMounted(() => {
-  console.log('Component mounted, initializing options...');
-  initializeOptions();
-});
+    // 當 dish 或 optionCategories 任一改變時都重新初始化選項
+    initializeOptions();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>

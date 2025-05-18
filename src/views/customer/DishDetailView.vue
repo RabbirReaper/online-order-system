@@ -73,7 +73,7 @@ const loadDishData = async () => {
 
     if (dishData && dishData.success) {
       dish.value = dishData.template; // 使用 template 欄位
-      console.log('Loaded dish data:', dishData);
+      // console.log('Loaded dish data:', dishData);
 
       // 確保圖片URL是正確的
       if (!dish.value.image || !dish.value.image.url) {
@@ -91,7 +91,7 @@ const loadDishData = async () => {
         );
 
         const categories = await Promise.all(categoryPromises);
-        console.log('Loaded option categories:', categories);
+        // console.log('Loaded option categories:', categories);
 
         // 依照原始順序排序選項類別
         optionCategories.value = categories

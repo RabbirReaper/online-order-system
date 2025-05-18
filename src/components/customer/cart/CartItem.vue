@@ -1,6 +1,7 @@
 <template>
   <div class="cart-item card mb-3 border-0 shadow-sm">
     <div class="card-body">
+      {{ item }}
       <div class="d-flex justify-content-between align-items-start mb-2">
         <h6 class="card-title mb-0 fw-bold">{{ item.dishInstance.name }}</h6>
         <div class="item-price fw-bold">${{ item.subtotal }}</div>
