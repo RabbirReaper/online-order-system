@@ -1,7 +1,6 @@
 <template>
   <div class="cart-item card mb-3 border-0 shadow-sm">
     <div class="card-body">
-      {{ item }}
       <div class="d-flex justify-content-between align-items-start mb-2">
         <h6 class="card-title mb-0 fw-bold">{{ item.dishInstance.name }}</h6>
         <div class="item-price fw-bold">${{ item.subtotal }}</div>
@@ -9,15 +8,16 @@
 
       <div class="item-details mb-3">
         <!-- 顯示所有選項 -->
-        <template v-if="item.options && item.options.length > 0">
-          <p class="card-text small mb-1" v-for="(option, optIndex) in item.options" :key="optIndex">
-            {{ option.optionCategoryName }}:
-            {{ formatSelections(option.selections) }}
+        <template v-if="item.dishInstance.options && item.dishInstance.options.length > 0">
+          <p class="card-text small mb-1" v-for="(category, catIndex) in item.dishInstance.options" :key="catIndex">
+            {{ category.optionCategoryName }}:
+            {{ formatSelections(category.selections) }}
           </p>
         </template>
 
-        <p class="card-text small mb-1" v-if="item.note">
-          備註: {{ item.note }}
+        <!-- 特殊要求 -->
+        <p class="card-text small mb-1" v-if="item.dishInstance.specialInstructions">
+          備註: {{ item.dishInstance.specialInstructions }}
         </p>
       </div>
 

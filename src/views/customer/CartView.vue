@@ -198,18 +198,23 @@ const removeFromCart = (index) => {
 const editItem = (index) => {
   const item = cartItems.value[index];
 
-  // 確保我們有必要的資料
-  console.log('編輯項目:', item);
-  console.log('當前品牌:', cartStore.currentBrand.value);
-  console.log('當前店鋪:', cartStore.currentStore.value);
+  // 確保有品牌和店鋪ID
+  if (!cartStore.currentBrand || !cartStore.currentStore) {
+    console.error('缺少品牌或店鋪ID:', {
+      brandId: cartStore.currentBrand,
+      storeId: cartStore.currentStore
+    });
+    alert('無法編輯商品：缺少必要資訊');
+    return;
+  }
 
   // 導航到商品詳情頁面進行編輯
   router.push({
     name: 'dish-detail',
     params: {
-      dishId: item.dishInstance._id,
-      brandId: cartStore.currentBrand.value, // 修正：使用 .value 獲取 ref 的值
-      storeId: cartStore.currentStore.value   // 修正：使用 .value 獲取 ref 的值
+      brandId: cartStore.currentBrand,
+      storeId: cartStore.currentStore,
+      dishId: item.dishInstance.templateId || item.dishInstance._id
     }
   });
 };

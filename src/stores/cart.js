@@ -1,6 +1,4 @@
-// src/stores/cart.js
-// 修正版本 - 添加餐點備註傳送
-
+// src/stores/cart.js - 修正版本
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import api from '@/api';
@@ -104,7 +102,8 @@ export const useCartStore = defineStore('cart', () => {
     currentStore.value = storeId;
   }
 
-  function addItem(dishInstance, quantity = 1, options = []) {
+  // 修正後的 addItem 方法，使資料結構符合 DishInstance Model
+  function addItem(dishInstance, quantity = 1) {
     if (!dishInstance || !dishInstance._id) {
       console.error('無效的餐點:', dishInstance);
       return;
@@ -115,8 +114,21 @@ export const useCartStore = defineStore('cart', () => {
       return;
     }
 
-    // 生成帶選項的餐點唯一鍵值
-    const itemKey = generateItemKey(dishInstance._id, options);
+    // 提取選項資料，符合後端 DishInstance Model 的結構
+    const options = dishInstance.options || [];
+
+    // 計算選項價格
+    let optionsPrice = 0;
+    options.forEach(category => {
+      if (category.selections) {
+        category.selections.forEach(selection => {
+          optionsPrice += selection.price || 0;
+        });
+      }
+    });
+
+    // 生成購物車項目的唯一鍵值
+    const itemKey = generateItemKey(dishInstance._id, options, dishInstance.specialInstructions);
 
     // 檢查購物車中是否已有相同的餐點及選項
     const existingItemIndex = items.value.findIndex(
@@ -128,38 +140,41 @@ export const useCartStore = defineStore('cart', () => {
       const newQuantity = items.value[existingItemIndex].quantity + quantity;
       updateItemQuantity(existingItemIndex, newQuantity);
     } else {
-      // 計算基本價格和選項額外費用
-      let finalPrice = dishInstance.finalPrice || dishInstance.basePrice;
-      let optionsPrice = 0;
-
-      if (options && options.length > 0) {
-        optionsPrice = options.reduce((total, option) => total + (option.price || 0), 0);
-      }
-
-      // 添加新餐點到購物車
-      items.value.push({
+      // 添加新餐點到購物車，結構符合後端期望
+      const newItem = {
         key: itemKey,
         dishInstance: {
           _id: dishInstance._id,
+          templateId: dishInstance.templateId,
           name: dishInstance.name,
           basePrice: dishInstance.basePrice,
-          finalPrice: finalPrice
+          finalPrice: dishInstance.finalPrice || dishInstance.basePrice,
+          options: options, // 符合 DishInstance Model 的 options 結構
+          specialInstructions: dishInstance.specialInstructions || ''
         },
-        options: options,
-        optionsPrice: optionsPrice,
         quantity: quantity,
-        subtotal: (finalPrice + optionsPrice) * quantity,
-        note: dishInstance.note || '' // 修正：添加餐點備註
-      });
+        subtotal: dishInstance.finalPrice * quantity
+      };
+
+      items.value.push(newItem);
     }
+
+    console.log('添加到購物車:', { itemKey, optionsPrice, totalItems: items.value.length });
   }
 
-  function generateItemKey(dishId, options) {
-    // 根據餐點ID和選項創建唯一鍵值
-    const optionsKey = options && options.length > 0
-      ? options.map(o => o._id).sort().join('-')
-      : '';
-    return `${dishId}:${optionsKey}`;
+  // 生成基於餐點ID、選項和特殊要求的唯一鍵值
+  function generateItemKey(dishId, options, specialInstructions = '') {
+    // 將選項轉換為字符串以生成唯一鍵值
+    let optionsKey = '';
+    if (options && options.length > 0) {
+      optionsKey = options.map(category => {
+        const selections = category.selections.map(s => s.optionId).sort().join('-');
+        return `${category.optionCategoryId}:${selections}`;
+      }).sort().join('|');
+    }
+
+    const instructionsKey = specialInstructions ? `:${specialInstructions}` : '';
+    return `${dishId}:${optionsKey}${instructionsKey}`;
   }
 
   function removeItem(index) {
@@ -178,11 +193,10 @@ export const useCartStore = defineStore('cart', () => {
       removeItem(index);
     } else {
       const item = items.value[index];
-      const basePrice = item.dishInstance.finalPrice || item.dishInstance.basePrice;
-      const totalItemPrice = basePrice + (item.optionsPrice || 0);
+      const finalPrice = item.dishInstance.finalPrice || item.dishInstance.basePrice;
 
       item.quantity = quantity;
-      item.subtotal = totalItemPrice * quantity;
+      item.subtotal = finalPrice * quantity;
     }
   }
 
@@ -355,14 +369,20 @@ export const useCartStore = defineStore('cart', () => {
     try {
       isSubmitting.value = true;
 
-      // 準備訂單資料 - 修正：添加餐點備註
+      // 準備訂單資料，符合後端 Order Model 期望的格式
       const orderData = {
         items: items.value.map(item => ({
-          dishInstance: item.dishInstance._id,
+          dishInstance: {
+            templateId: item.dishInstance.templateId,
+            name: item.dishInstance.name,
+            basePrice: item.dishInstance.basePrice,
+            options: item.dishInstance.options,
+            specialInstructions: item.dishInstance.specialInstructions,
+            finalPrice: item.dishInstance.finalPrice
+          },
           quantity: item.quantity,
           subtotal: item.subtotal,
-          note: item.note || '', // 修正：添加餐點備註
-          options: item.options.map(opt => opt._id)
+          note: item.dishInstance.specialInstructions
         })),
         orderType: orderType.value,
         subtotal: subtotal.value,
