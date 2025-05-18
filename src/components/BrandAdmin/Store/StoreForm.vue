@@ -17,6 +17,14 @@
             <BFormText>請輸入店鋪名稱，不可超過50個字元</BFormText>
           </div>
 
+          <!-- 店鋪地址 -->
+          <div class="mb-3">
+            <label for="storeAddress" class="form-label required">店鋪地址</label>
+            <BFormInput id="storeAddress" v-model="formData.address" :state="errors.address ? false : null" required />
+            <BFormInvalidFeedback v-if="errors.address">{{ errors.address }}</BFormInvalidFeedback>
+            <BFormText>請輸入完整的店鋪地址，不可超過200個字元</BFormText>
+          </div>
+
           <!-- 店鋪狀態 (僅在編輯模式顯示) -->
           <div class="mb-3" v-if="isEditMode">
             <label class="form-label d-block">店鋪狀態</label>
@@ -261,6 +269,7 @@ const brandId = computed(() => route.params.brandId);
 const formData = reactive({
   name: '',
   brand: '',
+  address: '',
   image: null,   // 現有圖片（編輯模式）
   newImage: null, // 新上傳的圖片
   businessHours: [],
@@ -271,6 +280,7 @@ const formData = reactive({
 // 錯誤訊息
 const errors = reactive({
   name: '',
+  address: '',
   image: '',
   businessHours: [],
   announcements: []
@@ -434,6 +444,7 @@ const resetForm = () => {
     // 清空表單
     formData.name = '';
     formData.brand = brandId.value;
+    formData.address = '';
     formData.image = null;
     formData.businessHours = [];
     formData.announcements = [];
@@ -454,7 +465,7 @@ const resetForm = () => {
 const validateForm = () => {
   // 清除先前的錯誤
   errors.name = '';
-  // errors.image = '';
+  errors.address = '';
   errors.businessHours = [];
   errors.announcements = [];
   formErrors.value = [];
@@ -468,6 +479,17 @@ const validateForm = () => {
   } else if (formData.name.length > 50) {
     errors.name = '店鋪名稱不能超過 50 個字元';
     formErrors.value.push('店鋪名稱不能超過 50 個字元');
+    isValid = false;
+  }
+
+  // 驗證地址
+  if (!formData.address.trim()) {
+    errors.address = '店鋪地址為必填項';
+    formErrors.value.push('店鋪地址為必填項');
+    isValid = false;
+  } else if (formData.address.length > 200) {
+    errors.address = '店鋪地址不能超過 200 個字元';
+    formErrors.value.push('店鋪地址不能超過 200 個字元');
     isValid = false;
   }
 
@@ -550,6 +572,7 @@ const fetchStoreData = async () => {
       const store = response.store;
       formData.name = store.name;
       formData.brand = store.brand;
+      formData.address = store.address || '';
       formData.image = store.image;
 
       // 處理營業時間
@@ -611,6 +634,7 @@ const submitForm = async () => {
     const submitData = {
       name: formData.name,
       brand: formData.brand,
+      address: formData.address,
       businessHours: formData.businessHours,
       announcements: formData.announcements,
       isActive: formData.isActive

@@ -52,6 +52,11 @@
               </div>
 
               <div class="mb-3">
+                <h6 class="text-muted mb-1">店鋪地址</h6>
+                <p>{{ store.address || '未設定地址' }}</p>
+              </div>
+
+              <div class="mb-3">
                 <h6 class="text-muted mb-1">創建時間</h6>
                 <p>{{ formatDate(store.createdAt) }}</p>
               </div>
