@@ -37,7 +37,8 @@ export const createOrder = async (orderData) => {
       items.push({
         dishInstance: dishInstance._id,
         quantity: item.quantity,
-        subtotal: item.subtotal
+        subtotal: item.subtotal,
+        note: item.note || '' // 新增這行
       });
     }
 
