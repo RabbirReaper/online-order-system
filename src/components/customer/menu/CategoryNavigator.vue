@@ -1,17 +1,12 @@
 <template>
   <div ref="navContainer" class="category-navigator">
-    <div class="category-nav-wrapper">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light p-0">
-        <div class="container-fluid p-0">
-          <ul class="navbar-nav category-nav" ref="categoryNav">
-            <li class="nav-item" v-for="(category, index) in categories" :key="index">
-              <a class="nav-link" :class="{ active: activeCategory === category.categoryId }"
-                :href="'#category-' + category.categoryId" @click.prevent="scrollToCategory(category.categoryId)">
-                {{ category.categoryName }}
-              </a>
-            </li>
-          </ul>
-        </div>
+    <div class="category-nav-wrapper" ref="navWrapper">
+      <nav class="nav nav-pills category-nav-custom" ref="categoryNav">
+        <a v-for="category in categories" :key="category.categoryId" class="nav-link nav-link-custom"
+          :class="{ 'active': activeCategory === category.categoryId }" :href="'#category-' + category.categoryId"
+          @click.prevent="scrollToCategory(category.categoryId)">
+          {{ category.categoryName }}
+        </a>
       </nav>
     </div>
   </div>
@@ -28,6 +23,7 @@ const props = defineProps({
 });
 
 const navContainer = ref(null);
+const navWrapper = ref(null);
 const categoryNav = ref(null);
 const activeCategory = ref('');
 const observer = ref(null);
@@ -38,7 +34,7 @@ const scrollToCategory = (categoryId) => {
   const element = document.getElementById('category-' + categoryId);
   if (element) {
     // 考慮頂部固定導航欄的高度
-    const navHeight = navContainer.value.offsetHeight;
+    const navHeight = navContainer.value?.offsetHeight || 0;
     const rect = element.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const targetPosition = rect.top + scrollTop - navHeight - 10; // 10px 緩衝
@@ -50,32 +46,32 @@ const scrollToCategory = (categoryId) => {
 
     // 更新激活狀態
     activeCategory.value = categoryId;
+
+    // 立即滾動導航欄到當前項目
+    setTimeout(() => {
+      scrollNavToActiveItem();
+    }, 100);
   }
 };
 
 // 設置滾動監聽
 const setupScrollSpy = () => {
-  // 創建 IntersectionObserver 實例
   observer.value = new IntersectionObserver(
     (entries) => {
       entries.forEach(entry => {
-        // 當元素進入視口時
         if (entry.isIntersecting) {
           const id = entry.target.id.replace('category-', '');
           activeCategory.value = id;
-
-          // 滾動導航欄以顯示當前活躍項目
           scrollNavToActiveItem();
         }
       });
     },
     {
-      rootMargin: '-50px 0px -50% 0px',  // 元素頂部進入視口的 50px 內會觸發
+      rootMargin: '-50px 0px -50% 0px',
       threshold: 0
     }
   );
 
-  // 為每個類別添加觀察
   props.categories.forEach(category => {
     const element = document.getElementById('category-' + category.categoryId);
     if (element) {
@@ -83,27 +79,35 @@ const setupScrollSpy = () => {
     }
   });
 
-  // 初始化時設置第一個類別為活躍
   if (props.categories.length > 0) {
     activeCategory.value = props.categories[0].categoryId;
   }
 };
 
-// 當激活類別變化時，滾動導航欄以確保激活項目可見
+// 滾動導航欄到活躍項目
 const scrollNavToActiveItem = () => {
-  if (!categoryNav.value) return;
+  if (!navWrapper.value) return;
 
-  const activeItem = categoryNav.value.querySelector('.nav-link.active');
-  if (activeItem) {
-    const navRect = categoryNav.value.getBoundingClientRect();
-    const activeRect = activeItem.getBoundingClientRect();
+  const activeItem = navWrapper.value.querySelector('.nav-link-custom.active');
+  if (!activeItem) return;
 
-    // 檢查項目是否在視口中
-    if (activeRect.left < navRect.left || activeRect.right > navRect.right) {
-      // 計算滾動位置，使項目居中
-      categoryNav.value.scrollLeft = activeItem.offsetLeft - (navRect.width / 2) + (activeRect.width / 2);
-    }
-  }
+  const navRect = navWrapper.value.getBoundingClientRect();
+  const activeItemOffsetLeft = activeItem.offsetLeft;
+  const activeItemWidth = activeItem.offsetWidth;
+  const navWidth = navRect.width;
+
+  // 計算理想的滾動位置（將活躍項目置於中央）
+  const idealScrollLeft = activeItemOffsetLeft - (navWidth / 2) + (activeItemWidth / 2);
+
+  // 邊界檢查
+  const maxScrollLeft = navWrapper.value.scrollWidth - navWidth;
+  const targetScrollLeft = Math.max(0, Math.min(idealScrollLeft, maxScrollLeft));
+
+  // 平滑滾動到目標位置
+  navWrapper.value.scrollTo({
+    left: targetScrollLeft,
+    behavior: 'smooth'
+  });
 };
 
 // 設置粘性導航
@@ -112,7 +116,6 @@ const setupStickyNav = () => {
 
   const stickyOffset = navContainer.value.offsetTop;
 
-  // 滾動處理函數
   scrollHandler.value = () => {
     if (window.pageYOffset >= stickyOffset) {
       navContainer.value.classList.add('sticky');
@@ -121,21 +124,22 @@ const setupStickyNav = () => {
     }
   };
 
-  // 添加滾動事件監聽
   window.addEventListener('scroll', scrollHandler.value);
 };
 
 onMounted(async () => {
-  // 等待 DOM 更新
   await nextTick();
-
-  // 設置粘性導航和滾動監聽
   setupStickyNav();
   setupScrollSpy();
+
+  if (props.categories.length > 0) {
+    setTimeout(() => {
+      scrollNavToActiveItem();
+    }, 300);
+  }
 });
 
 onUnmounted(() => {
-  // 清理所有監聽
   if (observer.value) {
     observer.value.disconnect();
   }
@@ -155,49 +159,75 @@ onUnmounted(() => {
 
 .category-nav-wrapper {
   width: 100%;
-  overflow-x: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.category-nav {
-  display: flex;
   overflow-x: auto;
-  margin: 0;
-  padding: 0;
-  white-space: nowrap;
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* IE and Edge */
+  overflow-y: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 0;
+
+  /* 自定義滾動條樣式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(211, 84, 0, 0.3) transparent;
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.category-nav::-webkit-scrollbar {
-  display: none;
+/* Webkit 滾動條樣式 */
+.category-nav-wrapper::-webkit-scrollbar {
+  height: 4px;
 }
 
-.category-nav .nav-item {
-  display: inline-block;
+.category-nav-wrapper::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.category-nav .nav-link {
-  padding: 1rem 1.2rem;
-  color: #555;
+.category-nav-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(211, 84, 0, 0.3);
+  border-radius: 2px;
+}
+
+.category-nav-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(211, 84, 0, 0.5);
+}
+
+/* 重寫 Bootstrap nav 樣式實現橫向滾動 */
+.category-nav-custom {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  flex-direction: row !important;
+  justify-content: flex-start !important;
+  min-width: max-content;
+  padding: 0 1rem;
+  margin-bottom: 0;
+  list-style: none;
+}
+
+.nav-link-custom {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  padding: 0.75rem 1.25rem !important;
+  margin-right: 0.5rem;
+  color: #555 !important;
   font-weight: 600;
   font-size: 0.95rem;
-  border-bottom: 3px solid transparent;
+  background-color: transparent !important;
+  border: 2px solid transparent !important;
+  border-radius: 25px !important;
   transition: all 0.3s ease;
-  position: relative;
-  /* 添加這個，確保點擊區域正確 */
+  white-space: nowrap;
+  text-decoration: none !important;
+  cursor: pointer;
+  min-width: max-content;
 }
 
-.category-nav .nav-link:hover {
-  color: #d35400;
+.nav-link-custom:hover {
+  color: #d35400 !important;
+  background-color: rgba(211, 84, 0, 0.1) !important;
+  border-color: rgba(211, 84, 0, 0.2) !important;
+  text-decoration: none !important;
 }
 
-.category-nav .nav-link.active {
-  color: #d35400;
-  border-bottom: 3px solid #d35400;
+.nav-link-custom.active {
+  color: #fff !important;
+  background-color: #d35400 !important;
+  border-color: #d35400 !important;
 }
 
 .sticky {
@@ -207,17 +237,60 @@ onUnmounted(() => {
   max-width: 736px;
   background-color: #fff;
   z-index: 1050;
-  /* 提高 z-index 值，確保在最頂層 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  /* 增強陰影效果 */
 }
 
-/* 確保 sticky 狀態下的連結可以點擊 */
-.sticky .nav-link {
+.sticky .nav-link-custom {
   pointer-events: auto;
-  /* 明確啟用點擊事件 */
   position: relative;
   z-index: 1;
-  /* 確保連結在頂層 */
+}
+
+/* 響應式調整 */
+@media (max-width: 576px) {
+  .nav-link-custom {
+    padding: 0.6rem 1rem !important;
+    font-size: 0.9rem;
+    margin-right: 0.25rem;
+  }
+
+  .category-nav-wrapper::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .category-nav-custom {
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-link-custom {
+    padding: 0.5rem 0.8rem !important;
+    font-size: 0.85rem;
+  }
+
+  .category-nav-custom {
+    padding: 0 0.25rem;
+  }
+}
+
+/* 為觸控設備增加滑動提示 */
+@media (hover: none) and (pointer: coarse) {
+  .category-nav-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.8), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+/* 確保在所有裝置上都能正確顯示橫向滾動 */
+.category-nav-custom>* {
+  flex-shrink: 0;
 }
 </style>
