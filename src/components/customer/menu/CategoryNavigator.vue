@@ -187,6 +187,8 @@ onUnmounted(() => {
   font-size: 0.95rem;
   border-bottom: 3px solid transparent;
   transition: all 0.3s ease;
+  position: relative;
+  /* 添加這個，確保點擊區域正確 */
 }
 
 .category-nav .nav-link:hover {
@@ -204,6 +206,18 @@ onUnmounted(() => {
   width: 100%;
   max-width: 736px;
   background-color: #fff;
-  z-index: 99;
+  z-index: 1050;
+  /* 提高 z-index 值，確保在最頂層 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  /* 增強陰影效果 */
+}
+
+/* 確保 sticky 狀態下的連結可以點擊 */
+.sticky .nav-link {
+  pointer-events: auto;
+  /* 明確啟用點擊事件 */
+  position: relative;
+  z-index: 1;
+  /* 確保連結在頂層 */
 }
 </style>
