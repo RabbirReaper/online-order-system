@@ -113,6 +113,7 @@ const submitForm = async (evt) => {
     };
 
     await api.inventory.createInventory({
+      brandId: props.brandId,
       storeId: props.storeId,
       data: inventoryData
     });
