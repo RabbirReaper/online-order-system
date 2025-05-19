@@ -10,6 +10,7 @@ const OptionSchema = new mongoose.Schema({
   name: { type: String, trim: true, required: true },
   refDishTemplate: { type: mongoose.Schema.Types.ObjectId, ref: 'DishTemplate' },
   price: { type: Number, default: 0 },
+  tags: [{ type: String }]
 });
 
 OptionSchema.index({ brand: 1 });
