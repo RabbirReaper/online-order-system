@@ -5,19 +5,22 @@
     <div class="row g-3 mb-3">
       <div class="col-md-6">
         <label for="customerName" class="form-label">姓名 <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="customerName" v-model="localCustomerInfo.name" placeholder="請輸入姓名"
-          required>
+        <input type="text" class="form-control" id="customerName" :value="localCustomerInfo.name" @input="updateName"
+          placeholder="請輸入姓名">
       </div>
       <div class="col-md-6">
         <label for="customerPhone" class="form-label">電話 <span class="text-danger">*</span></label>
-        <input type="tel" class="form-control" id="customerPhone" v-model="localCustomerInfo.phone"
-          placeholder="請輸入聯絡電話" required>
+        <input type="tel" class="form-control" id="customerPhone" :value="localCustomerInfo.phone" @input="updatePhone"
+          placeholder="請輸入聯絡電話">
       </div>
+      <!-- Email 欄位暫時註解，後續採用手機號碼簡訊或Line訊息通知 -->
+      <!--
       <div class="col-12">
         <label for="customerEmail" class="form-label">Email</label>
         <input type="email" class="form-control" id="customerEmail" v-model="localCustomerInfo.email"
           placeholder="選填，訂單確認將發送到您的信箱">
       </div>
+      -->
     </div>
 
     <!-- 付款方式 -->
@@ -94,7 +97,7 @@ const props = defineProps({
     default: () => ({
       name: '',
       phone: '',
-      email: ''
+      // email: '' // 暫時註解
     })
   },
   paymentMethod: {
@@ -105,8 +108,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update:customerInfo', 'update:paymentMethod']);
 
-// 本地狀態
-const localCustomerInfo = ref({ ...props.customerInfo });
+// 本地狀態 - 避免直接使用 reactive 物件的引用
+const localCustomerInfo = ref({
+  name: props.customerInfo.name || '',
+  phone: props.customerInfo.phone || ''
+});
 const localPaymentMethod = ref(props.paymentMethod);
 
 // 信用卡資訊
@@ -117,20 +123,35 @@ const creditCardInfo = ref({
   name: ''
 });
 
-// 監聽 props 變化
+// 手動處理輸入事件，避免遞歸更新
+const updateName = (event) => {
+  localCustomerInfo.value.name = event.target.value;
+  emit('update:customerInfo', { ...localCustomerInfo.value });
+};
+
+const updatePhone = (event) => {
+  localCustomerInfo.value.phone = event.target.value;
+  emit('update:customerInfo', { ...localCustomerInfo.value });
+};
+
+// 只在 props 變化時更新本地狀態，避免雙向綁定造成的遞歸
 watch(() => props.customerInfo, (newVal) => {
-  localCustomerInfo.value = { ...newVal };
+  if (newVal.name !== localCustomerInfo.value.name ||
+    newVal.phone !== localCustomerInfo.value.phone) {
+    localCustomerInfo.value = {
+      name: newVal.name || '',
+      phone: newVal.phone || ''
+    };
+  }
 }, { deep: true });
 
 watch(() => props.paymentMethod, (newVal) => {
-  localPaymentMethod.value = newVal;
+  if (newVal !== localPaymentMethod.value) {
+    localPaymentMethod.value = newVal;
+  }
 });
 
-// 監聽本地狀態變化並向上傳遞
-watch(localCustomerInfo, (newVal) => {
-  emit('update:customerInfo', newVal);
-}, { deep: true });
-
+// 監聽付款方式變化
 watch(localPaymentMethod, (newVal) => {
   emit('update:paymentMethod', newVal);
 });

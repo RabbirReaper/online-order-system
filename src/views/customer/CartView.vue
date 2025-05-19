@@ -162,23 +162,28 @@ const availableCoupons = ref([
 // Modals (會在onMounted中初始化)
 let confirmModal = null;
 
-// 計算屬性
+// 計算屬性 - 修正響應式依賴
 const isFormValid = computed(() => {
-  // 基本表單檢查
-  if (!customerInfo.value.name || !customerInfo.value.phone) {
+  // 如果是內用，姓名電話非必填
+  if (orderType.value === 'dineIn') {
+    // 內用只檢查桌號
+    return tableNumber.value && tableNumber.value.trim() !== '';
+  }
+
+  // 外帶和外送檢查姓名電話必填
+  const name = customerInfo.value?.name || '';
+  const phone = customerInfo.value?.phone || '';
+
+  if (!name.trim() || !phone.trim()) {
     return false;
   }
 
   // 根據訂單類型檢查額外字段
-  if (orderType.value === 'dineIn' && !tableNumber.value) {
+  if (orderType.value === 'delivery' && (!deliveryAddress.value || !deliveryAddress.value.trim())) {
     return false;
   }
 
-  if (orderType.value === 'delivery' && !deliveryAddress.value) {
-    return false;
-  }
-
-  if (pickupTime.value === 'scheduled' && !scheduledTime.value) {
+  if (pickupTime.value === 'scheduled' && (!scheduledTime.value || !scheduledTime.value.trim())) {
     return false;
   }
 
@@ -260,8 +265,87 @@ const checkout = () => {
 };
 
 const submitOrder = async () => {
-  // 實際應用中會實現訂單提交邏輯
-  // 這裡只做示範，實際提交訂單還需處理各種狀態和錯誤
+  // 準備符合Order schema的訂單資料
+  const orderData = {
+    // 基本訂單資訊 - 符合schema
+    store: cartStore.currentStore,  // ObjectId
+    brand: cartStore.currentBrand,  // ObjectId
+    orderType: orderType.value,     // 'dine_in', 'takeout', 'delivery'
+
+    // 訂單項目 - 注意：這裡假設dishInstance已經先在後端創建
+    items: cartItems.value.map(item => ({
+      // 前端需要先創建DishInstance，這裡只傳ID
+      dishInstance: item.dishInstance.templateId, // 實際應該是創建後的DishInstance ObjectId
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+      note: item.note || ''
+    })),
+
+    // 價格計算 - 符合schema
+    subtotal: calculateSubtotal(),
+    serviceCharge: 0, // 目前沒有服務費
+    totalDiscount: couponDiscount.value,
+    total: calculateTotal(),
+
+    // 付款資訊 - 符合schema格式
+    paymentType: 'On-site', // 目前都是現場付款
+    paymentMethod: (() => {
+      switch (paymentMethod.value) {
+        case '現金': return 'cash';
+        case '信用卡': return 'credit_card';
+        case 'Line Pay': return 'line_pay';
+        default: return 'other';
+      }
+    })(),
+
+    // 客戶資訊 - 符合schema
+    customerInfo: {
+      name: customerInfo.value.name || null,
+      phone: customerInfo.value.phone || null
+    },
+
+    // 根據訂單類型設置特定資訊
+    ...(orderType.value === 'delivery' && {
+      deliveryInfo: {
+        address: deliveryAddress.value,
+        deliveryFee: deliveryFee.value,
+        estimatedTime: pickupTime.value === 'scheduled' ? new Date(scheduledTime.value) : null
+      }
+    }),
+
+    ...(orderType.value === 'dineIn' && {
+      dineInInfo: {
+        tableNumber: tableNumber.value,
+        numberOfGuests: 1
+      }
+    }),
+
+    ...(orderType.value === 'takeout' && pickupTime.value === 'scheduled' && {
+      estimatedPickupTime: new Date(scheduledTime.value)
+    }),
+
+    // 折扣資訊 - 符合schema array格式
+    discounts: selectedCoupon.value ? [{
+      couponId: selectedCoupon.value,
+      amount: couponDiscount.value
+    }] : [],
+
+    // 訂單備註
+    notes: orderRemarks.value || null,
+
+    // 外送平台相關（目前為空）
+    deliveryPlatform: '',
+    platformOrderId: '',
+
+    // 其他預設值
+    status: 'pending',
+    manualAdjustment: 0
+  };
+
+  // Console log 訂單資料
+  console.log('=== 準備送出的訂單資料 (符合Order Schema) ===');
+  console.log(JSON.stringify(orderData, null, 2));
+  console.log('===========================================');
 
   try {
     // 設置訂單類型和客戶資訊
@@ -303,8 +387,14 @@ const submitOrder = async () => {
       confirmModal.hide();
     }
 
-    // 導航到訂單確認頁面
-    router.push({ name: 'order-confirm' });
+    // 導航到訂單確認頁面 - 提供必要的路由參數
+    router.push({
+      name: 'order-confirm',
+      params: {
+        brandId: cartStore.currentBrand,
+        storeId: cartStore.currentStore
+      }
+    });
 
   } catch (error) {
     console.error('提交訂單失敗:', error);
