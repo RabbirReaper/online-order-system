@@ -27,7 +27,6 @@ const storeSchema = new mongoose.Schema({
 
   // === 新增的功能設定欄位 ===
   enableLineOrdering: { type: Boolean, default: false }, // 啟用LINE點餐
-  menuLayout: { type: String, enum: ['single', 'double'], default: 'single' }, // 菜單樣式 (single: 單欄, double: 雙欄)
   showTaxId: { type: Boolean, default: false }, // 顯示統一編號欄位
   provideReceipt: { type: Boolean, default: true }, // 提供收據
 
