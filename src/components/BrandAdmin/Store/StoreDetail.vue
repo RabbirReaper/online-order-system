@@ -57,6 +57,11 @@
               </div>
 
               <div class="mb-3">
+                <h6 class="text-muted mb-1">店鋪電話</h6>
+                <p>{{ store.phone || '未設定電話' }}</p>
+              </div>
+
+              <div class="mb-3">
                 <h6 class="text-muted mb-1">創建時間</h6>
                 <p>{{ formatDate(store.createdAt) }}</p>
               </div>
@@ -86,6 +91,123 @@
 
         <!-- 右側詳細資訊 -->
         <div class="col-md-7">
+          <!-- 服務設定卡片 -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
+                <span>服務設定</span>
+                <button class="btn btn-sm btn-outline-primary" @click="showServiceSettingsModal = true">
+                  <i class="bi bi-pencil me-1"></i>快速編輯
+                </button>
+              </h5>
+
+              <div class="row g-3">
+                <!-- 服務類型 -->
+                <div class="col-md-12">
+                  <h6 class="text-muted mb-2">服務類型</h6>
+                  <div class="d-flex flex-wrap gap-3">
+                    <span class="badge" :class="store.enableDineIn ? 'bg-success' : 'bg-secondary'">
+                      <i class="bi"
+                        :class="store.enableDineIn ? 'bi-check-circle-fill me-1' : 'bi-x-circle-fill me-1'"></i>
+                      內用
+                    </span>
+                    <span class="badge" :class="store.enableTakeOut ? 'bg-success' : 'bg-secondary'">
+                      <i class="bi"
+                        :class="store.enableTakeOut ? 'bi-check-circle-fill me-1' : 'bi-x-circle-fill me-1'"></i>
+                      外帶
+                    </span>
+                    <span class="badge" :class="store.enableDelivery ? 'bg-success' : 'bg-secondary'">
+                      <i class="bi"
+                        :class="store.enableDelivery ? 'bi-check-circle-fill me-1' : 'bi-x-circle-fill me-1'"></i>
+                      外送
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 準備時間 -->
+                <div class="col-md-12">
+                  <h6 class="text-muted mb-2">準備時間設定</h6>
+                  <div class="row g-2">
+                    <div class="col-md-4" v-if="store.enableDineIn">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted">內用準備時間</div>
+                        <div class="fw-bold">{{ store.dineInPrepTime || 0 }} 分鐘</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4" v-if="store.enableTakeOut">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted">外帶準備時間</div>
+                        <div class="fw-bold">{{ store.takeOutPrepTime || 0 }} 分鐘</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4" v-if="store.enableDelivery">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted">外送準備時間</div>
+                        <div class="fw-bold">{{ store.deliveryPrepTime || 0 }} 分鐘</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 外送設定 -->
+                <div class="col-md-12" v-if="store.enableDelivery">
+                  <h6 class="text-muted mb-2">外送設定</h6>
+                  <div class="row g-2">
+                    <div class="col-md-4">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted">最低外送金額</div>
+                        <div class="fw-bold">${{ store.minDeliveryAmount || 0 }}</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted">最少外送數量</div>
+                        <div class="fw-bold">{{ store.minDeliveryQuantity || 1 }} 項</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted">最長外送距離</div>
+                        <div class="fw-bold">{{ store.maxDeliveryDistance || 5 }} 公里</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 預訂設定 -->
+                <div class="col-md-12">
+                  <h6 class="text-muted mb-2">預訂設定</h6>
+                  <div class="p-2 border rounded">
+                    <div class="small text-muted">可預訂天數</div>
+                    <div class="fw-bold">{{ formatAdvanceOrderDays(store.advanceOrderDays) }}</div>
+                  </div>
+                </div>
+
+                <!-- 其他功能設定 -->
+                <div class="col-md-12">
+                  <h6 class="text-muted mb-2">其他功能設定</h6>
+                  <div class="d-flex flex-wrap gap-3 mb-0">
+                    <span class="badge" :class="store.enableLineOrdering ? 'bg-success' : 'bg-secondary'">
+                      <i class="bi"
+                        :class="store.enableLineOrdering ? 'bi-check-circle-fill me-1' : 'bi-x-circle-fill me-1'"></i>
+                      LINE點餐
+                    </span>
+                    <span class="badge" :class="store.showTaxId ? 'bg-success' : 'bg-secondary'">
+                      <i class="bi"
+                        :class="store.showTaxId ? 'bi-check-circle-fill me-1' : 'bi-x-circle-fill me-1'"></i>
+                      顯示統一編號欄位
+                    </span>
+                    <span class="badge" :class="store.provideReceipt ? 'bg-success' : 'bg-secondary'">
+                      <i class="bi"
+                        :class="store.provideReceipt ? 'bi-check-circle-fill me-1' : 'bi-x-circle-fill me-1'"></i>
+                      提供收據
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- 營業時間卡片 -->
           <div class="card mb-4">
             <div class="card-body">
@@ -337,13 +459,109 @@
         </BButton>
       </template>
     </BModal>
+
+    <!-- 服務設定快速編輯對話框 -->
+    <BModal v-model:show="showServiceSettingsModal" title="編輯服務設定" size="lg" centered>
+      <div class="mb-4">
+        <h6 class="border-bottom pb-2 mb-3">服務類型</h6>
+        <div class="d-flex flex-wrap gap-3">
+          <BFormCheckbox v-model="editServiceSettings.enableDineIn" switch>
+            啟用內用 {{ editServiceSettings.enableDineIn ? '✓' : '✗' }}
+          </BFormCheckbox>
+          <BFormCheckbox v-model="editServiceSettings.enableTakeOut" switch>
+            啟用外帶 {{ editServiceSettings.enableTakeOut ? '✓' : '✗' }}
+          </BFormCheckbox>
+          <BFormCheckbox v-model="editServiceSettings.enableDelivery" switch>
+            啟用外送 {{ editServiceSettings.enableDelivery ? '✓' : '✗' }}
+          </BFormCheckbox>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="border-bottom pb-2 mb-3">準備時間設定（分鐘）</h6>
+        <div class="row g-3">
+          <div class="col-md-4" v-if="editServiceSettings.enableDineIn">
+            <label for="edit-dineInPrepTime" class="form-label">內用準備時間</label>
+            <BFormInput type="number" id="edit-dineInPrepTime" v-model.number="editServiceSettings.dineInPrepTime"
+              min="0" />
+          </div>
+          <div class="col-md-4" v-if="editServiceSettings.enableTakeOut">
+            <label for="edit-takeOutPrepTime" class="form-label">外帶準備時間</label>
+            <BFormInput type="number" id="edit-takeOutPrepTime" v-model.number="editServiceSettings.takeOutPrepTime"
+              min="0" />
+          </div>
+          <div class="col-md-4" v-if="editServiceSettings.enableDelivery">
+            <label for="edit-deliveryPrepTime" class="form-label">外送準備時間</label>
+            <BFormInput type="number" id="edit-deliveryPrepTime" v-model.number="editServiceSettings.deliveryPrepTime"
+              min="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4" v-if="editServiceSettings.enableDelivery">
+        <h6 class="border-bottom pb-2 mb-3">外送設定</h6>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="edit-minDeliveryAmount" class="form-label">最低外送金額（元）</label>
+            <BFormInput type="number" id="edit-minDeliveryAmount" v-model.number="editServiceSettings.minDeliveryAmount"
+              min="0" />
+          </div>
+          <div class="col-md-4">
+            <label for="edit-minDeliveryQuantity" class="form-label">最少外送數量（項）</label>
+            <BFormInput type="number" id="edit-minDeliveryQuantity"
+              v-model.number="editServiceSettings.minDeliveryQuantity" min="1" />
+          </div>
+          <div class="col-md-4">
+            <label for="edit-maxDeliveryDistance" class="form-label">最長外送距離（公里）</label>
+            <BFormInput type="number" id="edit-maxDeliveryDistance"
+              v-model.number="editServiceSettings.maxDeliveryDistance" min="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="border-bottom pb-2 mb-3">預訂設定</h6>
+        <div class="mb-3">
+          <label for="edit-advanceOrderDays" class="form-label">可預訂天數</label>
+          <BFormInput type="number" id="edit-advanceOrderDays" v-model.number="editServiceSettings.advanceOrderDays"
+            min="0" />
+          <BFormText>
+            設定顧客可提前預訂的天數，0表示只能立即點餐，1表示可預訂當天，2表示可預訂隔天，以此類推
+          </BFormText>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="border-bottom pb-2 mb-3">其他功能設定</h6>
+        <div class="d-flex flex-column gap-2">
+          <BFormCheckbox v-model="editServiceSettings.enableLineOrdering" switch>
+            啟用LINE點餐 {{ editServiceSettings.enableLineOrdering ? '✓' : '✗' }}
+          </BFormCheckbox>
+          <BFormCheckbox v-model="editServiceSettings.showTaxId" switch>
+            顯示統一編號欄位 {{ editServiceSettings.showTaxId ? '✓' : '✗' }}
+          </BFormCheckbox>
+          <BFormCheckbox v-model="editServiceSettings.provideReceipt" switch>
+            提供收據 {{ editServiceSettings.provideReceipt ? '✓' : '✗' }}
+          </BFormCheckbox>
+        </div>
+      </div>
+
+      <template #footer>
+        <BButton variant="secondary" @click="showServiceSettingsModal = false">取消</BButton>
+        <BButton variant="primary" @click="updateServiceSettings" :disabled="isUpdatingServiceSettings">
+          <span v-if="isUpdatingServiceSettings" class="spinner-border spinner-border-sm me-1" role="status"
+            aria-hidden="true"></span>
+          {{ isUpdatingServiceSettings ? '更新中...' : '保存變更' }}
+        </BButton>
+      </template>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { BModal, BButton, BFormCheckbox, BFormInput, BFormTextarea } from 'bootstrap-vue-next';
+import { BModal, BButton, BFormCheckbox, BFormInput, BFormTextarea, BFormText } from 'bootstrap-vue-next';
 import api from '@/api';
 
 // 路由
@@ -361,15 +579,32 @@ const error = ref('');
 const isDeleting = ref(false);
 const isUpdatingHours = ref(false);
 const isUpdatingAnnouncements = ref(false);
+const isUpdatingServiceSettings = ref(false);
 
 // Modal 顯示狀態
 const showDeleteModal = ref(false);
 const showBusinessHoursModal = ref(false);
 const showAnnouncementsModal = ref(false);
+const showServiceSettingsModal = ref(false);
 
 // 編輯用的數據
 const editBusinessHours = ref([]);
 const editAnnouncements = ref([]);
+const editServiceSettings = reactive({
+  enableLineOrdering: false,
+  showTaxId: false,
+  provideReceipt: true,
+  enableDineIn: true,
+  enableTakeOut: true,
+  enableDelivery: false,
+  dineInPrepTime: 15,
+  takeOutPrepTime: 10,
+  deliveryPrepTime: 30,
+  minDeliveryAmount: 0,
+  minDeliveryQuantity: 1,
+  maxDeliveryDistance: 5,
+  advanceOrderDays: 0
+});
 
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
@@ -384,6 +619,13 @@ const sortedBusinessHours = computed(() => {
   if (!store.value || !store.value.businessHours) return [];
   return [...store.value.businessHours].sort((a, b) => a.day - b.day);
 });
+
+// 格式化預訂天數顯示
+const formatAdvanceOrderDays = (days) => {
+  if (days === 0) return '只能立即點餐';
+  if (days === 1) return '可預訂當天';
+  return `可預訂 ${days} 天`;
+};
 
 // 獲取店鋪資料
 const fetchStoreData = async () => {
@@ -428,6 +670,23 @@ const initEditData = () => {
 
   // 深複製公告數據
   editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []));
+
+  // 初始化服務設定
+  Object.assign(editServiceSettings, {
+    enableLineOrdering: store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
+    showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
+    provideReceipt: store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,
+    enableDineIn: store.value.enableDineIn !== undefined ? store.value.enableDineIn : true,
+    enableTakeOut: store.value.enableTakeOut !== undefined ? store.value.enableTakeOut : true,
+    enableDelivery: store.value.enableDelivery !== undefined ? store.value.enableDelivery : false,
+    dineInPrepTime: store.value.dineInPrepTime !== undefined ? store.value.dineInPrepTime : 15,
+    takeOutPrepTime: store.value.takeOutPrepTime !== undefined ? store.value.takeOutPrepTime : 10,
+    deliveryPrepTime: store.value.deliveryPrepTime !== undefined ? store.value.deliveryPrepTime : 30,
+    minDeliveryAmount: store.value.minDeliveryAmount !== undefined ? store.value.minDeliveryAmount : 0,
+    minDeliveryQuantity: store.value.minDeliveryQuantity !== undefined ? store.value.minDeliveryQuantity : 1,
+    maxDeliveryDistance: store.value.maxDeliveryDistance !== undefined ? store.value.maxDeliveryDistance : 5,
+    advanceOrderDays: store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0
+  });
 };
 
 // 格式化日期
@@ -451,6 +710,7 @@ const toggleStoreActive = async () => {
   try {
     const newStatus = !store.value.isActive;
     await api.store.toggleStoreActive({
+      brandId: brandId.value,
       id: store.value._id,
       isActive: newStatus
     });
@@ -473,7 +733,10 @@ const handleDelete = async () => {
   isDeleting.value = true;
 
   try {
-    await api.store.deleteStore(store.value._id);
+    await api.store.deleteStore({
+      brandId: brandId.value,
+      id: store.value._id
+    });
 
     // 關閉模態對話框
     showDeleteModal.value = false;
@@ -520,6 +783,7 @@ const updateBusinessHours = async () => {
 
   try {
     const response = await api.store.updateBusinessHours({
+      brandId: brandId.value,
       id: store.value._id,
       businessHours: editBusinessHours.value
     });
@@ -574,6 +838,7 @@ const updateAnnouncements = async () => {
 
   try {
     const response = await api.store.updateAnnouncements({
+      brandId: brandId.value,
       id: store.value._id,
       announcements: editAnnouncements.value
     });
@@ -593,6 +858,79 @@ const updateAnnouncements = async () => {
   }
 };
 
+// 更新服務設定
+const updateServiceSettings = async () => {
+  if (!store.value) return;
+
+  // 驗證表單
+  let isValid = true;
+
+  // 驗證準備時間設定
+  if (editServiceSettings.dineInPrepTime < 0) {
+    alert('內用準備時間不能小於0');
+    isValid = false;
+  }
+
+  if (editServiceSettings.takeOutPrepTime < 0) {
+    alert('外帶準備時間不能小於0');
+    isValid = false;
+  }
+
+  if (editServiceSettings.deliveryPrepTime < 0) {
+    alert('外送準備時間不能小於0');
+    isValid = false;
+  }
+
+  // 驗證外送相關設定
+  if (editServiceSettings.minDeliveryAmount < 0) {
+    alert('最低外送金額不能小於0');
+    isValid = false;
+  }
+
+  if (editServiceSettings.minDeliveryQuantity < 1) {
+    alert('最少外送數量不能小於1');
+    isValid = false;
+  }
+
+  if (editServiceSettings.maxDeliveryDistance < 0) {
+    alert('最長外送距離不能小於0');
+    isValid = false;
+  }
+
+  // 驗證預訂設定
+  if (editServiceSettings.advanceOrderDays < 0) {
+    alert('可預訂天數不能小於0');
+    isValid = false;
+  }
+
+  if (!isValid) {
+    return;
+  }
+
+  isUpdatingServiceSettings.value = true;
+
+  try {
+    const response = await api.store.updateServiceSettings({
+      brandId: brandId.value,
+      id: store.value._id,
+      serviceSettings: editServiceSettings
+    });
+
+    if (response && response.store) {
+      // 更新數據
+      Object.assign(store.value, response.store);
+
+      // 關閉模態窗口
+      showServiceSettingsModal.value = false;
+    }
+  } catch (err) {
+    console.error('更新服務設定失敗:', err);
+    alert('更新服務設定時發生錯誤');
+  } finally {
+    isUpdatingServiceSettings.value = false;
+  }
+};
+
 // 生命週期鉤子
 onMounted(() => {
   // 獲取店鋪資料
@@ -603,6 +941,16 @@ onMounted(() => {
   watch(showBusinessHoursModal, (newValue) => {
     if (newValue) {
       editBusinessHours.value = JSON.parse(JSON.stringify(store.value.businessHours || []));
+
+      // 確保每天的時段都有正確的結構
+      editBusinessHours.value.forEach(day => {
+        if (!day.periods || day.periods.length === 0) {
+          day.periods = [{
+            open: '09:00',
+            close: '18:00'
+          }];
+        }
+      });
     }
   });
 
@@ -610,6 +958,27 @@ onMounted(() => {
   watch(showAnnouncementsModal, (newValue) => {
     if (newValue) {
       editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []));
+    }
+  });
+
+  // 當服務設定編輯模態框開啟時重新初始化數據
+  watch(showServiceSettingsModal, (newValue) => {
+    if (newValue) {
+      Object.assign(editServiceSettings, {
+        enableLineOrdering: store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
+        showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
+        provideReceipt: store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,
+        enableDineIn: store.value.enableDineIn !== undefined ? store.value.enableDineIn : true,
+        enableTakeOut: store.value.enableTakeOut !== undefined ? store.value.enableTakeOut : true,
+        enableDelivery: store.value.enableDelivery !== undefined ? store.value.enableDelivery : false,
+        dineInPrepTime: store.value.dineInPrepTime !== undefined ? store.value.dineInPrepTime : 15,
+        takeOutPrepTime: store.value.takeOutPrepTime !== undefined ? store.value.takeOutPrepTime : 10,
+        deliveryPrepTime: store.value.deliveryPrepTime !== undefined ? store.value.deliveryPrepTime : 30,
+        minDeliveryAmount: store.value.minDeliveryAmount !== undefined ? store.value.minDeliveryAmount : 0,
+        minDeliveryQuantity: store.value.minDeliveryQuantity !== undefined ? store.value.minDeliveryQuantity : 1,
+        maxDeliveryDistance: store.value.maxDeliveryDistance !== undefined ? store.value.maxDeliveryDistance : 5,
+        advanceOrderDays: store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0
+      });
     }
   });
 });

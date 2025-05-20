@@ -145,11 +145,10 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} [params.categoryId] - 按類別篩選
+     * @param {Array} [params.tags] - 按標籤篩選
      * @returns {Promise} - API 回應
      */
-    getAllOptions({ brandId, categoryId }) {
-      const queryParams = {};
-      if (categoryId) queryParams.categoryId = categoryId;
+    getAllOptions({ brandId, ...queryParams }) {
       return apiClient.get(`/dish/brands/${brandId}/options`, { params: queryParams });
     },
 
@@ -172,6 +171,7 @@ export default function (apiClient) {
      * @param {string} params.data.name - 名稱
      * @param {number} [params.data.price=0] - 價格
      * @param {string} [params.data.refDishTemplate] - 關聯的餐點模板
+     * @param {Array} [params.data.tags] - 標籤
      * @returns {Promise} - API 回應
      */
     createOption({ brandId, data }) {
@@ -187,6 +187,7 @@ export default function (apiClient) {
      * @param {string} [params.data.name] - 名稱
      * @param {number} [params.data.price] - 價格
      * @param {string} [params.data.refDishTemplate] - 關聯的餐點模板
+     * @param {Array} [params.data.tags] - 標籤
      * @returns {Promise} - API 回應
      */
     updateOption({ brandId, id, data }) {

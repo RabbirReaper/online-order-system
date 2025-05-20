@@ -25,6 +25,14 @@
             <BFormText>請輸入完整的店鋪地址，不可超過200個字元</BFormText>
           </div>
 
+          <!-- 店鋪電話 -->
+          <div class="mb-3">
+            <label for="storePhone" class="form-label required">店鋪電話</label>
+            <BFormInput id="storePhone" v-model="formData.phone" :state="errors.phone ? false : null" required />
+            <BFormInvalidFeedback v-if="errors.phone">{{ errors.phone }}</BFormInvalidFeedback>
+            <BFormText>請輸入店鋪電話，例如：02-12345678</BFormText>
+          </div>
+
           <!-- 店鋪狀態 (僅在編輯模式顯示) -->
           <div class="mb-3" v-if="isEditMode">
             <label class="form-label d-block">店鋪狀態</label>
@@ -62,6 +70,96 @@
                 <span class="text-muted">現有圖片</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 服務設定區塊 -->
+        <div class="mb-4">
+          <h6 class="border-bottom pb-2 mb-3">服務設定</h6>
+
+          <!-- 服務類型 -->
+          <div class="mb-3">
+            <label class="form-label">服務類型</label>
+            <div class="d-flex flex-wrap gap-3">
+              <BFormCheckbox v-model="formData.enableDineIn" switch>
+                啟用內用 {{ formData.enableDineIn ? '✓' : '✗' }}
+              </BFormCheckbox>
+              <BFormCheckbox v-model="formData.enableTakeOut" switch>
+                啟用外帶 {{ formData.enableTakeOut ? '✓' : '✗' }}
+              </BFormCheckbox>
+              <BFormCheckbox v-model="formData.enableDelivery" switch>
+                啟用外送 {{ formData.enableDelivery ? '✓' : '✗' }}
+              </BFormCheckbox>
+            </div>
+            <BFormText>選擇此店鋪提供的服務類型</BFormText>
+          </div>
+
+          <!-- 準備時間設定 -->
+          <div class="mb-3">
+            <label class="form-label">準備時間設定（分鐘）</label>
+            <div class="row g-3">
+              <div class="col-md-4" v-if="formData.enableDineIn">
+                <label for="dineInPrepTime" class="form-label small">內用準備時間</label>
+                <BFormInput type="number" id="dineInPrepTime" v-model.number="formData.dineInPrepTime" min="0" />
+              </div>
+              <div class="col-md-4" v-if="formData.enableTakeOut">
+                <label for="takeOutPrepTime" class="form-label small">外帶準備時間</label>
+                <BFormInput type="number" id="takeOutPrepTime" v-model.number="formData.takeOutPrepTime" min="0" />
+              </div>
+              <div class="col-md-4" v-if="formData.enableDelivery">
+                <label for="deliveryPrepTime" class="form-label small">外送準備時間</label>
+                <BFormInput type="number" id="deliveryPrepTime" v-model.number="formData.deliveryPrepTime" min="0" />
+              </div>
+            </div>
+            <BFormText>設定各種服務類型的餐點準備時間</BFormText>
+          </div>
+
+          <!-- 外送設定 (僅在啟用外送時顯示) -->
+          <div class="mb-3" v-if="formData.enableDelivery">
+            <label class="form-label">外送設定</label>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="minDeliveryAmount" class="form-label small">最低外送金額（元）</label>
+                <BFormInput type="number" id="minDeliveryAmount" v-model.number="formData.minDeliveryAmount" min="0" />
+              </div>
+              <div class="col-md-4">
+                <label for="minDeliveryQuantity" class="form-label small">最少外送數量（項）</label>
+                <BFormInput type="number" id="minDeliveryQuantity" v-model.number="formData.minDeliveryQuantity"
+                  min="1" />
+              </div>
+              <div class="col-md-4">
+                <label for="maxDeliveryDistance" class="form-label small">最長外送距離（公里）</label>
+                <BFormInput type="number" id="maxDeliveryDistance" v-model.number="formData.maxDeliveryDistance"
+                  min="0" />
+              </div>
+            </div>
+            <BFormText>設定外送的相關限制</BFormText>
+          </div>
+
+          <!-- 預訂設定 -->
+          <div class="mb-3">
+            <label for="advanceOrderDays" class="form-label">可預訂天數</label>
+            <BFormInput type="number" id="advanceOrderDays" v-model.number="formData.advanceOrderDays" min="0" />
+            <BFormText>
+              設定顧客可提前預訂的天數，0表示只能立即點餐，1表示可預訂當天，2表示可預訂隔天，以此類推
+            </BFormText>
+          </div>
+
+          <!-- 其他功能設定 -->
+          <div class="mb-3">
+            <label class="form-label">其他功能設定</label>
+            <div class="d-flex flex-column gap-2">
+              <BFormCheckbox v-model="formData.enableLineOrdering" switch>
+                啟用LINE點餐 {{ formData.enableLineOrdering ? '✓' : '✗' }}
+              </BFormCheckbox>
+              <BFormCheckbox v-model="formData.showTaxId" switch>
+                顯示統一編號欄位 {{ formData.showTaxId ? '✓' : '✗' }}
+              </BFormCheckbox>
+              <BFormCheckbox v-model="formData.provideReceipt" switch>
+                提供收據 {{ formData.provideReceipt ? '✓' : '✗' }}
+              </BFormCheckbox>
+            </div>
+            <BFormText>設定店鋪的其他功能選項</BFormText>
           </div>
         </div>
 
@@ -270,17 +368,34 @@ const formData = reactive({
   name: '',
   brand: '',
   address: '',
+  phone: '',
   image: null,   // 現有圖片（編輯模式）
   newImage: null, // 新上傳的圖片
   businessHours: [],
   announcements: [],
-  isActive: true
+  isActive: true,
+
+  // 新增的欄位
+  enableLineOrdering: false,
+  showTaxId: false,
+  provideReceipt: true,
+  enableDineIn: true,
+  enableTakeOut: true,
+  enableDelivery: false,
+  dineInPrepTime: 15,
+  takeOutPrepTime: 10,
+  deliveryPrepTime: 30,
+  minDeliveryAmount: 0,
+  minDeliveryQuantity: 1,
+  maxDeliveryDistance: 5,
+  advanceOrderDays: 0
 });
 
 // 錯誤訊息
 const errors = reactive({
   name: '',
   address: '',
+  phone: '',
   image: '',
   businessHours: [],
   announcements: []
@@ -445,15 +560,32 @@ const resetForm = () => {
     formData.name = '';
     formData.brand = brandId.value;
     formData.address = '';
+    formData.phone = '';
     formData.image = null;
     formData.businessHours = [];
     formData.announcements = [];
     formData.isActive = true;
+    // 重置新增欄位
+    formData.enableLineOrdering = false;
+    formData.showTaxId = false;
+    formData.provideReceipt = true;
+    formData.enableDineIn = true;
+    formData.enableTakeOut = true;
+    formData.enableDelivery = false;
+    formData.dineInPrepTime = 15;
+    formData.takeOutPrepTime = 10;
+    formData.deliveryPrepTime = 30;
+    formData.minDeliveryAmount = 0;
+    formData.minDeliveryQuantity = 1;
+    formData.maxDeliveryDistance = 5;
+    formData.advanceOrderDays = 0;
   }
   clearImage();
 
   // 清除錯誤
   errors.name = '';
+  errors.address = '';
+  errors.phone = '';
   errors.image = '';
   errors.businessHours = [];
   errors.announcements = [];
@@ -466,6 +598,7 @@ const validateForm = () => {
   // 清除先前的錯誤
   errors.name = '';
   errors.address = '';
+  errors.phone = '';
   errors.businessHours = [];
   errors.announcements = [];
   formErrors.value = [];
@@ -490,6 +623,13 @@ const validateForm = () => {
   } else if (formData.address.length > 200) {
     errors.address = '店鋪地址不能超過 200 個字元';
     formErrors.value.push('店鋪地址不能超過 200 個字元');
+    isValid = false;
+  }
+
+  // 驗證電話
+  if (!formData.phone.trim()) {
+    errors.phone = '店鋪電話為必填項';
+    formErrors.value.push('店鋪電話為必填項');
     isValid = false;
   }
 
@@ -559,6 +699,44 @@ const validateForm = () => {
     errors.announcements[i] = Object.keys(announcementErrors).length > 0 ? announcementErrors : null;
   }
 
+  // 驗證準備時間設定
+  if (formData.dineInPrepTime < 0) {
+    formErrors.value.push('內用準備時間不能小於0');
+    isValid = false;
+  }
+
+  if (formData.takeOutPrepTime < 0) {
+    formErrors.value.push('外帶準備時間不能小於0');
+    isValid = false;
+  }
+
+  if (formData.deliveryPrepTime < 0) {
+    formErrors.value.push('外送準備時間不能小於0');
+    isValid = false;
+  }
+
+  // 驗證外送相關設定
+  if (formData.minDeliveryAmount < 0) {
+    formErrors.value.push('最低外送金額不能小於0');
+    isValid = false;
+  }
+
+  if (formData.minDeliveryQuantity < 1) {
+    formErrors.value.push('最少外送數量不能小於1');
+    isValid = false;
+  }
+
+  if (formData.maxDeliveryDistance < 0) {
+    formErrors.value.push('最長外送距離不能小於0');
+    isValid = false;
+  }
+
+  // 驗證預訂設定
+  if (formData.advanceOrderDays < 0) {
+    formErrors.value.push('可預訂天數不能小於0');
+    isValid = false;
+  }
+
   return isValid;
 };
 
@@ -573,6 +751,7 @@ const fetchStoreData = async () => {
       formData.name = store.name;
       formData.brand = store.brand;
       formData.address = store.address || '';
+      formData.phone = store.phone || '';
       formData.image = store.image;
 
       // 處理營業時間
@@ -595,7 +774,24 @@ const fetchStoreData = async () => {
         ? store.announcements
         : [];
 
+      // 設定店鋪狀態
       formData.isActive = store.isActive !== undefined ? store.isActive : true;
+
+      // 設定新增的欄位
+      formData.enableLineOrdering = store.enableLineOrdering !== undefined ? store.enableLineOrdering : false;
+      formData.showTaxId = store.showTaxId !== undefined ? store.showTaxId : false;
+      formData.provideReceipt = store.provideReceipt !== undefined ? store.provideReceipt : true;
+      formData.enableDineIn = store.enableDineIn !== undefined ? store.enableDineIn : true;
+      formData.enableTakeOut = store.enableTakeOut !== undefined ? store.enableTakeOut : true;
+      formData.enableDelivery = store.enableDelivery !== undefined ? store.enableDelivery : false;
+      formData.dineInPrepTime = store.dineInPrepTime !== undefined ? store.dineInPrepTime : 15;
+      formData.takeOutPrepTime = store.takeOutPrepTime !== undefined ? store.takeOutPrepTime : 10;
+      formData.deliveryPrepTime = store.deliveryPrepTime !== undefined ? store.deliveryPrepTime : 30;
+      formData.minDeliveryAmount = store.minDeliveryAmount !== undefined ? store.minDeliveryAmount : 0;
+      formData.minDeliveryQuantity = store.minDeliveryQuantity !== undefined ? store.minDeliveryQuantity : 1;
+      formData.maxDeliveryDistance = store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 5;
+      formData.advanceOrderDays = store.advanceOrderDays !== undefined ? store.advanceOrderDays : 0;
+
       formData._id = store._id;
     } else {
       // 顯示錯誤訊息
@@ -635,9 +831,24 @@ const submitForm = async () => {
       name: formData.name,
       brand: formData.brand,
       address: formData.address,
+      phone: formData.phone,
       businessHours: formData.businessHours,
       announcements: formData.announcements,
-      isActive: formData.isActive
+      isActive: formData.isActive,
+      // 新增的欄位
+      enableLineOrdering: formData.enableLineOrdering,
+      showTaxId: formData.showTaxId,
+      provideReceipt: formData.provideReceipt,
+      enableDineIn: formData.enableDineIn,
+      enableTakeOut: formData.enableTakeOut,
+      enableDelivery: formData.enableDelivery,
+      dineInPrepTime: formData.dineInPrepTime,
+      takeOutPrepTime: formData.takeOutPrepTime,
+      deliveryPrepTime: formData.deliveryPrepTime,
+      minDeliveryAmount: formData.minDeliveryAmount,
+      minDeliveryQuantity: formData.minDeliveryQuantity,
+      maxDeliveryDistance: formData.maxDeliveryDistance,
+      advanceOrderDays: formData.advanceOrderDays
     };
 
     // 直接使用已轉換的base64圖片，不需要再次轉換
@@ -650,13 +861,17 @@ const submitForm = async () => {
     if (isEditMode.value) {
       // 更新店鋪
       response = await api.store.updateStore({
+        brandId: brandId.value,
         id: route.params.id,
         data: submitData
       });
       successMessage.value = '店鋪更新成功！';
     } else {
       // 創建新店鋪
-      response = await api.store.createStore({ data: submitData, brandId: brandId.value });
+      response = await api.store.createStore({
+        brandId: brandId.value,
+        data: submitData
+      });
       successMessage.value = '店鋪創建成功！';
     }
 

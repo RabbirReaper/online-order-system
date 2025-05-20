@@ -103,6 +103,7 @@
                         <th>選項名稱</th>
                         <th>價格</th>
                         <th>關聯餐點</th>
+                        <th>標籤</th>
                         <th>操作</th>
                       </tr>
                     </thead>
@@ -117,6 +118,14 @@
                         <td>
                           <span v-if="option.refDishTemplate">{{ option.refDishTemplate.name }}</span>
                           <span v-else class="text-muted">無</span>
+                        </td>
+                        <td>
+                          <div class="d-flex flex-wrap gap-1">
+                            <span v-for="(tag, tagIndex) in option.tags" :key="tagIndex" class="badge bg-info">
+                              {{ tag }}
+                            </span>
+                            <span v-if="!option.tags || option.tags.length === 0" class="text-muted">無標籤</span>
+                          </div>
                         </td>
                         <td>
                           <div class="btn-group">
@@ -145,6 +154,30 @@
                 <div class="spinner-border spinner-border-sm text-primary" role="status">
                   <span class="visually-hidden">加載中...</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 選項標籤分析 -->
+          <div class="card mb-4" v-if="optionDetails.length > 0">
+            <div class="card-body">
+              <h5 class="card-title mb-3">標籤分析</h5>
+
+              <div v-if="optionTags.length > 0">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <div v-for="tag in optionTags" :key="tag.name" class="badge bg-info p-2" style="font-size: 1rem;">
+                    {{ tag.name }}
+                    <span class="badge bg-light text-dark ms-1">{{ tag.count }}</span>
+                  </div>
+                </div>
+                <p class="small text-muted mb-0">此類別中的選項共使用了 {{ optionTags.length }} 個不同的標籤</p>
+              </div>
+
+              <div v-else class="alert alert-light text-center">
+                <div class="text-muted">此類別中的選項沒有使用任何標籤</div>
+                <p class="small mt-2 mb-0">
+                  標籤可幫助您組織和篩選選項，請前往選項編輯頁面添加標籤
+                </p>
               </div>
             </div>
           </div>
@@ -215,6 +248,31 @@ const isLoadingOptions = ref(true);
 const error = ref('');
 const isDeleting = ref(false);
 const optionDetails = ref([]);
+
+// 計算選項的標籤統計
+const optionTags = computed(() => {
+  const tagCounts = {};
+
+  optionDetails.value.forEach(option => {
+    if (option.tags && Array.isArray(option.tags)) {
+      option.tags.forEach(tag => {
+        if (tagCounts[tag]) {
+          tagCounts[tag]++;
+        } else {
+          tagCounts[tag] = 1;
+        }
+      });
+    }
+  });
+
+  // 轉換為數組並排序
+  const tagArray = Object.keys(tagCounts).map(name => ({
+    name,
+    count: tagCounts[name]
+  }));
+
+  return tagArray.sort((a, b) => b.count - a.count);
+});
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -328,7 +386,10 @@ const handleDelete = async () => {
   isDeleting.value = true;
 
   try {
-    await api.dish.deleteOptionCategory(category.value._id, brandId.value);
+    await api.dish.deleteOptionCategory({
+      brandId: brandId.value,
+      id: category.value._id
+    });
 
     // 關閉模態對話框
     const modalElement = document.getElementById('deleteCategoryModal');

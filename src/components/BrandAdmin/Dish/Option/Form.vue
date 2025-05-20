@@ -43,6 +43,26 @@
             <div class="invalid-feedback" v-if="errors.refDishTemplate">{{ errors.refDishTemplate }}</div>
             <div class="form-text">關聯餐點後，選擇此選項會影響該餐點的庫存（可選）</div>
           </div>
+
+          <!-- 標籤 -->
+          <div class="mb-3">
+            <label for="optionTags" class="form-label">標籤</label>
+            <div class="d-flex align-items-center mb-2">
+              <input type="text" class="form-control" id="newTag" v-model="newTag" placeholder="新增標籤" />
+              <button type="button" class="btn btn-outline-primary ms-2" @click="addTag" :disabled="!newTag.trim()">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+            <div class="d-flex flex-wrap">
+              <span v-for="(tag, index) in formData.tags" :key="index" class="badge bg-info me-2 mb-2 p-2">
+                {{ tag }}
+                <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.65rem;"
+                  @click="removeTag(index)"></button>
+              </span>
+              <span v-if="formData.tags.length === 0" class="text-muted small">尚未添加標籤</span>
+            </div>
+            <div class="form-text">標籤可用於分類和搜尋選項，例如：「甜度」、「配料」、「口味」等</div>
+          </div>
         </div>
 
         <!-- 關聯類別區塊 -->
@@ -125,7 +145,8 @@ const formData = reactive({
   name: '',
   brand: '',
   price: 0,
-  refDishTemplate: ''
+  refDishTemplate: '',
+  tags: []
 });
 
 // 錯誤訊息
@@ -141,6 +162,24 @@ const successMessage = ref('');
 const formErrors = ref([]);
 const dishes = ref([]);
 const linkedCategories = ref([]);
+const newTag = ref('');
+
+// 添加標籤
+const addTag = () => {
+  const tag = newTag.value.trim();
+  if (!tag) return;
+
+  if (!formData.tags.includes(tag)) {
+    formData.tags.push(tag);
+  }
+
+  newTag.value = '';
+};
+
+// 移除標籤
+const removeTag = (index) => {
+  formData.tags.splice(index, 1);
+};
 
 // 重置表單
 const resetForm = () => {
@@ -153,6 +192,7 @@ const resetForm = () => {
     formData.brand = brandId.value;
     formData.price = 0;
     formData.refDishTemplate = '';
+    formData.tags = [];
   }
 
   // 清除錯誤
@@ -161,6 +201,7 @@ const resetForm = () => {
   errors.refDishTemplate = '';
   formErrors.value = [];
   successMessage.value = '';
+  newTag.value = '';
 };
 
 // 驗證表單
@@ -209,6 +250,7 @@ const fetchOptionData = async () => {
       formData.brand = option.brand;
       formData.price = option.price;
       formData.refDishTemplate = option.refDishTemplate ? option.refDishTemplate._id : '';
+      formData.tags = option.tags || [];
       formData._id = option._id;
 
       // 獲取關聯此選項的類別
@@ -280,7 +322,8 @@ const submitForm = async () => {
       name: formData.name,
       brand: formData.brand,
       price: Number(formData.price),
-      refDishTemplate: formData.refDishTemplate || null
+      refDishTemplate: formData.refDishTemplate || null,
+      tags: formData.tags
     };
 
     let response;

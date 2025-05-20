@@ -13,15 +13,21 @@ import { AppError } from '../../middlewares/error.js';
  * @param {String} brandId - 品牌ID
  * @param {Object} options - 查詢選項
  * @param {String} options.categoryId - 按類別篩選
+ * @param {Array} options.tags - 按標籤篩選
  * @returns {Promise<Array>} 選項列表
  */
 export const getAllOptions = async (brandId, options = {}) => {
-  const { categoryId } = options;
+  const { categoryId, tags } = options;
 
   // 構建查詢條件
   const queryConditions = { brand: brandId };
 
-  // 過濾條件
+  // 按標籤篩選
+  if (tags && Array.isArray(tags) && tags.length > 0) {
+    queryConditions.tags = { $in: tags };
+  }
+
+  // 按類別篩選
   if (categoryId) {
     // 查找類別下的所有選項引用，確保類別屬於該品牌
     const category = await OptionCategory.findOne({
@@ -147,9 +153,13 @@ export const createOption = async (optionData, brandId) => {
     throw new AppError('此選項名稱已存在', 400);
   }
 
-
   // 確保設置品牌ID
   optionData.brand = brandId;
+
+  // 確保 tags 是陣列
+  if (optionData.tags && !Array.isArray(optionData.tags)) {
+    optionData.tags = [optionData.tags];
+  }
 
   // 創建選項
   const newOption = new Option(optionData);
@@ -166,6 +176,55 @@ export const createOption = async (optionData, brandId) => {
  * @returns {Promise<Object>} 更新後的選項
  */
 export const updateOption = async (optionId, updateData, brandId) => {
+  // 檢查選項是否存在且屬於該品牌
+  const option = await Option.findOne({
+    _id: optionId,
+    brand: brandId
+  });
+
+  if (!option) {
+    throw new AppError('選項不存在或無權訪問', 404);
+  }
+
+  // 基本驗證
+  if (updateData.name) {
+    // 檢查更新的名稱是否與其他選項重複
+    const existingOption = await Option.findOne({
+      name: updateData.name,
+      brand: brandId,
+      _id: { $ne: optionId } // 排除當前選項
+    });
+
+    if (existingOption) {
+      throw new AppError('此選項名稱已存在', 400);
+    }
+  }
+
+  // 檢查關聯的餐點模板是否存在且屬於該品牌
+  if (updateData.refDishTemplate) {
+    const template = await DishTemplate.findOne({
+      _id: updateData.refDishTemplate,
+      brand: brandId
+    });
+
+    if (!template) {
+      throw new AppError('關聯的餐點模板不存在或不屬於此品牌', 404);
+    }
+  }
+
+  // 確保 tags 是陣列
+  if (updateData.tags && !Array.isArray(updateData.tags)) {
+    updateData.tags = [updateData.tags];
+  }
+
+  // 更新選項
+  Object.keys(updateData).forEach(key => {
+    option[key] = updateData[key];
+  });
+
+  await option.save();
+
+  return option;
 };
 
 /**

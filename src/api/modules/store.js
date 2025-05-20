@@ -33,12 +33,27 @@ export default function (apiClient) {
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {Object} params.data - 店鋪資料
      * @param {string} params.data.name - 店鋪名稱
+     * @param {string} params.data.address - 店鋪地址
+     * @param {string} params.data.phone - 店鋪電話
      * @param {string} [params.data.imageData] - 圖片資料 (Base64)
      * @param {Object} [params.data.image] - 現有圖片資訊
      * @param {Array} [params.data.businessHours] - 營業時間
      * @param {string} [params.data.menuId] - 菜單ID
      * @param {Array} [params.data.announcements] - 公告
      * @param {boolean} [params.data.isActive] - 是否啟用
+     * @param {boolean} [params.data.enableLineOrdering] - 啟用LINE點餐
+     * @param {boolean} [params.data.showTaxId] - 顯示統一編號欄位
+     * @param {boolean} [params.data.provideReceipt] - 提供收據
+     * @param {boolean} [params.data.enableDineIn] - 啟用內用
+     * @param {boolean} [params.data.enableTakeOut] - 啟用外帶
+     * @param {boolean} [params.data.enableDelivery] - 啟用外送
+     * @param {number} [params.data.dineInPrepTime] - 內用準備時間
+     * @param {number} [params.data.takeOutPrepTime] - 外帶準備時間
+     * @param {number} [params.data.deliveryPrepTime] - 外送準備時間
+     * @param {number} [params.data.minDeliveryAmount] - 最低外送金額
+     * @param {number} [params.data.minDeliveryQuantity] - 最少外送數量
+     * @param {number} [params.data.maxDeliveryDistance] - 最長外送距離
+     * @param {number} [params.data.advanceOrderDays] - 可預訂天數
      * @returns {Promise} - API 回應
      */
     createStore({ brandId, data }) {
@@ -125,6 +140,18 @@ export default function (apiClient) {
      */
     getStoreStatus({ brandId, id }) {
       return apiClient.get(`/store/brands/${brandId}/${id}/status`);
+    },
+
+    /**
+     * 更新店鋪服務設定
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.id - 店鋪ID
+     * @param {Object} params.serviceSettings - 服務設定
+     * @returns {Promise} - API 回應
+     */
+    updateServiceSettings({ brandId, id, serviceSettings }) {
+      return apiClient.put(`/store/brands/${brandId}/${id}/service-settings`, { serviceSettings });
     }
   };
 }

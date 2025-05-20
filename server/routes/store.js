@@ -41,6 +41,9 @@ router.put('/brands/:brandId/:id/announcements', authenticate('admin'), requireR
 // 獲取店鋪當前狀態
 router.get('/brands/:brandId/:id/status', storeController.getStoreCurrentStatus);
 
+// 更新店鋪服務設定
+router.put('/brands/:brandId/:id/service-settings', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('edit_backend'), storeController.updateServiceSettings);
+
 // 庫存路由
 // 獲取店鋪庫存
 router.get('/brands/:brandId/:storeId/inventory', authenticate('admin'), requireRole('boss', 'brand_admin', 'store_admin'), requireBrandAccess, requireStoreAccess, requirePermission('order_system', 'view_reports'), inventoryController.getStoreInventory);

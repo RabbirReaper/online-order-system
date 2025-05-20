@@ -229,3 +229,32 @@ export const getStoreCurrentStatus = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// 更新店家服務設定
+export const updateServiceSettings = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { serviceSettings } = req.body;
+
+    if (!serviceSettings) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少參數 serviceSettings'
+      });
+    }
+
+    const store = await storeService.updateStoreServiceSettings(id, serviceSettings);
+
+    res.json({
+      success: true,
+      message: '服務設定更新成功',
+      store
+    });
+  } catch (error) {
+    console.error('Error updating service settings:', error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error'
+    });
+  }
+});

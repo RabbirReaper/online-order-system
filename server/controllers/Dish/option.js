@@ -14,7 +14,8 @@ export const getAllOptions = asyncHandler(async (req, res) => {
   }
 
   const options = {
-    categoryId: req.query.categoryId
+    categoryId: req.query.categoryId,
+    tags: req.query.tags ? req.query.tags.split(',') : []
   };
 
   const allOptions = await optionService.getAllOptions(brandId, options);

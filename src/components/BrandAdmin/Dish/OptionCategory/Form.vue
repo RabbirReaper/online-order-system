@@ -133,30 +133,132 @@
 
     <!-- 添加選項對話框 -->
     <div class="modal fade" id="addOptionModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">添加選項</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
+            <!-- 選項篩選器 -->
+            <div class="mb-3">
+              <label class="form-label">篩選選項</label>
+              <div class="d-flex gap-2 mb-2">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="搜尋選項名稱..." v-model="optionSearchQuery"
+                    @input="filterOptions" />
+                  <button class="btn btn-outline-secondary" type="button">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+                <button type="button" class="btn btn-outline-primary" @click="showTagFilterModal">
+                  <i class="bi bi-tags me-1"></i>標籤
+                </button>
+              </div>
+
+              <!-- 已選標籤顯示 -->
+              <div v-if="selectedTags.length > 0" class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="text-muted me-1">已選標籤:</span>
+                <span v-for="(tag, index) in selectedTags" :key="index" class="badge bg-primary">
+                  {{ tag }}
+                  <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.5rem;"
+                    @click="removeSelectedTag(tag)"></button>
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-secondary" @click="clearTagFilters">
+                  <i class="bi bi-x me-1"></i>清除全部
+                </button>
+              </div>
+            </div>
+
+            <!-- 可用選項列表 -->
             <div class="mb-3">
               <label for="optionSelect" class="form-label required">選擇選項</label>
-              <select class="form-select" id="optionSelect" v-model="selectedOptionId">
-                <option value="">請選擇...</option>
-                <option v-for="option in availableOptions" :key="option._id" :value="option._id">
+              <select class="form-select" id="optionSelect" v-model="selectedOptionId" size="10" style="height: 250px;">
+                <option v-if="filteredOptions.length === 0" disabled>沒有符合篩選條件的選項</option>
+                <option v-for="option in filteredOptions" :key="option._id" :value="option._id">
                   {{ option.name }} ({{ option.price > 0 ? '+$' + option.price : '免費' }})
+                  <span v-if="option.refDishTemplate"> - 餐點: {{ option.refDishTemplate.name }}</span>
                 </option>
               </select>
-              <div class="form-text" v-if="availableOptions.length === 0">
-                沒有可用的選項，請先在選項管理頁面中創建
+              <div class="d-flex justify-content-between mt-1">
+                <div class="form-text"
+                  v-if="filteredOptions.length === 0 && !optionSearchQuery && selectedTags.length === 0">
+                  沒有可用的選項，請先在選項管理頁面中創建
+                </div>
+                <div class="form-text" v-else-if="filteredOptions.length === 0">
+                  沒有符合篩選條件的選項
+                </div>
+                <div class="form-text" v-else>
+                  共 {{ filteredOptions.length }} 個選項
+                </div>
+                <router-link :to="`/admin/${brandId}/options/create`" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-plus-lg me-1"></i>新增選項
+                </router-link>
+              </div>
+            </div>
+
+            <!-- 已選擇的選項詳情 -->
+            <div v-if="selectedOptionPreview" class="card mt-3">
+              <div class="card-header bg-light">
+                <h6 class="mb-0">選項預覽</h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <p><strong>名稱:</strong> {{ selectedOptionPreview.name }}</p>
+                    <p><strong>價格:</strong> {{ selectedOptionPreview.price > 0 ? '+$' + selectedOptionPreview.price :
+                      '免費' }}</p>
+                  </div>
+                  <div class="col-md-6">
+                    <p><strong>關聯餐點:</strong> {{ selectedOptionPreview.refDishTemplate ?
+                      selectedOptionPreview.refDishTemplate.name : '無' }}</p>
+                    <p v-if="selectedOptionPreview.tags && selectedOptionPreview.tags.length > 0">
+                      <strong>標籤:</strong>
+                      <span v-for="(tag, index) in selectedOptionPreview.tags" :key="index" class="badge bg-info me-1">
+                        {{ tag }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
             <button type="button" class="btn btn-primary" @click="addOption" :disabled="!selectedOptionId">
-              添加
+              添加到類別
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 標籤篩選對話框 -->
+    <div class="modal fade" id="tagFilterModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">選擇標籤篩選</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <div class="d-flex flex-wrap gap-2">
+                <div v-for="tag in availableTags" :key="tag" class="form-check">
+                  <input class="form-check-input" type="checkbox" :id="`tag-${tag}`" :value="tag"
+                    v-model="selectedTags">
+                  <label class="form-check-label" :for="`tag-${tag}`">{{ tag }}</label>
+                </div>
+                <div v-if="availableTags.length === 0" class="text-muted">
+                  沒有可用的標籤，請先為選項添加標籤
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeTagFilterModal">取消</button>
+            <button type="button" class="btn btn-primary" @click="applyTagFilters">
+              應用篩選
             </button>
           </div>
         </div>
@@ -200,13 +302,41 @@ const isSubmitting = ref(false);
 const successMessage = ref('');
 const formErrors = ref([]);
 const optionModal = ref(null);
+const tagFilterModal = ref(null);
 const selectedOptionId = ref('');
-const availableOptions = ref([]);
 const allOptions = ref([]);
+const availableTags = ref([]);
+const selectedTags = ref([]);
+const optionSearchQuery = ref('');
+const selectedOptionPreview = ref(null);
 
 // 計算已排序的選項列表
 const sortedOptions = computed(() => {
   return [...formData.options].sort((a, b) => a.order - b.order);
+});
+
+// 根據標籤和搜尋過濾的選項列表
+const filteredOptions = computed(() => {
+  let options = [...availableOptions.value];
+
+  // 根據搜尋關鍵字過濾
+  if (optionSearchQuery.value.trim()) {
+    const query = optionSearchQuery.value.toLowerCase().trim();
+    options = options.filter(option =>
+      option.name.toLowerCase().includes(query)
+    );
+  }
+
+  // 根據已選標籤過濾
+  if (selectedTags.value.length > 0) {
+    options = options.filter(option => {
+      if (!option.tags || !Array.isArray(option.tags)) return false;
+      // 確認選項標籤包含任一已選標籤
+      return selectedTags.value.some(tag => option.tags.includes(tag));
+    });
+  }
+
+  return options;
 });
 
 // 格式化價格
@@ -221,19 +351,95 @@ const formatRefDishName = (option) => {
   return dishName === '無' ? dishName : `餐點: ${dishName}`;
 };
 
+// 清除標籤篩選
+const clearTagFilters = () => {
+  selectedTags.value = [];
+  filterOptions();
+};
+
+// 移除單個已選標籤
+const removeSelectedTag = (tag) => {
+  selectedTags.value = selectedTags.value.filter(t => t !== tag);
+  filterOptions();
+};
+
+// 過濾選項
+const filterOptions = () => {
+  // 由於使用 computed 屬性 filteredOptions，此處只需重新獲取選項預覽
+  updateSelectedOptionPreview();
+};
+
+// 獲取選項預覽
+const updateSelectedOptionPreview = () => {
+  if (!selectedOptionId.value) {
+    selectedOptionPreview.value = null;
+    return;
+  }
+
+  const option = allOptions.value.find(opt => opt._id === selectedOptionId.value);
+  selectedOptionPreview.value = option || null;
+};
+
 // 顯示添加選項對話框
 const showAddOptionModal = () => {
+  // 重設篩選條件
+  optionSearchQuery.value = '';
+  selectedTags.value = [];
+
+  // 更新可用選項列表
   updateAvailableOptions();
   selectedOptionId.value = '';
+  selectedOptionPreview.value = null;
+
+  // 顯示對話框
   optionModal.value.show();
 };
 
-// 更新可用選項列表
-const updateAvailableOptions = () => {
+// 顯示標籤篩選對話框
+const showTagFilterModal = () => {
+  tagFilterModal.value.show();
+};
+
+// 關閉標籤篩選對話框
+const closeTagFilterModal = () => {
+  tagFilterModal.value.hide();
+};
+
+// 應用標籤篩選
+const applyTagFilters = () => {
+  // 關閉標籤對話框
+  tagFilterModal.value.hide();
+  // 過濾選項會自動通過 computed 屬性完成
+};
+
+// 可用選項計算屬性
+const availableOptions = computed(() => {
   const usedOptionIds = formData.options.map(opt => opt.refOption._id);
-  availableOptions.value = allOptions.value.filter(
+  return allOptions.value.filter(
     option => !usedOptionIds.includes(option._id)
   );
+});
+
+// 更新可用選項列表
+const updateAvailableOptions = async () => {
+  try {
+    // 重新獲取所有選項，以確保最新的標籤資訊
+    const response = await api.dish.getAllOptions({ brandId: brandId.value });
+    if (response && response.options) {
+      allOptions.value = response.options;
+
+      // 收集所有可用標籤
+      const tagSet = new Set();
+      allOptions.value.forEach(option => {
+        if (option.tags && Array.isArray(option.tags)) {
+          option.tags.forEach(tag => tagSet.add(tag));
+        }
+      });
+      availableTags.value = Array.from(tagSet);
+    }
+  } catch (error) {
+    console.error('獲取選項列表失敗:', error);
+  }
 };
 
 // 添加選項
@@ -242,15 +448,13 @@ const addOption = () => {
 
   // 找到選擇的選項對象
   const selectedOption = allOptions.value.find(opt => opt._id === selectedOptionId.value);
+  if (!selectedOption) return;
 
   // 添加到選項列表
   formData.options.push({
     refOption: selectedOption, // 直接存儲整個對象
     order: formData.options.length
   });
-
-  // 更新可用列表
-  updateAvailableOptions();
 
   // 關閉對話框
   optionModal.value.hide();
@@ -264,9 +468,6 @@ const removeOption = (option) => {
   formData.options.forEach((opt, idx) => {
     opt.order = idx;
   });
-
-  // 更新可用列表
-  updateAvailableOptions();
 };
 
 // 移動選項排序
@@ -366,17 +567,30 @@ const fetchCategoryData = async () => {
   }
 };
 
-// 獲取所有選項
+// 獲取所有選項 (無需分頁)
 const fetchAllOptions = async () => {
   try {
     const response = await api.dish.getAllOptions({ brandId: brandId.value });
     if (response && response.options) {
       allOptions.value = response.options;
-      updateAvailableOptions();
+
+      // 收集所有可用標籤
+      const tagSet = new Set();
+      allOptions.value.forEach(option => {
+        if (option.tags && Array.isArray(option.tags)) {
+          option.tags.forEach(tag => tagSet.add(tag));
+        }
+      });
+      availableTags.value = Array.from(tagSet);
     }
   } catch (error) {
     console.error('獲取選項列表失敗:', error);
   }
+};
+
+// 監聽選項變更
+const watchOptionSelection = () => {
+  updateSelectedOptionPreview();
 };
 
 // 提交表單
@@ -463,6 +677,12 @@ onMounted(() => {
     optionModal.value = new Modal(modalElement);
   }
 
+  // 初始化標籤篩選對話框
+  const tagModalElement = document.getElementById('tagFilterModal');
+  if (tagModalElement) {
+    tagFilterModal.value = new Modal(tagModalElement);
+  }
+
   // 獲取所有選項
   fetchAllOptions();
 
@@ -470,6 +690,9 @@ onMounted(() => {
   if (isEditMode.value) {
     fetchCategoryData();
   }
+
+  // 監聽選項選擇變更
+  watch(() => selectedOptionId.value, watchOptionSelection);
 });
 </script>
 
@@ -489,5 +712,20 @@ onMounted(() => {
 /* 按鈕樣式 */
 .btn-group-vertical .btn {
   padding: 0.25rem 0.5rem;
+}
+
+/* 表單控制項樣式 */
+.form-select[size] {
+  height: auto;
+}
+
+/* 標籤樣式 */
+.badge {
+  font-weight: 500;
+}
+
+/* 選項預覽卡片 */
+.card-header {
+  padding: 0.5rem 1rem;
 }
 </style>

@@ -67,6 +67,14 @@ export const createStore = async (storeData) => {
     throw new AppError('店鋪名稱和品牌為必填欄位', 400);
   }
 
+  if (!storeData.address) {
+    throw new AppError('店鋪地址為必填欄位', 400);
+  }
+
+  if (!storeData.phone) {
+    throw new AppError('店鋪電話為必填欄位', 400);
+  }
+
   // 驗證品牌是否存在
   const brand = await Brand.findById(storeData.brand);
   if (!brand) {
@@ -93,6 +101,27 @@ export const createStore = async (storeData) => {
   } else if (!storeData.image || !storeData.image.url || !storeData.image.key) {
     throw new AppError('圖片資訊不完整，請提供圖片', 400);
   }
+
+  // 設置服務相關預設值
+  if (storeData.enableLineOrdering === undefined) storeData.enableLineOrdering = false;
+  if (storeData.showTaxId === undefined) storeData.showTaxId = false;
+  if (storeData.provideReceipt === undefined) storeData.provideReceipt = true;
+  if (storeData.enableDineIn === undefined) storeData.enableDineIn = true;
+  if (storeData.enableTakeOut === undefined) storeData.enableTakeOut = true;
+  if (storeData.enableDelivery === undefined) storeData.enableDelivery = false;
+
+  // 設置準備時間預設值
+  if (storeData.dineInPrepTime === undefined) storeData.dineInPrepTime = 15;
+  if (storeData.takeOutPrepTime === undefined) storeData.takeOutPrepTime = 10;
+  if (storeData.deliveryPrepTime === undefined) storeData.deliveryPrepTime = 30;
+
+  // 設置外送相關預設值
+  if (storeData.minDeliveryAmount === undefined) storeData.minDeliveryAmount = 0;
+  if (storeData.minDeliveryQuantity === undefined) storeData.minDeliveryQuantity = 1;
+  if (storeData.maxDeliveryDistance === undefined) storeData.maxDeliveryDistance = 5;
+
+  // 設置預訂設定預設值
+  if (storeData.advanceOrderDays === undefined) storeData.advanceOrderDays = 0;
 
   // 創建店鋪
   const newStore = new Store(storeData);
@@ -166,6 +195,37 @@ export const updateStore = async (storeId, updateData) => {
     if (!menu) {
       throw new AppError('菜單不存在', 404);
     }
+  }
+
+  // 驗證準備時間設定
+  if (updateData.dineInPrepTime !== undefined && updateData.dineInPrepTime < 0) {
+    throw new AppError('內用準備時間不能小於0', 400);
+  }
+
+  if (updateData.takeOutPrepTime !== undefined && updateData.takeOutPrepTime < 0) {
+    throw new AppError('外帶準備時間不能小於0', 400);
+  }
+
+  if (updateData.deliveryPrepTime !== undefined && updateData.deliveryPrepTime < 0) {
+    throw new AppError('外送準備時間不能小於0', 400);
+  }
+
+  // 驗證外送相關設定
+  if (updateData.minDeliveryAmount !== undefined && updateData.minDeliveryAmount < 0) {
+    throw new AppError('最低外送金額不能小於0', 400);
+  }
+
+  if (updateData.minDeliveryQuantity !== undefined && updateData.minDeliveryQuantity < 1) {
+    throw new AppError('最少外送數量不能小於1', 400);
+  }
+
+  if (updateData.maxDeliveryDistance !== undefined && updateData.maxDeliveryDistance < 0) {
+    throw new AppError('最長外送距離不能小於0', 400);
+  }
+
+  // 驗證預訂設定
+  if (updateData.advanceOrderDays !== undefined && updateData.advanceOrderDays < 0) {
+    throw new AppError('可預訂天數不能小於0', 400);
   }
 
   // 更新店鋪
@@ -371,4 +431,38 @@ export const getStoreCurrentStatus = async (storeId) => {
 
   // 不在營業時間內
   return { isOpen: false, status: 'closed', message: '非營業時間' };
+};
+
+/**
+ * 更新店鋪服務設定
+ * @param {String} storeId - 店鋪ID
+ * @param {Object} serviceSettings - 服務設定
+ * @returns {Promise<Object>} 更新後的店鋪
+ */
+export const updateStoreServiceSettings = async (storeId, serviceSettings) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  // 更新服務設定
+  const allowedFields = [
+    'enableLineOrdering', 'showTaxId', 'provideReceipt',
+    'enableDineIn', 'enableTakeOut', 'enableDelivery',
+    'dineInPrepTime', 'takeOutPrepTime', 'deliveryPrepTime',
+    'minDeliveryAmount', 'minDeliveryQuantity', 'maxDeliveryDistance',
+    'advanceOrderDays'
+  ];
+
+  allowedFields.forEach(field => {
+    if (serviceSettings[field] !== undefined) {
+      store[field] = serviceSettings[field];
+    }
+  });
+
+  await store.save();
+
+  return store;
 };
