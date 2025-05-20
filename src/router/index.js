@@ -15,6 +15,50 @@ const checkAdminAuth = async () => {
   // return { loggedIn: true, role: 'boss', manage: [] }
 }
 
+// 檢查用戶登入狀態
+const checkUserAuth = async () => {
+  try {
+    // 直接從API獲取當前登入狀態
+    const currentBrandId = sessionStorage.getItem('currentBrandId'); // 可以從URL或session中獲取
+    if (!currentBrandId) {
+      return { loggedIn: false };
+    }
+
+    const response = await api.userAuth.checkStatus(currentBrandId);
+    return response;
+  } catch (error) {
+    console.error('檢查用戶登入狀態失敗', error);
+    return { loggedIn: false };
+  }
+};
+
+// 認證守衛 - 檢查用戶是否已登入
+const requireAuth = async (to, from, next) => {
+  const { loggedIn } = await checkUserAuth();
+
+  if (loggedIn) {
+    next(); // 允許訪問
+  } else {
+    // 跳轉到登入頁面並保存原始請求路徑
+    next({
+      path: '/auth/login',
+      query: { redirect: to.fullPath }
+    });
+  }
+};
+
+// 非認證守衛 - 檢查用戶是否未登入
+const requireNoAuth = async (to, from, next) => {
+  const { loggedIn } = await checkUserAuth();
+
+  if (!loggedIn) {
+    next(); // 允許訪問
+  } else {
+    // 如果已登入，跳轉到首頁或用戶資料頁面
+    next('/profile');
+  }
+};
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -416,49 +460,45 @@ const router = createRouter({
       component: () => import('@/views/customer/OrderConfirmView.vue')
     },
 
-    // // 會員登入頁面 (未來實現)
-    // {
-    //   path: '/login',
-    //   name: 'login',
-    //   component: () => import('@/views/customer/LoginView.vue')
-    // },
+    // 會員認證相關路由 - 使用懶加載方式
+    {
+      path: '/auth/login',
+      name: 'customer-login',
+      component: () => import('@/components/customer/auth/Login.vue'),
+      beforeEnter: requireNoAuth,
+      meta: {
+        title: '會員登入'
+      }
+    },
+    {
+      path: '/auth/register',
+      name: 'customer-register',
+      component: () => import('@/components/customer/auth/Register.vue'),
+      beforeEnter: requireNoAuth,
+      meta: {
+        title: '會員註冊'
+      }
+    },
+    {
+      path: '/auth/forgot-password',
+      name: 'customer-forgot-password',
+      component: () => import('@/components/customer/auth/ForgotPassword.vue'),
+      beforeEnter: requireNoAuth,
+      meta: {
+        title: '忘記密碼'
+      }
+    },
+    {
+      path: '/profile',
+      name: 'customer-profile',
+      component: () => import('@/components/customer/auth/UserProfile.vue'),
+      beforeEnter: requireAuth,
+      meta: {
+        title: '會員資料',
+        requiresCustomerAuth: true
+      }
+    },
 
-    // // 會員註冊頁面 (未來實現)
-    // {
-    //   path: '/register',
-    //   name: 'register',
-    //   component: () => import('@/views/customer/RegisterView.vue')
-    // },
-
-    // // 會員中心頁面 (未來實現)
-    // {
-    //   path: '/account',
-    //   name: 'account',
-    //   component: () => import('@/views/customer/AccountView.vue'),
-    //   meta: { requiresAuth: true },
-    //   children: [
-    //     {
-    //       path: 'orders',
-    //       name: 'account-orders',
-    //       component: () => import('@/views/customer/OrderHistoryView.vue')
-    //     },
-    //     {
-    //       path: 'points',
-    //       name: 'account-points',
-    //       component: () => import('@/views/customer/PointsView.vue')
-    //     },
-    //     {
-    //       path: 'coupons',
-    //       name: 'account-coupons',
-    //       component: () => import('@/views/customer/CouponsView.vue')
-    //     },
-    //     {
-    //       path: 'settings',
-    //       name: 'account-settings',
-    //       component: () => import('@/views/customer/AccountSettingsView.vue')
-    //     }
-    //   ]
-    // },
     // 404 頁面
     {
       path: '/:pathMatch(.*)*',
@@ -515,18 +555,24 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // // 會員授權檢查
-  // if (to.matched.some(record => record.meta.requiresCustomerAuth)) {
-  //   const { loggedIn } = await checkUserAuth()
+  // 會員授權檢查
+  if (to.matched.some(record => record.meta.requiresCustomerAuth)) {
+    const { loggedIn } = await checkUserAuth();
 
-  //   if (!loggedIn) {
-  //     return next({
-  //       path: '/customer/login',
-  //       query: { redirect: to.fullPath }
-  //     })
-  //   }
-  // }
-  next()
+    if (!loggedIn) {
+      return next({
+        path: '/auth/login',
+        query: { redirect: to.fullPath }
+      });
+    }
+  }
+
+  // 如果路由包含brandId參數，將其保存到sessionStorage中，供認證相關操作使用
+  if (to.params.brandId) {
+    sessionStorage.setItem('currentBrandId', to.params.brandId);
+  }
+
+  next();
 })
 
 export default router

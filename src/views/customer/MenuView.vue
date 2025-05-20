@@ -193,13 +193,23 @@ const loadMenuItems = async () => {
 
 // 登入相關方法（僅包含基本結構，實際邏輯待實現）
 const handleLogin = () => {
-  // 實際應用中應該導航到登入頁面或顯示登入模態框
-  console.log('導航到登入頁面');
+  router.push({
+    name: 'customer-login',
+    // params: {
+    //   brandId: brandId.value,
+    //   storeId: storeId.value
+    // }
+  });
 };
 
 const handleAccount = () => {
-  // 導航到會員中心
-  console.log('導航到會員中心');
+  router.push({
+    name: 'customer-profile',
+    // params: {
+    //   brandId: brandId.value,
+    //   storeId: storeId.value
+    // }
+  });
 };
 
 const handleLogout = async () => {
