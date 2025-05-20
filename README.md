@@ -531,14 +531,14 @@ flowchart TD
     Login -->|登入成功| Profile[個人資料]
 
     Login --> Register[註冊按鈕]
-    Register --> RegPage[註冊頁面\n輸入電話號碼和密碼]
-    RegPage --> VerifyPhone[驗證電話號碼\n輸入驗證碼]
-    VerifyPhone -->|沒有獲得驗證碼| ResendCode[重新獲取驗證碼\n60s延遲]
+    Register --> RegPage[註冊頁面<br>輸入電話號碼和密碼]
+    RegPage --> VerifyPhone[驗證電話號碼<br>輸入驗證碼]
+    VerifyPhone -->|沒有獲得驗證碼| ResendCode[重新獲取驗證碼<br>60s延遲]
     ResendCode --> VerifyPhone
     VerifyPhone -->|驗證成功| Login
 
     Login --> ForgotPwd[忘記密碼]
-    ForgotPwd --> ResetPwd[重設密碼\n發送簡訊驗證碼]
+    ForgotPwd --> ResetPwd[重設密碼<br>發送簡訊驗證碼]
     ResetPwd --> VerifyCode[驗證成功]
     VerifyCode --> NewPwd[重設密碼]
     NewPwd --> Login
