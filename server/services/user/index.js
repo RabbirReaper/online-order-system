@@ -4,26 +4,39 @@
  */
 
 // 導入用戶相關服務
-import * as authService from './authService.js';
+import * as userAuthService from './userAuthService.js';
+import * as adminAuthService from './adminAuthService.js';
 import * as adminService from './adminService.js';
 import * as userProfileService from './userProfile.js';
 
 // 導出所有用戶服務
-export const auth = authService;
+export const userAuth = userAuthService;
+export const adminAuth = adminAuthService;
 export const admin = adminService;
 export const profile = userProfileService;
 
-// 簡單導出，方便直接調用
+// 簡單導出用戶認證服務，方便直接調用
 export const {
-  login,
   register,
+  login,
   logout,
   forgotPassword,
   resetPassword,
-  verifyToken,
-  changePassword
-} = authService;
+  changePassword,
+  sendPhoneVerification,
+  verifyPhoneCode,
+  checkUserStatus
+} = userAuthService;
 
+// 簡單導出管理員認證服務，方便直接調用
+export const {
+  adminLogin,
+  adminLogout,
+  changeAdminPassword,
+  checkAdminStatus
+} = adminAuthService;
+
+// 簡單導出管理員服務，方便直接調用
 export const {
   getAllAdmins,
   getAdminById,
@@ -35,6 +48,7 @@ export const {
   checkPermission
 } = adminService;
 
+// 簡單導出用戶資料服務，方便直接調用
 export const {
   getUserProfile,
   updateUserProfile,

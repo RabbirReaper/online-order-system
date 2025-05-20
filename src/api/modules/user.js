@@ -6,62 +6,6 @@
 export default function (apiClient) {
   return {
     /**
-     * 用戶註冊
-     * @param {Object} params - 註冊參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {Object} params.userData - 用戶資料
-     * @returns {Promise} - API 回應
-     */
-    register({ brandId, userData }) {
-      return apiClient.post(`/user/brands/${brandId}/register`, userData);
-    },
-
-    /**
-     * 用戶登入
-     * @param {Object} params - 登入參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {Object} params.credentials - 登入憑證
-     * @param {string} params.credentials.email - 電子郵件
-     * @param {string} params.credentials.password - 密碼
-     * @returns {Promise} - API 回應
-     */
-    login({ brandId, credentials }) {
-      return apiClient.post(`/user/brands/${brandId}/login`, credentials);
-    },
-
-    /**
-     * 用戶登出
-     * @param {string} brandId - 品牌ID
-     * @returns {Promise} - API 回應
-     */
-    logout(brandId) {
-      return apiClient.post(`/user/brands/${brandId}/logout`);
-    },
-
-    /**
-     * 忘記密碼
-     * @param {Object} params - 參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {string} params.email - 用戶電子郵件
-     * @returns {Promise} - API 回應
-     */
-    forgotPassword({ brandId, email }) {
-      return apiClient.post(`/user/brands/${brandId}/forgot-password`, { email });
-    },
-
-    /**
-     * 重設密碼
-     * @param {Object} params - 重設密碼參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {string} params.token - 重設密碼令牌
-     * @param {string} params.newPassword - 新密碼
-     * @returns {Promise} - API 回應
-     */
-    resetPassword({ brandId, token, newPassword }) {
-      return apiClient.post(`/user/brands/${brandId}/reset-password`, { token, newPassword });
-    },
-
-    /**
      * 獲取用戶資料
      * @param {string} brandId - 品牌ID
      * @returns {Promise} - API 回應
@@ -79,18 +23,6 @@ export default function (apiClient) {
      */
     updateUserProfile({ brandId, profileData }) {
       return apiClient.put(`/user/brands/${brandId}/profile`, profileData);
-    },
-
-    /**
-     * 更改密碼
-     * @param {Object} params - 密碼變更參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {string} params.currentPassword - 當前密碼
-     * @param {string} params.newPassword - 新密碼
-     * @returns {Promise} - API 回應
-     */
-    changePassword({ brandId, currentPassword, newPassword }) {
-      return apiClient.post(`/user/brands/${brandId}/change-password`, { currentPassword, newPassword });
     },
 
     /**

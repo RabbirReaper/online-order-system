@@ -1,90 +1,9 @@
 import * as userService from '../../services/user/index.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
-// 用戶註冊
-export const register = asyncHandler(async (req, res) => {
-  const { brandId } = req.params;
-  const userData = {
-    ...req.body,
-    brand: brandId
-  };
-
-  const user = await userService.auth.register(userData);
-
-  res.status(201).json({
-    success: true,
-    message: '註冊成功',
-    user
-  });
-});
-
-// 用戶登入
-export const login = asyncHandler(async (req, res) => {
-  const { brandId } = req.params;
-  const credentials = {
-    ...req.body,
-    brand: brandId
-  };
-
-  const user = await userService.auth.login(credentials, req.session);
-
-  res.json({
-    success: true,
-    message: '登入成功',
-    user
-  });
-});
-
-// 用戶登出
-export const logout = asyncHandler(async (req, res) => {
-  const result = await userService.auth.logout(req.session);
-
-  res.json({
-    success: true,
-    message: '登出成功'
-  });
-});
-
-// 忘記密碼
-export const forgotPassword = asyncHandler(async (req, res) => {
-  const { brandId } = req.params;
-  const { email } = req.body;
-
-  const result = await userService.auth.forgotPassword(email, brandId);
-
-  res.json({
-    success: true,
-    message: '重設密碼連結已發送至您的信箱'
-  });
-});
-
-// 重設密碼
-export const resetPassword = asyncHandler(async (req, res) => {
-  const { brandId } = req.params;
-  const { token, newPassword } = req.body;
-
-  const result = await userService.auth.resetPassword(token, newPassword, brandId);
-
-  res.json({
-    success: true,
-    message: '密碼重設成功，請使用新密碼登入'
-  });
-});
-
-// 更改密碼
-export const changePassword = asyncHandler(async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-  const userId = req.auth.id; // 從中間件獲取
-
-  const result = await userService.auth.changePassword(userId, currentPassword, newPassword);
-
-  res.json({
-    success: true,
-    message: '密碼變更成功'
-  });
-});
-
-// 獲取用戶資料
+/**
+ * 獲取用戶資料
+ */
 export const getUserProfile = asyncHandler(async (req, res) => {
   const userId = req.auth.id; // 從中間件獲取
 
@@ -96,7 +15,9 @@ export const getUserProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// 更新用戶資料
+/**
+ * 更新用戶資料
+ */
 export const updateUserProfile = asyncHandler(async (req, res) => {
   const userId = req.auth.id; // 從中間件獲取
   const updateData = req.body;
@@ -110,7 +31,9 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// 添加地址
+/**
+ * 添加地址
+ */
 export const addAddress = asyncHandler(async (req, res) => {
   const userId = req.auth.id; // 從中間件獲取
   const addressData = req.body;
@@ -124,7 +47,9 @@ export const addAddress = asyncHandler(async (req, res) => {
   });
 });
 
-// 更新地址
+/**
+ * 更新地址
+ */
 export const updateAddress = asyncHandler(async (req, res) => {
   const userId = req.auth.id; // 從中間件獲取
   const { addressId } = req.params;
@@ -139,7 +64,9 @@ export const updateAddress = asyncHandler(async (req, res) => {
   });
 });
 
-// 刪除地址
+/**
+ * 刪除地址
+ */
 export const deleteAddress = asyncHandler(async (req, res) => {
   const userId = req.auth.id; // 從中間件獲取
   const { addressId } = req.params;
@@ -153,7 +80,9 @@ export const deleteAddress = asyncHandler(async (req, res) => {
   });
 });
 
-// 獲取所有用戶 (admin功能)
+/**
+ * 獲取所有用戶 (admin功能)
+ */
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { brandId } = req.params;
 
@@ -174,7 +103,9 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   });
 });
 
-// 獲取單個用戶 (admin功能)
+/**
+ * 獲取單個用戶 (admin功能)
+ */
 export const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -186,7 +117,9 @@ export const getUserById = asyncHandler(async (req, res) => {
   });
 });
 
-// 切換用戶啟用狀態 (admin功能)
+/**
+ * 切換用戶啟用狀態 (admin功能)
+ */
 export const toggleUserStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { isActive } = req.body;

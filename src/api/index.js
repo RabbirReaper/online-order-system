@@ -1,7 +1,8 @@
 // API 主入口
 
 import axios from 'axios';
-import authApi from './modules/auth';
+import adminAuthApi from './modules/adminAuth';
+import userAuthApi from './modules/userAuth';
 import storeApi from './modules/store';
 import brandApi from './modules/brand';
 import inventoryApi from './modules/inventory';
@@ -9,6 +10,7 @@ import menuApi from './modules/menu';
 import dishApi from './modules/dish';
 import imageApi from './modules/image';
 import userApi from './modules/user';
+import adminUserApi from './modules/adminUser';
 import orderApi from './modules/order';
 import promotionApi from './modules/promotion';
 import pointRulesApi from './modules/pointRules';
@@ -47,7 +49,8 @@ apiClient.interceptors.response.use(
 
 // 導出所有 API 模組
 export default {
-  auth: authApi(apiClient),
+  adminAuth: adminAuthApi(apiClient),
+  userAuth: userAuthApi(apiClient),
   store: storeApi(apiClient),
   brand: brandApi(apiClient),
   inventory: inventoryApi(apiClient),
@@ -55,6 +58,7 @@ export default {
   dish: dishApi(apiClient),
   image: imageApi(apiClient),
   user: userApi(apiClient),
+  adminUser: adminUserApi(apiClient),
   order: orderApi(apiClient),
   promotion: promotionApi(apiClient),
   pointRules: pointRulesApi(apiClient),

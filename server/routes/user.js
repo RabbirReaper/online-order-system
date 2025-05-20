@@ -9,17 +9,9 @@ import {
 
 const router = express.Router();
 
-// 用戶認證路由（公開）
-router.post('/brands/:brandId/register', userController.register);
-router.post('/brands/:brandId/login', userController.login);
-router.post('/brands/:brandId/logout', userController.logout);
-router.post('/brands/:brandId/forgot-password', userController.forgotPassword);
-router.post('/brands/:brandId/reset-password', userController.resetPassword);
-
 // 用戶個人資料管理（需要用戶認證）
 router.get('/brands/:brandId/profile', authenticate('user'), userController.getUserProfile);
 router.put('/brands/:brandId/profile', authenticate('user'), userController.updateUserProfile);
-router.post('/brands/:brandId/change-password', authenticate('user'), userController.changePassword);
 
 // 地址管理（需要用戶認證）
 router.post('/brands/:brandId/addresses', authenticate('user'), userController.addAddress);
