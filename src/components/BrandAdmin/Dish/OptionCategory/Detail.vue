@@ -182,16 +182,6 @@
             </div>
           </div>
 
-          <!-- 使用此類別的餐點 -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">使用此類別的餐點</h5>
-              <p class="text-muted">列出使用此選項類別的所有餐點模板</p>
-              <button class="btn btn-sm btn-outline-primary" disabled>
-                <i class="bi bi-link-45deg me-1"></i>查看關聯餐點
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
