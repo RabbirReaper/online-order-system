@@ -191,9 +191,6 @@
                 <div class="form-text" v-else>
                   共 {{ filteredOptions.length }} 個選項
                 </div>
-                <router-link :to="`/admin/${brandId}/options/create`" class="btn btn-sm btn-outline-primary">
-                  <i class="bi bi-plus-lg me-1"></i>新增選項
-                </router-link>
               </div>
             </div>
 
@@ -268,7 +265,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Modal } from 'bootstrap';
 import api from '@/api';
