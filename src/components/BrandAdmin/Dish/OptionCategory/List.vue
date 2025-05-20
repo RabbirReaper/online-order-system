@@ -167,7 +167,7 @@ const confirmDelete = (category) => {
 // 實際進行刪除的方法
 const deleteCategory = async (category) => {
   try {
-    await api.dish.deleteOptionCategory(category._id, brandId.value);
+    await api.dish.deleteOptionCategory({ id: category._id, brandId: brandId.value });
     // 從列表中移除已刪除的類別
     categories.value = categories.value.filter(
       item => item._id !== category._id
