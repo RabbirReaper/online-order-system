@@ -204,7 +204,7 @@ const handleAccount = () => {
 
 const handleLogout = async () => {
   try {
-    await api.auth.logout();
+    await api.adminAuth.logout();
     isLoggedIn.value = false;
     customerName.value = '';
     // 可能需要重置某些數據或狀態
@@ -241,7 +241,7 @@ const calculateTotal = () => {
 onMounted(async () => {
   // 檢查登入狀態
   try {
-    const status = await api.auth.checkUserStatus();
+    const status = await api.userAuth.checkStatus();
     isLoggedIn.value = status.loggedIn;
     if (status.loggedIn && status.user) {
       customerName.value = status.user.name;

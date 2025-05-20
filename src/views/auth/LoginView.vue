@@ -109,7 +109,7 @@ const handleLogin = async () => {
 
   try {
     // 實際 API 呼叫
-    const response = await api.auth.login({
+    const response = await api.adminAuth.login({
       name: formData.username,
       password: formData.password
     });

@@ -328,7 +328,7 @@ const fetchBrandInfo = async () => {
 // 處理登出
 const handleLogout = async () => {
   try {
-    await api.auth.logout();
+    await api.adminAuth.logout();
     router.push('/admin/login');
   } catch (error) {
     console.error('登出失敗', error);

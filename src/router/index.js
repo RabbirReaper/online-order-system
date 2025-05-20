@@ -5,7 +5,7 @@ import Placeholder from '@/components/common/Placeholder.vue'
 // 檢查管理員登入狀態
 const checkAdminAuth = async () => {
   try {
-    const response = await api.auth.checkAdminStatus()
+    const response = await api.adminAuth.checkStatus()
     console.log('登入狀態:', response)
     return response;
   } catch (error) {
