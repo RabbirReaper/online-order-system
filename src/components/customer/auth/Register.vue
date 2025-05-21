@@ -228,12 +228,12 @@ const handleNextStep = async () => {
     }
 
     // 首先驗證驗證碼
-    await api.userAuth.verifyCode({
-      brandId: brandId.value,
-      phone: userData.phone,
-      code: verificationCode.value,
-      purpose: 'register'
-    });
+    // await api.userAuth.verifyCode({
+    //   brandId: brandId.value,
+    //   phone: userData.phone,
+    //   code: verificationCode.value,
+    //   purpose: 'register'
+    // });
 
     // 然後註冊用戶
     const response = await api.userAuth.register({
