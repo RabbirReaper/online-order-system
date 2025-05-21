@@ -357,7 +357,8 @@ const loadUserProfile = async () => {
 
     // 調用獲取用戶資料 API
     const response = await api.user.getUserProfile(currentBrandId);
-    profile.value = response;
+    console.log('用戶資料:', response);
+    profile.value = response.profile;
 
     // 初始化編輯表單
     initEditForm();
@@ -445,6 +446,7 @@ const updateProfile = async () => {
       successModal.value.show();
     }
 
+    loadUserProfile();
   } catch (error) {
     console.error('更新用戶資料失敗:', error);
 
@@ -581,6 +583,7 @@ const setDefaultAddress = async (addressId) => {
       successModal.value.show();
     }
 
+    loadUserProfile();
   } catch (error) {
     console.error('設置默認地址失敗:', error);
 
@@ -634,7 +637,7 @@ const proceedDeleteAddress = async () => {
     if (successModal.value) {
       successModal.value.show();
     }
-
+    loadUserProfile();
   } catch (error) {
     console.error('刪除地址失敗:', error);
 
