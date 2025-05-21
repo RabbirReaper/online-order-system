@@ -87,23 +87,34 @@
     </div>
 
     <!-- 確認刪除對話框 -->
-    <ConfirmModal modalId="deleteCategoryModal" title="確認刪除選項類別" confirmMessage="確定要刪除選項類別" confirmText="確認刪除"
-      :cancelText="'取消'" variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill"
-      :item="categoryToDelete" nameKey="name" warningMessage="此操作無法撤銷，類別及其所有選項都將被永久刪除。" @delete="deleteCategory"
-      @close="categoryToDelete = null" />
+    <BModal id="deleteCategoryModal" title="確認刪除選項類別" ok-title="確認刪除" cancel-title="取消" ok-variant="danger"
+      @ok="handleDeleteConfirm" ref="deleteCategoryModal">
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        此操作無法撤銷，類別及其所有選項都將被永久刪除。
+      </div>
+      <p v-if="categoryToDelete">確定要刪除選項類別 <strong>{{ categoryToDelete.name }}</strong>？</p>
+    </BModal>
 
     <!-- 錯誤通知模態框 -->
-    <ConfirmModal modalId="errorModal" title="操作失敗" confirmMessage="刪除選項類別時發生錯誤" confirmText="確認" :cancelText="'關閉'"
-      variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill" :item="{ name: '錯誤通知' }"
-      @delete="closeErrorModal" ref="errorModal" />
+    <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" ref="errorModal">
+      <div class="text-center mb-3">
+        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
+      </div>
+      <p class="text-center">刪除選項類別時發生錯誤</p>
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ errorModalMessage }}
+      </div>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
 
 // 從路由中獲取品牌ID
 const route = useRoute();
@@ -115,10 +126,9 @@ const isLoading = ref(true);
 const searchQuery = ref('');
 const errorMessage = ref('');
 const categoryToDelete = ref(null);
+const errorModalMessage = ref('操作失敗');
+const deleteCategoryModal = ref(null);
 const errorModal = ref(null);
-
-// 關閉錯誤模態框的回調函數
-const closeErrorModal = () => { };
 
 // 計算已過濾的類別列表
 const filteredCategories = computed(() => {
@@ -172,7 +182,15 @@ const fetchCategories = async () => {
 
 // 確認刪除前的操作
 const confirmDelete = (category) => {
-  categoryToDelete.value = category; // 設置要刪除的項目，會自動顯示對話框
+  categoryToDelete.value = category;
+  deleteCategoryModal.value.show();
+};
+
+// 處理確認刪除
+const handleDeleteConfirm = () => {
+  if (categoryToDelete.value) {
+    deleteCategory(categoryToDelete.value);
+  }
 };
 
 // 實際進行刪除的方法
@@ -185,10 +203,16 @@ const deleteCategory = async (category) => {
     );
   } catch (error) {
     console.error('刪除選項類別失敗:', error);
-    // 顯示錯誤模態框而不是 alert
-    if (errorModal.value) {
-      errorModal.value.show();
+    // 設置錯誤訊息
+    if (error.response && error.response.data && error.response.data.message) {
+      errorModalMessage.value = error.response.data.message;
+    } else if (error.message) {
+      errorModalMessage.value = error.message;
+    } else {
+      errorModalMessage.value = '刪除選項類別時發生錯誤';
     }
+    // 顯示錯誤模態框
+    errorModal.value.show();
   }
 };
 
