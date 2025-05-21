@@ -87,21 +87,37 @@
   </div>
 
   <!-- 成功訊息模態框 -->
-  <ConfirmModal modalId="successModal" title="操作成功" :confirmMessage="successMessage" confirmText="確認" :cancelText="'關閉'"
-    variant="success" alertType="success" alertIcon="check-circle-fill" :item="{ name: '成功通知' }"
-    @delete="onSuccessModalClose" ref="successModal" />
+  <BModal id="successModal" title="操作成功" ok-title="確認" ok-variant="success" cancel-variant="outline-secondary"
+    no-close-on-backdrop @ok="onSuccessModalClose" ref="successModal">
+    <div class="text-center mb-3">
+      <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+    </div>
+    <p class="text-center">{{ successMessage }}</p>
+    <div class="alert alert-success">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      您的操作已成功完成。
+    </div>
+  </BModal>
 
   <!-- 錯誤訊息模態框 -->
-  <ConfirmModal modalId="errorModal" title="操作失敗" :confirmMessage="errorMessage" confirmText="確認" :cancelText="'關閉'"
-    variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill" :item="{ name: '錯誤通知' }"
-    @delete="closeErrorModal" ref="errorModal" />
+  <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" cancel-variant="outline-secondary"
+    no-close-on-backdrop @ok="closeErrorModal" ref="errorModal">
+    <div class="text-center mb-3">
+      <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
+    </div>
+    <p class="text-center">{{ errorMessage }}</p>
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      操作失敗，請稍後再試。
+    </div>
+  </BModal>
 </template>
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
-import ConfirmModal from '@/components/common/ConfirmModal.vue';
 
 // 路由相關
 const router = useRouter();
