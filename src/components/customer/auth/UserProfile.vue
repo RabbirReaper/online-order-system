@@ -224,12 +224,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/api';
 
 // 路由相關
 const route = useRoute();
+
+// 新增 brandId 計算屬性
+const brandId = computed(() => {
+  return sessionStorage.getItem('currentBrandId');
+});
 
 // 狀態管理
 const isLoading = ref(true);
@@ -300,17 +305,15 @@ const loadUserProfile = async () => {
     isLoading.value = true;
     errorMessage.value = '';
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
+    const currentBrandId = route.params.brandId || brandId.value;
 
-    if (!brandId) {
+    if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 調用獲取用戶資料 API
-    const response = await api.user.getUserProfile(brandId);
-
-    profile.value = response;
+    const response = await api.user.getUserProfile(currentBrandId);
+    profile.value = response.profile;
 
     // 初始化編輯表單
     initEditForm();
@@ -367,16 +370,16 @@ const updateProfile = async () => {
     isUpdating.value = true;
     errorMessage.value = '';
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
+    // 使用 route.params.brandId 或 brandId 計算屬性
+    const currentBrandId = brandId.value;
 
-    if (!brandId) {
+    if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 調用更新用戶資料 API
     const response = await api.user.updateUserProfile({
-      brandId,
+      brandId: currentBrandId,
       profileData: {
         name: editForm.name,
         email: editForm.email,
@@ -388,7 +391,7 @@ const updateProfile = async () => {
 
     profile.value = response;
     isEditingProfile.value = false;
-    alert('個人資料已成功更新');
+    loadUserProfile();
 
   } catch (error) {
     console.error('更新用戶資料失敗:', error);
@@ -435,10 +438,10 @@ const saveAddress = async () => {
     isUpdatingAddress.value = true;
     errorMessage.value = '';
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
+    // 使用 route.params.brandId 或 brandId 計算屬性
+    const currentBrandId = route.params.brandId || brandId.value;
 
-    if (!brandId) {
+    if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
@@ -447,7 +450,7 @@ const saveAddress = async () => {
     if (isEditingAddress.value) {
       // 調用更新地址 API
       response = await api.user.updateAddress({
-        brandId,
+        brandId: currentBrandId,
         addressId: currentEditAddressId.value,
         data: {
           name: addressForm.name,
@@ -458,7 +461,7 @@ const saveAddress = async () => {
     } else {
       // 調用新增地址 API
       response = await api.user.addAddress({
-        brandId,
+        brandId: currentBrandId,
         addressData: {
           name: addressForm.name,
           address: addressForm.address,
@@ -466,11 +469,10 @@ const saveAddress = async () => {
         }
       });
     }
-
     profile.value = response;
     isAddingAddress.value = false;
     isEditingAddress.value = false;
-    alert(isEditingAddress.value ? '地址已成功更新' : '地址已成功新增');
+    loadUserProfile();
 
   } catch (error) {
     console.error('保存地址失敗:', error);
@@ -491,16 +493,16 @@ const setDefaultAddress = async (addressId) => {
     isUpdatingAddress.value = true;
     errorMessage.value = '';
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
+    // 使用 route.params.brandId 或 brandId 計算屬性
+    const currentBrandId = route.params.brandId || brandId.value;
 
-    if (!brandId) {
+    if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 調用設置默認地址 API
     const response = await api.user.updateAddress({
-      brandId,
+      brandId: currentBrandId,
       addressId,
       data: {
         isDefault: true
@@ -508,7 +510,7 @@ const setDefaultAddress = async (addressId) => {
     });
 
     profile.value = response;
-
+    loadUserProfile();
   } catch (error) {
     console.error('設置默認地址失敗:', error);
 
@@ -534,16 +536,16 @@ const deleteAddress = async (addressId) => {
     deletingAddressId.value = addressId;
     errorMessage.value = '';
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
+    // 使用 route.params.brandId 或 brandId 計算屬性
+    const currentBrandId = route.params.brandId || brandId.value;
 
-    if (!brandId) {
+    if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 調用刪除地址 API
     const response = await api.user.deleteAddress({
-      brandId,
+      brandId: currentBrandId,
       addressId
     });
 
@@ -593,16 +595,16 @@ const changePassword = async () => {
     isUpdatingPassword.value = true;
     errorMessage.value = '';
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
+    // 使用 route.params.brandId 或 brandId 計算屬性
+    const currentBrandId = route.params.brandId || brandId.value;
 
-    if (!brandId) {
+    if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 調用修改密碼 API
     await api.userAuth.changePassword({
-      brandId,
+      brandId: currentBrandId,
       currentPassword: passwordForm.currentPassword,
       newPassword: passwordForm.newPassword
     });
