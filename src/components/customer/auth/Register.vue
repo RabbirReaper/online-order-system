@@ -80,19 +80,22 @@
     </div>
   </div>
 
-  <!-- 確認對話框 -->
-  <BModal id="verificationCodeModal" title="驗證碼已發送" ok-title="我知道了" ok-variant="success" cancel-title="關閉"
-    :hide-footer="false" @hidden="closeVerificationModal">
-    <p>驗證碼已發送到您的手機，請注意查收</p>
+  <!-- 驗證碼已發送模態框 -->
+  <BModal id="verificationCodeModal" title="驗證碼已發送" ok-title="我知道了" ok-variant="success"
+    cancel-variant="outline-secondary" no-close-on-backdrop @ok="closeVerificationModal" ref="verificationCodeModal">
+    <div class="text-center mb-3">
+      <i class="bi bi-envelope-check-fill text-success" style="font-size: 3rem;"></i>
+    </div>
+    <p class="text-center">驗證碼已發送到您的手機，請注意查收</p>
     <div class="alert alert-success">
-      <i class="bi bi-check-circle-fill me-2"></i>
+      <i class="bi bi-info-circle-fill me-2"></i>
       系統已向您的手機發送驗證簡訊，請在5分鐘內完成驗證。
     </div>
   </BModal>
 
   <!-- 條款對話框 -->
   <BModal id="termsModal" title="用戶服務條款" ok-title="我同意" ok-variant="primary" size="lg" scrollable
-    @ok="agreeTerms = true">
+    @ok="agreeTerms = true" ref="termsModal">
     <div>
       <h5>第一條：總則</h5>
       <p>這裡將顯示用戶服務條款的詳細內容...</p>
@@ -115,7 +118,7 @@
 
   <!-- 隱私政策對話框 -->
   <BModal id="privacyModal" title="隱私政策" ok-title="我同意" ok-variant="primary" size="lg" scrollable
-    @ok="agreeTerms = true">
+    @ok="agreeTerms = true" ref="privacyModal">
     <div>
       <h5>隱私保護政策</h5>
       <p>本公司非常重視您的隱私保護，以下說明我們如何收集、使用和保護您的個人資料...</p>
@@ -135,16 +138,20 @@
   </BModal>
 
   <!-- 錯誤模態框 -->
-  <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" :hide-footer="false" ref="errorModal">
+  <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" no-close-on-backdrop ref="errorModal">
+    <div class="text-center mb-3">
+      <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
+    </div>
+    <p class="text-center">{{ errorMessage }}</p>
     <div class="alert alert-danger">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ errorMessage }}
+      請檢查您輸入的資料並稍後再試。
     </div>
   </BModal>
 
   <!-- 註冊成功模態框 -->
-  <BModal id="successModal" title="註冊成功" ok-title="立即登入" ok-variant="success" :hide-header-close="true"
-    :hide-footer="false" no-close-on-backdrop no-close-on-esc @ok="redirectToLogin" ref="successModal">
+  <BModal id="successModal" title="註冊成功" ok-title="立即登入" ok-variant="success" hide-header-close no-close-on-backdrop
+    no-close-on-esc @ok="redirectToLogin" ref="successModal">
     <div class="text-center mb-3">
       <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
     </div>
@@ -160,8 +167,8 @@
 <script setup>
 import { ref, reactive, computed, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import api from '@/api';
 import { BModal } from 'bootstrap-vue-next';
+import api from '@/api';
 
 // 路由相關
 const router = useRouter();
@@ -170,6 +177,9 @@ const route = useRoute();
 // 模態框參考
 const errorModal = ref(null);
 const successModal = ref(null);
+const verificationCodeModal = ref(null);
+const termsModal = ref(null);
+const privacyModal = ref(null);
 
 // 新增 brandId 計算屬性
 const brandId = computed(() => {
@@ -231,14 +241,12 @@ const redirectToLogin = () => {
 
 // 顯示服務條款
 const showTerms = () => {
-  const termsModal = new bootstrap.Modal(document.getElementById('termsModal'));
-  termsModal.show();
+  termsModal.value.show();
 };
 
 // 顯示隱私政策
 const showPrivacyPolicy = () => {
-  const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'));
-  privacyModal.show();
+  privacyModal.value.show();
 };
 
 // 關閉驗證碼模態框
@@ -287,8 +295,9 @@ const sendVerificationCode = async () => {
     });
 
     // 顯示成功訊息並開始倒計時
-    const verificationCodeModal = new bootstrap.Modal(document.getElementById('verificationCodeModal'));
-    verificationCodeModal.show();
+    if (verificationCodeModal.value) {
+      verificationCodeModal.value.show();
+    }
 
     startCountdown(60); // 60秒倒計時
 
