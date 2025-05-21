@@ -79,7 +79,7 @@ onMounted(() => {
   }
 
   // 設置當前品牌ID (如果有的話)
-  const brandId = route.params.brandId || sessionStorage.getItem('currentBrandId');
+  const brandId = sessionStorage.getItem('currentBrandId');
   // console.log('Brand ID:', brandId);
   if (brandId) {
     authStore.setBrandId(brandId);
@@ -109,7 +109,7 @@ const handleLogin = async () => {
     isLoading.value = true;
 
     // 從 URL 或 sessionStorage 獲取品牌 ID
-    const brandId = route.params.brandId || sessionStorage.getItem('currentBrandId');
+    const brandId = sessionStorage.getItem('currentBrandId');
 
     if (!brandId) {
       throw new Error('無法獲取品牌資訊');
