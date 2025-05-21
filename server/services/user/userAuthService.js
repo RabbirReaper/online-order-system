@@ -15,20 +15,22 @@ import { AppError } from '../../middlewares/error.js';
  */
 export const register = async (userData) => {
   // 基本驗證
-  if (!userData.name || !userData.email || !userData.password || !userData.phone) {
-    throw new AppError('姓名、電子郵件、密碼和電話為必填欄位', 400);
-  }
-
-  // 檢查電子郵件是否已被使用
-  const existingUserEmail = await User.findOne({ email: userData.email });
-  if (existingUserEmail) {
-    throw new AppError('此電子郵件已被使用', 400);
+  if (!userData.name || !userData.password || !userData.phone) {
+    throw new AppError('姓名、密碼和電話為必填欄位', 400);
   }
 
   // 檢查電話是否已被使用
   const existingUserPhone = await User.findOne({ phone: userData.phone });
   if (existingUserPhone) {
     throw new AppError('此電話號碼已被使用', 400);
+  }
+
+  // 如果提供了電子郵件，檢查是否已被使用
+  if (userData.email) {
+    const existingUserEmail = await User.findOne({ email: userData.email });
+    if (existingUserEmail) {
+      throw new AppError('此電子郵件已被使用', 400);
+    }
   }
 
   // 密碼強度驗證
@@ -52,23 +54,23 @@ export const register = async (userData) => {
 /**
  * 用戶登入
  * @param {Object} credentials - 登入憑證
- * @param {String} credentials.email - 電子郵件
+ * @param {String} credentials.phone - 手機號碼
  * @param {String} credentials.password - 密碼
  * @param {Object} session - 會話對象
  * @returns {Promise<Object>} 用戶信息
  */
 export const login = async (credentials, session) => {
-  const { email, password } = credentials;
+  const { phone, password } = credentials;
 
-  if (!email || !password) {
-    throw new AppError('電子郵件和密碼為必填欄位', 400);
+  if (!phone || !password) {
+    throw new AppError('手機號碼和密碼為必填欄位', 400);
   }
 
   // 查找用戶
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ phone }).select('+password');
 
   if (!user) {
-    throw new AppError('電子郵件或密碼錯誤', 401);
+    throw new AppError('手機號碼或密碼錯誤', 401);
   }
 
   // 檢查用戶是否啟用
@@ -80,7 +82,7 @@ export const login = async (credentials, session) => {
   const isPasswordValid = await user.comparePassword(password);
 
   if (!isPasswordValid) {
-    throw new AppError('電子郵件或密碼錯誤', 401);
+    throw new AppError('手機號碼或密碼錯誤', 401);
   }
 
   // 設置會話
@@ -185,7 +187,7 @@ export const verifyPhoneCode = async (phone, code, purpose = 'register') => {
   if (!phone || !code) {
     throw new AppError('電話號碼和驗證碼為必填欄位', 400);
   }
-
+  console.log(phone, code, purpose);
   const verificationCode = await VerificationCode.findOne({
     phone,
     code,

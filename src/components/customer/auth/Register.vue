@@ -14,9 +14,9 @@
             <input type="text" class="form-control" id="name" v-model="userData.name" placeholder="請輸入您的姓名" required>
           </div>
           <div class="mb-3">
-            <label for="email" class="form-label">電子郵件 <span class="text-danger">*</span></label>
-            <input type="email" class="form-control" id="email" v-model="userData.email" placeholder="請輸入您的電子郵件"
-              required>
+            <label for="email" class="form-label">電子郵件</label>
+            <input type="email" class="form-control" id="email" v-model="userData.email" placeholder="請輸入您的電子郵件">
+            <small class="text-muted">選填，用於接收訂單通知</small>
           </div>
           <div class="mb-3">
             <label for="phone" class="form-label">手機號碼 <span class="text-danger">*</span></label>
@@ -90,6 +90,11 @@ import api from '@/api';
 const router = useRouter();
 const route = useRoute();
 
+// 新增 brandId 計算屬性
+const brandId = computed(() => {
+  return sessionStorage.getItem('currentBrandId');
+});
+
 // 表單資料
 const userData = reactive({
   name: '',
@@ -113,7 +118,6 @@ let countdownTimer = null;
 // 表單驗證
 const isFormValid = computed(() => {
   return userData.name &&
-    userData.email &&
     userData.phone &&
     userData.password &&
     confirmPassword.value &&
@@ -174,16 +178,13 @@ const sendVerificationCode = async () => {
     errorMessage.value = '';
     isCodeSending.value = true;
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
-
-    if (!brandId) {
+    if (!brandId.value) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 調用發送驗證碼 API
     const response = await api.userAuth.sendVerificationCode({
-      brandId,
+      brandId: brandId.value,
       phone: userData.phone,
       purpose: 'register'
     });
@@ -222,16 +223,13 @@ const handleNextStep = async () => {
     errorMessage.value = '';
     isLoading.value = true;
 
-    // 從 URL 或其他地方獲取品牌 ID
-    const brandId = route.params.brandId || localStorage.getItem('currentBrandId');
-
-    if (!brandId) {
+    if (!brandId.value) {
       throw new Error('無法獲取品牌資訊');
     }
 
     // 首先驗證驗證碼
     await api.userAuth.verifyCode({
-      brandId,
+      brandId: brandId.value,
       phone: userData.phone,
       code: verificationCode.value,
       purpose: 'register'
@@ -239,13 +237,13 @@ const handleNextStep = async () => {
 
     // 然後註冊用戶
     const response = await api.userAuth.register({
-      brandId,
+      brandId: brandId.value,
       userData: {
         name: userData.name,
-        email: userData.email,
+        email: userData.email || '', // 電子郵件現在可以為空
         phone: userData.phone,
         password: userData.password,
-        brand: brandId
+        brand: brandId.value
       },
       code: verificationCode.value
     });
@@ -253,10 +251,10 @@ const handleNextStep = async () => {
     // 註冊成功後的處理
     console.log('註冊成功:', response);
 
-    // 跳轉到登入頁面並傳遞郵箱
+    // 跳轉到登入頁面並傳遞手機號碼
     router.push({
       path: '/auth/login',
-      query: { email: userData.email, registered: 'true' }
+      query: { phone: userData.phone, registered: 'true' }
     });
 
   } catch (error) {

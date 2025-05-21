@@ -78,7 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       return response;
     } catch (err) {
-      error.value = err.response?.data?.message || '登入失敗，請檢查您的電子郵件和密碼';
+      error.value = err.response?.data?.message || '登入失敗，請檢查您的手機號碼和密碼';
       throw err;
     } finally {
       loadingAuth.value = false;

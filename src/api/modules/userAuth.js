@@ -36,8 +36,8 @@ export default function (apiClient) {
      * @param {string} params.brandId - 品牌ID
      * @param {Object} params.userData - 用戶資料
      * @param {string} params.userData.name - 姓名
-     * @param {string} params.userData.email - 電子郵件
      * @param {string} params.userData.phone - 手機號碼
+     * @param {string} [params.userData.email] - 電子郵件 (選填)
      * @param {string} params.userData.password - 密碼
      * @param {string} params.code - 手機驗證碼
      * @returns {Promise} - API 回應
@@ -51,7 +51,7 @@ export default function (apiClient) {
      * @param {Object} params - 登入參數
      * @param {string} params.brandId - 品牌ID
      * @param {Object} params.credentials - 登入憑證
-     * @param {string} params.credentials.email - 電子郵件
+     * @param {string} params.credentials.phone - 手機號碼
      * @param {string} params.credentials.password - 密碼
      * @returns {Promise} - API 回應
      */

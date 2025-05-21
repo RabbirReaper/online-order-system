@@ -10,8 +10,8 @@
         </div>
         <form @submit.prevent="handleLogin">
           <div class="mb-3">
-            <label for="email" class="form-label">電子郵件</label>
-            <input type="email" class="form-control" id="email" v-model="credentials.email" placeholder="請輸入您的電子郵件"
+            <label for="phone" class="form-label">手機號碼</label>
+            <input type="tel" class="form-control" id="phone" v-model="credentials.phone" placeholder="請輸入您的手機號碼"
               required>
           </div>
           <div class="mb-4">
@@ -62,7 +62,7 @@ const authStore = useAuthStore();
 
 // 表單資料
 const credentials = reactive({
-  email: '',
+  phone: '',
   password: ''
 });
 
@@ -72,15 +72,14 @@ const errorMessage = ref('');
 const showPassword = ref(false);
 const rememberMe = ref(false);
 
-// 從 URL 查詢參數中恢復上次使用的 email
+// 從 URL 查詢參數中恢復上次使用的手機號碼
 onMounted(() => {
-  if (route.query.email) {
-    credentials.email = route.query.email;
+  if (route.query.phone) {
+    credentials.phone = route.query.phone;
   }
 
   // 設置當前品牌ID (如果有的話)
   const brandId = sessionStorage.getItem('currentBrandId');
-  // console.log('Brand ID:', brandId);
   if (brandId) {
     authStore.setBrandId(brandId);
   } else {
@@ -132,7 +131,7 @@ const handleLogin = async () => {
     console.error('登入失敗:', error);
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '登入失敗，請檢查您的電子郵件和密碼';
+      errorMessage.value = error.response.data.message || '登入失敗，請檢查您的手機號碼和密碼';
     } else {
       errorMessage.value = '登入失敗，請稍後再試';
     }
