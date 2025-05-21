@@ -62,14 +62,6 @@ const requireNoAuth = async (to, from, next) => {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 首頁 - 重定向到適當的頁面
-    {
-      path: '/',
-      name: 'home',
-      redirect: to => {
-        return { path: '/admin' }
-      }
-    },
 
     // 管理員認證
     {

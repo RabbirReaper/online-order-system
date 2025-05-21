@@ -80,8 +80,12 @@ onMounted(() => {
 
   // 設置當前品牌ID (如果有的話)
   const brandId = route.params.brandId || sessionStorage.getItem('currentBrandId');
+  // console.log('Brand ID:', brandId);
   if (brandId) {
     authStore.setBrandId(brandId);
+  } else {
+    // 如果沒有品牌ID，則跳轉到首頁或錯誤頁面
+    router.push('/');
   }
 
   // 清除舊的錯誤訊息
