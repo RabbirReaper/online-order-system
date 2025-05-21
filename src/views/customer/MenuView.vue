@@ -31,10 +31,12 @@ import MenuHeader from '@/components/customer/menu/MenuHeader.vue';
 import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue';
 import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue';
 import { useCartStore } from '@/stores/cart';
+import { useAuthStore } from '@/stores/auth'; // 添加 authStore
 
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore(); // 初始化 authStore
 
 // 獲取路由參數
 const brandId = computed(() => route.params.brandId);
@@ -191,7 +193,7 @@ const loadMenuItems = async () => {
   }
 };
 
-// 登入相關方法（僅包含基本結構，實際邏輯待實現）
+// 登入相關方法
 const handleLogin = () => {
   router.push({
     name: 'customer-login',
@@ -214,12 +216,16 @@ const handleAccount = () => {
 
 const handleLogout = async () => {
   try {
-    await api.adminAuth.logout();
+    // 使用 authStore 進行登出，brandId 已在 onMounted 中設置
+    await authStore.logout();
+
+    // 更新本地 UI 狀態
     isLoggedIn.value = false;
     customerName.value = '';
-    // 可能需要重置某些數據或狀態
+
   } catch (error) {
     console.error('登出失敗:', error);
+    alert('登出失敗: ' + error.message);
   }
 };
 
@@ -249,12 +255,20 @@ const calculateTotal = () => {
 
 // 生命週期鉤子
 onMounted(async () => {
+  // 設置 brandId 到 authStore，解決登出時找不到 brandId 的問題
+  if (brandId.value) {
+    authStore.setBrandId(brandId.value);
+
+    // 將 brandId 也存入 sessionStorage，確保頁面刷新後仍能訪問
+    sessionStorage.setItem('currentBrandId', brandId.value);
+  }
+
   // 檢查登入狀態
   try {
-    const status = await api.userAuth.checkStatus();
+    const status = await authStore.checkAuthStatus();
     isLoggedIn.value = status.loggedIn;
-    if (status.loggedIn && status.user) {
-      customerName.value = status.user.name;
+    if (status.loggedIn && authStore.user) {
+      customerName.value = authStore.user.name || '';
     }
   } catch (error) {
     console.error('檢查登入狀態失敗:', error);
