@@ -114,7 +114,7 @@
                 <button class="btn btn-sm btn-outline-secondary me-2" @click="editAddress(address)">
                   編輯
                 </button>
-                <button class="btn btn-sm btn-outline-danger" @click="deleteAddress(address._id)"
+                <button class="btn btn-sm btn-outline-danger" @click="confirmDeleteAddress(address)"
                   :disabled="isUpdatingAddress">
                   <span v-if="isUpdatingAddress && deletingAddressId === address._id"
                     class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -221,19 +221,60 @@
       </div>
     </div>
   </div>
+
+  <!-- 通知模態框 -->
+  <BModal id="successModal" title="操作成功" ok-title="確認" ok-variant="success" :hide-footer="false" ref="successModal">
+    <div class="text-center mb-3">
+      <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+    </div>
+    <p class="text-center">{{ successMessage }}</p>
+    <div class="alert alert-success">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      您的操作已成功完成。
+    </div>
+  </BModal>
+
+  <!-- 刪除地址確認模態框 -->
+  <BModal id="deleteAddressModal" title="確認刪除地址" ok-title="確認刪除" ok-variant="danger" cancel-title="取消"
+    @ok="proceedDeleteAddress" ref="deleteAddressModal">
+    <p v-if="addressToDelete">確定要刪除地址「{{ addressToDelete.name }}」嗎？</p>
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      此操作無法撤銷，地址將被永久刪除。
+    </div>
+    <div v-if="isUpdatingAddress" class="text-center">
+      <div class="spinner-border text-danger" role="status">
+        <span class="visually-hidden">刪除中...</span>
+      </div>
+    </div>
+  </BModal>
+
+  <!-- 錯誤模態框 -->
+  <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" :hide-footer="false" ref="errorModal">
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ errorMessage }}
+    </div>
+  </BModal>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/api';
+import { BModal } from 'bootstrap-vue-next';
 
 // 路由相關
 const route = useRoute();
 
-// 新增 brandId 計算屬性
+// 模態框參考
+const successModal = ref(null);
+const deleteAddressModal = ref(null);
+const errorModal = ref(null);
+
+// 品牌ID計算屬性
 const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId');
+  return sessionStorage.getItem('currentBrandId') || localStorage.getItem('currentBrandId');
 });
 
 // 狀態管理
@@ -264,6 +305,9 @@ const addressForm = reactive({
   address: '',
   isDefault: false
 });
+
+// 地址刪除
+const addressToDelete = ref(null);
 
 // 密碼管理相關
 const isChangingPassword = ref(false);
@@ -305,7 +349,7 @@ const loadUserProfile = async () => {
     isLoading.value = true;
     errorMessage.value = '';
 
-    const currentBrandId = route.params.brandId || brandId.value;
+    const currentBrandId = brandId.value;
 
     if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
@@ -313,7 +357,7 @@ const loadUserProfile = async () => {
 
     // 調用獲取用戶資料 API
     const response = await api.user.getUserProfile(currentBrandId);
-    profile.value = response.profile;
+    profile.value = response;
 
     // 初始化編輯表單
     initEditForm();
@@ -325,6 +369,10 @@ const loadUserProfile = async () => {
       errorMessage.value = error.response.data.message || '無法載入用戶資料';
     } else {
       errorMessage.value = '無法載入用戶資料，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isLoading.value = false;
@@ -370,7 +418,6 @@ const updateProfile = async () => {
     isUpdating.value = true;
     errorMessage.value = '';
 
-    // 使用 route.params.brandId 或 brandId 計算屬性
     const currentBrandId = brandId.value;
 
     if (!currentBrandId) {
@@ -391,7 +438,12 @@ const updateProfile = async () => {
 
     profile.value = response;
     isEditingProfile.value = false;
-    loadUserProfile();
+
+    // 顯示成功訊息模態框
+    successMessage.value = '個人資料已成功更新';
+    if (successModal.value) {
+      successModal.value.show();
+    }
 
   } catch (error) {
     console.error('更新用戶資料失敗:', error);
@@ -400,6 +452,10 @@ const updateProfile = async () => {
       errorMessage.value = error.response.data.message || '更新個人資料失敗';
     } else {
       errorMessage.value = '更新個人資料失敗，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isUpdating.value = false;
@@ -438,8 +494,7 @@ const saveAddress = async () => {
     isUpdatingAddress.value = true;
     errorMessage.value = '';
 
-    // 使用 route.params.brandId 或 brandId 計算屬性
-    const currentBrandId = route.params.brandId || brandId.value;
+    const currentBrandId = brandId.value;
 
     if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
@@ -469,10 +524,16 @@ const saveAddress = async () => {
         }
       });
     }
+
     profile.value = response;
     isAddingAddress.value = false;
     isEditingAddress.value = false;
-    loadUserProfile();
+
+    // 顯示成功訊息模態框
+    successMessage.value = isEditingAddress.value ? '地址已成功更新' : '地址已成功新增';
+    if (successModal.value) {
+      successModal.value.show();
+    }
 
   } catch (error) {
     console.error('保存地址失敗:', error);
@@ -481,6 +542,10 @@ const saveAddress = async () => {
       errorMessage.value = error.response.data.message || '保存地址失敗';
     } else {
       errorMessage.value = '保存地址失敗，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isUpdatingAddress.value = false;
@@ -493,8 +558,7 @@ const setDefaultAddress = async (addressId) => {
     isUpdatingAddress.value = true;
     errorMessage.value = '';
 
-    // 使用 route.params.brandId 或 brandId 計算屬性
-    const currentBrandId = route.params.brandId || brandId.value;
+    const currentBrandId = brandId.value;
 
     if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
@@ -510,7 +574,13 @@ const setDefaultAddress = async (addressId) => {
     });
 
     profile.value = response;
-    loadUserProfile();
+
+    // 顯示成功訊息
+    successMessage.value = '已設為預設地址';
+    if (successModal.value) {
+      successModal.value.show();
+    }
+
   } catch (error) {
     console.error('設置默認地址失敗:', error);
 
@@ -519,25 +589,33 @@ const setDefaultAddress = async (addressId) => {
     } else {
       errorMessage.value = '設置默認地址失敗，請稍後再試';
     }
+
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
   } finally {
     isUpdatingAddress.value = false;
   }
 };
 
-// 刪除地址
-const deleteAddress = async (addressId) => {
-  // 確認刪除
-  if (!confirm('確定要刪除這個地址嗎？')) {
-    return;
+// 確認刪除地址
+const confirmDeleteAddress = (address) => {
+  addressToDelete.value = address;
+  if (deleteAddressModal.value) {
+    deleteAddressModal.value.show();
   }
+};
+
+// 執行地址刪除
+const proceedDeleteAddress = async () => {
+  if (!addressToDelete.value) return;
 
   try {
     isUpdatingAddress.value = true;
-    deletingAddressId.value = addressId;
+    deletingAddressId.value = addressToDelete.value._id;
     errorMessage.value = '';
 
-    // 使用 route.params.brandId 或 brandId 計算屬性
-    const currentBrandId = route.params.brandId || brandId.value;
+    const currentBrandId = brandId.value;
 
     if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
@@ -546,10 +624,16 @@ const deleteAddress = async (addressId) => {
     // 調用刪除地址 API
     const response = await api.user.deleteAddress({
       brandId: currentBrandId,
-      addressId
+      addressId: addressToDelete.value._id
     });
 
     profile.value = response;
+
+    // 顯示成功訊息模態框
+    successMessage.value = '地址已成功刪除';
+    if (successModal.value) {
+      successModal.value.show();
+    }
 
   } catch (error) {
     console.error('刪除地址失敗:', error);
@@ -559,9 +643,14 @@ const deleteAddress = async (addressId) => {
     } else {
       errorMessage.value = '刪除地址失敗，請稍後再試';
     }
+
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
   } finally {
     isUpdatingAddress.value = false;
     deletingAddressId.value = null;
+    addressToDelete.value = null;
   }
 };
 
@@ -583,11 +672,17 @@ const changePassword = async () => {
   // 驗證密碼
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     errorMessage.value = '兩次輸入的密碼不一致';
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
     return;
   }
 
   if (passwordForm.newPassword.length < 8) {
     errorMessage.value = '密碼長度至少需要8個字元';
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
     return;
   }
 
@@ -595,8 +690,7 @@ const changePassword = async () => {
     isUpdatingPassword.value = true;
     errorMessage.value = '';
 
-    // 使用 route.params.brandId 或 brandId 計算屬性
-    const currentBrandId = route.params.brandId || brandId.value;
+    const currentBrandId = brandId.value;
 
     if (!currentBrandId) {
       throw new Error('無法獲取品牌資訊');
@@ -610,7 +704,12 @@ const changePassword = async () => {
     });
 
     isChangingPassword.value = false;
-    alert('密碼已成功修改');
+
+    // 顯示成功訊息模態框
+    successMessage.value = '密碼已成功修改';
+    if (successModal.value) {
+      successModal.value.show();
+    }
 
   } catch (error) {
     console.error('修改密碼失敗:', error);
@@ -619,6 +718,10 @@ const changePassword = async () => {
       errorMessage.value = error.response.data.message || '修改密碼失敗';
     } else {
       errorMessage.value = '修改密碼失敗，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isUpdatingPassword.value = false;

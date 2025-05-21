@@ -1,46 +1,44 @@
 <template>
-  <div class="modal fade" :id="modalId" tabindex="-1" aria-hidden="true" ref="modalRef">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">{{ title }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" v-if="item">
-          <p>{{ confirmMessage }} <strong>{{ getItemName() }}</strong> 嗎？</p>
-          <div class="alert alert-danger" :class="alertClass">
-            <i class="bi" :class="iconClass + ' me-2'"></i>
-            {{ warningMessage }}
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ cancelText }}</button>
-          <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
-            <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-              aria-hidden="true"></span>
-            {{ isDeleting ? loadingText : confirmText }}
-          </button>
-        </div>
+  <BModal :id="modalId" :title="title" :ok-title="confirmText" :cancel-title="cancelText" :ok-variant="variantType"
+    :ok-disabled="isDeleting" @ok="handleDelete" @hidden="$emit('close')">
+    <p v-if="item">{{ confirmMessage }} <strong>{{ getItemName() }}</strong> 嗎？</p>
+    <div class="alert" :class="`alert-${alertType}`">
+      <i class="bi" :class="iconClass + ' me-2'"></i>
+      {{ warningMessage }}
+    </div>
+    <div v-if="isDeleting" class="text-center mt-3">
+      <div class="spinner-border" :class="`text-${variantType}`" role="status">
+        <span class="visually-hidden">{{ loadingText }}</span>
       </div>
     </div>
-  </div>
+
+    <template #modal-footer="{ ok, cancel }">
+      <BButton variant="secondary" @click="cancel()">
+        {{ cancelText }}
+      </BButton>
+      <BButton :variant="variantType" @click="ok()" :disabled="isDeleting">
+        <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        {{ isDeleting ? loadingText : confirmText }}
+      </BButton>
+    </template>
+  </BModal>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
+import { BModal, BButton } from 'bootstrap-vue-next';
 
 // 接收的屬性
 const props = defineProps({
   // 對話框ID，用於初始化Bootstrap Modal
   modalId: {
     type: String,
-    default: 'deleteConfirmModal'
+    default: 'confirmModal'
   },
   // 對話框標題
   title: {
     type: String,
-    default: '確認刪除'
+    default: '確認操作'
   },
   // 確認提示訊息
   confirmMessage: {
@@ -50,7 +48,7 @@ const props = defineProps({
   // 警告訊息
   warningMessage: {
     type: String,
-    default: '此操作無法撤銷，刪除後將無法復原！'
+    default: '此操作無法撤銷，請謹慎選擇！'
   },
   // 當前要刪除的項目
   item: {
@@ -65,7 +63,7 @@ const props = defineProps({
   // 提交按鈕文字
   confirmText: {
     type: String,
-    default: '確認刪除'
+    default: '確認'
   },
   // 取消按鈕文字
   cancelText: {
@@ -75,18 +73,24 @@ const props = defineProps({
   // 刪除中按鈕文字
   loadingText: {
     type: String,
-    default: '刪除中...'
+    default: '處理中...'
   },
   // 警告框類型
   alertType: {
     type: String,
-    default: 'warning', // warning, danger 等
-    validator: (value) => ['warning', 'danger', 'info'].includes(value)
+    default: 'warning', // warning, danger, info, success
+    validator: (value) => ['warning', 'danger', 'info', 'success'].includes(value)
   },
   // 警告框圖示
   alertIcon: {
     type: String,
     default: 'exclamation-triangle-fill' // 默認感嘆號三角圖示
+  },
+  // 模態框類型（顏色變體）
+  variant: {
+    type: String,
+    default: 'primary', // 'success'（綠色）、'warning'（黃色）、'danger'（紅色）、'primary'（藍色）
+    validator: (value) => ['success', 'warning', 'danger', 'primary', 'info', 'secondary'].includes(value)
   }
 });
 
@@ -95,11 +99,12 @@ const emit = defineEmits(['delete', 'close']);
 
 // 響應式變數
 const isDeleting = ref(false);
-const modalRef = ref(null);
-const modalInstance = ref(null);
+const modalVisible = ref(false);
+
+// 根據 variant 屬性設置模態框按鈕顏色
+const variantType = computed(() => props.variant);
 
 // 計算alert類與圖示類
-const alertClass = computed(() => `alert-${props.alertType}`);
 const iconClass = computed(() => `bi-${props.alertIcon}`);
 
 // 獲取項目名稱
@@ -115,10 +120,8 @@ const handleDelete = async () => {
   try {
     // 通知父組件執行刪除操作
     await emit('delete', props.item);
-    // 隱藏對話框
-    hide();
   } catch (error) {
-    console.error('刪除操作失敗:', error);
+    console.error('操作失敗:', error);
   } finally {
     isDeleting.value = false;
   }
@@ -126,41 +129,18 @@ const handleDelete = async () => {
 
 // 顯示對話框
 const show = () => {
-  if (modalInstance.value) {
-    modalInstance.value.show();
-  }
-};
-
-// 隱藏對話框
-const hide = () => {
-  if (modalInstance.value) {
-    modalInstance.value.hide();
-    emit('close');
-  }
+  modalVisible.value = true;
 };
 
 // 監聽項目變化，當有新項目時自動顯示對話框
 watch(() => props.item, (newItem) => {
-  if (newItem && modalInstance.value) {
-    show();
-  }
-});
-
-// 初始化Modal
-onMounted(() => {
-  if (modalRef.value) {
-    modalInstance.value = new Modal(modalRef.value);
-
-    // 監聽對話框關閉事件，告知父組件
-    modalRef.value.addEventListener('hidden.bs.modal', () => {
-      emit('close');
-    });
+  if (newItem) {
+    modalVisible.value = true;
   }
 });
 
 // 將方法暴露給父組件使用
 defineExpose({
-  show,
-  hide
+  show
 });
 </script>

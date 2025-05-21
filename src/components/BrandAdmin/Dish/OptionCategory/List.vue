@@ -87,8 +87,15 @@
     </div>
 
     <!-- 確認刪除對話框 -->
-    <ConfirmModal modalId="deleteCategoryModal" :item="categoryToDelete" @delete="deleteCategory"
+    <ConfirmModal modalId="deleteCategoryModal" title="確認刪除選項類別" confirmMessage="確定要刪除選項類別" confirmText="確認刪除"
+      :cancelText="'取消'" variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill"
+      :item="categoryToDelete" nameKey="name" warningMessage="此操作無法撤銷，類別及其所有選項都將被永久刪除。" @delete="deleteCategory"
       @close="categoryToDelete = null" />
+
+    <!-- 錯誤通知模態框 -->
+    <ConfirmModal modalId="errorModal" title="操作失敗" confirmMessage="刪除選項類別時發生錯誤" confirmText="確認" :cancelText="'關閉'"
+      variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill" :item="{ name: '錯誤通知' }"
+      @delete="closeErrorModal" ref="errorModal" />
   </div>
 </template>
 
@@ -108,6 +115,10 @@ const isLoading = ref(true);
 const searchQuery = ref('');
 const errorMessage = ref('');
 const categoryToDelete = ref(null);
+const errorModal = ref(null);
+
+// 關閉錯誤模態框的回調函數
+const closeErrorModal = () => { };
 
 // 計算已過濾的類別列表
 const filteredCategories = computed(() => {
@@ -174,7 +185,10 @@ const deleteCategory = async (category) => {
     );
   } catch (error) {
     console.error('刪除選項類別失敗:', error);
-    alert('刪除選項類別時發生錯誤');
+    // 顯示錯誤模態框而不是 alert
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
   }
 };
 

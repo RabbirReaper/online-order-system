@@ -85,16 +85,31 @@
       </div>
     </div>
   </div>
+
+  <!-- 成功訊息模態框 -->
+  <ConfirmModal modalId="successModal" title="操作成功" :confirmMessage="successMessage" confirmText="確認" :cancelText="'關閉'"
+    variant="success" alertType="success" alertIcon="check-circle-fill" :item="{ name: '成功通知' }"
+    @delete="onSuccessModalClose" ref="successModal" />
+
+  <!-- 錯誤訊息模態框 -->
+  <ConfirmModal modalId="errorModal" title="操作失敗" :confirmMessage="errorMessage" confirmText="確認" :cancelText="'關閉'"
+    variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill" :item="{ name: '錯誤通知' }"
+    @delete="closeErrorModal" ref="errorModal" />
 </template>
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
+import ConfirmModal from '@/components/common/ConfirmModal.vue';
 
 // 路由相關
 const router = useRouter();
 const route = useRoute();
+
+// 模態框參考
+const successModal = ref(null);
+const errorModal = ref(null);
 
 // 表單資料
 const phone = ref('');
@@ -113,6 +128,16 @@ const countdown = ref(0);
 const codeRequested = ref(false);
 const codeVerified = ref(false);
 let countdownTimer = null;
+
+// 模態框回調函數
+const onSuccessModalClose = () => {
+  // 如果是密碼重設成功，跳轉到登入頁面
+  if (codeVerified.value) {
+    router.push('/auth/login');
+  }
+};
+
+const closeErrorModal = () => { };
 
 // 表單驗證
 const isPasswordFormValid = computed(() => {
@@ -155,6 +180,9 @@ const sendVerificationCode = async () => {
   // 驗證手機號碼
   if (!phone.value || !/^\d{10,}$/.test(phone.value)) {
     errorMessage.value = '請輸入有效的手機號碼';
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
     return;
   }
 
@@ -178,6 +206,10 @@ const sendVerificationCode = async () => {
 
     // 顯示成功訊息並開始倒計時
     successMessage.value = '驗證碼已發送到您的手機，請注意查收';
+    if (successModal.value) {
+      successModal.value.show();
+    }
+
     startCountdown(60); // 60秒倒計時
     codeRequested.value = true;
 
@@ -188,6 +220,10 @@ const sendVerificationCode = async () => {
       errorMessage.value = error.response.data.message || '發送驗證碼失敗，請稍後再試';
     } else {
       errorMessage.value = '發送驗證碼失敗，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isCodeSending.value = false;
@@ -218,6 +254,10 @@ const verifyCode = async () => {
 
     // 驗證成功
     successMessage.value = '驗證成功，請設置新密碼';
+    if (successModal.value) {
+      successModal.value.show();
+    }
+
     codeVerified.value = true;
 
   } catch (error) {
@@ -227,6 +267,10 @@ const verifyCode = async () => {
       errorMessage.value = error.response.data.message || '驗證碼無效或已過期';
     } else {
       errorMessage.value = '驗證失敗，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isLoading.value = false;
@@ -238,11 +282,17 @@ const resetPassword = async () => {
   // 驗證密碼
   if (newPassword.value !== confirmPassword.value) {
     errorMessage.value = '兩次輸入的密碼不一致';
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
     return;
   }
 
   if (newPassword.value.length < 8) {
     errorMessage.value = '密碼長度至少需要8個字元';
+    if (errorModal.value) {
+      errorModal.value.show();
+    }
     return;
   }
 
@@ -268,11 +318,14 @@ const resetPassword = async () => {
 
     // 重設成功
     successMessage.value = '密碼已重設成功，請使用新密碼登入';
-
-    // 延遲後跳轉到登入頁面
-    setTimeout(() => {
-      router.push('/auth/login');
-    }, 2000);
+    if (successModal.value) {
+      successModal.value.show();
+    } else {
+      // 如果模態框不可用，延遲後直接跳轉
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 2000);
+    }
 
   } catch (error) {
     console.error('重設密碼失敗:', error);
@@ -281,6 +334,10 @@ const resetPassword = async () => {
       errorMessage.value = error.response.data.message || '重設密碼失敗，請稍後再試';
     } else {
       errorMessage.value = '重設密碼失敗，請稍後再試';
+    }
+
+    if (errorModal.value) {
+      errorModal.value.show();
     }
   } finally {
     isLoading.value = false;

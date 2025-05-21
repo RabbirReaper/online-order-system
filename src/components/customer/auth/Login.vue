@@ -47,6 +47,16 @@
       </div>
     </div>
   </div>
+
+  <!-- 登入成功模態框 -->
+  <ConfirmModal modalId="loginSuccessModal" title="登入成功" confirmMessage="您已成功登入系統" confirmText="繼續" :cancelText="'關閉'"
+    variant="success" alertType="success" alertIcon="check-circle-fill" :item="{ name: '登入通知' }"
+    @delete="closeLoginSuccessModal" ref="loginSuccessModal" />
+
+  <!-- 登入失敗模態框 -->
+  <ConfirmModal modalId="loginErrorModal" title="登入失敗" :confirmMessage="errorMessage" confirmText="重試"
+    :cancelText="'關閉'" variant="danger" alertType="danger" alertIcon="exclamation-triangle-fill"
+    :item="{ name: '錯誤通知' }" @delete="closeLoginErrorModal" ref="loginErrorModal" />
 </template>
 
 <script setup>
@@ -54,11 +64,16 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import api from '@/api';
+import ConfirmModal from '@/components/common/ConfirmModal.vue';
 
 // 路由相關
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+
+// 模態框參考
+const loginSuccessModal = ref(null);
+const loginErrorModal = ref(null);
 
 // 表單資料
 const credentials = reactive({
@@ -71,6 +86,18 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 const showPassword = ref(false);
 const rememberMe = ref(false);
+
+// 模態框回調函數
+const closeLoginSuccessModal = () => {
+  // 關閉模態框後跳轉
+  const redirectPath = route.query.redirect || '/';
+  router.push(redirectPath);
+};
+
+const closeLoginErrorModal = () => {
+  // 重新聚焦到密碼輸入框
+  document.getElementById('password')?.focus();
+};
 
 // 從 URL 查詢參數中恢復上次使用的手機號碼
 onMounted(() => {
@@ -89,6 +116,16 @@ onMounted(() => {
 
   // 清除舊的錯誤訊息
   errorMessage.value = '';
+
+  // 如果是從註冊頁面跳轉過來，顯示成功訊息
+  if (route.query.registered === 'true') {
+    // 可以顯示註冊成功的訊息
+    errorMessage.value = '';
+    if (loginSuccessModal.value) {
+      loginSuccessModal.value.confirmMessage = '註冊成功，請使用您的手機號碼和密碼登入';
+      loginSuccessModal.value.show();
+    }
+  }
 });
 
 // 切換密碼可見性
@@ -123,9 +160,15 @@ const handleLogin = async () => {
     // 登入成功後的處理
     console.log('登入成功!');
 
-    // 跳轉到首頁或上一頁
-    const redirectPath = route.query.redirect || '/';
-    router.push(redirectPath);
+    // 顯示成功訊息
+    if (loginSuccessModal.value) {
+      loginSuccessModal.value.confirmMessage = '您已成功登入系統';
+      loginSuccessModal.value.show();
+    } else {
+      // 如果模態框不可用，直接跳轉
+      const redirectPath = route.query.redirect || '/';
+      router.push(redirectPath);
+    }
 
   } catch (error) {
     console.error('登入失敗:', error);
@@ -134,6 +177,11 @@ const handleLogin = async () => {
       errorMessage.value = error.response.data.message || '登入失敗，請檢查您的手機號碼和密碼';
     } else {
       errorMessage.value = '登入失敗，請稍後再試';
+    }
+
+    // 顯示錯誤模態框
+    if (loginErrorModal.value) {
+      loginErrorModal.value.show();
     }
   } finally {
     isLoading.value = false;
