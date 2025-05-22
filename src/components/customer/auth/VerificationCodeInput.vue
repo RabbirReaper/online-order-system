@@ -69,7 +69,7 @@ const updateModelValue = () => {
   emit('update:modelValue', value);
 
   // 當所有位數都填寫完畢時，觸發 completed 事件
-  if (value.length === props.length) {
+  if (value.length === props.length && !value.includes('')) {
     emit('completed', value);
   }
 };
@@ -130,13 +130,14 @@ onMounted(() => {
 
 <style scoped>
 .verification-code-container {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-label {
   font-weight: 500;
   margin-bottom: 0.5rem;
   display: block;
+  color: #333;
 }
 
 .code-input-group {
@@ -148,12 +149,13 @@ onMounted(() => {
 .code-input {
   width: 3rem;
   height: 3rem;
-  border: 2px solid #ced4da;
+  border: 2px solid #dee2e6;
   border-radius: 8px;
   font-size: 1.5rem;
   text-align: center;
   flex: 1;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .code-input:focus {
@@ -179,6 +181,22 @@ onMounted(() => {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1.25rem;
+  }
+
+  .code-input-group {
+    gap: 0.3rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .code-input {
+    width: 2rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
+  }
+
+  .code-input-group {
+    gap: 0.2rem;
   }
 }
 </style>

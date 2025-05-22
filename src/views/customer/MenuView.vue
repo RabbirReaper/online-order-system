@@ -263,6 +263,11 @@ onMounted(async () => {
     sessionStorage.setItem('currentBrandId', brandId.value);
   }
 
+  // 設置 storeId 到購物車
+  if (storeId.value) {
+    sessionStorage.setItem('currentStoreId', storeId.value);
+  }
+
   // 檢查登入狀態
   try {
     const status = await authStore.checkAuthStatus();

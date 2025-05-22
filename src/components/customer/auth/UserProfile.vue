@@ -1,221 +1,234 @@
 <template>
-  <div class="profile-container">
-    <div class="profile-header">
-      <h2 class="mb-3">會員資料</h2>
-      <p class="text-muted">查看和管理您的個人資訊</p>
-    </div>
-
-    <div v-if="isLoading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">載入中...</span>
-      </div>
-      <p class="mt-3">載入您的資料中，請稍候...</p>
-    </div>
-
-    <div v-else-if="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
-
-    <div v-else class="profile-content">
-      <!-- 個人資料部分 -->
-      <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">個人資料</h5>
-          <button class="btn btn-sm btn-outline-primary" @click="toggleEditProfile">
-            <i class="bi bi-pencil me-1"></i>{{ isEditingProfile ? '取消編輯' : '編輯資料' }}
-          </button>
-        </div>
-        <div class="card-body">
-          <form v-if="isEditingProfile" @submit.prevent="updateProfile">
-            <div class="mb-3">
-              <label for="name" class="form-label">姓名</label>
-              <input type="text" class="form-control" id="name" v-model="editForm.name" required>
-            </div>
-            <div class="mb-3">
-              <label for="email" class="form-label">電子郵件</label>
-              <input type="email" class="form-control" id="email" v-model="editForm.email" required>
-            </div>
-            <div class="mb-3">
-              <label for="phone" class="form-label">手機號碼</label>
-              <input type="tel" class="form-control" id="phone" v-model="editForm.phone" required>
-            </div>
-            <div class="mb-3">
-              <label for="gender" class="form-label">性別</label>
-              <select class="form-select" id="gender" v-model="editForm.gender">
-                <option value="male">男性</option>
-                <option value="female">女性</option>
-                <option value="other">其他</option>
-                <option value="prefer_not_to_say">不願透露</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="dateOfBirth" class="form-label">生日</label>
-              <input type="date" class="form-control" id="dateOfBirth" v-model="editForm.dateOfBirth">
-            </div>
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-primary" :disabled="isUpdating">
-                <span v-if="isUpdating" class="spinner-border spinner-border-sm me-2" role="status"
-                  aria-hidden="true"></span>
-                儲存變更
-              </button>
-              <button type="button" class="btn btn-outline-secondary" @click="cancelEdit">
-                取消
-              </button>
-            </div>
-          </form>
-          <div v-else class="profile-info">
-            <div class="row mb-2">
-              <div class="col-sm-4 text-muted">姓名</div>
-              <div class="col-sm-8">{{ profile.name || '未設定' }}</div>
-            </div>
-            <div class="row mb-2">
-              <div class="col-sm-4 text-muted">電子郵件</div>
-              <div class="col-sm-8">{{ profile.email || '未設定' }}</div>
-            </div>
-            <div class="row mb-2">
-              <div class="col-sm-4 text-muted">手機號碼</div>
-              <div class="col-sm-8">{{ profile.phone || '未設定' }}</div>
-            </div>
-            <div class="row mb-2">
-              <div class="col-sm-4 text-muted">性別</div>
-              <div class="col-sm-8">{{ formatGender(profile.gender) }}</div>
-            </div>
-            <div class="row mb-2">
-              <div class="col-sm-4 text-muted">生日</div>
-              <div class="col-sm-8">{{ formatDate(profile.dateOfBirth) }}</div>
-            </div>
+  <div class="main-container">
+    <!-- 頂部導航欄 -->
+    <div class="nav-container">
+      <div class="nav-wrapper">
+        <nav class="navbar navbar-light">
+          <div class="container-fluid px-3">
+            <a class="navbar-brand" href="#" @click.prevent="goBack">
+              <i class="bi bi-arrow-left me-2"></i>返回
+            </a>
+            <div class="navbar-title">會員資料</div>
+            <div class="nav-placeholder"></div>
           </div>
+        </nav>
+        <div class="nav-border"></div>
+      </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div v-if="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">載入中...</span>
         </div>
+        <p class="mt-3">載入您的資料中，請稍候...</p>
       </div>
 
-      <!-- 地址部分 -->
-      <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">地址管理</h5>
-          <button class="btn btn-sm btn-outline-primary" @click="showAddAddressForm">
-            <i class="bi bi-plus-lg me-1"></i>新增地址
-          </button>
-        </div>
-        <div class="card-body">
-          <div v-if="profile.addresses && profile.addresses.length > 0">
-            <div class="address-item" v-for="(address, index) in profile.addresses" :key="index">
-              <div class="address-content">
-                <div class="d-flex align-items-center mb-1">
-                  <h6 class="mb-0">{{ address.name }}</h6>
-                  <span v-if="address.isDefault" class="badge bg-success ms-2">預設</span>
-                </div>
-                <p class="mb-1">{{ address.address }}</p>
-              </div>
-              <div class="address-actions">
-                <button v-if="!address.isDefault" class="btn btn-sm btn-outline-success me-2"
-                  @click="setDefaultAddress(address._id)" :disabled="isUpdatingAddress">
-                  設為預設
-                </button>
-                <button class="btn btn-sm btn-outline-secondary me-2" @click="editAddress(address)">
-                  編輯
-                </button>
-                <button class="btn btn-sm btn-outline-danger" @click="confirmDeleteAddress(address)"
-                  :disabled="isUpdatingAddress">
-                  <span v-if="isUpdatingAddress && deletingAddressId === address._id"
-                    class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  刪除
-                </button>
-              </div>
-            </div>
-          </div>
-          <p v-else class="text-muted">您尚未新增任何地址。</p>
+      <div v-else-if="errorMessage" class="alert alert-danger">
+        {{ errorMessage }}
+      </div>
 
-          <!-- 地址表單 -->
-          <div v-if="isAddingAddress || isEditingAddress" class="address-form mt-4">
-            <h6 class="mb-3">{{ isEditingAddress ? '編輯地址' : '新增地址' }}</h6>
-            <form @submit.prevent="saveAddress">
+      <div v-else class="profile-content">
+        <!-- 個人資料部分 -->
+        <div class="profile-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">個人資料</h5>
+            <button class="btn btn-sm btn-outline-primary" @click="toggleEditProfile">
+              <i class="bi bi-pencil me-1"></i>{{ isEditingProfile ? '取消編輯' : '編輯資料' }}
+            </button>
+          </div>
+          <div class="card-body">
+            <form v-if="isEditingProfile" @submit.prevent="updateProfile">
               <div class="mb-3">
-                <label for="addressName" class="form-label">地址名稱</label>
-                <input type="text" class="form-control" id="addressName" v-model="addressForm.name"
-                  placeholder="例如：家、公司" required>
+                <label for="name" class="form-label">姓名</label>
+                <input type="text" class="form-control" id="name" v-model="editForm.name" required>
               </div>
               <div class="mb-3">
-                <label for="addressDetail" class="form-label">詳細地址</label>
-                <textarea class="form-control" id="addressDetail" v-model="addressForm.address" rows="3"
-                  placeholder="請輸入完整地址" required></textarea>
+                <label for="email" class="form-label">電子郵件</label>
+                <input type="email" class="form-control" id="email" v-model="editForm.email" required>
               </div>
-              <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="isDefault" v-model="addressForm.isDefault">
-                <label class="form-check-label" for="isDefault">設為預設地址</label>
+              <div class="mb-3">
+                <label for="phone" class="form-label">手機號碼</label>
+                <input type="tel" class="form-control" id="phone" v-model="editForm.phone" required>
+              </div>
+              <div class="mb-3">
+                <label for="gender" class="form-label">性別</label>
+                <select class="form-select" id="gender" v-model="editForm.gender">
+                  <option value="male">男性</option>
+                  <option value="female">女性</option>
+                  <option value="other">其他</option>
+                  <option value="prefer_not_to_say">不願透露</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="dateOfBirth" class="form-label">生日</label>
+                <input type="date" class="form-control" id="dateOfBirth" v-model="editForm.dateOfBirth">
               </div>
               <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary" :disabled="isUpdatingAddress">
-                  <span v-if="isUpdatingAddress" class="spinner-border spinner-border-sm me-2" role="status"
+                <button type="submit" class="btn btn-primary" :disabled="isUpdating">
+                  <span v-if="isUpdating" class="spinner-border spinner-border-sm me-2" role="status"
                     aria-hidden="true"></span>
-                  儲存
+                  儲存變更
                 </button>
-                <button type="button" class="btn btn-outline-secondary" @click="cancelAddressForm">
+                <button type="button" class="btn btn-outline-secondary" @click="cancelEdit">
                   取消
                 </button>
               </div>
             </form>
+            <div v-else class="profile-info">
+              <div class="info-item">
+                <div class="info-label">姓名</div>
+                <div class="info-value">{{ profile.name || '未設定' }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">電子郵件</div>
+                <div class="info-value">{{ profile.email || '未設定' }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">手機號碼</div>
+                <div class="info-value">{{ profile.phone || '未設定' }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">性別</div>
+                <div class="info-value">{{ formatGender(profile.gender) }}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">生日</div>
+                <div class="info-value">{{ formatDate(profile.dateOfBirth) }}</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- 密碼管理部分 -->
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">密碼管理</h5>
+        <!-- 地址部分 -->
+        <div class="profile-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">地址管理</h5>
+            <button class="btn btn-sm btn-outline-primary" @click="showAddAddressForm">
+              <i class="bi bi-plus-lg me-1"></i>新增地址
+            </button>
+          </div>
+          <div class="card-body">
+            <div v-if="profile.addresses && profile.addresses.length > 0">
+              <div class="address-item" v-for="(address, index) in profile.addresses" :key="index">
+                <div class="address-content">
+                  <div class="d-flex align-items-center mb-1">
+                    <h6 class="mb-0">{{ address.name }}</h6>
+                    <span v-if="address.isDefault" class="badge bg-success ms-2">預設</span>
+                  </div>
+                  <p class="mb-1">{{ address.address }}</p>
+                </div>
+                <div class="address-actions">
+                  <button v-if="!address.isDefault" class="btn btn-sm btn-outline-success me-2"
+                    @click="setDefaultAddress(address._id)" :disabled="isUpdatingAddress">
+                    設為預設
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary me-2" @click="editAddress(address)">
+                    編輯
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="confirmDeleteAddress(address)"
+                    :disabled="isUpdatingAddress">
+                    <span v-if="isUpdatingAddress && deletingAddressId === address._id"
+                      class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    刪除
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="text-muted">您尚未新增任何地址。</p>
+
+            <!-- 地址表單 -->
+            <div v-if="isAddingAddress || isEditingAddress" class="address-form mt-4">
+              <h6 class="mb-3">{{ isEditingAddress ? '編輯地址' : '新增地址' }}</h6>
+              <form @submit.prevent="saveAddress">
+                <div class="mb-3">
+                  <label for="addressName" class="form-label">地址名稱</label>
+                  <input type="text" class="form-control" id="addressName" v-model="addressForm.name"
+                    placeholder="例如：家、公司" required>
+                </div>
+                <div class="mb-3">
+                  <label for="addressDetail" class="form-label">詳細地址</label>
+                  <textarea class="form-control" id="addressDetail" v-model="addressForm.address" rows="3"
+                    placeholder="請輸入完整地址" required></textarea>
+                </div>
+                <div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input" id="isDefault" v-model="addressForm.isDefault">
+                  <label class="form-check-label" for="isDefault">設為預設地址</label>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary" :disabled="isUpdatingAddress">
+                    <span v-if="isUpdatingAddress" class="spinner-border spinner-border-sm me-2" role="status"
+                      aria-hidden="true"></span>
+                    儲存
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" @click="cancelAddressForm">
+                    取消
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <button class="btn btn-outline-primary" @click="showChangePasswordForm">
-            <i class="bi bi-key me-1"></i>修改密碼
-          </button>
 
-          <!-- 修改密碼表單 -->
-          <div v-if="isChangingPassword" class="password-form mt-4">
-            <h6 class="mb-3">修改密碼</h6>
-            <form @submit.prevent="changePassword">
-              <div class="mb-3">
-                <label for="currentPassword" class="form-label">當前密碼</label>
-                <div class="input-group">
-                  <input :type="showCurrentPassword ? 'text' : 'password'" class="form-control" id="currentPassword"
-                    v-model="passwordForm.currentPassword" required>
-                  <button class="btn btn-outline-secondary" type="button"
-                    @click="showCurrentPassword = !showCurrentPassword">
-                    <i :class="showCurrentPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+        <!-- 密碼管理部分 -->
+        <div class="profile-card">
+          <div class="card-header">
+            <h5 class="mb-0">密碼管理</h5>
+          </div>
+          <div class="card-body">
+            <button class="btn btn-outline-primary" @click="showChangePasswordForm">
+              <i class="bi bi-key me-1"></i>修改密碼
+            </button>
+
+            <!-- 修改密碼表單 -->
+            <div v-if="isChangingPassword" class="password-form mt-4">
+              <h6 class="mb-3">修改密碼</h6>
+              <form @submit.prevent="changePassword">
+                <div class="mb-3">
+                  <label for="currentPassword" class="form-label">當前密碼</label>
+                  <div class="input-group">
+                    <input :type="showCurrentPassword ? 'text' : 'password'" class="form-control" id="currentPassword"
+                      v-model="passwordForm.currentPassword" required>
+                    <button class="btn btn-outline-secondary" type="button"
+                      @click="showCurrentPassword = !showCurrentPassword">
+                      <i :class="showCurrentPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="newPassword" class="form-label">新密碼</label>
+                  <div class="input-group">
+                    <input :type="showNewPassword ? 'text' : 'password'" class="form-control" id="newPassword"
+                      v-model="passwordForm.newPassword" required minlength="8">
+                    <button class="btn btn-outline-secondary" type="button" @click="showNewPassword = !showNewPassword">
+                      <i :class="showNewPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    </button>
+                  </div>
+                  <small class="form-text text-muted">密碼長度至少需要8個字元</small>
+                </div>
+                <div class="mb-3">
+                  <label for="confirmPassword" class="form-label">確認新密碼</label>
+                  <div class="input-group">
+                    <input :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword"
+                      v-model="passwordForm.confirmPassword" required>
+                    <button class="btn btn-outline-secondary" type="button"
+                      @click="showConfirmPassword = !showConfirmPassword">
+                      <i :class="showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" class="btn btn-primary" :disabled="isUpdatingPassword">
+                    <span v-if="isUpdatingPassword" class="spinner-border spinner-border-sm me-2" role="status"
+                      aria-hidden="true"></span>
+                    更新密碼
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" @click="cancelChangePassword">
+                    取消
                   </button>
                 </div>
-              </div>
-              <div class="mb-3">
-                <label for="newPassword" class="form-label">新密碼</label>
-                <div class="input-group">
-                  <input :type="showNewPassword ? 'text' : 'password'" class="form-control" id="newPassword"
-                    v-model="passwordForm.newPassword" required minlength="8">
-                  <button class="btn btn-outline-secondary" type="button" @click="showNewPassword = !showNewPassword">
-                    <i :class="showNewPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-                  </button>
-                </div>
-                <small class="form-text text-muted">密碼長度至少需要8個字元</small>
-              </div>
-              <div class="mb-3">
-                <label for="confirmPassword" class="form-label">確認新密碼</label>
-                <div class="input-group">
-                  <input :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword"
-                    v-model="passwordForm.confirmPassword" required>
-                  <button class="btn btn-outline-secondary" type="button"
-                    @click="showConfirmPassword = !showConfirmPassword">
-                    <i :class="showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary" :disabled="isUpdatingPassword">
-                  <span v-if="isUpdatingPassword" class="spinner-border spinner-border-sm me-2" role="status"
-                    aria-hidden="true"></span>
-                  更新密碼
-                </button>
-                <button type="button" class="btn btn-outline-secondary" @click="cancelChangePassword">
-                  取消
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -260,11 +273,12 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
 import { BModal } from 'bootstrap-vue-next';
 
 // 路由相關
+const router = useRouter();
 const route = useRoute();
 
 // 模態框參考
@@ -272,9 +286,18 @@ const successModal = ref(null);
 const deleteAddressModal = ref(null);
 const errorModal = ref(null);
 
+// 返回上一頁
+const goBack = () => {
+  router.push(`/stores/${brandId.value}/${storeId.value}`);
+};
+
 // 品牌ID計算屬性
 const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId') || localStorage.getItem('currentBrandId');
+  return sessionStorage.getItem('currentBrandId');
+});
+
+const storeId = computed(() => {
+  return sessionStorage.getItem('currentStoreId');
 });
 
 // 狀態管理
@@ -738,21 +761,80 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.profile-container {
-  max-width: 768px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+.main-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
-.profile-header {
-  margin-bottom: 2rem;
+/* 導航欄樣式 */
+.nav-container {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  max-width: 736px;
+  z-index: 1030;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav-wrapper {
+  width: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar {
+  width: 100%;
+  background-color: #ffffff;
+  margin-bottom: 0;
+  padding: 0.8rem 1rem;
+}
+
+.navbar-brand {
+  color: #333;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.navbar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.nav-placeholder {
+  width: 30px;
+}
+
+.nav-border {
+  height: 3px;
+  background: linear-gradient(to right, #d35400, #e67e22);
+  width: 100%;
+}
+
+/* 內容容器 */
+.content-wrapper {
+  width: 100%;
+  max-width: 736px;
+  margin: 0 auto;
+  padding: 80px 15px 30px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-content {
   margin-bottom: 2rem;
 }
 
-.card {
+.profile-card {
+  background-color: white;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -765,8 +847,31 @@ onMounted(() => {
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.profile-info {
-  padding: 0.5rem 0;
+.card-body {
+  padding: 1.25rem;
+}
+
+.info-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.info-label {
+  width: 110px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.info-value {
+  flex: 1;
 }
 
 .btn-primary {
@@ -783,11 +888,13 @@ onMounted(() => {
 .address-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem;
   border: 1px solid #dee2e6;
   border-radius: 8px;
   margin-bottom: 1rem;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .address-content {
@@ -798,6 +905,7 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin-left: 1rem;
 }
 
 .badge {
@@ -805,7 +913,11 @@ onMounted(() => {
   font-size: 0.75em;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 576px) {
+  .content-wrapper {
+    padding-top: 70px;
+  }
+
   .address-item {
     flex-direction: column;
     align-items: flex-start;
@@ -814,6 +926,7 @@ onMounted(() => {
   .address-actions {
     margin-top: 1rem;
     width: 100%;
+    margin-left: 0;
   }
 }
 </style>

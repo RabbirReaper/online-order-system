@@ -1,10 +1,23 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <h2 class="text-center mb-4">會員註冊</h2>
+  <div class="main-container">
+    <!-- 頂部導航欄 -->
+    <div class="nav-container">
+      <div class="nav-wrapper">
+        <nav class="navbar navbar-light">
+          <div class="container-fluid px-3">
+            <a class="navbar-brand" href="#" @click.prevent="goBack">
+              <i class="bi bi-arrow-left me-2"></i>返回
+            </a>
+            <div class="navbar-title">會員註冊</div>
+            <div class="nav-placeholder"></div>
+          </div>
+        </nav>
+        <div class="nav-border"></div>
       </div>
-      <div class="auth-body">
+    </div>
+
+    <div class="content-wrapper">
+      <div class="auth-card">
         <div v-if="errorMessage" class="alert alert-danger">
           {{ errorMessage }}
         </div>
@@ -243,6 +256,11 @@ const showConfirmPassword = ref(false);
 const countdown = ref(0);
 let countdownTimer = null;
 
+// 返回上一頁
+const goBack = () => {
+  router.back();
+};
+
 // 表單驗證
 const isFormValid = computed(() => {
   return userData.name &&
@@ -432,30 +450,81 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.auth-container {
+.main-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
   min-height: 100vh;
-  padding: 2rem 1rem;
   background-color: #f8f9fa;
 }
 
-.auth-card {
+/* 導航欄樣式 */
+.nav-container {
+  position: fixed;
+  top: 0;
   width: 100%;
-  max-width: 500px;
+  max-width: 736px;
+  z-index: 1030;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav-wrapper {
+  width: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar {
+  width: 100%;
+  background-color: #ffffff;
+  margin-bottom: 0;
+  padding: 0.8rem 1rem;
+}
+
+.navbar-brand {
+  color: #333;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.navbar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.nav-placeholder {
+  width: 30px;
+}
+
+.nav-border {
+  height: 3px;
+  background: linear-gradient(to right, #d35400, #e67e22);
+  width: 100%;
+}
+
+/* 內容容器 */
+.content-wrapper {
+  width: 100%;
+  max-width: 736px;
+  margin: 0 auto;
+  padding: 80px 15px 30px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-card {
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.auth-header {
-  padding: 1.5rem 1.5rem 0.5rem;
-}
-
-.auth-body {
   padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .form-label {
@@ -481,13 +550,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 576px) {
-  .auth-card {
-    border-radius: 0;
-    box-shadow: none;
+  .content-wrapper {
+    padding-top: 70px;
   }
 
-  .auth-container {
-    padding: 0;
+  .auth-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 }
 </style>
