@@ -5,7 +5,7 @@ import adminUserRoutes from './adminUser.js';
 import dishRoutes from './dish.js';
 import storeRoutes from './store.js';
 import brandRoutes from './brand.js';
-// import orderRoutes from './order.js';
+import orderRoutes from './order.js';
 import promotionRoutes from './promotion.js';
 import userRoutes from './user.js';
 import adminRoutes from './admin.js';
@@ -21,7 +21,7 @@ apiRouter.use('/admin-user', adminUserRoutes);    // 管理員用戶管理路由
 apiRouter.use('/dish', dishRoutes);
 apiRouter.use('/store', storeRoutes);
 apiRouter.use('/brand', brandRoutes);
-// apiRouter.use('/order', orderRoutes);
+apiRouter.use('/order', orderRoutes);
 apiRouter.use('/promotion', promotionRoutes);
 apiRouter.use('/user', userRoutes);
 apiRouter.use('/admin', adminRoutes);
