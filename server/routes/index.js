@@ -5,11 +5,12 @@ import adminUserRoutes from './adminUser.js';
 import dishRoutes from './dish.js';
 import storeRoutes from './store.js';
 import brandRoutes from './brand.js';
-import orderRoutes from './order.js';
 import promotionRoutes from './promotion.js';
 import userRoutes from './user.js';
 import adminRoutes from './admin.js';
 import { errorHandler, notFoundHandler } from '../middlewares/error.js';
+import orderCustomerRoutes from './orderCustomer.js';
+import orderAdminRoutes from './orderAdmin.js';
 
 // 創建一個主要的 API 路由器
 const apiRouter = express.Router();
@@ -21,10 +22,25 @@ apiRouter.use('/admin-user', adminUserRoutes);    // 管理員用戶管理路由
 apiRouter.use('/dish', dishRoutes);
 apiRouter.use('/store', storeRoutes);
 apiRouter.use('/brand', brandRoutes);
-apiRouter.use('/order', orderRoutes);
 apiRouter.use('/promotion', promotionRoutes);
 apiRouter.use('/user', userRoutes);
 apiRouter.use('/admin', adminRoutes);
+
+// 訂單路由 - 按權限分離
+apiRouter.use('/order-customer', orderCustomerRoutes);  // 前台客戶訂單
+apiRouter.use('/order-admin', orderAdminRoutes);        // 後台管理員訂單
+
+
+// API 健康檢查
+apiRouter.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API 服務正常運行',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 
 // 錯誤處理中介軟體
 apiRouter.use(notFoundHandler);
