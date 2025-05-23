@@ -601,117 +601,62 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant Client as 客人 (Vue Component)
-    participant CartStore as Cart Store (Pinia)
-    participant API as API Client
-    participant Controller as OrderCustomer Controller
-    participant Service as OrderCustomer Service
-    participant DishModel as DishInstance Model
-    participant OrderModel as Order Model
-    participant PaymentGW as Payment Gateway
-    participant AdminUI as 前台管理介面
+    participant Client as 客人前端
+    participant API as 後端API
+    participant PaymentGW as 付款閘道
+    participant Admin as 前台管理
 
-    Note over Client, OrderModel: 🏪 現場付款流程
+    Note over Client, Admin: 🏪 現場付款流程
 
-    Client->>Client: 填寫訂單資訊<br/>(餐點、數量、顧客資訊)
-    Client->>Client: 選擇付款方式: "現場付款"
-    Client->>CartStore: submitOrder()
+    Client->>Client: 選擇付款方式: 現場付款
+    Client->>API: POST /order-customer/brands/{brandId}/stores/{storeId}/create<br/>{orderData, paymentMethod: "cash"}
+    API->>API: 創建訂單 status: "unpaid"
+    API->>Client: 200 OK {success: true, order: {status: "unpaid"}}
 
-    CartStore->>CartStore: validateOrder()<br/>檢查購物車內容
-    CartStore->>API: orderCustomer.createOrder({<br/>brandId, storeId, orderData})
+    Client->>Client: 跳轉 OrderConfirmView<br/>顯示: 尚未付款
 
-    API->>Controller: POST /order-customer/brands/{brandId}/stores/{storeId}/create
-    Controller->>Service: createOrder(orderData)
+    Note over Admin: 等待前台確認收款
+    Admin->>API: PUT /order-admin/brands/{brandId}/stores/{storeId}/orders/{orderId}<br/>{status: "paid"}
+    API->>Admin: 200 OK {success: true, order: {status: "paid"}}
 
-    Service->>Service: generateOrderNumber()<br/>生成訂單編號
+    API-->>Client: 訂單狀態更新通知
+    Client->>Client: 更新頁面: 付款完成
 
-    loop 為每個餐點項目
-        Service->>DishModel: new DishInstance({<br/>templateId, name, price, options})
-        DishModel->>Service: dishInstance._id
-    end
+    Note over Client, PaymentGW: 💳 Credit Card 流程
 
-    Service->>OrderModel: new Order({<br/>status: 'unpaid',<br/>items, subtotal, total...})
-    OrderModel->>Service: order._id
-
-    Service->>Controller: return order
-    Controller->>API: return { success: true, order }
-    API->>CartStore: return response
-    CartStore->>Client: { success: true, order }
-
-    Client->>Client: 跳轉到 OrderConfirmView<br/>顯示: 訂單送出成功, 尚未付款
-    Client->>Client: 進度條: ✅送出訂單 🔄未付款 ⏳付款完成
-
-    Note over AdminUI, OrderModel: 等待前台確認收款
-
-    AdminUI->>AdminUI: 前台人員確認收到現金
-    AdminUI->>API: orderAdmin.updateOrder({<br/>orderId, status: 'paid'})
-    API->>Controller: PUT /order-admin/.../orders/{orderId}
-    Controller->>Service: updateOrder(orderId, {status: 'paid'})
-    Service->>OrderModel: order.status = 'paid'<br/>order.save()
-    OrderModel->>Service: 更新成功
-    Service->>Controller: return updatedOrder
-    Controller->>API: return { success: true, order }
-    API->>AdminUI: 更新成功
-
-    AdminUI-->>Client: WebSocket/輪詢通知<br/>訂單狀態更新
-    Client->>Client: 更新 OrderConfirmView<br/>進度條: ✅✅✅ 全部完成
-
-    Note over Client, PaymentGW: 💳 線上付款流程 (Credit Card)
-
-    Client->>Client: 選擇付款方式: "Credit Card"
-    Client->>PaymentGW: 跳轉到 Credit Card 驗證頁面
-    PaymentGW->>PaymentGW: 客人輸入信用卡資訊
-    PaymentGW->>PaymentGW: 驗證付款資訊
+    Client->>Client: 選擇付款方式: Credit Card
+    Client->>PaymentGW: 跳轉信用卡付款頁面
+    PaymentGW->>PaymentGW: 處理付款
 
     alt 付款成功
         PaymentGW->>Client: 付款成功回調
-        Client->>CartStore: submitOrder()
-        CartStore->>API: orderCustomer.createOrder({<br/>orderData, paymentResult})
-
-        API->>Controller: POST /order-customer/brands/{brandId}/stores/{storeId}/create
-        Controller->>Service: createOrder(orderData)
-
-        Service->>Service: generateOrderNumber()
-
-        loop 為每個餐點項目
-            Service->>DishModel: new DishInstance(...)
-            DishModel->>Service: dishInstance._id
-        end
-
-        Service->>OrderModel: new Order({<br/>status: 'paid',<br/>paymentMethod: 'credit_card'...})
-        OrderModel->>Service: order._id
-
-        Service->>Controller: return order
-        Controller->>API: return { success: true, order }
-        API->>CartStore: return response
-        CartStore->>Client: { success: true, order }
-
-        Client->>Client: 跳轉到 OrderConfirmView<br/>顯示: 訂單送出成功, 付款完成
-        Client->>Client: 進度條: ✅✅✅ 全部完成
+        Client->>API: POST /order-customer/brands/{brandId}/stores/{storeId}/create<br/>{orderData, paymentMethod: "credit_card"}
+        API->>API: 創建訂單 status: "paid"
+        API->>Client: 200 OK {success: true, order: {status: "paid"}}
+        Client->>Client: 跳轉 OrderConfirmView<br/>顯示: 付款完成
 
     else 付款失敗
         PaymentGW->>Client: 付款失敗
-        Client->>Client: 顯示錯誤訊息<br/>返回付款方式選擇
+        Client->>Client: 返回付款選擇頁面
     end
 
     Note over Client, PaymentGW: 📱 LINE Pay 流程
 
-    Client->>Client: 選擇付款方式: "LINE Pay"
-    Client->>PaymentGW: 跳轉到 LINE Pay 驗證
-    PaymentGW->>PaymentGW: LINE Pay 驗證流程
+    Client->>Client: 選擇付款方式: LINE Pay
+    Client->>PaymentGW: 跳轉 LINE Pay 頁面
+    PaymentGW->>PaymentGW: 處理付款
 
     alt 付款成功
-        PaymentGW->>API: 付款回調 webhook
-        API->>Controller: POST /order-customer/.../payment/callback
-        Controller->>Service: handlePaymentCallback(orderId, callbackData)
-        Service->>OrderModel: order.status = 'paid'
+        PaymentGW->>API: POST /order-customer/brands/{brandId}/orders/{orderId}/payment/callback<br/>{success: true}
+        API->>API: 更新訂單 status: "paid"
+        API->>PaymentGW: 200 OK
 
-        PaymentGW->>Client: 付款成功，重導向
-        Client->>Client: 跳轉到 OrderConfirmView<br/>顯示付款完成
+        PaymentGW->>Client: 重導向到成功頁面
+        Client->>Client: 跳轉 OrderConfirmView<br/>顯示: 付款完成
 
     else 付款失敗
         PaymentGW->>Client: 付款失敗
-        Client->>Client: 返回付款方式選擇
+        Client->>Client: 返回付款選擇頁面
     end
 ```
 
