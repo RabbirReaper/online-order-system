@@ -548,9 +548,171 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["submit order"] --On-site--> B["unpaid"]
-    A["submit order"] --Online--> C["paid"]
-    B --paid--> C
+    Start([客人填寫訂單資訊]) --> PaymentChoice{選擇付款方式}
+
+    PaymentChoice -->|現場付款| CashSubmit[送出訂單<br/>創建訂單 status: unpaid]
+    PaymentChoice -->|Credit Card| CreditCard[跳轉 Credit Card<br/>驗證畫面]
+    PaymentChoice -->|LINE Pay| LinePay[跳轉 LINE Pay<br/>驗證畫面]
+
+    CreditCard --> CreditVerify{Credit Card 驗證}
+    LinePay --> LinePayVerify{LINE Pay 驗證}
+
+    CreditVerify -->|付款成功| CreditSubmit[送出訂單<br/>創建訂單 status: paid]
+    CreditVerify -->|付款失敗| PaymentFailed[付款失敗<br/>返回付款選擇]
+
+    LinePayVerify -->|付款成功| LineSubmit[送出訂單<br/>創建訂單 status: paid]
+    LinePayVerify -->|付款失敗| PaymentFailed
+
+    PaymentFailed --> PaymentChoice
+
+    CashSubmit --> OrderConfirmCash[OrderConfirmView<br/>顯示訂單送出成功<br/>尚未付款]
+    CreditSubmit --> OrderConfirmPaid[OrderConfirmView<br/>顯示訂單送出成功<br/>付款完成]
+    LineSubmit --> OrderConfirmPaid
+
+    OrderConfirmCash --> ProgressBarUnpaid[進度條顯示:<br/>✅ 送出訂單<br/>🔄 未付款<br/>⏳ 付款完成]
+    OrderConfirmPaid --> ProgressBarPaid[進度條顯示:<br/>✅ 送出訂單<br/>✅ 已付款<br/>✅ 付款完成]
+
+    ProgressBarUnpaid --> WaitStaff[等待前台人員<br/>點選付款完成]
+    ProgressBarPaid --> OrderComplete[訂單完成<br/>開始製作]
+
+    WaitStaff --> StaffAction[前台人員操作]
+    StaffAction --> StaffConfirm{確認收到款項}
+    StaffConfirm -->|是| UpdatePaidCash[更新訂單狀態<br/>status: paid]
+    StaffConfirm -->|否| WaitStaff
+
+    UpdatePaidCash --> FinalConfirm[OrderConfirmView<br/>更新為付款完成]
+
+    FinalConfirm --> FinalProgress[進度條顯示:<br/>✅ 送出訂單<br/>✅ 已付款<br/>✅ 付款完成]
+
+    FinalProgress --> OrderComplete
+
+    %% 樣式設定
+
+    class Start startNode
+    class CashSubmit,CreditSubmit,LineSubmit,CreditCard,LinePay,UpdatePaidCash processNode
+    class PaymentChoice,CreditVerify,LinePayVerify,StaffConfirm decisionNode
+    class OrderComplete,FinalProgress successNode
+    class ProgressBarUnpaid,WaitStaff,StaffAction waitNode
+    class PaymentFailed failNode
+    class OrderConfirmCash,OrderConfirmPaid,FinalConfirm,ProgressBarPaid confirmNode
+```
+
+### 訂單時序圖
+
+```mermaid
+sequenceDiagram
+    participant Client as 客人 (Vue Component)
+    participant CartStore as Cart Store (Pinia)
+    participant API as API Client
+    participant Controller as OrderCustomer Controller
+    participant Service as OrderCustomer Service
+    participant DishModel as DishInstance Model
+    participant OrderModel as Order Model
+    participant PaymentGW as Payment Gateway
+    participant AdminUI as 前台管理介面
+
+    Note over Client, OrderModel: 🏪 現場付款流程
+
+    Client->>Client: 填寫訂單資訊<br/>(餐點、數量、顧客資訊)
+    Client->>Client: 選擇付款方式: "現場付款"
+    Client->>CartStore: submitOrder()
+
+    CartStore->>CartStore: validateOrder()<br/>檢查購物車內容
+    CartStore->>API: orderCustomer.createOrder({<br/>brandId, storeId, orderData})
+
+    API->>Controller: POST /order-customer/brands/{brandId}/stores/{storeId}/create
+    Controller->>Service: createOrder(orderData)
+
+    Service->>Service: generateOrderNumber()<br/>生成訂單編號
+
+    loop 為每個餐點項目
+        Service->>DishModel: new DishInstance({<br/>templateId, name, price, options})
+        DishModel->>Service: dishInstance._id
+    end
+
+    Service->>OrderModel: new Order({<br/>status: 'unpaid',<br/>items, subtotal, total...})
+    OrderModel->>Service: order._id
+
+    Service->>Controller: return order
+    Controller->>API: return { success: true, order }
+    API->>CartStore: return response
+    CartStore->>Client: { success: true, order }
+
+    Client->>Client: 跳轉到 OrderConfirmView<br/>顯示: 訂單送出成功, 尚未付款
+    Client->>Client: 進度條: ✅送出訂單 🔄未付款 ⏳付款完成
+
+    Note over AdminUI, OrderModel: 等待前台確認收款
+
+    AdminUI->>AdminUI: 前台人員確認收到現金
+    AdminUI->>API: orderAdmin.updateOrder({<br/>orderId, status: 'paid'})
+    API->>Controller: PUT /order-admin/.../orders/{orderId}
+    Controller->>Service: updateOrder(orderId, {status: 'paid'})
+    Service->>OrderModel: order.status = 'paid'<br/>order.save()
+    OrderModel->>Service: 更新成功
+    Service->>Controller: return updatedOrder
+    Controller->>API: return { success: true, order }
+    API->>AdminUI: 更新成功
+
+    AdminUI-->>Client: WebSocket/輪詢通知<br/>訂單狀態更新
+    Client->>Client: 更新 OrderConfirmView<br/>進度條: ✅✅✅ 全部完成
+
+    Note over Client, PaymentGW: 💳 線上付款流程 (Credit Card)
+
+    Client->>Client: 選擇付款方式: "Credit Card"
+    Client->>PaymentGW: 跳轉到 Credit Card 驗證頁面
+    PaymentGW->>PaymentGW: 客人輸入信用卡資訊
+    PaymentGW->>PaymentGW: 驗證付款資訊
+
+    alt 付款成功
+        PaymentGW->>Client: 付款成功回調
+        Client->>CartStore: submitOrder()
+        CartStore->>API: orderCustomer.createOrder({<br/>orderData, paymentResult})
+
+        API->>Controller: POST /order-customer/brands/{brandId}/stores/{storeId}/create
+        Controller->>Service: createOrder(orderData)
+
+        Service->>Service: generateOrderNumber()
+
+        loop 為每個餐點項目
+            Service->>DishModel: new DishInstance(...)
+            DishModel->>Service: dishInstance._id
+        end
+
+        Service->>OrderModel: new Order({<br/>status: 'paid',<br/>paymentMethod: 'credit_card'...})
+        OrderModel->>Service: order._id
+
+        Service->>Controller: return order
+        Controller->>API: return { success: true, order }
+        API->>CartStore: return response
+        CartStore->>Client: { success: true, order }
+
+        Client->>Client: 跳轉到 OrderConfirmView<br/>顯示: 訂單送出成功, 付款完成
+        Client->>Client: 進度條: ✅✅✅ 全部完成
+
+    else 付款失敗
+        PaymentGW->>Client: 付款失敗
+        Client->>Client: 顯示錯誤訊息<br/>返回付款方式選擇
+    end
+
+    Note over Client, PaymentGW: 📱 LINE Pay 流程
+
+    Client->>Client: 選擇付款方式: "LINE Pay"
+    Client->>PaymentGW: 跳轉到 LINE Pay 驗證
+    PaymentGW->>PaymentGW: LINE Pay 驗證流程
+
+    alt 付款成功
+        PaymentGW->>API: 付款回調 webhook
+        API->>Controller: POST /order-customer/.../payment/callback
+        Controller->>Service: handlePaymentCallback(orderId, callbackData)
+        Service->>OrderModel: order.status = 'paid'
+
+        PaymentGW->>Client: 付款成功，重導向
+        Client->>Client: 跳轉到 OrderConfirmView<br/>顯示付款完成
+
+    else 付款失敗
+        PaymentGW->>Client: 付款失敗
+        Client->>Client: 返回付款方式選擇
+    end
 ```
 
 # 各個資料夾裡面應該放什麼邏輯
