@@ -521,7 +521,7 @@ erDiagram
     CouponInstance }o--o{ Order : "使用於訂單"
 ```
 
-# 個元件流程圖
+# 內部各元件流程圖
 
 ### 客戶登入按鈕
 
@@ -542,6 +542,15 @@ flowchart TD
     ResetPwd --> VerifyCode[驗證成功]
     VerifyCode --> NewPwd[重設密碼]
     NewPwd --> Login
+```
+
+### 訂單流程
+
+```mermaid
+flowchart TD
+    A["submit order"] --On-site--> B["unpaid"]
+    A["submit order"] --Online--> C["paid"]
+    B --paid--> C
 ```
 
 # 各個資料夾裡面應該放什麼邏輯
