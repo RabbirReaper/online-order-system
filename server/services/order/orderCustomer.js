@@ -187,9 +187,9 @@ export const processPayment = async (orderId, paymentData) => {
 
   // 根據支付方式更新訂單狀態
   if (paymentData.paymentMethod === 'cash') {
-    order.status = 'pending'; // 現金付款，等待確認
+    order.status = 'unpaid'; // 現金付款，等待確認
   } else {
-    order.status = 'pending'; // 線上支付也先設為pending，等待回調確認
+    order.status = 'unpaid'; // 線上支付也先設為pending，等待回調確認
   }
 
   await order.save();
@@ -217,9 +217,9 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
 
   // 根據支付結果更新訂單狀態
   if (callbackData.success) {
-    order.status = 'confirmed';
+    order.status = 'paid';
   } else {
-    order.status = 'pending';
+    order.status = 'unpaid';
   }
 
   await order.save();

@@ -162,9 +162,9 @@ export const cancelOrder = async (orderId, reason, adminId) => {
     throw new AppError('訂單已被取消', 400);
   }
 
-  if (order.status === 'completed') {
-    throw new AppError('已完成的訂單無法取消', 400);
-  }
+  // if (order.status === 'paid') {
+  //   throw new AppError('已完成的訂單無法取消', 400);
+  // }
 
   // 更新訂單狀態
   order.status = 'cancelled';
@@ -245,8 +245,11 @@ export const getOrderStats = async (storeId, options = {}) => {
         _id: dateFormat,
         totalOrders: { $sum: 1 },
         totalAmount: { $sum: '$total' },
-        completedOrders: {
-          $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+        paidOrders: {  // 原本是 completedOrders
+          $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] }  // 原本是 'completed'
+        },
+        unpaidOrders: {  // 新增
+          $sum: { $cond: [{ $eq: ['$status', 'unpaid'] }, 1, 0] }
         },
         cancelledOrders: {
           $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] }
@@ -259,11 +262,11 @@ export const getOrderStats = async (storeId, options = {}) => {
     },
     {
       $addFields: {
-        completionRate: {
+        paymentRate: {  // 原本是 completionRate
           $cond: [
             { $eq: ['$totalOrders', 0] },
             0,
-            { $divide: ['$completedOrders', '$totalOrders'] }
+            { $divide: ['$paidOrders', '$totalOrders'] }  // 原本是 completedOrders
           ]
         }
       }
@@ -292,12 +295,13 @@ export const getOrderStats = async (storeId, options = {}) => {
   const summary = {
     totalOrders: stats.reduce((sum, stat) => sum + stat.totalOrders, 0),
     totalAmount: stats.reduce((sum, stat) => sum + stat.totalAmount, 0),
-    completedOrders: stats.reduce((sum, stat) => sum + stat.completedOrders, 0),
+    paidOrders: stats.reduce((sum, stat) => sum + stat.paidOrders, 0),        // 原本是 completedOrders
+    unpaidOrders: stats.reduce((sum, stat) => sum + stat.unpaidOrders, 0),    // 新增
     cancelledOrders: stats.reduce((sum, stat) => sum + stat.cancelledOrders, 0)
   };
 
-  summary.completionRate = summary.totalOrders > 0
-    ? Math.round((summary.completedOrders / summary.totalOrders) * 100) / 100
+  summary.paymentRate = summary.totalOrders > 0  // 原本是 completionRate
+    ? Math.round((summary.paidOrders / summary.totalOrders) * 100) / 100  // 原本是 completedOrders
     : 0;
   summary.averageAmount = summary.totalOrders > 0
     ? Math.round(summary.totalAmount / summary.totalOrders)

@@ -11,7 +11,7 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID（必填）
-     * @param {string} [params.status] - 訂單狀態篩選 ('pending', 'confirmed', 'preparing', 'completed', 'cancelled')
+     * @param {string} [params.status] - 訂單狀態篩選 ('unpaid', 'paid', 'cancelled')
      * @param {string} [params.orderType] - 訂單類型篩選 ('dine_in', 'takeout', 'delivery')
      * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日開始時間)
      * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日結束時間)
@@ -42,7 +42,7 @@ export default function (apiClient) {
      * @param {string} params.storeId - 店鋪ID（必填）
      * @param {string} params.orderId - 訂單ID（必填）
      * @param {Object} params.updateData - 更新資料
-     * @param {string} [params.updateData.status] - 訂單狀態
+     * @param {string} [params.updateData.status] - 訂單狀態 ('unpaid', 'paid', 'cancelled')
      * @param {number} [params.updateData.manualAdjustment] - 手動調整金額
      * @param {string} [params.updateData.notes] - 訂單備註
      * @param {Date} [params.updateData.estimatedPickupTime] - 預計取餐時間
