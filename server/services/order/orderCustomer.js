@@ -1,6 +1,6 @@
 /**
- * 訂單核心服務
- * 處理訂單基本操作和計算
+ * 訂單客戶服務
+ * 處理客戶相關的訂單操作
  */
 
 import Order from '../../models/Order/Order.js';
@@ -38,7 +38,7 @@ export const createOrder = async (orderData) => {
         dishInstance: dishInstance._id,
         quantity: item.quantity,
         subtotal: item.subtotal,
-        note: item.note || '' // 新增這行
+        note: item.note || ''
       });
     }
 
@@ -63,83 +63,35 @@ export const createOrder = async (orderData) => {
 };
 
 /**
- * 獲取訂單詳情
- * @param {String} orderId - 訂單ID
- * @param {Object} options - 查詢選項
- * @returns {Promise<Object>} 訂單詳情
- */
-export const getOrderById = async (orderId, options = {}) => {
-  const { storeId, populateItems = true, populateUser = false } = options;
-
-  const query = { _id: orderId };
-  if (storeId) query.store = storeId;
-
-  const populateOptions = [];
-
-  if (populateItems) {
-    populateOptions.push({ path: 'items.dishInstance', select: 'name price options' });
-  }
-
-  if (populateUser) {
-    populateOptions.push({ path: 'user', select: 'name email phone' });
-  }
-
-  const order = await Order.findOne(query)
-    .populate(populateOptions)
-    .lean();
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
-  }
-
-  return order;
-};
-
-/**
- * 獲取店鋪訂單列表
- * @param {String} storeId - 店鋪ID
+ * 獲取用戶訂單列表
+ * @param {String} userId - 用戶ID
  * @param {Object} options - 查詢選項
  * @returns {Promise<Object>} 訂單列表和分頁信息
  */
-export const getStoreOrders = async (storeId, options = {}) => {
-  const { status, orderType, fromDate, toDate, page = 1, limit = 20 } = options;
+export const getUserOrders = async (userId, options = {}) => {
+  const { brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
 
   // 構建查詢條件
-  const query = { store: storeId };
-
-  if (status) {
-    query.status = status;
-  }
-
-  if (orderType) {
-    query.orderType = orderType;
-  }
-
-  if (fromDate || toDate) {
-    query.createdAt = {};
-
-    if (fromDate) {
-      query.createdAt.$gte = fromDate;
-    }
-
-    if (toDate) {
-      query.createdAt.$lte = toDate;
-    }
-  }
+  const query = { user: userId };
+  if (brandId) query.brand = brandId;
 
   // 計算分頁
   const skip = (page - 1) * limit;
+
+  // 構建排序
+  const sort = {};
+  sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
   // 獲取總數
   const total = await Order.countDocuments(query);
 
   // 查詢訂單
   const orders = await Order.find(query)
-    .sort({ createdAt: -1 })
+    .sort(sort)
     .skip(skip)
     .limit(limit)
     .populate('items.dishInstance', 'name price options')
-    .populate('user', 'name email phone')
+    .populate('store', 'name')
     .lean();
 
   // 構建分頁信息
@@ -161,28 +113,13 @@ export const getStoreOrders = async (storeId, options = {}) => {
 };
 
 /**
- * 驗證訂單所有權
- * @param {String} orderId - 訂單ID
- * @param {String} userId - 用戶ID
- * @returns {Promise<Boolean>} 是否是訂單擁有者
- */
-export const verifyOrderOwnership = async (orderId, userId) => {
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
-  }
-
-  return order.user && order.user.toString() === userId;
-};
-
-/**
  * 獲取用戶訂單詳情
  * @param {String} orderId - 訂單ID
+ * @param {String} userId - 用戶ID
  * @returns {Promise<Object>} 訂單詳情
  */
-export const getUserOrderById = async (orderId) => {
-  const order = await Order.findById(orderId)
+export const getUserOrderById = async (orderId, userId) => {
+  const order = await Order.findOne({ _id: orderId, user: userId })
     .populate('items.dishInstance', 'name price options')
     .populate('store', 'name')
     .lean();
@@ -191,6 +128,39 @@ export const getUserOrderById = async (orderId) => {
     throw new AppError('訂單不存在', 404);
   }
 
+  return order;
+};
+
+/**
+ * 用戶取消訂單
+ * @param {String} orderId - 訂單ID
+ * @param {String} userId - 用戶ID
+ * @param {String} reason - 取消原因
+ * @returns {Promise<Object>} 更新後的訂單
+ */
+export const cancelUserOrder = async (orderId, userId, reason) => {
+  const order = await Order.findOne({ _id: orderId, user: userId });
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  if (order.status === 'cancelled') {
+    throw new AppError('訂單已被取消', 400);
+  }
+
+  if (order.status === 'completed') {
+    throw new AppError('已完成的訂單無法取消', 400);
+  }
+
+  // 更新訂單狀態
+  order.status = 'cancelled';
+  order.cancelReason = reason;
+  order.cancelledBy = userId;
+  order.cancelledByModel = 'User';
+  order.cancelledAt = new Date();
+
+  await order.save();
   return order;
 };
 
@@ -219,6 +189,102 @@ export const getGuestOrderById = async (orderId, phone, orderNumber) => {
   }
 
   return order;
+};
+
+/**
+ * 處理支付
+ * @param {String} orderId - 訂單ID
+ * @param {Object} paymentData - 支付資料
+ * @returns {Promise<Object>} 支付結果
+ */
+export const processPayment = async (orderId, paymentData) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  if (order.status === 'cancelled') {
+    throw new AppError('已取消的訂單無法支付', 400);
+  }
+
+  // 更新支付信息
+  if (paymentData.paymentMethod) {
+    order.paymentMethod = paymentData.paymentMethod;
+  }
+
+  if (paymentData.onlinePaymentCode) {
+    order.onlinePaymentCode = paymentData.onlinePaymentCode;
+  }
+
+  // 根據支付方式更新訂單狀態
+  if (paymentData.paymentMethod === 'cash') {
+    order.status = 'pending'; // 現金付款，等待確認
+  } else {
+    order.status = 'pending'; // 線上支付也先設為pending，等待回調確認
+  }
+
+  await order.save();
+
+  return {
+    orderId: order._id,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    total: order.total
+  };
+};
+
+/**
+ * 支付回調處理
+ * @param {String} orderId - 訂單ID
+ * @param {Object} callbackData - 回調資料
+ * @returns {Promise<Object>} 處理結果
+ */
+export const handlePaymentCallback = async (orderId, callbackData) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  // 根據支付結果更新訂單狀態
+  if (callbackData.success) {
+    order.status = 'confirmed';
+  } else {
+    order.status = 'pending';
+  }
+
+  await order.save();
+
+  return {
+    orderId: order._id,
+    status: order.status,
+    processed: true
+  };
+};
+
+/**
+ * 生成訂單編號
+ * @returns {Promise<Object>} 訂單編號信息
+ */
+export const generateOrderNumber = async () => {
+  const today = new Date();
+  const year = today.getFullYear().toString().slice(-2);
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const orderDateCode = `${year}${month}${day}`;
+
+  // 獲取當天的最後一個序號
+  const lastOrder = await Order.findOne({
+    orderDateCode
+  }).sort({ sequence: -1 });
+
+  const sequence = lastOrder ? lastOrder.sequence + 1 : 1;
+
+  return {
+    orderDateCode,
+    sequence
+  };
 };
 
 /**

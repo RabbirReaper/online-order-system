@@ -1,20 +1,21 @@
 // API 主入口
 
 import axios from 'axios';
-import adminAuthApi from './modules/adminAuth';
-import userAuthApi from './modules/userAuth';
-import storeApi from './modules/store';
-import brandApi from './modules/brand';
-import inventoryApi from './modules/inventory';
-import menuApi from './modules/menu';
-import dishApi from './modules/dish';
-import imageApi from './modules/image';
-import userApi from './modules/user';
-import adminUserApi from './modules/adminUser';
-import orderApi from './modules/order';
-import promotionApi from './modules/promotion';
-import pointRulesApi from './modules/pointRules';
-import adminApi from './modules/admin';
+import adminAuthApi from './modules/adminAuth.js';
+import userAuthApi from './modules/userAuth.js';
+import storeApi from './modules/store.js';
+import brandApi from './modules/brand.js';
+import inventoryApi from './modules/inventory.js';
+import menuApi from './modules/menu.js';
+import dishApi from './modules/dish.js';
+import imageApi from './modules/image.js';
+import userApi from './modules/user.js';
+import adminUserApi from './modules/adminUser.js';
+import orderCustomerApi from './modules/orderCustomer.js';
+import orderAdminApi from './modules/orderAdmin.js';
+import promotionApi from './modules/promotion.js';
+import pointRulesApi from './modules/pointRules.js';
+import adminApi from './modules/admin.js';
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -59,7 +60,9 @@ export default {
   image: imageApi(apiClient),
   user: userApi(apiClient),
   adminUser: adminUserApi(apiClient),
-  order: orderApi(apiClient),
+  // 訂單 API 按權限分離
+  orderCustomer: orderCustomerApi(apiClient),
+  orderAdmin: orderAdminApi(apiClient),
   promotion: promotionApi(apiClient),
   pointRules: pointRulesApi(apiClient),
   admin: adminApi(apiClient),

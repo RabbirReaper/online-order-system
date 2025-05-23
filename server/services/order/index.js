@@ -1,51 +1,36 @@
 /**
  * 訂單服務入口文件
- * 匯總並導出所有訂單相關服務
+ * 按照權限分離導出客戶和管理員服務
  */
 
-// 導入各模組
-import * as orderCore from './orderCore.js';
-import * as orderManagement from './orderManagement.js';
-import * as orderPayment from './orderPayment.js';
-import * as orderStats from './orderStats.js';
+// 導入客戶相關服務
+import * as orderCustomer from './orderCustomer.js';
 
-// 導出所有服務
-export {
-  orderCore,
-  orderManagement,
-  orderPayment,
-  orderStats
-};
+// 導入管理員相關服務
+import * as orderAdmin from './orderAdmin.js';
 
-// 簡單導出核心功能，方便直接調用
+// 分別導出
+export { orderCustomer, orderAdmin };
+
+// 為了向後兼容，也可以直接導出常用功能
 export const {
   createOrder,
-  getOrderById,
-  getStoreOrders,
-  verifyOrderOwnership,
+  getUserOrders,
   getUserOrderById,
+  cancelUserOrder,
   getGuestOrderById,
+  processPayment,
+  handlePaymentCallback,
+  generateOrderNumber,
   calculateOrderAmounts,
   updateOrderAmounts
-} = orderCore;
+} = orderCustomer;
 
 export const {
-  generateOrderNumber,
-  updateOrderStatus,
-  updateOrderManualAdjustment,
+  getStoreOrders,
+  getOrderById,
+  updateOrder,
   cancelOrder,
-  confirmOrder,
-  completeOrder
-} = orderManagement;
-
-export const {
-  processPayment,
-  handlePaymentCallback
-} = orderPayment;
-
-export const {
-  getDailyOrderStats,
-  getMonthlyOrderStats,
-  getUserOrderHistory,
+  getOrderStats,
   getPopularDishes
-} = orderStats;
+} = orderAdmin;
