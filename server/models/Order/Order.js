@@ -40,8 +40,8 @@ const orderSchema = new mongoose.Schema({
   }, // 訂單類型
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'preparing', 'completed', 'cancelled'], // 目前只會用到'pending','completed', 'cancelled'
-    default: 'pending'
+    enum: ['unpaid', 'paid', 'cancelled'],
+    default: 'unpaid'
   }, // 訂單狀態
   items: [{
     dishInstance: {
