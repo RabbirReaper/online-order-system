@@ -13,8 +13,8 @@ export default function (apiClient) {
      * @param {string} params.storeId - 店鋪ID（必填）
      * @param {string} [params.status] - 訂單狀態篩選 ('pending', 'confirmed', 'preparing', 'completed', 'cancelled')
      * @param {string} [params.orderType] - 訂單類型篩選 ('dine_in', 'takeout', 'delivery')
-     * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD)
-     * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD)
+     * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日開始時間)
+     * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日結束時間)
      * @param {number} [params.page=1] - 頁碼
      * @param {number} [params.limit=20] - 每頁數量
      * @returns {Promise} - API 回應
@@ -72,8 +72,8 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID（必填）
-     * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD)
-     * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD)
+     * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日開始時間)
+     * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日結束時間)
      * @param {string} [params.groupBy='day'] - 分組方式 ('hour', 'day', 'month')
      * @returns {Promise} - API 回應
      */
@@ -88,8 +88,8 @@ export default function (apiClient) {
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID（必填）
-     * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD)
-     * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD)
+     * @param {string} [params.fromDate] - 開始日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日開始時間)
+     * @param {string} [params.toDate] - 結束日期 (YYYY-MM-DD，會在後端轉換為台灣時區的當日結束時間)
      * @param {number} [params.limit=10] - 返回數量限制
      * @returns {Promise} - API 回應
      */
@@ -130,6 +130,7 @@ export default function (apiClient) {
     // 便利方法 - 獲取今日統計
     /**
      * 獲取今日訂單統計 (便利方法)
+     * 注意：日期會在後端使用台灣時區進行處理
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID
      * @param {string} params.storeId - 店鋪ID
@@ -143,6 +144,7 @@ export default function (apiClient) {
     // 便利方法 - 獲取月度統計
     /**
      * 獲取月度訂單統計 (便利方法)
+     * 注意：日期會在後端使用台灣時區進行處理
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID
      * @param {string} params.storeId - 店鋪ID

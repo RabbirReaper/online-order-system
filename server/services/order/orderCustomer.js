@@ -7,6 +7,7 @@ import Order from '../../models/Order/Order.js';
 import DishInstance from '../../models/Dish/DishInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import * as inventoryService from '../inventory/stockManagement.js';
+import { getTaiwanDateTime, formatDateTime } from '../../utils/date.js';
 
 /**
  * 創建訂單
@@ -158,7 +159,7 @@ export const cancelUserOrder = async (orderId, userId, reason) => {
   order.cancelReason = reason;
   order.cancelledBy = userId;
   order.cancelledByModel = 'User';
-  order.cancelledAt = new Date();
+  order.cancelledAt = getTaiwanDateTime().toJSDate();
 
   await order.save();
   return order;
@@ -268,10 +269,10 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
  * @returns {Promise<Object>} 訂單編號信息
  */
 export const generateOrderNumber = async () => {
-  const today = new Date();
-  const year = today.getFullYear().toString().slice(-2);
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+  const today = getTaiwanDateTime();
+  const year = today.year.toString().slice(-2);
+  const month = String(today.month).padStart(2, '0');
+  const day = String(today.day).padStart(2, '0');
   const orderDateCode = `${year}${month}${day}`;
 
   // 獲取當天的最後一個序號
