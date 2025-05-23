@@ -61,28 +61,6 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
   });
 });
 
-// 用戶取消訂單
-export const cancelUserOrder = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
-  const { reason } = req.body;
-  const userId = req.auth.id;
-
-  if (!reason) {
-    return res.status(400).json({
-      success: false,
-      message: '缺少取消原因'
-    });
-  }
-
-  const cancelledOrder = await orderService.cancelUserOrder(orderId, userId, reason);
-
-  res.json({
-    success: true,
-    message: '訂單取消成功',
-    order: cancelledOrder
-  });
-});
-
 // 獲取訪客訂單詳情（不需登入）
 export const getGuestOrderById = asyncHandler(async (req, res) => {
   const { orderId } = req.params;

@@ -13,9 +13,6 @@ router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.g
 // 獲取個人訂單詳情
 router.get('/brands/:brandId/my-orders/:orderId', authenticate('user'), orderController.getUserOrderById);
 
-// 用戶取消自己的訂單
-router.post('/brands/:brandId/my-orders/:orderId/cancel', authenticate('user'), orderController.cancelUserOrder);
-
 // 訪客訂單查詢（無需登入，但需要驗證資訊）
 router.post('/brands/:brandId/guest/:orderId', orderController.getGuestOrderById);
 

@@ -55,18 +55,6 @@ export default function (apiClient) {
     },
 
     /**
-     * 用戶取消訂單
-     * @param {Object} params - 取消參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.orderId - 訂單ID（必填）
-     * @param {string} params.reason - 取消原因
-     * @returns {Promise} - API 回應
-     */
-    cancelOrder({ brandId, orderId, reason }) {
-      return apiClient.post(`/order-customer/brands/${brandId}/my-orders/${orderId}/cancel`, { reason });
-    },
-
-    /**
      * 獲取訪客訂單詳情
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）

@@ -133,39 +133,6 @@ export const getUserOrderById = async (orderId, userId) => {
 };
 
 /**
- * 用戶取消訂單
- * @param {String} orderId - 訂單ID
- * @param {String} userId - 用戶ID
- * @param {String} reason - 取消原因
- * @returns {Promise<Object>} 更新後的訂單
- */
-export const cancelUserOrder = async (orderId, userId, reason) => {
-  const order = await Order.findOne({ _id: orderId, user: userId });
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
-  }
-
-  if (order.status === 'cancelled') {
-    throw new AppError('訂單已被取消', 400);
-  }
-
-  if (order.status === 'completed') {
-    throw new AppError('已完成的訂單無法取消', 400);
-  }
-
-  // 更新訂單狀態
-  order.status = 'cancelled';
-  order.cancelReason = reason;
-  order.cancelledBy = userId;
-  order.cancelledByModel = 'User';
-  order.cancelledAt = getTaiwanDateTime().toJSDate();
-
-  await order.save();
-  return order;
-};
-
-/**
  * 獲取訪客訂單詳情
  * @param {String} orderId - 訂單ID
  * @param {String} phone - 電話號碼
