@@ -424,6 +424,19 @@ const router = createRouter({
         }
       ]
     },
+
+    // 櫃檯點餐系統路由
+    {
+      path: '/counter/:brandId/:storeId',
+      name: 'counter',
+      component: () => import('@/views/counter/index.vue'),
+      meta: {
+        requiresAdminAuth: true,
+        title: '櫃檯點餐系統'
+      },
+      props: true
+    },
+
     // 菜單頁面
     {
       path: '/stores/:brandId/:storeId',
