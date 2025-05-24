@@ -116,7 +116,6 @@ const orderSchema = new mongoose.Schema({
   }, // 配送信息 (僅適用於外送訂單)
   dineInInfo: {
     tableNumber: { type: String }, // 桌號
-    numberOfGuests: { type: Number, default: 1 }, // 用餐人數
   }, // 內用信息 (僅適用於內用訂單)
   estimatedPickupTime: {
     type: Date

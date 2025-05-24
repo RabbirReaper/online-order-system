@@ -21,9 +21,6 @@
                 <!-- 根據不同訂單類型顯示不同信息 -->
                 <div v-if="orderType === 'dine_in'">
                   桌號: {{ dineInInfo.tableNumber || '-' }}
-                  <span v-if="dineInInfo.numberOfGuests" class="ms-2">
-                    {{ dineInInfo.numberOfGuests }} 位用餐
-                  </span>
                 </div>
                 <div v-else-if="orderType === 'takeout'">
                   預計取餐時間: {{ formatPickupTime }}

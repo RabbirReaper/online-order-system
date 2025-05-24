@@ -299,7 +299,6 @@ const submitOrder = async () => {
       // 內用：只設置桌號，清空顧客資訊
       cartStore.setDineInInfo({
         tableNumber: tableNumber.value,
-        numberOfGuests: 1
       });
       cartStore.setCustomerInfo({ name: '', phone: '' });
     } else if (orderType.value === 'selfPickup') {

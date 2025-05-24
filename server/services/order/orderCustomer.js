@@ -257,8 +257,8 @@ export const calculateOrderAmounts = (order) => {
     return total + item.subtotal;
   }, 0);
 
-  // 計算服務費 (預設10%)
-  const serviceCharge = Math.round(subtotal * 0.1);
+  // 計算服務費 (預設0%)
+  const serviceCharge = Math.round(subtotal * 0);
 
   // 計算外送費
   const deliveryFee = order.orderType === 'delivery' && order.deliveryInfo ?

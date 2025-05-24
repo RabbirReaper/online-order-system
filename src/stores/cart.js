@@ -17,7 +17,6 @@ export const useCartStore = defineStore('cart', () => {
   }); // 外送資訊，可能包含郵遞區號等
   const dineInInfo = ref({
     tableNumber: '',
-    numberOfGuests: 0
   }); // 內用資訊，可能包含座位區域等
   const estimatedPickupTime = ref(null); // Date 對象，預計取餐時間
   const notes = ref(''); // 訂單備註，如餐點特殊要求
@@ -83,7 +82,6 @@ export const useCartStore = defineStore('cart', () => {
     if (!dineInInfo.value || typeof dineInInfo.value !== 'object') {
       dineInInfo.value = {
         tableNumber: '',
-        numberOfGuests: 0
       };
     }
 
@@ -208,7 +206,6 @@ export const useCartStore = defineStore('cart', () => {
 
     dineInInfo.value = {
       tableNumber: '',
-      numberOfGuests: 0
     };
 
     estimatedPickupTime.value = null;
@@ -230,7 +227,6 @@ export const useCartStore = defineStore('cart', () => {
     if (orderType.value !== 'dine_in') {
       dineInInfo.value = {
         tableNumber: '',
-        numberOfGuests: 0
       };
     }
 
