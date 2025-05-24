@@ -82,13 +82,6 @@
           </div>
         </div>
 
-        <!-- 特殊要求 -->
-        <div class="mb-3">
-          <label for="specialNote" class="form-label">特殊要求</label>
-          <textarea id="specialNote" class="form-control" rows="2" v-model="specialNote"
-            placeholder="請輸入特殊要求..."></textarea>
-        </div>
-
         <!-- 操作按鈕 -->
         <div class="d-flex justify-content-between">
           <button class="btn btn-outline-secondary" @click="cancelSelection">

@@ -24,21 +24,12 @@
         <div v-for="category in menuCategories" :key="category._id" class="mb-4">
           <h5 class="category-title mb-3">{{ category.name }}</h5>
           <div class="menu-items-grid">
-            <div v-for="dish in category.dishes" :key="dish._id"
-                 class="menu-item-card"
-                 @click="selectDish(dish.dishTemplate)">
+            <div v-for="dish in category.dishes" :key="dish._id" class="menu-item-card"
+              @click="selectDish(dish.dishTemplate)">
               <div class="card h-100">
-                <img v-if="dish.dishTemplate.image?.url"
-                     :src="dish.dishTemplate.image.url"
-                     class="card-img-top"
-                     :alt="dish.dishTemplate.name">
-                <div class="card-body"
-                     :class="{ 'selected': selectedDish?.id === dish.dishTemplate._id }">
+                <div class="card-body" :class="{ 'selected': selectedDish?.id === dish.dishTemplate._id }">
                   <h6 class="card-title">{{ dish.dishTemplate.name }}</h6>
                   <p class="card-text price">${{ dish.price || dish.dishTemplate.basePrice }}</p>
-                  <p v-if="dish.dishTemplate.description" class="card-text small text-muted">
-                    {{ dish.dishTemplate.description.substring(0, 50) }}...
-                  </p>
                 </div>
               </div>
             </div>
@@ -66,8 +57,8 @@
           <div v-if="optionCategory.inputType === 'single'" class="row g-2">
             <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
               <div class="card p-2 text-center option-card"
-                   :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
-                   @click="selectOption(optionCategory, option, 'single')">
+                :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
+                @click="selectOption(optionCategory, option, 'single')">
                 <div class="card-body p-1">
                   <p class="fw-bold mb-0">{{ option.name }}</p>
                   <small v-if="option.price > 0" class="text-muted">+${{ option.price }}</small>
@@ -80,8 +71,8 @@
           <div v-else class="row g-2">
             <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
               <div class="card p-2 text-center option-card"
-                   :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
-                   @click="selectOption(optionCategory, option, 'multiple')">
+                :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
+                @click="selectOption(optionCategory, option, 'multiple')">
                 <div class="card-body p-1">
                   <p class="fw-bold mb-0">{{ option.name }}</p>
                   <small v-if="option.price > 0" class="text-muted">+${{ option.price }}</small>
@@ -94,8 +85,8 @@
         <!-- 特殊要求 -->
         <div class="mb-3">
           <label for="specialNote" class="form-label">特殊要求</label>
-          <textarea id="specialNote" class="form-control" rows="2"
-                    v-model="specialNote" placeholder="請輸入特殊要求..."></textarea>
+          <textarea id="specialNote" class="form-control" rows="2" v-model="specialNote"
+            placeholder="請輸入特殊要求..."></textarea>
         </div>
 
         <!-- 操作按鈕 -->
