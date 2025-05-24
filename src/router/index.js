@@ -447,7 +447,7 @@ const router = createRouter({
 
     // 訂單確認頁面
     {
-      path: '/stores/:brandId/:storeId/confirm',
+      path: '/stores/:brandId/:storeId/order-confirm/:orderId',
       name: 'order-confirm',
       component: () => import('@/views/customer/OrderConfirmView.vue')
     },

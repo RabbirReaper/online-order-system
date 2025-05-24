@@ -265,110 +265,52 @@ const checkout = () => {
 };
 
 const submitOrder = async () => {
-  // 準備符合Order schema的訂單資料
-  const orderData = {
-    // 基本訂單資訊 - 符合schema
-    store: cartStore.currentStore,  // ObjectId
-    brand: cartStore.currentBrand,  // ObjectId
-    orderType: orderType.value,     // 'dine_in', 'takeout', 'delivery'
+  try {
+    const updateDeliveryFee = (fee) => {
+      deliveryFee.value = fee;
+      // 同時更新 cartStore 中的外送資訊
+      cartStore.setDeliveryInfo({
+        ...cartStore.deliveryInfo,
+        deliveryFee: fee
+      });
+    };
+    cartStore.setOrderType((() => {
+      switch (orderType.value) {
+        case 'dineIn': return 'dine_in';
+        case 'selfPickup': return 'takeout';
+        case 'delivery': return 'delivery';
+        default: return 'takeout';
+      }
+    })());
 
-    // 訂單項目 - 注意：這裡假設dishInstance已經先在後端創建
-    items: cartItems.value.map(item => ({
-      // 前端需要先創建DishInstance，這裡只傳ID
-      dishInstance: item.dishInstance.templateId, // 實際應該是創建後的DishInstance ObjectId
-      quantity: item.quantity,
-      subtotal: item.subtotal,
-      note: item.note || ''
-    })),
-
-    // 價格計算 - 符合schema
-    subtotal: calculateSubtotal(),
-    serviceCharge: 0, // 目前沒有服務費
-    totalDiscount: couponDiscount.value,
-    total: calculateTotal(),
-
-    // 付款資訊 - 符合schema格式
-    paymentType: 'On-site', // 目前都是現場付款
-    paymentMethod: (() => {
+    cartStore.setCustomerInfo(customerInfo.value);
+    cartStore.setNotes(orderRemarks.value);
+    cartStore.setPaymentMethod((() => {
       switch (paymentMethod.value) {
         case '現金': return 'cash';
         case '信用卡': return 'credit_card';
         case 'Line Pay': return 'line_pay';
-        default: return 'other';
+        default: return 'cash';
       }
-    })(),
+    })());
 
-    // 客戶資訊 - 符合schema
-    customerInfo: {
-      name: customerInfo.value.name || null,
-      phone: customerInfo.value.phone || null
-    },
-
-    // 根據訂單類型設置特定資訊
-    ...(orderType.value === 'delivery' && {
-      deliveryInfo: {
+    // 根據訂單類型設置相關資訊
+    if (orderType.value === 'delivery') {
+      cartStore.setDeliveryInfo({
         address: deliveryAddress.value,
         deliveryFee: deliveryFee.value,
         estimatedTime: pickupTime.value === 'scheduled' ? new Date(scheduledTime.value) : null
-      }
-    }),
-
-    ...(orderType.value === 'dineIn' && {
-      dineInInfo: {
+      });
+    } else if (orderType.value === 'dineIn') {
+      cartStore.setDineInInfo({
         tableNumber: tableNumber.value,
         numberOfGuests: 1
-      }
-    }),
-
-    ...(orderType.value === 'takeout' && pickupTime.value === 'scheduled' && {
-      estimatedPickupTime: new Date(scheduledTime.value)
-    }),
-
-    // 折扣資訊 - 符合schema array格式
-    discounts: selectedCoupon.value ? [{
-      couponId: selectedCoupon.value,
-      amount: couponDiscount.value
-    }] : [],
-
-    // 訂單備註
-    notes: orderRemarks.value || null,
-
-    // 外送平台相關（目前為空）
-    deliveryPlatform: '',
-    platformOrderId: '',
-
-    // 其他預設值
-    status: 'pending',
-    manualAdjustment: 0
-  };
-
-  // Console log 訂單資料
-  console.log('=== 準備送出的訂單資料 (符合Order Schema) ===');
-  console.log(JSON.stringify(orderData, null, 2));
-  console.log('===========================================');
-
-  try {
-    // 設置訂單類型和客戶資訊
-    cartStore.setOrderType(orderType.value);
-    cartStore.setCustomerInfo(customerInfo.value);
-
-    // 根據訂單類型設置相關資訊
-    if (orderType.value === 'dineIn') {
-      cartStore.setDineInInfo({ tableNumber: tableNumber.value, numberOfGuests: 1 });
-    } else if (orderType.value === 'delivery') {
-      cartStore.setDeliveryInfo({
-        address: deliveryAddress.value,
-        deliveryFee: deliveryFee.value
       });
+    } else if (orderType.value === 'selfPickup' && pickupTime.value === 'scheduled') {
+      cartStore.setPickupTime(new Date(scheduledTime.value));
     }
 
-    // 設置訂單備註
-    cartStore.setNotes(orderRemarks.value);
-
-    // 設置付款方式
-    cartStore.setPaymentMethod(paymentMethod.value);
-
-    // 優惠券處理（示範）
+    // 處理優惠券
     if (selectedCoupon.value) {
       const coupon = availableCoupons.value.find(c => c.id === selectedCoupon.value);
       if (coupon) {
@@ -379,26 +321,43 @@ const submitOrder = async () => {
       }
     }
 
-    // 這裡應該使用api提交訂單
-    // const result = await cartStore.submitOrder();
+    // 使用 pinia 的 submitOrder 方法
+    const result = await cartStore.submitOrder();
+
+    if (result.success) {
+      console.log('訂單提交成功:', result.order);
+
+      // 關閉模態框
+      if (confirmModal) {
+        confirmModal.hide();
+      }
+
+      // 導航到訂單確認頁面
+      router.push({
+        name: 'order-confirm',
+        params: {
+          brandId: cartStore.currentBrand,
+          storeId: cartStore.currentStore,
+          orderId: result.orderId
+        }
+      });
+
+    } else {
+      console.log('訂單提交失敗:', result);
+      throw new Error(result.error || '訂單提交失敗');
+    }
+
+  } catch (error) {
+    console.error('提交訂單失敗:', error);
 
     // 關閉模態框
     if (confirmModal) {
       confirmModal.hide();
     }
 
-    // 導航到訂單確認頁面 - 提供必要的路由參數
-    router.push({
-      name: 'order-confirm',
-      params: {
-        brandId: cartStore.currentBrand,
-        storeId: cartStore.currentStore
-      }
-    });
-
-  } catch (error) {
-    console.error('提交訂單失敗:', error);
-    alert('訂單提交失敗，請稍後再試');
+    // 顯示錯誤訊息
+    const errorMsg = typeof error === 'string' ? error : (error.message || '訂單提交失敗，請稍後再試');
+    alert(errorMsg);
   }
 };
 

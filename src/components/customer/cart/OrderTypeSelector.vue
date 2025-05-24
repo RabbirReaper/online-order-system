@@ -40,14 +40,19 @@
       </div>
     </div>
 
-    <!-- 取餐時間 -->
-    <div class="pickup-time-container mt-4">
-      <h6 class="mb-3 fw-bold">取餐時間</h6>
+    <!-- 取餐/配送時間 (僅限外帶和外送) -->
+    <div v-if="localOrderType === 'takeout' || localOrderType === 'delivery'" class="pickup-time-container mt-4">
+      <h6 class="mb-3 fw-bold">{{ localOrderType === 'delivery' ? '配送時間' : '取餐時間' }}</h6>
       <div class="d-flex">
         <div class="form-check me-4">
           <input class="form-check-input" type="radio" name="pickupTime" id="asap" value="asap"
             v-model="localPickupTime">
-          <label class="form-check-label" for="asap">盡快取餐</label>
+          <label class="form-check-label" for="asap">
+            {{ localOrderType === 'delivery' ? '盡快配送' : '盡快取餐' }}
+            <small class="d-block text-muted">
+              約 {{ estimatedMinTime }} 分鐘{{ localOrderType === 'delivery' ? '後送達' : '後可取餐' }}
+            </small>
+          </label>
         </div>
         <div class="form-check">
           <input class="form-check-input" type="radio" name="pickupTime" id="scheduled" value="scheduled"
@@ -57,17 +62,20 @@
       </div>
 
       <div v-if="localPickupTime === 'scheduled'" class="mt-3">
-        <label for="scheduledTime" class="form-label">預約時間 <span class="text-danger">*</span></label>
+        <label for="scheduledTime" class="form-label">
+          預約{{ localOrderType === 'delivery' ? '配送' : '取餐' }}時間 <span class="text-danger">*</span>
+        </label>
         <input type="datetime-local" class="form-control" id="scheduledTime" v-model="localScheduledTime"
-          :min="minPickupTime">
-        <small class="text-muted">請選擇至少 30 分鐘後的時間</small>
+          :min="minScheduledTime">
+        <small class="text-muted">請選擇至少 {{ estimatedMinTime }} 分鐘後的時間</small>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import api from '@/api';
 
 const props = defineProps({
   orderType: {
@@ -89,6 +97,10 @@ const props = defineProps({
   scheduledTime: {
     type: String,
     default: ''
+  },
+  storeInfo: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -109,17 +121,53 @@ const localPickupTime = ref(props.pickupTime);
 const localScheduledTime = ref(props.scheduledTime);
 const deliveryFee = ref(60); // 默認外送費
 
-// 最小取餐時間（當前時間 + 30 分鐘）
-const minPickupTime = computed(() => {
+// 店鋪資訊
+const storeData = ref(props.storeInfo || {});
+
+// 計算預估時間
+const estimatedMinTime = computed(() => {
+  if (localOrderType.value === 'takeout') {
+    return storeData.value.takeOutPrepTime || 15; // 預設15分鐘
+  } else if (localOrderType.value === 'delivery') {
+    return storeData.value.deliveryPrepTime || 30; // 預設30分鐘
+  }
+  return 15;
+});
+
+// 最小預約時間（當前時間 + 預估時間）
+const minScheduledTime = computed(() => {
   const date = new Date();
-  date.setMinutes(date.getMinutes() + 30);
+  date.setMinutes(date.getMinutes() + estimatedMinTime.value);
   return date.toISOString().slice(0, 16);
 });
 
-// 初始化 localScheduledTime 如果為空
-if (!localScheduledTime.value) {
-  localScheduledTime.value = minPickupTime.value;
-}
+// 載入店鋪資訊
+const loadStoreInfo = async () => {
+  try {
+    const brandId = sessionStorage.getItem('currentBrandId');
+    const storeId = sessionStorage.getItem('currentStoreId');
+
+    if (brandId && storeId) {
+      const response = await api.store.getStoreById({
+        brandId: brandId,
+        id: storeId
+      });
+
+      if (response && response.success) {
+        storeData.value = response.store;
+      }
+    }
+  } catch (error) {
+    console.error('載入店鋪資訊失敗:', error);
+  }
+};
+
+// 初始化預約時間
+const initializeScheduledTime = () => {
+  if (!localScheduledTime.value) {
+    localScheduledTime.value = minScheduledTime.value;
+  }
+};
 
 // 監聽 props 變化
 watch(() => props.orderType, (newVal) => {
@@ -142,15 +190,24 @@ watch(() => props.scheduledTime, (newVal) => {
   localScheduledTime.value = newVal;
 });
 
+watch(() => props.storeInfo, (newVal) => {
+  storeData.value = newVal || {};
+}, { deep: true });
+
 // 監聽本地狀態變化並向上傳遞
 watch(localOrderType, (newVal) => {
   emit('update:orderType', newVal);
 
-  // 如果選擇外送，更新外送費
+  // 重置相關欄位
   if (newVal === 'delivery') {
     emit('update:delivery-fee', deliveryFee.value);
   } else {
     emit('update:delivery-fee', 0);
+  }
+
+  // 當訂單類型改變時，重新初始化預約時間
+  if (newVal === 'takeout' || newVal === 'delivery') {
+    initializeScheduledTime();
   }
 });
 
@@ -168,6 +225,22 @@ watch(localPickupTime, (newVal) => {
 
 watch(localScheduledTime, (newVal) => {
   emit('update:scheduledTime', newVal);
+});
+
+// 監聽預估時間變化，更新最小預約時間
+watch(estimatedMinTime, () => {
+  if (localPickupTime.value === 'scheduled') {
+    const newMinTime = minScheduledTime.value;
+    if (localScheduledTime.value < newMinTime) {
+      localScheduledTime.value = newMinTime;
+      emit('update:scheduledTime', newMinTime);
+    }
+  }
+});
+
+onMounted(async () => {
+  await loadStoreInfo();
+  initializeScheduledTime();
 });
 </script>
 
@@ -199,5 +272,10 @@ input[type="datetime-local"] {
 
 .order-type-container label {
   font-weight: 500;
+}
+
+.form-check-label small {
+  font-weight: 400;
+  margin-top: 2px;
 }
 </style>
