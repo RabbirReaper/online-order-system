@@ -17,8 +17,20 @@
             class="success-icon rounded-circle bg-success d-inline-flex align-items-center justify-content-center mb-3">
             <i class="bi bi-check-lg text-white fs-4"></i>
           </div>
-          <h4 class="mb-2">訂單已成功送出！</h4>
-          <p class="text-muted mb-0">您的訂單編號：{{ orderNumber }}</p>
+          <h4 class="mb-3">訂單已成功送出！</h4>
+
+          <!-- 優化的訂單編號顯示 -->
+          <div class="order-number-section mb-2">
+            <p class="text-muted mb-2 fs-6">您的訂單編號</p>
+            <div class="order-number-display bg-light border rounded-3 p-3 mx-auto" style="max-width: 300px;">
+              <span class="badge bg-primary fs-1 px-3 py-2">
+                {{ orderDetails.sequence }}
+              </span>
+            </div>
+            <small class="text-muted d-block mt-2">
+              <i class="bi bi-info-circle me-1"></i>請保存此編號以便查詢訂單狀態
+            </small>
+          </div>
         </div>
 
         <!-- 進度條 -->
