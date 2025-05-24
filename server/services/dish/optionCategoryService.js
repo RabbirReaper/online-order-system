@@ -17,7 +17,16 @@ import { AppError } from '../../middlewares/error.js';
 export const getAllCategories = async (brandId) => {
   // 直接返回該品牌的所有類別，無分頁
   const categories = await OptionCategory.find({ brand: brandId })
-    .sort({ name: 1 });
+    .sort({ name: 1 })
+    .populate({
+      path: 'options.refOption',
+      model: 'Option',
+      populate: {
+        path: 'refDishTemplate',
+        model: 'DishTemplate',
+        select: 'name'
+      }
+    });
 
   return categories;
 };

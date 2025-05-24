@@ -60,8 +60,8 @@
                 :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
                 @click="selectOption(optionCategory, option, 'single')">
                 <div class="card-body p-1">
-                  <p class="fw-bold mb-0">{{ option.name }}</p>
-                  <small v-if="option.price > 0" class="text-muted">+${{ option.price }}</small>
+                  <p class="fw-bold mb-0">{{ option.refOption.name }}</p>
+                  <small v-if="option.price > 0" class="text-muted">+${{ option.refOption.price }}</small>
                 </div>
               </div>
             </div>
@@ -74,19 +74,12 @@
                 :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
                 @click="selectOption(optionCategory, option, 'multiple')">
                 <div class="card-body p-1">
-                  <p class="fw-bold mb-0">{{ option.name }}</p>
-                  <small v-if="option.price > 0" class="text-muted">+${{ option.price }}</small>
+                  <p class="fw-bold mb-0">{{ option.refOption.name }}</p>
+                  <small v-if="option.refOption.price > 0" class="text-muted">+${{ option.refOption.price }}</small>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- 特殊要求 -->
-        <div class="mb-3">
-          <label for="specialNote" class="form-label">特殊要求</label>
-          <textarea id="specialNote" class="form-control" rows="2" v-model="specialNote"
-            placeholder="請輸入特殊要求..."></textarea>
         </div>
 
         <!-- 操作按鈕 -->
