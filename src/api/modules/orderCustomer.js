@@ -51,7 +51,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserOrderById({ brandId, orderId }) {
-      return apiClient.get(`/order-customer/brands/${brandId}/my-orders/${orderId}`);
+      return apiClient.get(`/order-customer/brands/${brandId}/order/${orderId}`);
     },
 
     /**

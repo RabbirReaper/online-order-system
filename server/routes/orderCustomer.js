@@ -11,7 +11,7 @@ router.post('/brands/:brandId/stores/:storeId/create', orderController.createOrd
 router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.getUserOrders);
 
 // 獲取個人訂單詳情
-router.get('/brands/:brandId/order/:orderId', authenticate('user'), orderController.getUserOrderById);
+router.get('/brands/:brandId/order/:orderId', orderController.getUserOrderById);
 
 // 支付相關路由
 // 處理支付
