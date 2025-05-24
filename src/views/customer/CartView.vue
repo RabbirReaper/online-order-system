@@ -266,14 +266,7 @@ const checkout = () => {
 // 在 CartView.vue 中添加調試信息
 const submitOrder = async () => {
   try {
-    // 🔍 調試：檢查當前的訂單類型
-    console.log('=== 調試訂單提交 ===');
-    console.log('前端 orderType:', orderType.value);
-    console.log('customerInfo:', customerInfo.value);
-    console.log('tableNumber:', tableNumber.value);
-    console.log('=====================');
 
-    // 🔥 重要：將前端格式轉換為後端格式
     const mappedOrderType = (() => {
       switch (orderType.value) {
         case 'dineIn': return 'dine_in';
@@ -282,8 +275,6 @@ const submitOrder = async () => {
         default: return 'takeout';
       }
     })();
-
-    console.log('映射後的 orderType:', mappedOrderType);
 
     // 先設置訂單類型（這很重要，因為驗證邏輯依賴於此）
     cartStore.setOrderType(mappedOrderType);
@@ -311,16 +302,12 @@ const submitOrder = async () => {
         numberOfGuests: 1
       });
       cartStore.setCustomerInfo({ name: '', phone: '' });
-      console.log('內用模式：已清空顧客資訊，設置桌號：', tableNumber.value);
-
     } else if (orderType.value === 'selfPickup') {
       // 外帶：設置顧客資訊
       cartStore.setCustomerInfo(customerInfo.value);
       if (pickupTime.value === 'scheduled') {
         cartStore.setPickupTime(new Date(scheduledTime.value));
       }
-      console.log('外帶模式：設置顧客資訊：', customerInfo.value);
-
     } else if (orderType.value === 'delivery') {
       // 外送：設置顧客資訊和配送資訊
       cartStore.setCustomerInfo(customerInfo.value);
@@ -329,7 +316,6 @@ const submitOrder = async () => {
         deliveryFee: deliveryFee.value,
         estimatedTime: pickupTime.value === 'scheduled' ? new Date(scheduledTime.value) : null
       });
-      console.log('外送模式：設置顧客資訊和配送地址');
     }
 
     // 處理優惠券
@@ -343,19 +329,10 @@ const submitOrder = async () => {
       }
     }
 
-    // 在提交前檢查 cartStore 的狀態
-    console.log('=== 提交前的 cartStore 狀態 ===');
-    console.log('cartStore.orderType:', cartStore.orderType);
-    console.log('cartStore.customerInfo:', cartStore.customerInfo);
-    console.log('cartStore.dineInInfo:', cartStore.dineInInfo);
-    console.log('===============================');
-
     // 提交訂單
     const result = await cartStore.submitOrder();
 
     if (result.success) {
-      console.log('訂單提交成功:', result.order);
-
       if (confirmModal) {
         confirmModal.hide();
       }
