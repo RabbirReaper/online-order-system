@@ -4,12 +4,12 @@
     <h6 class="mb-3 fw-bold">取餐方式</h6>
     <div class="d-flex flex-wrap">
       <div class="form-check me-4 mb-3">
-        <input class="form-check-input" type="radio" name="orderType" id="dineIn" value="dine_in"
+        <input class="form-check-input" type="radio" name="orderType" id="dineIn" value="dineIn"
           v-model="localOrderType">
         <label class="form-check-label" for="dineIn">內用</label>
       </div>
       <div class="form-check me-4 mb-3">
-        <input class="form-check-input" type="radio" name="orderType" id="selfPickup" value="takeout"
+        <input class="form-check-input" type="radio" name="orderType" id="selfPickup" value="selfPickup"
           v-model="localOrderType">
         <label class="form-check-label" for="selfPickup">自取</label>
       </div>
@@ -21,7 +21,7 @@
     </div>
 
     <!-- 內用選項 -->
-    <div v-if="localOrderType === 'dine_in'" class="mt-3">
+    <div v-if="localOrderType === 'dineIn'" class="mt-3">
       <label for="tableNumber" class="form-label">桌號 <span class="text-danger">*</span></label>
       <input type="text" class="form-control" id="tableNumber" v-model="localTableNumber" placeholder="請輸入桌號">
       <small class="text-muted">請向服務人員確認您的桌號</small>
@@ -41,7 +41,7 @@
     </div>
 
     <!-- 取餐/配送時間 (僅限外帶和外送) -->
-    <div v-if="localOrderType === 'takeout' || localOrderType === 'delivery'" class="pickup-time-container mt-4">
+    <div v-if="localOrderType === 'selfPickup' || localOrderType === 'delivery'" class="pickup-time-container mt-4">
       <h6 class="mb-3 fw-bold">{{ localOrderType === 'delivery' ? '配送時間' : '取餐時間' }}</h6>
       <div class="d-flex">
         <div class="form-check me-4">
@@ -80,7 +80,7 @@ import api from '@/api';
 const props = defineProps({
   orderType: {
     type: String,
-    default: 'takeout' // 默認為自取
+    default: 'selfPickup' // 默認為自取，使用前端格式
   },
   tableNumber: {
     type: String,
@@ -126,7 +126,7 @@ const storeData = ref(props.storeInfo || {});
 
 // 計算預估時間
 const estimatedMinTime = computed(() => {
-  if (localOrderType.value === 'takeout') {
+  if (localOrderType.value === 'selfPickup') {
     return storeData.value.takeOutPrepTime || 15; // 預設15分鐘
   } else if (localOrderType.value === 'delivery') {
     return storeData.value.deliveryPrepTime || 30; // 預設30分鐘
@@ -206,7 +206,7 @@ watch(localOrderType, (newVal) => {
   }
 
   // 當訂單類型改變時，重新初始化預約時間
-  if (newVal === 'takeout' || newVal === 'delivery') {
+  if (newVal === 'selfPickup' || newVal === 'delivery') {
     initializeScheduledTime();
   }
 });

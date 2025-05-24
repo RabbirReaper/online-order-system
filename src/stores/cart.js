@@ -1,4 +1,3 @@
-// src/stores/cart.js - 修正版本
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import api from '@/api';
@@ -28,7 +27,7 @@ export const useCartStore = defineStore('cart', () => {
   const isStaffMode = ref(false); // true=員工點餐模式, false=顧客模式
   const currentBrand = ref(null); // 當前品牌ID
   const currentStore = ref(null); // 當前店鋪ID
-  const serviceChargeRate = ref(0.1); // 服務費率，0.1 表示 10%
+  const serviceChargeRate = ref(0); // 服務費率，0.1 表示 10%
   const isSubmitting = ref(false); // 是否正在提交訂單
   const validationErrors = ref({}); // 驗證錯誤信息對象
 

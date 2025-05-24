@@ -60,7 +60,8 @@
         <div class="divider"></div>
 
         <!-- Customer Information -->
-        <CustomerInfoForm v-model:customer-info="customerInfo" v-model:payment-method="paymentMethod" />
+        <CustomerInfoForm v-model:customer-info="customerInfo" v-model:payment-method="paymentMethod"
+          :order-type="orderType" />
 
         <div class="divider"></div>
 
@@ -164,13 +165,12 @@ let confirmModal = null;
 
 // 計算屬性 - 修正響應式依賴
 const isFormValid = computed(() => {
-  // 如果是內用，姓名電話非必填
+  // 🔥 如果是內用，只檢查桌號（使用前端格式 'dineIn'）
   if (orderType.value === 'dineIn') {
-    // 內用只檢查桌號
     return tableNumber.value && tableNumber.value.trim() !== '';
   }
 
-  // 外帶和外送檢查姓名電話必填
+  // 🔥 外帶和外送檢查姓名電話必填
   const name = customerInfo.value?.name || '';
   const phone = customerInfo.value?.phone || '';
 
@@ -178,7 +178,7 @@ const isFormValid = computed(() => {
     return false;
   }
 
-  // 根據訂單類型檢查額外字段
+  // 🔥 根據訂單類型檢查額外字段
   if (orderType.value === 'delivery' && (!deliveryAddress.value || !deliveryAddress.value.trim())) {
     return false;
   }
@@ -189,7 +189,6 @@ const isFormValid = computed(() => {
 
   return true;
 });
-
 // 方法
 const goBack = () => {
   if (cartStore.currentBrand && cartStore.currentStore) {
@@ -264,50 +263,73 @@ const checkout = () => {
   }
 };
 
+// 在 CartView.vue 中添加調試信息
 const submitOrder = async () => {
   try {
-    const updateDeliveryFee = (fee) => {
-      deliveryFee.value = fee;
-      // 同時更新 cartStore 中的外送資訊
-      cartStore.setDeliveryInfo({
-        ...cartStore.deliveryInfo,
-        deliveryFee: fee
-      });
-    };
-    cartStore.setOrderType((() => {
+    // 🔍 調試：檢查當前的訂單類型
+    console.log('=== 調試訂單提交 ===');
+    console.log('前端 orderType:', orderType.value);
+    console.log('customerInfo:', customerInfo.value);
+    console.log('tableNumber:', tableNumber.value);
+    console.log('=====================');
+
+    // 🔥 重要：將前端格式轉換為後端格式
+    const mappedOrderType = (() => {
       switch (orderType.value) {
         case 'dineIn': return 'dine_in';
         case 'selfPickup': return 'takeout';
         case 'delivery': return 'delivery';
         default: return 'takeout';
       }
-    })());
+    })();
 
-    cartStore.setCustomerInfo(customerInfo.value);
-    cartStore.setNotes(orderRemarks.value);
-    cartStore.setPaymentMethod((() => {
+    console.log('映射後的 orderType:', mappedOrderType);
+
+    // 先設置訂單類型（這很重要，因為驗證邏輯依賴於此）
+    cartStore.setOrderType(mappedOrderType);
+
+    // 設置付款方式
+    const mappedPaymentMethod = (() => {
       switch (paymentMethod.value) {
         case '現金': return 'cash';
         case '信用卡': return 'credit_card';
         case 'Line Pay': return 'line_pay';
         default: return 'cash';
       }
-    })());
+    })();
 
-    // 根據訂單類型設置相關資訊
-    if (orderType.value === 'delivery') {
+    cartStore.setPaymentMethod(mappedPaymentMethod);
+
+    // 設置訂單備註
+    cartStore.setNotes(orderRemarks.value);
+
+    // 🔥 根據訂單類型設置相應數據（使用前端格式判斷）
+    if (orderType.value === 'dineIn') {
+      // 內用：只設置桌號，清空顧客資訊
+      cartStore.setDineInInfo({
+        tableNumber: tableNumber.value,
+        numberOfGuests: 1
+      });
+      cartStore.setCustomerInfo({ name: '', phone: '' });
+      console.log('內用模式：已清空顧客資訊，設置桌號：', tableNumber.value);
+
+    } else if (orderType.value === 'selfPickup') {
+      // 外帶：設置顧客資訊
+      cartStore.setCustomerInfo(customerInfo.value);
+      if (pickupTime.value === 'scheduled') {
+        cartStore.setPickupTime(new Date(scheduledTime.value));
+      }
+      console.log('外帶模式：設置顧客資訊：', customerInfo.value);
+
+    } else if (orderType.value === 'delivery') {
+      // 外送：設置顧客資訊和配送資訊
+      cartStore.setCustomerInfo(customerInfo.value);
       cartStore.setDeliveryInfo({
         address: deliveryAddress.value,
         deliveryFee: deliveryFee.value,
         estimatedTime: pickupTime.value === 'scheduled' ? new Date(scheduledTime.value) : null
       });
-    } else if (orderType.value === 'dineIn') {
-      cartStore.setDineInInfo({
-        tableNumber: tableNumber.value,
-        numberOfGuests: 1
-      });
-    } else if (orderType.value === 'selfPickup' && pickupTime.value === 'scheduled') {
-      cartStore.setPickupTime(new Date(scheduledTime.value));
+      console.log('外送模式：設置顧客資訊和配送地址');
     }
 
     // 處理優惠券
@@ -321,18 +343,23 @@ const submitOrder = async () => {
       }
     }
 
-    // 使用 pinia 的 submitOrder 方法
+    // 在提交前檢查 cartStore 的狀態
+    console.log('=== 提交前的 cartStore 狀態 ===');
+    console.log('cartStore.orderType:', cartStore.orderType);
+    console.log('cartStore.customerInfo:', cartStore.customerInfo);
+    console.log('cartStore.dineInInfo:', cartStore.dineInInfo);
+    console.log('===============================');
+
+    // 提交訂單
     const result = await cartStore.submitOrder();
 
     if (result.success) {
       console.log('訂單提交成功:', result.order);
 
-      // 關閉模態框
       if (confirmModal) {
         confirmModal.hide();
       }
 
-      // 導航到訂單確認頁面
       router.push({
         name: 'order-confirm',
         params: {
@@ -348,15 +375,23 @@ const submitOrder = async () => {
     }
 
   } catch (error) {
-    console.error('提交訂單失敗:', error);
+    console.error('提交訂單失敗 - 完整錯誤信息:', error);
 
-    // 關閉模態框
     if (confirmModal) {
       confirmModal.hide();
     }
 
-    // 顯示錯誤訊息
-    const errorMsg = typeof error === 'string' ? error : (error.message || '訂單提交失敗，請稍後再試');
+    let errorMsg = '訂單提交失敗，請稍後再試';
+
+    if (error.errors) {
+      const errorMessages = Object.values(error.errors).join('\n');
+      errorMsg = `請檢查以下資訊：\n${errorMessages}`;
+    } else if (typeof error === 'string') {
+      errorMsg = error;
+    } else if (error.message) {
+      errorMsg = error.message;
+    }
+
     alert(errorMsg);
   }
 };

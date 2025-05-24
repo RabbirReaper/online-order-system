@@ -1,26 +1,28 @@
 <template>
   <div class="customer-info-container mb-4">
-    <!-- 顧客資訊 -->
-    <h6 class="mb-3 fw-bold">顧客資訊</h6>
-    <div class="row g-3 mb-3">
-      <div class="col-md-6">
-        <label for="customerName" class="form-label">姓名 <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="customerName" :value="localCustomerInfo.name" @input="updateName"
-          placeholder="請輸入姓名">
+    <!-- 顧客資訊 - 只在非內用模式下顯示 -->
+    <div v-if="orderType !== 'dineIn'">
+      <h6 class="mb-3 fw-bold">顧客資訊</h6>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label for="customerName" class="form-label">姓名 <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="customerName" :value="localCustomerInfo.name" @input="updateName"
+            placeholder="請輸入姓名">
+        </div>
+        <div class="col-md-6">
+          <label for="customerPhone" class="form-label">電話 <span class="text-danger">*</span></label>
+          <input type="tel" class="form-control" id="customerPhone" :value="localCustomerInfo.phone"
+            @input="updatePhone" placeholder="請輸入聯絡電話">
+        </div>
+        <!-- Email 欄位暫時註解，後續採用手機號碼簡訊或Line訊息通知 -->
+        <!--
+        <div class="col-12">
+          <label for="customerEmail" class="form-label">Email</label>
+          <input type="email" class="form-control" id="customerEmail" v-model="localCustomerInfo.email"
+            placeholder="選填，訂單確認將發送到您的信箱">
+        </div>
+        -->
       </div>
-      <div class="col-md-6">
-        <label for="customerPhone" class="form-label">電話 <span class="text-danger">*</span></label>
-        <input type="tel" class="form-control" id="customerPhone" :value="localCustomerInfo.phone" @input="updatePhone"
-          placeholder="請輸入聯絡電話">
-      </div>
-      <!-- Email 欄位暫時註解，後續採用手機號碼簡訊或Line訊息通知 -->
-      <!--
-      <div class="col-12">
-        <label for="customerEmail" class="form-label">Email</label>
-        <input type="email" class="form-control" id="customerEmail" v-model="localCustomerInfo.email"
-          placeholder="選填，訂單確認將發送到您的信箱">
-      </div>
-      -->
     </div>
 
     <!-- 付款方式 -->
@@ -103,6 +105,10 @@ const props = defineProps({
   paymentMethod: {
     type: String,
     default: '現金'
+  },
+  orderType: {
+    type: String,
+    default: 'takeout' // 'dine_in', 'takeout', 'delivery'
   }
 });
 
@@ -133,6 +139,14 @@ const updatePhone = (event) => {
   localCustomerInfo.value.phone = event.target.value;
   emit('update:customerInfo', { ...localCustomerInfo.value });
 };
+
+// 當訂單類型變為內用時，清空顧客資訊
+watch(() => props.orderType, (newType) => {
+  if (newType === 'dineIn') {
+    localCustomerInfo.value = { name: '', phone: '' };
+    emit('update:customerInfo', { ...localCustomerInfo.value });
+  }
+});
 
 // 只在 props 變化時更新本地狀態，避免雙向綁定造成的遞歸
 watch(() => props.customerInfo, (newVal) => {
