@@ -284,12 +284,12 @@ const formatPickupTime = (time) => {
 
 // 返回菜單頁面
 const goToMenu = () => {
-  if (cartStore.currentBrand && cartStore.currentStore) {
+  if (sessionStorage.getItem('currentBrandId') && sessionStorage.getItem('currentStoreId')) {
     router.push({
       name: 'menu',
       params: {
-        brandId: cartStore.currentBrand,
-        storeId: cartStore.currentStore
+        brandId: sessionStorage.getItem('currentBrandId'),
+        storeId: sessionStorage.getItem('currentStoreId')
       }
     });
   } else {
