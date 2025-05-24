@@ -122,8 +122,8 @@ export const getUserOrders = async (userId, options = {}) => {
  * @param {String} userId - 用戶ID
  * @returns {Promise<Object>} 訂單詳情
  */
-export const getUserOrderById = async (orderId, userId) => {
-  const order = await Order.findOne({ _id: orderId, user: userId })
+export const getUserOrderById = async (orderId) => {
+  const order = await Order.findOne({ _id: orderId })
     .populate('items.dishInstance', 'name basePrice options finalPrice')
     .populate('store', 'name')
     .lean();
@@ -134,35 +134,6 @@ export const getUserOrderById = async (orderId, userId) => {
 
   return order;
 };
-
-/**
- * 獲取訪客訂單詳情
- * @param {String} orderId - 訂單ID
- * @param {String} phone - 電話號碼
- * @param {String} orderNumber - 訂單編號
- * @returns {Promise<Object>} 訂單詳情
- */
-export const getGuestOrderById = async (orderId, phone, orderNumber) => {
-  const order = await Order.findById(orderId)
-    .populate('items.dishInstance', 'name basePrice options finalPrice')
-    .populate('store', 'name')
-    .lean();
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
-  }
-
-  // 驗證訪客信息
-  if (!order.customerInfo ||
-    order.customerInfo.phone !== phone ||
-    `${order.orderDateCode}${order.sequence}` !== orderNumber) {
-    throw new AppError('驗證資訊不正確', 403);
-  }
-
-  return order;
-};
-
-
 
 /**
  * 處理支付

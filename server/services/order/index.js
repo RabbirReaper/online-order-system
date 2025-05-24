@@ -17,8 +17,6 @@ export const {
   createOrder,
   getUserOrders,
   getUserOrderById,
-  cancelUserOrder,
-  getGuestOrderById,
   processPayment,
   handlePaymentCallback,
   generateOrderNumber,

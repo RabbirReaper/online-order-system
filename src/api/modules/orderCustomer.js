@@ -55,19 +55,6 @@ export default function (apiClient) {
     },
 
     /**
-     * 獲取訪客訂單詳情
-     * @param {Object} params - 查詢參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.orderId - 訂單ID（必填）
-     * @param {string} params.phone - 電話號碼（必填）
-     * @param {string} params.orderNumber - 訂單編號（必填）
-     * @returns {Promise} - API 回應
-     */
-    getGuestOrderById({ brandId, orderId, phone, orderNumber }) {
-      return apiClient.post(`/order-customer/brands/${brandId}/guest/${orderId}`, { phone, orderNumber });
-    },
-
-    /**
      * 處理訂單支付
      * @param {Object} params - 支付參數
      * @param {string} params.brandId - 品牌ID（必填）

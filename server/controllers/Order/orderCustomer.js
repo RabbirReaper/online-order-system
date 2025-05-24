@@ -51,29 +51,8 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 // 獲取用戶訂單詳情
 export const getUserOrderById = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
-  const userId = req.auth.id;
 
-  const order = await orderService.getUserOrderById(orderId, userId);
-
-  res.json({
-    success: true,
-    order
-  });
-});
-
-// 獲取訪客訂單詳情（不需登入）
-export const getGuestOrderById = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
-  const { phone, orderNumber } = req.body;
-
-  if (!phone || !orderNumber) {
-    return res.status(400).json({
-      success: false,
-      message: '缺少驗證資訊'
-    });
-  }
-
-  const order = await orderService.getGuestOrderById(orderId, phone, orderNumber);
+  const order = await orderService.getUserOrderById(orderId);
 
   res.json({
     success: true,

@@ -11,10 +11,7 @@ router.post('/brands/:brandId/stores/:storeId/create', orderController.createOrd
 router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.getUserOrders);
 
 // 獲取個人訂單詳情
-router.get('/brands/:brandId/my-orders/:orderId', authenticate('user'), orderController.getUserOrderById);
-
-// 訪客訂單查詢（無需登入，但需要驗證資訊）
-router.post('/brands/:brandId/guest/:orderId', orderController.getGuestOrderById);
+router.get('/brands/:brandId/order/:orderId', authenticate('user'), orderController.getUserOrderById);
 
 // 支付相關路由
 // 處理支付
