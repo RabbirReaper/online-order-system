@@ -22,13 +22,14 @@ export const createOrder = async (orderData) => {
     // 創建訂單的餐點實例
     const items = [];
     for (const item of orderData.items) {
-      // 建立餐點實例
+      // 建立餐點實例 - 修正參數名稱以符合模型定義
       const dishInstance = new DishInstance({
-        templateId: item.templateId,
+        brand: orderData.brand,
+        templateId: item.templateId, // 對應模型中的 templateId
         name: item.name,
-        price: item.price,
+        basePrice: item.basePrice, // 對應模型中的 basePrice
         options: item.options || [],
-        specialInstructions: item.specialInstructions || ''
+        finalPrice: item.finalPrice || item.subtotal || (item.basePrice * item.quantity) // 計算最終價格
       });
 
       // 保存餐點實例
@@ -38,7 +39,7 @@ export const createOrder = async (orderData) => {
       items.push({
         dishInstance: dishInstance._id,
         quantity: item.quantity,
-        subtotal: item.subtotal,
+        subtotal: item.subtotal || (dishInstance.finalPrice * item.quantity),
         note: item.note || ''
       });
     }
@@ -52,10 +53,12 @@ export const createOrder = async (orderData) => {
     // 確保訂單金額計算正確
     updateOrderAmounts(order);
 
-    // 扣除庫存
+    // 先保存訂單以獲得 _id
+    await order.save();
+
+    // 扣除庫存（只有啟用庫存管理的項目才會被扣除）
     await inventoryService.reduceInventoryForOrder(order);
 
-    await order.save();
     return order;
   } catch (error) {
     console.error('創建訂單錯誤:', error);
@@ -91,7 +94,7 @@ export const getUserOrders = async (userId, options = {}) => {
     .sort(sort)
     .skip(skip)
     .limit(limit)
-    .populate('items.dishInstance', 'name price options')
+    .populate('items.dishInstance', 'name basePrice options finalPrice')
     .populate('store', 'name')
     .lean();
 
@@ -121,7 +124,7 @@ export const getUserOrders = async (userId, options = {}) => {
  */
 export const getUserOrderById = async (orderId, userId) => {
   const order = await Order.findOne({ _id: orderId, user: userId })
-    .populate('items.dishInstance', 'name price options')
+    .populate('items.dishInstance', 'name basePrice options finalPrice')
     .populate('store', 'name')
     .lean();
 
@@ -141,7 +144,7 @@ export const getUserOrderById = async (orderId, userId) => {
  */
 export const getGuestOrderById = async (orderId, phone, orderNumber) => {
   const order = await Order.findById(orderId)
-    .populate('items.dishInstance', 'name price options')
+    .populate('items.dishInstance', 'name basePrice options finalPrice')
     .populate('store', 'name')
     .lean();
 
@@ -158,6 +161,8 @@ export const getGuestOrderById = async (orderId, phone, orderNumber) => {
 
   return order;
 };
+
+
 
 /**
  * 處理支付

@@ -68,6 +68,24 @@ export const getInventoryItem = async (storeId, inventoryId) => {
 };
 
 /**
+ * 根據餐點模板ID獲取庫存項目
+ * @param {String} storeId - 店鋪ID
+ * @param {String} dishTemplateId - 餐點模板ID
+ * @returns {Promise<Object|null>} 庫存項目
+ */
+export const getInventoryItemByDishTemplate = async (storeId, dishTemplateId) => {
+  const inventoryItem = await Inventory.findOne({
+    store: storeId,
+    inventoryType: 'DishTemplate',
+    dish: dishTemplateId
+  })
+    .populate('dish', 'name')
+    .populate('brand', 'name');
+
+  return inventoryItem;
+};
+
+/**
  * 創建庫存項目
  * @param {Object} inventoryData - 庫存數據
  * @param {String} adminId - 管理員ID
@@ -143,20 +161,12 @@ export const createInventory = async (inventoryData, adminId) => {
       inventoryType: inventoryData.inventoryType,
       dish: inventoryData.dishId,
       itemName: inventoryData.itemName,
-      stockType: 'totalStock',
       previousStock: 0,
       newStock: inventoryData.initialTotalStock,
       changeAmount: inventoryData.initialTotalStock,
       changeType: 'initial_stock',
       reason: '初始庫存設定',
-      admin: adminId,
-      metadata: {
-        inventorySettings: {
-          enableAvailableStock: newInventory.enableAvailableStock,
-          isInventoryTracked: newInventory.isInventoryTracked,
-          isSoldOut: newInventory.isSoldOut
-        }
-      }
+      admin: adminId
     });
   }
 
@@ -167,20 +177,12 @@ export const createInventory = async (inventoryData, adminId) => {
       inventoryType: inventoryData.inventoryType,
       dish: inventoryData.dishId,
       itemName: inventoryData.itemName,
-      stockType: 'availableStock',
       previousStock: 0,
       newStock: inventoryData.initialAvailableStock,
       changeAmount: inventoryData.initialAvailableStock,
       changeType: 'initial_stock',
       reason: '初始庫存設定',
-      admin: adminId,
-      metadata: {
-        inventorySettings: {
-          enableAvailableStock: newInventory.enableAvailableStock,
-          isInventoryTracked: newInventory.isInventoryTracked,
-          isSoldOut: newInventory.isSoldOut
-        }
-      }
+      admin: adminId
     });
   }
 
@@ -225,20 +227,12 @@ export const updateInventory = async (updateData, adminId) => {
         inventoryType: inventoryItem.inventoryType,
         dish: inventoryItem.dish,
         itemName: inventoryItem.itemName,
-        stockType: 'totalStock',
         previousStock: previousTotalStock,
         newStock: stock,
         changeAmount: actualChangeAmount,
         changeType: actualChangeAmount > 0 ? 'manual_add' : 'manual_subtract',
         reason: reason || '手動調整庫存',
-        admin: adminId,
-        metadata: {
-          inventorySettings: {
-            enableAvailableStock: inventoryItem.enableAvailableStock,
-            isInventoryTracked: inventoryItem.isInventoryTracked,
-            isSoldOut: inventoryItem.isSoldOut
-          }
-        }
+        admin: adminId
       });
     }
 
@@ -263,20 +257,12 @@ export const updateInventory = async (updateData, adminId) => {
         inventoryType: inventoryItem.inventoryType,
         dish: inventoryItem.dish,
         itemName: inventoryItem.itemName,
-        stockType: 'availableStock',
         previousStock: previousAvailableStock,
         newStock: newAvailableStock,
         changeAmount: actualChangeAmount,
         changeType: actualChangeAmount > 0 ? 'manual_add' : 'manual_subtract',
         reason: reason || '手動調整可販售庫存',
-        admin: adminId,
-        metadata: {
-          inventorySettings: {
-            enableAvailableStock: inventoryItem.enableAvailableStock,
-            isInventoryTracked: inventoryItem.isInventoryTracked,
-            isSoldOut: inventoryItem.isSoldOut
-          }
-        }
+        admin: adminId
       });
     }
   }
@@ -363,21 +349,13 @@ export const reduceStock = async (reduceData) => {
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType: 'totalStock',
     previousStock: previousTotalStock,
     newStock: inventoryItem.totalStock,
     changeAmount: -quantity,
     changeType: orderId ? 'order' : 'manual_subtract',
     reason: reason || '訂單消耗',
     order: orderId,
-    admin: adminId,
-    metadata: {
-      inventorySettings: {
-        enableAvailableStock: inventoryItem.enableAvailableStock,
-        isInventoryTracked: inventoryItem.isInventoryTracked,
-        isSoldOut: inventoryItem.isSoldOut
-      }
-    }
+    admin: adminId
   });
 
   // 如果啟用可用庫存，創建可用庫存日誌
@@ -388,25 +366,65 @@ export const reduceStock = async (reduceData) => {
       inventoryType: inventoryItem.inventoryType,
       dish: inventoryItem.dish,
       itemName: inventoryItem.itemName,
-      stockType: 'availableStock',
       previousStock: previousAvailableStock,
       newStock: inventoryItem.availableStock,
       changeAmount: previousAvailableStock - inventoryItem.availableStock,
       changeType: orderId ? 'order' : 'manual_subtract',
       reason: reason || '訂單消耗（同步可用庫存）',
       order: orderId,
-      admin: adminId,
-      metadata: {
-        inventorySettings: {
-          enableAvailableStock: inventoryItem.enableAvailableStock,
-          isInventoryTracked: inventoryItem.isInventoryTracked,
-          isSoldOut: inventoryItem.isSoldOut
-        }
-      }
+      admin: adminId
     });
   }
 
   return true;
+};
+
+/**
+ * 為訂單減少庫存（新增函數）
+ * @param {Object} order - 訂單對象
+ * @returns {Promise<Boolean>} 操作是否成功
+ */
+export const reduceInventoryForOrder = async (order) => {
+  try {
+    // 遍歷訂單項目，減少對應庫存
+    for (const item of order.items) {
+      // 獲取餐點實例以取得模板ID
+      const DishInstance = (await import('../../models/Dish/DishInstance.js')).default;
+      const dishInstance = await DishInstance.findById(item.dishInstance);
+
+      if (!dishInstance) {
+        console.warn(`餐點實例 ${item.dishInstance} 不存在，跳過庫存扣除`);
+        continue;
+      }
+
+      // 查找對應的庫存項目
+      const inventoryItem = await getInventoryItemByDishTemplate(order.store, dishInstance.templateId);
+
+      if (!inventoryItem) {
+        console.warn(`餐點模板 ${dishInstance.templateId} 在店鋪 ${order.store} 沒有庫存記錄，跳過庫存扣除`);
+        continue;
+      }
+
+      // 如果沒有啟用庫存追蹤，跳過
+      if (!inventoryItem.isInventoryTracked) {
+        continue;
+      }
+
+      // 減少庫存
+      await reduceStock({
+        storeId: order.store,
+        inventoryId: inventoryItem._id,
+        quantity: item.quantity,
+        reason: `訂單消耗: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
+        orderId: order._id
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error('為訂單減少庫存時發生錯誤:', error);
+    throw error;
+  }
 };
 
 /**
@@ -453,20 +471,12 @@ export const addStock = async (addData) => {
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType,
     previousStock,
     newStock: inventoryItem[stockType],
     changeAmount: quantity,
     changeType: 'manual_add',
     reason: reason || '手動增加庫存',
-    admin: adminId,
-    metadata: {
-      inventorySettings: {
-        enableAvailableStock: inventoryItem.enableAvailableStock,
-        isInventoryTracked: inventoryItem.isInventoryTracked,
-        isSoldOut: inventoryItem.isSoldOut
-      }
-    }
+    admin: adminId
   });
 
   return true;
@@ -510,20 +520,12 @@ export const setAvailableStock = async (setData) => {
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType: 'availableStock',
     previousStock: previousAvailableStock,
     newStock: availableStock,
     changeAmount: availableStock - previousAvailableStock,
     changeType: 'system_adjustment',
     reason: reason || '設定可用庫存',
-    admin: adminId,
-    metadata: {
-      inventorySettings: {
-        enableAvailableStock: inventoryItem.enableAvailableStock,
-        isInventoryTracked: inventoryItem.isInventoryTracked,
-        isSoldOut: inventoryItem.isSoldOut
-      }
-    }
+    admin: adminId
   });
 
   return inventoryItem;
@@ -570,10 +572,15 @@ export const restoreInventoryForCancelledOrder = async (order) => {
     }
 
     // 記錄先前的庫存
-    const previousStock = inventoryItem[log.stockType];
+    const previousTotalStock = inventoryItem.totalStock;
+    const previousAvailableStock = inventoryItem.availableStock;
 
     // 還原庫存 (因為減少庫存時 changeAmount 是負數，所以還原時取負值)
-    inventoryItem[log.stockType] -= log.changeAmount;
+    inventoryItem.totalStock -= log.changeAmount;
+
+    if (inventoryItem.enableAvailableStock) {
+      inventoryItem.availableStock -= log.changeAmount;
+    }
 
     // 保存庫存項目
     await inventoryItem.save();
@@ -585,21 +592,30 @@ export const restoreInventoryForCancelledOrder = async (order) => {
       inventoryType: log.inventoryType,
       dish: log.dish,
       itemName: log.itemName,
-      stockType: log.stockType,
-      previousStock,
-      newStock: inventoryItem[log.stockType],
+      previousStock: previousTotalStock,
+      newStock: inventoryItem.totalStock,
       changeAmount: -log.changeAmount,
       changeType: 'system_adjustment',
       reason: `訂單取消還原庫存: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
-      order: order._id,
-      metadata: {
-        inventorySettings: {
-          enableAvailableStock: inventoryItem.enableAvailableStock,
-          isInventoryTracked: inventoryItem.isInventoryTracked,
-          isSoldOut: inventoryItem.isSoldOut
-        }
-      }
+      order: order._id
     });
+
+    // 如果啟用可用庫存，創建可用庫存日誌
+    if (inventoryItem.enableAvailableStock) {
+      await StockLog.create({
+        brand: log.brand,
+        store: log.store,
+        inventoryType: log.inventoryType,
+        dish: log.dish,
+        itemName: log.itemName,
+        previousStock: previousAvailableStock,
+        newStock: inventoryItem.availableStock,
+        changeAmount: -log.changeAmount,
+        changeType: 'system_adjustment',
+        reason: `訂單取消還原庫存（可用庫存）: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
+        order: order._id
+      });
+    }
   }
 
   return true;
@@ -648,20 +664,12 @@ export const processDamage = async (damageData) => {
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType,
     previousStock,
     newStock: inventoryItem[stockType],
     changeAmount: -quantity,
     changeType: 'damage',
     reason,
-    admin: adminId,
-    metadata: {
-      inventorySettings: {
-        enableAvailableStock: inventoryItem.enableAvailableStock,
-        isInventoryTracked: inventoryItem.isInventoryTracked,
-        isSoldOut: inventoryItem.isSoldOut
-      }
-    }
+    admin: adminId
   });
 
   return true;
@@ -688,20 +696,12 @@ export const toggleSoldOut = async (storeId, inventoryId, isSoldOut, adminId) =>
     inventoryType: inventoryItem.inventoryType,
     dish: inventoryItem.dish,
     itemName: inventoryItem.itemName,
-    stockType: inventoryItem.enableAvailableStock ? 'availableStock' : 'totalStock',
     previousStock: inventoryItem[inventoryItem.enableAvailableStock ? 'availableStock' : 'totalStock'],
     newStock: inventoryItem[inventoryItem.enableAvailableStock ? 'availableStock' : 'totalStock'],
     changeAmount: 0,
     changeType: 'system_adjustment',
     reason: isSoldOut ? '設為售完' : '取消售完',
-    admin: adminId,
-    metadata: {
-      inventorySettings: {
-        enableAvailableStock: inventoryItem.enableAvailableStock,
-        isInventoryTracked: inventoryItem.isInventoryTracked,
-        isSoldOut: inventoryItem.isSoldOut
-      }
-    }
+    admin: adminId
   });
 
   return inventoryItem;
@@ -771,21 +771,12 @@ export const initializeDishInventory = async (storeId, adminId) => {
         inventoryType: 'DishTemplate',
         dish: dish._id,
         itemName: dish.name,
-        stockType: 'totalStock',
         previousStock: 0,
         newStock: 0,
         changeAmount: 0,
         changeType: 'initial_stock',
         reason: '自動初始化餐點庫存',
-        admin: adminId,
-        metadata: {
-          isDailyReset: false,
-          inventorySettings: {
-            enableAvailableStock: false,
-            isInventoryTracked: false,
-            isSoldOut: false
-          }
-        }
+        admin: adminId
       });
 
     } catch (error) {

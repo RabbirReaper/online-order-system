@@ -15,14 +15,18 @@ export const stats = stockStats;
 export const {
   getStoreInventory,
   getInventoryItem,
+  getInventoryItemByDishTemplate,
   createInventory,
   updateInventory,
   reduceStock,
+  reduceInventoryForOrder,
   addStock,
-  transferStock,
+  setAvailableStock,
   processDamage,
   restoreInventoryForCancelledOrder,
-  bulkUpdateInventory
+  bulkUpdateInventory,
+  toggleSoldOut,
+  initializeDishInventory
 } = stockManagement;
 
 export const {
