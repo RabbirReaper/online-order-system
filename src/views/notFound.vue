@@ -1,6 +1,7 @@
 <template>
   <div class="not-found">
     <h1>404 - Page Not Found</h1>
+    <h2>請重新掃碼店家QR code</h2>
     <p>Sorry, the page you are looking for does not exist.</p>
     <!-- <router-link to="/">Go back to Home</router-link> -->
   </div>
