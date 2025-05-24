@@ -100,7 +100,6 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     enum: ['cash', 'credit_card', 'line_pay', 'other'],
-    required: true
   }, // 付款方式
   onlinePaymentCode: { type: String }, // 線上付款代碼 (例如：LINE Pay)
   customerInfo: {
@@ -110,7 +109,6 @@ const orderSchema = new mongoose.Schema({
   deliveryInfo: {
     address: {
       type: String,
-      required: true
     },
     estimatedTime: { type: Date }, // 預計送達時間
     actualTime: { type: Date }, // 實際送達時間

@@ -374,21 +374,16 @@ export const useCartStore = defineStore('cart', () => {
         items: items.value.map(item => ({
           templateId: item.dishInstance.templateId,
           name: item.dishInstance.name,
-          price: item.dishInstance.finalPrice || item.dishInstance.basePrice,
+          basePrice: item.dishInstance.basePrice, // 後端需要 basePrice
+          finalPrice: item.dishInstance.finalPrice || item.dishInstance.basePrice,
           options: item.dishInstance.options || [],
           quantity: item.quantity,
           subtotal: item.subtotal,
-          note: item.note || '',
-          specialInstructions: item.note || '' // 備用欄位
+          note: item.note || ''
         })),
 
         // 訂單基本資訊
         orderType: orderType.value,
-        subtotal: subtotal.value,
-        serviceCharge: serviceCharge.value,
-        totalDiscount: discountAmount.value,
-        total: total.value,
-        manualAdjustment: 0,
 
         // 付款資訊
         paymentType: paymentType.value,
@@ -399,6 +394,9 @@ export const useCartStore = defineStore('cart', () => {
 
         // 訂單備註
         notes: notes.value,
+
+        // 手動調整金額（預設為0）
+        manualAdjustment: 0,
 
         // 折扣資訊
         discounts: appliedCoupons.value.map(coupon => ({
