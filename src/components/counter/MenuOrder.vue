@@ -35,16 +35,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 操作按鈕 -->
-        <div class="d-flex justify-content-between mt-4">
-          <button class="btn btn-outline-secondary" @click="cancelSelection">
-            取消
-          </button>
-          <button class="btn" :class="buttonClass" @click="addToCart">
-            {{ buttonText }}
-          </button>
-        </div>
       </div>
 
       <!-- 下半部：選項設定區域 -->
@@ -91,13 +81,23 @@
             </div>
           </div>
         </div>
+
+        <!-- 操作按鈕 -->
+        <div class="d-flex justify-content-between mt-4">
+          <button class="btn btn-outline-secondary" @click="cancelSelection">
+            取消
+          </button>
+          <button class="btn" :class="buttonClass" @click="addToCart">
+            {{ buttonText }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useCounterStore } from '@/stores/counter';
 
 const props = defineProps({
@@ -145,7 +145,7 @@ const buttonClass = computed(() => `btn-${props.themeClass}`);
 // 計算按鈕文字
 const buttonText = computed(() => {
   const isEditing = counterStore.currentItem && counterStore.currentItemIndex !== null;
-  return isEditing ? `更新餐點 - ${currentPrice.value}` : `加入購物車 - ${currentPrice.value}`;
+  return isEditing ? `更新餐點 - $${currentPrice.value}` : `加入購物車 - $${currentPrice.value}`;
 });
 
 const menuCategories = computed(() => {
@@ -220,12 +220,16 @@ const loadMenuData = async () => {
 };
 
 const selectDish = (dishTemplate) => {
-  // 設置選中的餐點和預設選項
+  // 設置選中的餐點
   selectedDish.value = dishTemplate;
+
+  // 重置選項狀態
   selectedOptions.value = {};
 
   // 為單選類型的選項類別預設選擇第一個選項
   if (dishTemplate.optionCategories && dishTemplate.optionCategories.length > 0) {
+    const newSelectedOptions = {};
+
     dishTemplate.optionCategories.forEach(categoryRef => {
       const category = counterStore.optionCategories.find(cat =>
         cat._id === categoryRef.categoryId
@@ -234,82 +238,49 @@ const selectDish = (dishTemplate) => {
       if (category && category.inputType === 'single' && category.options && category.options.length > 0) {
         const firstOption = category.options[0];
         const optionId = getOptionId(firstOption);
-        selectedOptions.value[category._id] = [optionId];
+        newSelectedOptions[category._id] = [optionId];
       }
     });
+
+    // 一次性更新所有選項
+    selectedOptions.value = newSelectedOptions;
   }
-
-  // 直接加入購物車（使用預設選項）
-  addToCartDirectly();
-};
-
-// 直接加入購物車的函數（用於上半部點擊）
-const addToCartDirectly = () => {
-  if (!selectedDish.value) return;
-
-  // 構建選項資料
-  const options = [];
-  Object.entries(selectedOptions.value).forEach(([categoryId, optionIds]) => {
-    if (optionIds.length > 0) {
-      const category = counterStore.optionCategories.find(cat => cat._id === categoryId);
-      if (category) {
-        const selections = optionIds.map(optionId => {
-          const option = category.options?.find(opt => getOptionId(opt) === optionId);
-          return option ? {
-            optionId: getOptionId(option),
-            name: getOptionName(option),
-            price: getOptionPrice(option)
-          } : null;
-        }).filter(Boolean);
-
-        if (selections.length > 0) {
-          options.push({
-            optionCategoryId: categoryId,
-            optionCategoryName: category.name,
-            selections: selections
-          });
-        }
-      }
-    }
-  });
-
-  // 添加到購物車
-  counterStore.addDishToCart(selectedDish.value, options, '');
+  addToCart();
+  console.log('選擇餐點後的選項狀態:', selectedOptions.value);
 };
 
 const selectOption = (category, option, inputType) => {
   const categoryId = category._id;
   const optionId = getOptionId(option);
 
+  // 確保該類別的選項陣列存在
+  if (!selectedOptions.value[categoryId]) {
+    selectedOptions.value[categoryId] = [];
+  }
+
   if (inputType === 'single') {
     // 單選：替換選中的選項
     selectedOptions.value[categoryId] = [optionId];
   } else {
     // 多選：切換選項
-    if (!selectedOptions.value[categoryId]) {
-      selectedOptions.value[categoryId] = [];
+    const currentOptions = [...selectedOptions.value[categoryId]];
+    const index = currentOptions.indexOf(optionId);
+
+    if (index > -1) {
+      currentOptions.splice(index, 1);
+    } else {
+      currentOptions.push(optionId);
     }
 
-    const index = selectedOptions.value[categoryId].indexOf(optionId);
-    if (index > -1) {
-      selectedOptions.value[categoryId].splice(index, 1);
-    } else {
-      selectedOptions.value[categoryId].push(optionId);
-    }
+    selectedOptions.value[categoryId] = currentOptions;
   }
 
-  // 下半部選項變更時，不直接加入購物車，只更新價格顯示
+  console.log('選項變更後:', selectedOptions.value);
 };
 
 const isOptionSelected = (categoryId, optionId) => {
-  const isSelected = selectedOptions.value[categoryId]?.includes(optionId) || false;
-
-  // 調試信息
-  if (counterStore.currentItem) {
-    console.log(`檢查選項: 類別${categoryId}, 選項${optionId}, 結果:${isSelected}`);
-    console.log('當前 selectedOptions:', selectedOptions.value);
-    console.log('該類別的選項:', selectedOptions.value[categoryId]);
-  }
+  const categoryOptions = selectedOptions.value[categoryId];
+  const isSelected = Array.isArray(categoryOptions) && categoryOptions.includes(optionId);
 
   return isSelected;
 };
@@ -383,6 +354,51 @@ const cancelSelection = () => {
   counterStore.clearCurrentItem();
 };
 
+// 設置編輯模式的選項
+const setupEditMode = async (currentItem) => {
+  if (!currentItem || !currentItem.dishInstance) return;
+
+  console.log('=== 設置編輯模式 ===');
+  console.log('編輯項目:', currentItem);
+
+  // 找到對應的餐點模板
+  const template = counterStore.getDishTemplate(currentItem.dishInstance.templateId);
+  console.log('找到的模板:', template);
+
+  if (!template) {
+    console.error('找不到餐點模板:', currentItem.dishInstance.templateId);
+    return;
+  }
+
+  // 設置選中的餐點
+  selectedDish.value = template;
+
+  // 等待下一個 tick 確保響應式系統準備好
+  await nextTick();
+
+  // 重建選項狀態
+  const newSelectedOptions = {};
+
+  if (currentItem.dishInstance.options) {
+    currentItem.dishInstance.options.forEach(optionCategory => {
+      console.log('處理選項類別:', optionCategory);
+
+      const optionIds = optionCategory.selections.map(selection => {
+        console.log('選項 ID:', selection.optionId);
+        return selection.optionId;
+      });
+
+      newSelectedOptions[optionCategory.optionCategoryId] = optionIds;
+    });
+  }
+
+  // 設置選項狀態
+  selectedOptions.value = newSelectedOptions;
+
+  console.log('編輯模式設置完成，選項狀態:', selectedOptions.value);
+  console.log('=== 編輯模式設置結束 ===');
+};
+
 // 生命周期
 onMounted(async () => {
   if (!counterStore.menuData) {
@@ -391,49 +407,15 @@ onMounted(async () => {
 });
 
 // 監聽編輯模式
-watch([() => counterStore.currentItem, () => counterStore.optionCategories], ([currentItem, optionCategories]) => {
-  if (currentItem && currentItem.dishInstance && optionCategories.length > 0) {
-    console.log('=== 編輯模式觸發 ===');
-    console.log('currentItem:', currentItem);
-    console.log('dishInstance:', currentItem.dishInstance);
-    console.log('options:', currentItem.dishInstance.options);
-
-    // 進入編輯模式
-    const template = counterStore.getDishTemplate(currentItem.dishInstance.templateId);
-    console.log('找到的模板:', template);
-
-    if (template) {
-      selectedDish.value = template;
-
-      // 先清空再重新設置，確保響應式更新
-      selectedOptions.value = {};
-
-      // 等待下一個 tick 再設置選項，確保響應式系統正確處理
-      setTimeout(() => {
-        const newSelectedOptions = {};
-
-        // 恢復原有的選項配置到 selectedOptions
-        if (currentItem.dishInstance.options) {
-          currentItem.dishInstance.options.forEach(optionCategory => {
-            console.log('處理選項類別:', optionCategory);
-            console.log('類別ID:', optionCategory.optionCategoryId);
-            console.log('選項:', optionCategory.selections);
-
-            newSelectedOptions[optionCategory.optionCategoryId] =
-              optionCategory.selections.map(selection => {
-                console.log('選項ID:', selection.optionId);
-                return selection.optionId;
-              });
-          });
-        }
-
-        selectedOptions.value = newSelectedOptions;
-        console.log('最終設置的 selectedOptions:', selectedOptions.value);
-        console.log('=== 編輯模式設置完成 ===');
-      }, 0);
+watch(
+  [() => counterStore.currentItem, () => counterStore.optionCategories],
+  async ([currentItem, optionCategories]) => {
+    if (currentItem && currentItem.dishInstance && optionCategories.length > 0) {
+      await setupEditMode(currentItem);
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
