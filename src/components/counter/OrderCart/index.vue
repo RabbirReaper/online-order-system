@@ -150,7 +150,7 @@ const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') 
     const response = await api.orderAdmin.updateOrder({
       brandId: counterStore.currentBrand,
       storeId: counterStore.currentStore,
-      orderId: checkoutOrderId.value,
+      orderId: counterStore.selectedOrder._id,
       updateData: {
         status: 'paid',
         paymentMethod: paymentMethod,

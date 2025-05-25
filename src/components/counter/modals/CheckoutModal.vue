@@ -75,7 +75,7 @@ watch(isVisible, (newValue) => {
 const handlePaymentMethod = (paymentMethod) => {
   emit('paymentSelected', {
     paymentMethod,
-    paymentType: paymentMethod === 'cash' ? 'On-site' : 'Online'
+    paymentType: 'On-site'
   });
   handleClose();
 };
