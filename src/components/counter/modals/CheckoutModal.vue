@@ -30,12 +30,6 @@
           </button>
         </div>
       </div>
-
-      <div class="mt-4">
-        <button type="button" class="btn btn-secondary" @click="handleClose">
-          取消
-        </button>
-      </div>
     </div>
   </BModal>
 </template>
