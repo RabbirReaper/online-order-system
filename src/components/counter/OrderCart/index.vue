@@ -276,14 +276,11 @@ const handleTableNumberConfirm = async (tableNumber) => {
   }
 };
 
-// 處理選擇當前編輯項目
+// 處理選擇當前編輯項目 - 簡化版本
 const handleSelectCurrentItem = (item, index) => {
-  // 通知父組件切換到對應的餐點編輯模式
-  // 這裡需要透過 emit 或其他方式通知 MenuOrder 組件進入編輯模式
-  console.log('編輯項目:', item, 'index:', index);
-
-  // 可以通過 store 來傳遞編輯狀態
+  // 直接設置編輯狀態
   counterStore.selectCurrentItem(item, index);
+  console.log('開始編輯項目:', item, 'index:', index);
 };
 
 // 調帳相關函數

@@ -5,7 +5,8 @@
       <p>尚未選擇餐點</p>
     </div>
     <div v-else>
-      <div v-for="(item, index) in cart" :key="index" class="cart-item card mb-3 border-0 shadow-sm">
+      <div v-for="(item, index) in cart" :key="index" class="cart-item card mb-3 border-0 shadow-sm"
+        :class="{ 'editing': isCurrentlyEditing(index) }">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <h6 class="card-title mb-0 fw-bold">{{ item.dishInstance.name }}</h6>
@@ -36,8 +37,10 @@
           </div>
 
           <div class="d-flex justify-content-between align-items-center">
-            <button class="btn btn-sm btn-outline-secondary" @click="$emit('selectCurrentItem', item, index)">
-              <i class="bi bi-pencil"></i> 編輯
+            <button class="btn btn-sm" :class="isCurrentlyEditing(index) ? 'btn-warning' : 'btn-outline-secondary'"
+              @click="handleEditClick(item, index)">
+              <i class="bi bi-pencil"></i>
+              {{ isCurrentlyEditing(index) ? '編輯中' : '編輯' }}
             </button>
 
             <div class="quantity-control d-flex align-items-center">
@@ -89,6 +92,9 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+import { useCounterStore } from '@/stores/counter';
+
 const props = defineProps({
   cart: {
     type: Array,
@@ -112,18 +118,43 @@ const props = defineProps({
   }
 });
 
-defineEmits([
+const emit = defineEmits([
   'removeFromCart',
   'selectCurrentItem',
   'updateQuantity',
   'openAdjustmentModal',
   'openDiscountModal'
 ]);
+
+// 使用 counter store 來檢查編輯狀態
+const counterStore = useCounterStore();
+
+// 檢查當前項目是否正在編輯
+const isCurrentlyEditing = (index) => {
+  return counterStore.isEditMode && counterStore.currentItemIndex === index;
+};
+
+// 處理編輯按鈕點擊
+const handleEditClick = (item, index) => {
+  if (isCurrentlyEditing(index)) {
+    // 如果正在編輯，則退出編輯模式
+    counterStore.clearCurrentItem();
+  } else {
+    // 否則進入編輯模式
+    emit('selectCurrentItem', item, index);
+  }
+};
 </script>
 
 <style scoped>
 .cart-item {
   border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.cart-item.editing {
+  border: 2px solid #ffc107;
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
 }
 
 .card-body {
@@ -146,5 +177,16 @@ defineEmits([
   justify-content: center;
   padding: 0;
   border-radius: 50%;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #000;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
+  border-color: #d39e00;
 }
 </style>
