@@ -12,7 +12,7 @@
         <!-- 購物車模式 -->
         <ShoppingCart :cart="counterStore.cart" :subtotal="counterStore.subtotal" :adjustment="counterStore.adjustment"
           :discount="counterStore.discount" :total="counterStore.total" @remove-from-cart="counterStore.removeFromCart"
-          @select-current-item="counterStore.selectCurrentItem" @update-quantity="counterStore.updateQuantity"
+          @select-current-item="handleSelectCurrentItem" @update-quantity="counterStore.updateQuantity"
           @open-adjustment-modal="openCartAdjustmentModal" @open-discount-modal="openCartDiscountModal" />
       </template>
     </div>
@@ -274,6 +274,16 @@ const handleTableNumberConfirm = async (tableNumber) => {
     console.error('提交訂單失敗:', error);
     alert(error.message || '提交訂單失敗');
   }
+};
+
+// 處理選擇當前編輯項目
+const handleSelectCurrentItem = (item, index) => {
+  // 通知父組件切換到對應的餐點編輯模式
+  // 這裡需要透過 emit 或其他方式通知 MenuOrder 組件進入編輯模式
+  console.log('編輯項目:', item, 'index:', index);
+
+  // 可以通過 store 來傳遞編輯狀態
+  counterStore.selectCurrentItem(item, index);
 };
 
 // 調帳相關函數
