@@ -8,9 +8,9 @@
       <div v-for="(item, index) in cart" :key="index" class="cart-item card mb-3 border-0 shadow-sm">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
-            <h6 class="card-title mb-0 fw-bold">{{ item.name }}</h6>
+            <h6 class="card-title mb-0 fw-bold">{{ item.dishInstance.name }}</h6>
             <div class="d-flex">
-              <div class="item-price fw-bold me-2">${{ (item.price * item.quantity) }}</div>
+              <div class="item-price fw-bold me-2">${{ item.subtotal }}</div>
               <button class="btn btn-sm btn-outline-danger" @click="$emit('removeFromCart', index)">
                 <i class="bi bi-x"></i>
               </button>
@@ -18,8 +18,9 @@
           </div>
 
           <div class="item-details mb-3">
-            <!-- 顯示選項 -->
-            <div v-for="optionCategory in item.options" :key="optionCategory.optionCategoryId" class="mb-1">
+            <!-- 顯示選項 - 統一使用 item.dishInstance.options -->
+            <div v-for="optionCategory in item.dishInstance.options" :key="optionCategory.optionCategoryId"
+              class="mb-1">
               <p class="card-text small mb-1">
                 <span class="text-muted">{{ optionCategory.optionCategoryName }}:</span>
                 <span v-for="selection in optionCategory.selections" :key="selection.optionId" class="ms-1">
@@ -40,11 +41,9 @@
             </button>
 
             <div class="quantity-control d-flex align-items-center">
-              <button class="btn btn-sm btn-outline-secondary"
-                @click="$emit('updateQuantity', index, -1)">-</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="$emit('updateQuantity', index, -1)">-</button>
               <span class="mx-2">{{ item.quantity }}</span>
-              <button class="btn btn-sm btn-outline-secondary"
-                @click="$emit('updateQuantity', index, 1)">+</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="$emit('updateQuantity', index, 1)">+</button>
             </div>
           </div>
         </div>

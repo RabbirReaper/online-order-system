@@ -57,11 +57,11 @@
           <div v-if="optionCategory.inputType === 'single'" class="row g-2">
             <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
               <div class="card p-2 text-center option-card"
-                :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
+                :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
                 @click="selectOption(optionCategory, option, 'single')">
                 <div class="card-body p-1">
-                  <p class="fw-bold mb-0">{{ option.refOption.name }}</p>
-                  <small v-if="option.price > 0" class="text-muted">+${{ option.refOption.price }}</small>
+                  <p class="fw-bold mb-0">{{ getOptionName(option) }}</p>
+                  <small v-if="getOptionPrice(option) > 0" class="text-muted">+${{ getOptionPrice(option) }}</small>
                 </div>
               </div>
             </div>
@@ -71,15 +71,22 @@
           <div v-else class="row g-2">
             <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
               <div class="card p-2 text-center option-card"
-                :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
+                :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
                 @click="selectOption(optionCategory, option, 'multiple')">
                 <div class="card-body p-1">
-                  <p class="fw-bold mb-0">{{ option.refOption.name }}</p>
-                  <small v-if="option.refOption.price > 0" class="text-muted">+${{ option.refOption.price }}</small>
+                  <p class="fw-bold mb-0">{{ getOptionName(option) }}</p>
+                  <small v-if="getOptionPrice(option) > 0" class="text-muted">+${{ getOptionPrice(option) }}</small>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- 特殊要求 -->
+        <div class="mb-3">
+          <label for="specialNote" class="form-label">特殊要求</label>
+          <textarea id="specialNote" class="form-control" rows="2" v-model="specialNote"
+            placeholder="請輸入特殊要求..."></textarea>
         </div>
 
         <!-- 操作按鈕 -->
@@ -97,9 +104,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useCounterStore } from '@/stores/counter';
-import api from '@/api';
 
 const props = defineProps({
   brandId: {
@@ -157,7 +163,7 @@ const currentPrice = computed(() => {
       optionIds.forEach(optionId => {
         const option = findOptionById(optionId);
         if (option) {
-          price += option.price || 0;
+          price += getOptionPrice(option);
         }
       });
     }
@@ -165,6 +171,20 @@ const currentPrice = computed(() => {
 
   return price;
 });
+
+// 統一的選項資料存取方法
+const getOptionId = (option) => {
+  // 判斷選項資料結構，支援兩種格式
+  return option.refOption ? option.refOption._id : option._id;
+};
+
+const getOptionName = (option) => {
+  return option.refOption ? option.refOption.name : option.name;
+};
+
+const getOptionPrice = (option) => {
+  return option.refOption ? (option.refOption.price || 0) : (option.price || 0);
+};
 
 // 方法
 const loadMenuData = async () => {
@@ -195,21 +215,22 @@ const cancelSelection = () => {
 
 const selectOption = (category, option, inputType) => {
   const categoryId = category._id;
+  const optionId = getOptionId(option);
 
   if (inputType === 'single') {
     // 單選：替換選中的選項
-    selectedOptions.value[categoryId] = [option._id];
+    selectedOptions.value[categoryId] = [optionId];
   } else {
     // 多選：切換選項
     if (!selectedOptions.value[categoryId]) {
       selectedOptions.value[categoryId] = [];
     }
 
-    const index = selectedOptions.value[categoryId].indexOf(option._id);
+    const index = selectedOptions.value[categoryId].indexOf(optionId);
     if (index > -1) {
       selectedOptions.value[categoryId].splice(index, 1);
     } else {
-      selectedOptions.value[categoryId].push(option._id);
+      selectedOptions.value[categoryId].push(optionId);
     }
   }
 };
@@ -220,8 +241,10 @@ const isOptionSelected = (categoryId, optionId) => {
 
 const findOptionById = (optionId) => {
   for (const category of counterStore.optionCategories) {
-    const option = category.options?.find(opt => opt._id === optionId);
-    if (option) return option;
+    if (category.options) {
+      const option = category.options.find(opt => getOptionId(opt) === optionId);
+      if (option) return option;
+    }
   }
   return null;
 };
@@ -236,11 +259,11 @@ const addToCart = () => {
       const category = counterStore.optionCategories.find(cat => cat._id === categoryId);
       if (category) {
         const selections = optionIds.map(optionId => {
-          const option = category.options?.find(opt => opt._id === optionId);
+          const option = category.options?.find(opt => getOptionId(opt) === optionId);
           return option ? {
-            optionId: option._id,
-            name: option.name,
-            price: option.price || 0
+            optionId: getOptionId(option),
+            name: getOptionName(option),
+            price: getOptionPrice(option)
           } : null;
         }).filter(Boolean);
 
@@ -262,49 +285,11 @@ const addToCart = () => {
   cancelSelection();
 };
 
-// 載入選項類別的詳細資料
-const loadOptionCategories = async () => {
-  if (counterStore.optionCategories.length === 0) {
-    try {
-      const response = await api.dish.getAllOptionCategories(props.brandId);
-      if (response.success) {
-        // 為每個類別載入選項
-        const categoriesWithOptions = await Promise.all(
-          response.categories.map(async (category) => {
-            try {
-              const optionResponse = await api.dish.getOptionsByCategory({
-                brandId: props.brandId,
-                categoryId: category._id
-              });
-
-              return {
-                ...category,
-                options: optionResponse.success ? optionResponse.options : []
-              };
-            } catch (error) {
-              console.error(`載入類別 ${category.name} 的選項失敗:`, error);
-              return {
-                ...category,
-                options: []
-              };
-            }
-          })
-        );
-
-        counterStore.optionCategories = categoriesWithOptions;
-      }
-    } catch (error) {
-      console.error('載入選項類別失敗:', error);
-    }
-  }
-};
-
 // 生命周期
 onMounted(async () => {
   if (!counterStore.menuData) {
     await loadMenuData();
   }
-  await loadOptionCategories();
 });
 </script>
 

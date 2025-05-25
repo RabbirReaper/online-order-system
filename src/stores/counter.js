@@ -12,7 +12,7 @@ export const useCounterStore = defineStore('counter', () => {
   const dishTemplates = ref([]);
   const optionCategories = ref([]);
 
-  // 購物車相關
+  // 購物車相關 - 統一資料結構與 cart.js
   const cart = ref([]);
   const currentItem = ref(null);
   const currentItemIndex = ref(null);
@@ -27,7 +27,10 @@ export const useCounterStore = defineStore('counter', () => {
 
   // 計算屬性
   const subtotal = computed(() => {
-    return cart.value.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.value.reduce((total, item) => {
+      // 統一使用 subtotal 計算，與 cart.js 保持一致
+      return total + (item.subtotal || 0);
+    }, 0);
   });
 
   const total = computed(() => {
@@ -76,7 +79,7 @@ export const useCounterStore = defineStore('counter', () => {
 
         // 載入餐點模板詳細資料
         await fetchDishTemplates(brandId);
-        await fetchOptionCategories(brandId);
+        await fetchOptionCategoriesWithOptions(brandId);
       }
     } catch (error) {
       console.error('載入菜單資料失敗:', error);
@@ -96,9 +99,10 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 載入選項類別
-  async function fetchOptionCategories(brandId) {
+  // 載入選項類別（使用統一的 API，確保資料結構一致）
+  async function fetchOptionCategoriesWithOptions(brandId) {
     try {
+      // 使用 getAllOptionCategories，它會 populate 完整的選項資料
       const response = await api.dish.getAllOptionCategories(brandId);
       if (response.success) {
         optionCategories.value = response.categories;
@@ -137,9 +141,22 @@ export const useCounterStore = defineStore('counter', () => {
     return dishTemplates.value.find(template => template._id === templateId);
   }
 
-  // 添加餐點到購物車
+  // 生成購物車項目的唯一鍵值
+  function generateItemKey(templateId, options, note = '') {
+    let optionsKey = '';
+    if (options && options.length > 0) {
+      optionsKey = options.map(category => {
+        const selections = category.selections.map(s => s.optionId).sort().join('-');
+        return `${category.optionCategoryId}:${selections}`;
+      }).sort().join('|');
+    }
+    const noteKey = note ? `:${note}` : '';
+    return `${templateId}:${optionsKey}${noteKey}`;
+  }
+
+  // 添加餐點到購物車 - 統一資料結構
   function addDishToCart(dishTemplate, options = [], note = '') {
-    // 計算價格
+    // 計算最終價格
     let finalPrice = dishTemplate.basePrice;
 
     // 加上選項價格
@@ -149,33 +166,37 @@ export const useCounterStore = defineStore('counter', () => {
       });
     });
 
-    // 生成購物車項目
-    const cartItem = {
-      id: Date.now(),
-      templateId: dishTemplate._id,
-      name: dishTemplate.name,
-      basePrice: dishTemplate.basePrice,
-      finalPrice: finalPrice,
-      price: finalPrice,
-      options: options,
-      note: note,
-      quantity: 1
-    };
+    // 生成唯一鍵值
+    const itemKey = generateItemKey(dishTemplate._id, options, note);
 
     // 檢查是否已存在相同配置的項目
-    const existingIndex = cart.value.findIndex(item =>
-      item.templateId === cartItem.templateId &&
-      JSON.stringify(item.options) === JSON.stringify(cartItem.options) &&
-      item.note === cartItem.note
-    );
+    const existingIndex = cart.value.findIndex(item => item.key === itemKey);
 
     if (existingIndex !== -1) {
       // 如果存在，增加數量
-      cart.value[existingIndex].quantity += 1;
+      const existingItem = cart.value[existingIndex];
+      existingItem.quantity += 1;
+      existingItem.subtotal = finalPrice * existingItem.quantity;
     } else {
-      // 如果不存在，添加新項目
+      // 創建新的購物車項目 - 使用與 cart.js 一致的結構
+      const cartItem = {
+        key: itemKey,
+        dishInstance: {
+          templateId: dishTemplate._id,
+          name: dishTemplate.name,
+          basePrice: dishTemplate.basePrice,
+          finalPrice: finalPrice,
+          options: options // 完整的選項資料，包含 name 和 price
+        },
+        quantity: 1,
+        note: note || '',
+        subtotal: finalPrice
+      };
+
       cart.value.push(cartItem);
     }
+
+    console.log('添加到購物車:', { itemKey, totalItems: cart.value.length });
   }
 
   // 移除購物車項目
@@ -188,11 +209,14 @@ export const useCounterStore = defineStore('counter', () => {
   // 更新數量
   function updateQuantity(index, change) {
     if (index >= 0 && index < cart.value.length) {
-      const newQuantity = cart.value[index].quantity + change;
+      const item = cart.value[index];
+      const newQuantity = item.quantity + change;
+
       if (newQuantity <= 0) {
         removeFromCart(index);
       } else {
-        cart.value[index].quantity = newQuantity;
+        item.quantity = newQuantity;
+        item.subtotal = item.dishInstance.finalPrice * newQuantity;
       }
     }
   }
@@ -243,7 +267,7 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 提交訂單
+  // 提交訂單 - 使用客戶訂單 API
   async function checkout(orderType, customerInfo = {}) {
     if (cart.value.length === 0) {
       throw new Error('購物車是空的');
@@ -252,19 +276,19 @@ export const useCounterStore = defineStore('counter', () => {
     isCheckingOut.value = true;
 
     try {
-      // 準備訂單資料
+      // 準備訂單資料 - 轉換為後端期望的格式
       const orderData = {
         orderType: orderType, // 'dine_in', 'takeout'
         paymentType: 'On-site',
         paymentMethod: 'cash',
         items: cart.value.map(item => ({
-          templateId: item.templateId,
-          name: item.name,
-          basePrice: item.basePrice,
-          finalPrice: item.finalPrice,
-          options: item.options,
+          templateId: item.dishInstance.templateId,
+          name: item.dishInstance.name,
+          basePrice: item.dishInstance.basePrice,
+          finalPrice: item.dishInstance.finalPrice,
+          options: item.dishInstance.options,
           quantity: item.quantity,
-          subtotal: item.price * item.quantity,
+          subtotal: item.subtotal,
           note: item.note || ''
         })),
         customerInfo: customerInfo,
@@ -280,7 +304,8 @@ export const useCounterStore = defineStore('counter', () => {
         };
       }
 
-      const response = await api.orderAdmin.createOrder({
+      // 使用客戶訂單 API 創建訂單
+      const response = await api.orderCustomer.createOrder({
         brandId: currentBrand.value,
         storeId: currentStore.value,
         orderData
@@ -336,9 +361,9 @@ export const useCounterStore = defineStore('counter', () => {
   // 獲取訂單狀態樣式
   function getStatusClass(status) {
     const classMap = {
-      'Unpaid': 'badge bg-warning text-dark',
-      'Completed': 'badge bg-success',
-      'Canceled': 'badge bg-danger'
+      'unpaid': 'badge bg-warning text-dark',
+      'paid': 'badge bg-success',
+      'cancelled': 'badge bg-danger'
     };
     return classMap[status] || 'badge bg-secondary';
   }
@@ -346,9 +371,9 @@ export const useCounterStore = defineStore('counter', () => {
   // 格式化訂單狀態
   function formatStatus(status) {
     const statusMap = {
-      'Unpaid': '未結帳',
-      'Completed': '已完成',
-      'Canceled': '已取消'
+      'unpaid': '未結帳',
+      'paid': '已完成',
+      'cancelled': '已取消'
     };
     return statusMap[status] || status;
   }
@@ -395,7 +420,7 @@ export const useCounterStore = defineStore('counter', () => {
     fetchStoreData,
     fetchMenuData,
     fetchDishTemplates,
-    fetchOptionCategories,
+    fetchOptionCategoriesWithOptions,
     fetchTodayOrders,
     getDishTemplate,
     addDishToCart,
