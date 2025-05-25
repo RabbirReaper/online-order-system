@@ -1,95 +1,171 @@
 <template>
   <div class="container-fluid p-0">
-    <div class="component-header bg-success text-white p-3">
-      <h4>外帶點餐</h4>
-    </div>
-
-    <!-- 加載提示 -->
-    <div v-if="isLoading" class="d-flex justify-content-center align-items-center py-5">
-      <div class="spinner-border text-success" role="status">
-        <span class="visually-hidden">載入中...</span>
+    <div class="component-header bg-secondary text-white p-3">
+      <h4>訂單管理 {{ counterStore.currentDate }}</h4>
+      <div class="d-flex justify-content-between align-items-center mt-2">
+        <div class="d-flex align-items-center">
+          <div class="input-group input-group-sm me-2" style="max-width: 200px;">
+            <input type="date" class="form-control" v-model="selectedDate" :max="maxDate">
+          </div>
+          <button class="btn btn-light btn-sm me-2" @click="fetchOrdersByDate" :disabled="isLoading">
+            <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
+              aria-hidden="true"></span>
+            {{ isLoading ? '載入中...' : '搜尋' }}
+          </button>
+        </div>
+        <div class="d-flex">
+          <select class="form-select form-select-sm me-2" style="max-width: 150px;" v-model="filterType">
+            <option value="all">所有類型</option>
+            <option value="dine_in">內用</option>
+            <option value="takeout">外帶</option>
+            <option value="delivery">外送</option>
+          </select>
+          <select class="form-select form-select-sm" style="max-width: 150px;" v-model="filterStatus">
+            <option value="all">所有狀態</option>
+            <option value="unpaid">未結帳</option>
+            <option value="paid">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </div>
       </div>
-      <span class="ms-2">載入菜單資料中...</span>
     </div>
 
     <!-- 錯誤提示 -->
     <div v-if="errorMessage" class="alert alert-danger m-3" role="alert">
       {{ errorMessage }}
-      <button class="btn btn-outline-danger btn-sm ms-2" @click="loadMenuData">重試</button>
+      <button class="btn btn-outline-danger btn-sm ms-2" @click="fetchOrdersByDate">重試</button>
     </div>
 
-    <div v-if="!isLoading && !errorMessage" class="row g-0">
-      <!-- 上半部：菜單選擇區域 -->
-      <div class="col-12 menu-section p-3">
-        <div v-for="category in menuCategories" :key="category._id" class="mb-4">
-          <h5 class="category-title mb-3">{{ category.name }}</h5>
-          <div class="menu-items-grid">
-            <div v-for="dish in category.dishes" :key="dish._id" class="menu-item-card"
-              @click="selectDish(dish.dishTemplate)">
-              <div class="card h-100">
-                <div class="card-body" :class="{ 'selected': selectedDish?.id === dish.dishTemplate._id }">
-                  <h6 class="card-title">{{ dish.dishTemplate.name }}</h6>
-                  <p class="card-text price">${{ dish.price || dish.dishTemplate.basePrice }}</p>
-                </div>
+    <!-- 訂單表格 -->
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>時間</th>
+            <th>訂單號</th>
+            <th>取餐方式</th>
+            <th>金額</th>
+            <th>狀態</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="isLoading && filteredOrders.length === 0">
+            <td colspan="5" class="text-center py-4">
+              <div class="spinner-border text-secondary" role="status">
+                <span class="visually-hidden">載入中...</span>
+              </div>
+              <p class="mt-2">載入訂單資料中...</p>
+            </td>
+          </tr>
+          <tr v-else-if="filteredOrders.length === 0">
+            <td colspan="5" class="text-center py-4">
+              <p class="text-muted">沒有符合條件的訂單</p>
+            </td>
+          </tr>
+          <tr v-for="order in filteredOrders" :key="order._id"
+            :class="{ 'table-active': counterStore.selectedOrder && counterStore.selectedOrder._id === order._id }"
+            @click="selectOrder(order)" class="order-row">
+            <td>{{ counterStore.formatTime(order.createdAt) }}</td>
+            <td class="fs-5">{{ order.sequence }}</td>
+            <td>
+              <span :class="getOrderTypeClass(order.orderType)">
+                {{ formatOrderType(order.orderType) }}
+              </span>
+              <span v-if="order.dineInInfo?.tableNumber" class="ms-1 badge bg-info">
+                桌號: {{ order.dineInInfo.tableNumber }}
+              </span>
+            </td>
+            <td class="fs-5">${{ calculateOrderTotal(order) }}</td>
+            <td>
+              <span :class="counterStore.getStatusClass(order.status)">
+                {{ counterStore.formatStatus(order.status) }}
+              </span>
+              <span v-if="order.status === 'paid'" class="ms-1 badge bg-secondary">
+                {{ order.paymentMethod }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 訂單詳情模態框 -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="orderDetailsModalLabel">
+              訂單詳情 #{{ counterStore.selectedOrder?.orderNumber || counterStore.selectedOrder?._id.slice(-6) }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" v-if="counterStore.selectedOrder">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <p><strong>訂單時間：</strong> {{ counterStore.formatDateTime(counterStore.selectedOrder.createdAt) }}</p>
+                <p><strong>取餐方式：</strong> {{ formatOrderType(counterStore.selectedOrder.orderType) }}</p>
+                <p v-if="counterStore.selectedOrder.dineInInfo?.tableNumber">
+                  <strong>桌號：</strong> {{ counterStore.selectedOrder.dineInInfo.tableNumber }}
+                </p>
+                <p v-if="counterStore.selectedOrder.deliveryInfo?.address">
+                  <strong>外送地址：</strong> {{ counterStore.selectedOrder.deliveryInfo.address }}
+                </p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>付款方式：</strong> {{ counterStore.selectedOrder.paymentMethod }}</p>
+                <p><strong>狀態：</strong> {{ counterStore.formatStatus(counterStore.selectedOrder.status) }}</p>
+                <p v-if="counterStore.selectedOrder.notes">
+                  <strong>備註：</strong> {{ counterStore.selectedOrder.notes }}
+                </p>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- 下半部：選項設定區域 -->
-      <div class="col-12 options-section bg-light p-3" v-if="selectedDish">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5>{{ selectedDish.name }} - 選項設定</h5>
-          <div class="d-flex align-items-center">
-            <span class="text-danger fs-5 me-2">${{ currentPrice }}</span>
-            <button class="btn btn-secondary btn-sm" @click="cancelSelection">
-              <i class="bi bi-x"></i>
+            <h6 class="mb-3">餐點明細</h6>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>餐點</th>
+                    <th>選項</th>
+                    <th>數量</th>
+                    <th>金額</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in counterStore.selectedOrder.items" :key="index">
+                    <td>{{ item.name }}</td>
+                    <td>
+                      <div v-for="optionCategory in item.options" :key="optionCategory.optionCategoryId" class="mb-1">
+                        <small>{{ optionCategory.optionCategoryName }}:</small>
+                        <small v-for="selection in optionCategory.selections" :key="selection.optionId" class="ms-1">
+                          {{ selection.name }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
+                        </small>
+                      </div>
+                      <small v-if="item.note" class="text-muted d-block">備註: {{ item.note }}</small>
+                    </td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ item.subtotal }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="text-end"><strong>總計：</strong></td>
+                    <td><strong>${{ calculateOrderTotal(counterStore.selectedOrder) }}</strong></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            <button type="button" class="btn btn-success" @click="printOrder"
+              :disabled="!counterStore.selectedOrder || isPrinting">
+              <span v-if="isPrinting" class="spinner-border spinner-border-sm me-2" role="status"
+                aria-hidden="true"></span>
+              {{ isPrinting ? '列印中...' : '列印訂單' }}
             </button>
           </div>
-        </div>
-
-        <!-- 選項類別 -->
-        <div v-for="optionCategory in dishOptionCategories" :key="optionCategory._id" class="mb-4">
-          <h6 class="option-category-title mb-3">{{ optionCategory.name }}</h6>
-
-          <!-- 單選類型 -->
-          <div v-if="optionCategory.inputType === 'single'" class="row g-2">
-            <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
-              <div class="card p-2 text-center option-card"
-                :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
-                @click="selectOption(optionCategory, option, 'single')">
-                <div class="card-body p-1">
-                  <p class="fw-bold mb-0">{{ option.name }}</p>
-                  <small v-if="option.price > 0" class="text-muted">+${{ option.price }}</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 多選類型 -->
-          <div v-else class="row g-2">
-            <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
-              <div class="card p-2 text-center option-card"
-                :class="{ 'selected': isOptionSelected(optionCategory._id, option._id) }"
-                @click="selectOption(optionCategory, option, 'multiple')">
-                <div class="card-body p-1">
-                  <p class="fw-bold mb-0">{{ option.name }}</p>
-                  <small v-if="option.price > 0" class="text-muted">+${{ option.price }}</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 操作按鈕 -->
-        <div class="d-flex justify-content-between">
-          <button class="btn btn-outline-secondary" @click="cancelSelection">
-            取消
-          </button>
-          <button class="btn btn-success" @click="addToCart">
-            加入購物車 - ${{ currentPrice }}
-          </button>
         </div>
       </div>
     </div>
@@ -99,7 +175,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useCounterStore } from '@/stores/counter';
-import api from '@/api';
 
 const props = defineProps({
   brandId: {
@@ -116,195 +191,222 @@ const props = defineProps({
 const counterStore = useCounterStore();
 
 // 本地狀態
+const selectedDate = ref('');
+const filterType = ref('all');
+const filterStatus = ref('all');
 const isLoading = ref(false);
+const isPrinting = ref(false);
 const errorMessage = ref('');
-const selectedDish = ref(null);
-const selectedOptions = ref({}); // { categoryId: [optionIds] }
-const specialNote = ref('');
+const maxDate = ref('');
 
 // 計算屬性
-const menuCategories = computed(() => {
-  return counterStore.menuData?.categories || [];
-});
+const filteredOrders = computed(() => {
+  let filtered = [...counterStore.todayOrders];
 
-const dishOptionCategories = computed(() => {
-  if (!selectedDish.value) return [];
+  // 過濾取餐方式
+  if (filterType.value !== 'all') {
+    filtered = filtered.filter(order => order.orderType === filterType.value);
+  }
 
-  const categories = [];
-  selectedDish.value.optionCategories.forEach(categoryRef => {
-    const category = counterStore.optionCategories.find(cat =>
-      cat._id === categoryRef.categoryId
-    );
-    if (category) {
-      categories.push({
-        ...category,
-        order: categoryRef.order
-      });
-    }
-  });
+  // 過濾訂單狀態
+  if (filterStatus.value !== 'all') {
+    filtered = filtered.filter(order => order.status === filterStatus.value);
+  }
 
-  return categories.sort((a, b) => a.order - b.order);
-});
-
-const currentPrice = computed(() => {
-  if (!selectedDish.value) return 0;
-
-  let price = selectedDish.value.basePrice;
-
-  // 加上選項價格
-  Object.values(selectedOptions.value).forEach(optionIds => {
-    if (Array.isArray(optionIds)) {
-      optionIds.forEach(optionId => {
-        const option = findOptionById(optionId);
-        if (option) {
-          price += option.price || 0;
-        }
-      });
-    }
-  });
-
-  return price;
+  // 按時間排序（最新的在前）
+  return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
 // 方法
-const loadMenuData = async () => {
+const fetchOrdersByDate = async () => {
+  if (isLoading.value) return;
+
   isLoading.value = true;
   errorMessage.value = '';
 
   try {
-    await counterStore.fetchMenuData(props.brandId, props.storeId);
+    await counterStore.fetchTodayOrders(props.brandId, props.storeId);
   } catch (error) {
-    console.error('載入菜單資料失敗:', error);
-    errorMessage.value = error.message || '載入菜單資料失敗';
+    console.error('獲取訂單失敗:', error);
+    errorMessage.value = error.message || '獲取訂單失敗';
   } finally {
     isLoading.value = false;
   }
 };
 
-const selectDish = (dishTemplate) => {
-  selectedDish.value = dishTemplate;
-  selectedOptions.value = {};
-  specialNote.value = '';
-};
+const selectOrder = async (order) => {
+  try {
+    // 獲取訂單詳情
+    const response = await api.orderAdmin.getOrderById({
+      brandId: props.brandId,
+      storeId: props.storeId,
+      orderId: order._id
+    });
 
-const cancelSelection = () => {
-  selectedDish.value = null;
-  selectedOptions.value = {};
-  specialNote.value = '';
-};
-
-const selectOption = (category, option, inputType) => {
-  const categoryId = category._id;
-
-  if (inputType === 'single') {
-    // 單選：替換選中的選項
-    selectedOptions.value[categoryId] = [option._id];
-  } else {
-    // 多選：切換選項
-    if (!selectedOptions.value[categoryId]) {
-      selectedOptions.value[categoryId] = [];
+    if (response.success) {
+      counterStore.selectOrder(response.order);
     }
-
-    const index = selectedOptions.value[categoryId].indexOf(option._id);
-    if (index > -1) {
-      selectedOptions.value[categoryId].splice(index, 1);
-    } else {
-      selectedOptions.value[categoryId].push(option._id);
-    }
+  } catch (error) {
+    console.error('獲取訂單詳情失敗:', error);
+    errorMessage.value = '獲取訂單詳情失敗';
   }
 };
 
-const isOptionSelected = (categoryId, optionId) => {
-  return selectedOptions.value[categoryId]?.includes(optionId) || false;
+const getOrderTypeClass = (orderType) => {
+  const classMap = {
+    'dine_in': 'badge bg-primary',
+    'takeout': 'badge bg-success',
+    'delivery': 'badge bg-warning text-dark'
+  };
+  return classMap[orderType] || 'badge bg-secondary';
 };
 
-const findOptionById = (optionId) => {
-  for (const category of counterStore.optionCategories) {
-    const option = category.options?.find(opt => opt._id === optionId);
-    if (option) return option;
-  }
-  return null;
+const formatOrderType = (orderType) => {
+  const typeMap = {
+    'dine_in': '內用',
+    'takeout': '外帶',
+    'delivery': '外送'
+  };
+  return typeMap[orderType] || orderType;
 };
 
-const addToCart = () => {
-  if (!selectedDish.value) return;
+const calculateOrderTotal = (order) => {
+  if (!order.items) return 0;
 
-  // 構建選項資料
-  const options = [];
-  Object.entries(selectedOptions.value).forEach(([categoryId, optionIds]) => {
-    if (optionIds.length > 0) {
-      const category = counterStore.optionCategories.find(cat => cat._id === categoryId);
-      if (category) {
-        const selections = optionIds.map(optionId => {
-          const option = category.options?.find(opt => opt._id === optionId);
-          return option ? {
-            optionId: option._id,
-            name: option.name,
-            price: option.price || 0
-          } : null;
-        }).filter(Boolean);
+  const itemsTotal = order.items.reduce((total, item) => total + (item.subtotal || 0), 0);
+  const adjustment = order.manualAdjustment || 0;
+  const discounts = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0;
 
-        if (selections.length > 0) {
-          options.push({
-            optionCategoryId: categoryId,
-            optionCategoryName: category.name,
-            selections: selections
-          });
-        }
+  return Math.max(0, itemsTotal + adjustment - discounts);
+};
+
+const printOrder = () => {
+  if (!counterStore.selectedOrder || isPrinting.value) return;
+
+  isPrinting.value = true;
+
+  try {
+    // 創建列印窗口
+    const printWindow = window.open('', '_blank');
+    const order = counterStore.selectedOrder;
+
+    let printContent = `
+      <html>
+        <head>
+          <title>訂單 #${order.orderNumber || order._id.slice(-6)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1, h2 { margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+            th { background-color: #f2f2f2; }
+            .total { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>訂單 #${order.orderNumber || order._id.slice(-6)}</h1>
+          <p><strong>訂單時間：</strong> ${counterStore.formatDateTime(order.createdAt)}</p>
+          <p><strong>取餐方式：</strong> ${formatOrderType(order.orderType)}</p>
+          ${order.dineInInfo?.tableNumber ? `<p><strong>桌號：</strong> ${order.dineInInfo.tableNumber}</p>` : ''}
+          ${order.deliveryInfo?.address ? `<p><strong>外送地址：</strong> ${order.deliveryInfo.address}</p>` : ''}
+          <p><strong>付款方式：</strong> ${order.paymentMethod}</p>
+          ${order.notes ? `<p><strong>備註：</strong> ${order.notes}</p>` : ''}
+
+          <h2>餐點明細</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>餐點</th>
+                <th>選項</th>
+                <th>數量</th>
+                <th>金額</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // 添加餐點明細
+    order.items.forEach(item => {
+      let optionsText = '';
+      if (item.options && item.options.length > 0) {
+        optionsText = item.options.map(category => {
+          const selections = category.selections.map(selection =>
+            `${selection.name}${selection.price > 0 ? `(+$${selection.price})` : ''}`
+          ).join(', ');
+          return `${category.optionCategoryName}: ${selections}`;
+        }).join('<br>');
       }
+      if (item.note) {
+        optionsText += optionsText ? `<br>備註: ${item.note}` : `備註: ${item.note}`;
+      }
+
+      printContent += `
+        <tr>
+          <td>${item.name}</td>
+          <td>${optionsText}</td>
+          <td>${item.quantity}</td>
+          <td>${item.subtotal}</td>
+        </tr>
+      `;
+    });
+
+    // 添加總計
+    printContent += `
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" style="text-align: right;"><strong>總計：</strong></td>
+                <td class="total">${calculateOrderTotal(order)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="text-align: center; margin-top: 40px;">
+            <p>感謝您的惠顧！</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // 寫入並列印
+    printWindow.document.open();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    // 等待載入
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.onafterprint = () => {
+        isPrinting.value = false;
+      };
+      // 安全超時
+      setTimeout(() => {
+        isPrinting.value = false;
+      }, 3000);
+    }, 500);
+  } catch (error) {
+    console.error('列印訂單失敗:', error);
+    errorMessage.value = '列印訂單時發生錯誤';
+    isPrinting.value = false;
+  }
+};
+
+// 初始化
+onMounted(() => {
+  const today = new Date();
+  selectedDate.value = today.toISOString().split('T')[0];
+  maxDate.value = today.toISOString().split('T')[0];
+
+  fetchOrdersByDate();
+
+  // 初始化 Bootstrap Modal
+  import('bootstrap/js/dist/modal').then(module => {
+    const Modal = module.default;
+    const modalElement = document.getElementById('orderDetailsModal');
+    if (modalElement) {
+      new Modal(modalElement);
     }
   });
-
-  // 添加到購物車
-  counterStore.addDishToCart(selectedDish.value, options, specialNote.value);
-
-  // 清空選擇
-  cancelSelection();
-};
-
-// 載入選項類別的詳細資料
-const loadOptionCategories = async () => {
-  if (counterStore.optionCategories.length === 0) {
-    try {
-      const response = await api.dish.getAllOptionCategories(props.brandId);
-      if (response.success) {
-        // 為每個類別載入選項
-        const categoriesWithOptions = await Promise.all(
-          response.categories.map(async (category) => {
-            try {
-              const optionResponse = await api.dish.getOptionsByCategory({
-                brandId: props.brandId,
-                categoryId: category._id
-              });
-
-              return {
-                ...category,
-                options: optionResponse.success ? optionResponse.options : []
-              };
-            } catch (error) {
-              console.error(`載入類別 ${category.name} 的選項失敗:`, error);
-              return {
-                ...category,
-                options: []
-              };
-            }
-          })
-        );
-
-        counterStore.optionCategories = categoriesWithOptions;
-      }
-    } catch (error) {
-      console.error('載入選項類別失敗:', error);
-    }
-  }
-};
-
-// 生命周期
-onMounted(async () => {
-  if (!counterStore.menuData) {
-    await loadMenuData();
-  }
-  await loadOptionCategories();
 });
 </script>
 
@@ -315,77 +417,31 @@ onMounted(async () => {
   z-index: 100;
 }
 
-.menu-section {
-  height: 50vh;
-  overflow-y: auto;
-  border-bottom: 1px solid #dee2e6;
+table {
+  font-size: 0.9rem;
 }
 
-.options-section {
-  height: 50vh;
-  overflow-y: auto;
-}
-
-.category-title {
-  color: #495057;
-  border-bottom: 2px solid #28a745;
-  padding-bottom: 0.5rem;
-}
-
-.menu-items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
-}
-
-.menu-item-card {
+tr {
   cursor: pointer;
-  transition: transform 0.2s;
 }
 
-.menu-item-card:hover {
-  transform: translateY(-3px);
+tr:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-.card-img-top {
-  height: 150px;
-  object-fit: cover;
+.badge {
+  font-size: 0.95rem;
 }
 
-.price {
-  color: #dc3545;
-  font-weight: bold;
-  font-size: 1.1rem;
+.order-row {
+  height: 50px;
+  vertical-align: middle;
 }
 
-.option-category-title {
-  color: #6c757d;
-  border-left: 4px solid #28a745;
-  padding-left: 0.5rem;
-}
-
-.option-card {
-  cursor: pointer;
-  transition: all 0.2s;
-  border-width: 2px;
-}
-
-.option-card:hover {
-  background-color: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.option-card.selected {
-  background-color: #e8f5e9;
-  border-color: #28a745;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-}
-
-.card-body.selected {
-  background-color: #e8f5e9;
-  border: 2px solid #28a745;
-  border-radius: 5px;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+.table-active {
+  --bs-table-active-bg: rgba(83, 109, 254, 0.35) !important;
+  --bs-table-active-color: #000 !important;
+  --bs-table-hover-bg: var(--bs-table-active-bg) !important;
+  --bs-table-hover-color: var(--bs-table-active-color) !important;
 }
 </style>
