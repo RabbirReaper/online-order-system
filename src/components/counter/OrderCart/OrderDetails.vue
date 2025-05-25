@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h5 class="mb-3">訂單詳情 #{{ selectedOrder.orderNumber || selectedOrder._id.slice(-6) }}</h5>
+    <h5 class="mb-3">訂單詳情 #{{ selectedOrder.sequence }}</h5>
 
     <!-- 餐點明細 -->
     <h6 class="fw-bold mb-2">餐點明細</h6>
@@ -9,11 +9,12 @@
         <div class="d-flex justify-content-between">
           <div class="item-details">
             <!-- 餐點名稱 -->
-            <h6 class="mb-2 fw-bold">{{ item.name }}</h6>
+            <h6 class="mb-2 fw-bold">{{ item.dishInstance.name }}</h6>
 
             <!-- 選項列表 -->
             <div class="options small">
-              <div v-for="optionCategory in item.options" :key="optionCategory.optionCategoryId" class="mb-1">
+              <div v-for="optionCategory in item.dishInstance.options" :key="optionCategory.optionCategoryId"
+                class="mb-1">
                 <span class="text-muted">{{ optionCategory.optionCategoryName }}:</span>
                 <span v-for="selection in optionCategory.selections" :key="selection.optionId" class="ms-1">
                   {{ selection.name }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
@@ -46,8 +47,7 @@
         <div class="d-flex justify-content-between mb-2">
           <div class="d-flex align-items-center">
             <span>訂單調帳</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2"
-              @click="$emit('openAdjustmentModal', selectedOrder)"
+            <button class="btn btn-sm btn-outline-secondary ms-2" @click="$emit('openAdjustmentModal', selectedOrder)"
               :disabled="selectedOrder.status !== 'unpaid'">
               <i class="bi bi-pencil-square"></i>
             </button>
@@ -62,8 +62,7 @@
         <div class="d-flex justify-content-between mb-2">
           <div class="d-flex align-items-center">
             <span>訂單折扣</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2"
-              @click="$emit('openDiscountModal', selectedOrder)"
+            <button class="btn btn-sm btn-outline-secondary ms-2" @click="$emit('openDiscountModal', selectedOrder)"
               :disabled="selectedOrder.status !== 'unpaid'">
               <i class="bi bi-percent"></i>
             </button>

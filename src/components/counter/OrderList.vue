@@ -175,6 +175,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useCounterStore } from '@/stores/counter';
+import api from '@/api';
 
 const props = defineProps({
   brandId: {
@@ -217,6 +218,14 @@ const filteredOrders = computed(() => {
   return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
+// 台灣時區日期處理
+const getTaiwanDate = (date = null) => {
+  const targetDate = date ? new Date(date) : new Date();
+  // 轉換為台灣時區 (UTC+8)
+  const taiwanTime = new Date(targetDate.getTime() + (8 * 60 * 60 * 1000));
+  return taiwanTime.toISOString().split('T')[0];
+};
+
 // 方法
 const fetchOrdersByDate = async () => {
   if (isLoading.value) return;
@@ -225,7 +234,11 @@ const fetchOrdersByDate = async () => {
   errorMessage.value = '';
 
   try {
-    await counterStore.fetchTodayOrders(props.brandId, props.storeId);
+    if (selectedDate.value) {
+      await counterStore.fetchOrdersByDate(props.brandId, props.storeId, selectedDate.value);
+    } else {
+      await counterStore.fetchTodayOrders(props.brandId, props.storeId);
+    }
   } catch (error) {
     console.error('獲取訂單失敗:', error);
     errorMessage.value = error.message || '獲取訂單失敗';
@@ -393,9 +406,9 @@ const printOrder = () => {
 
 // 初始化
 onMounted(() => {
-  const today = new Date();
-  selectedDate.value = today.toISOString().split('T')[0];
-  maxDate.value = today.toISOString().split('T')[0];
+  const taiwanToday = getTaiwanDate();
+  selectedDate.value = taiwanToday;
+  maxDate.value = taiwanToday;
 
   fetchOrdersByDate();
 

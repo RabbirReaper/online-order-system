@@ -37,6 +37,31 @@ export const useCounterStore = defineStore('counter', () => {
     return Math.max(0, subtotal.value + adjustment.value - discount.value);
   });
 
+  // 台灣時區日期處理工具函數 - 修復版
+  const getTaiwanDate = (date = null) => {
+    if (date) {
+      // 如果提供了日期，直接返回 YYYY-MM-DD 格式
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return date;
+      }
+      const targetDate = new Date(date);
+      return targetDate.toISOString().split('T')[0];
+    }
+
+    // 獲取當前台灣時間的日期
+    const now = new Date();
+    // 台灣時區是 UTC+8
+    const taiwanTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (8 * 3600000));
+    return taiwanTime.toISOString().split('T')[0];
+  };
+
+  const getTaiwanDateTime = (date = null) => {
+    const targetDate = date ? new Date(date) : new Date();
+    // 台灣時區是 UTC+8
+    const taiwanTime = new Date(targetDate.getTime() + (targetDate.getTimezoneOffset() * 60000) + (8 * 3600000));
+    return taiwanTime;
+  };
+
   // 方法
   function setBrandAndStore(brandId, storeId) {
     currentBrand.value = brandId;
@@ -112,26 +137,38 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 載入當日訂單
+  // 改善當日訂單載入，正確處理台灣時區
   async function fetchTodayOrders(brandId, storeId) {
+    const taiwanToday = getTaiwanDate();
+    return await fetchOrdersByDate(brandId, storeId, taiwanToday);
+  }
+
+  // 新增按日期載入訂單的方法 - 修復版
+  async function fetchOrdersByDate(brandId, storeId, dateString) {
     try {
-      const today = new Date();
-      const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      // 確保日期格式正確 (YYYY-MM-DD)
+      const normalizedDate = getTaiwanDate(dateString);
 
       const response = await api.orderAdmin.getStoreOrders({
         brandId,
         storeId,
-        fromDate: startDate.toISOString().split('T')[0],
-        toDate: endDate.toISOString().split('T')[0]
+        fromDate: normalizedDate,
+        toDate: normalizedDate
       });
 
       if (response.success) {
         todayOrders.value = response.orders;
-        currentDate.value = today.toLocaleDateString('zh-TW');
+        // 更新當前日期顯示
+        const displayDate = new Date(normalizedDate + 'T00:00:00');
+        currentDate.value = displayDate.toLocaleDateString('zh-TW');
+
+        return response;
+      } else {
+        console.error('API 回應失敗:', response);
+        throw new Error(response.message || '獲取訂單失敗');
       }
     } catch (error) {
-      console.error('載入當日訂單失敗:', error);
+      console.error('載入訂單失敗:', error);
       throw error;
     }
   }
@@ -196,7 +233,6 @@ export const useCounterStore = defineStore('counter', () => {
       cart.value.push(cartItem);
     }
 
-    console.log('添加到購物車:', { itemKey, totalItems: cart.value.length });
   }
 
   // 移除購物車項目
@@ -335,17 +371,22 @@ export const useCounterStore = defineStore('counter', () => {
     selectedOrder.value = order;
   }
 
-  // 格式化時間
+  // 格式化時間 - 使用台灣時區
   function formatTime(dateTime) {
-    return new Date(dateTime).toLocaleTimeString('zh-TW', {
+    const date = new Date(dateTime);
+    return date.toLocaleTimeString('zh-TW', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Taipei'
     });
   }
 
-  // 格式化日期時間
+  // 格式化日期時間 - 使用台灣時區
   function formatDateTime(dateTime) {
-    return new Date(dateTime).toLocaleString('zh-TW');
+    const date = new Date(dateTime);
+    return date.toLocaleString('zh-TW', {
+      timeZone: 'Asia/Taipei'
+    });
   }
 
   // 獲取取餐方式樣式
@@ -422,6 +463,9 @@ export const useCounterStore = defineStore('counter', () => {
     fetchDishTemplates,
     fetchOptionCategoriesWithOptions,
     fetchTodayOrders,
+    fetchOrdersByDate,
+    getTaiwanDate,
+    getTaiwanDateTime,
     getDishTemplate,
     addDishToCart,
     removeFromCart,

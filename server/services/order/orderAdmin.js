@@ -5,6 +5,8 @@
 
 import Order from '../../models/Order/Order.js';
 import { AppError } from '../../middlewares/error.js';
+import { getTaiwanDateTime, getStartOfDay, getEndOfDay } from '../../utils/date.js';
+import { DateTime } from 'luxon';
 
 /**
  * 獲取店鋪訂單列表
@@ -26,17 +28,37 @@ export const getStoreOrders = async (storeId, options = {}) => {
     query.orderType = orderType;
   }
 
+  // 使用 Luxon 正確處理台灣時區的日期範圍
   if (fromDate || toDate) {
     query.createdAt = {};
 
     if (fromDate) {
-      query.createdAt.$gte = new Date(fromDate);
+      try {
+        // 將前端的日期字串 (YYYY-MM-DD) 轉換為台灣時區的該日開始時間
+        const inputDate = DateTime.fromISO(fromDate, { zone: 'Asia/Taipei' });
+        const startDateTime = getStartOfDay(inputDate);
+        query.createdAt.$gte = startDateTime.toJSDate();
+
+      } catch (error) {
+        console.error('解析開始日期失敗:', error);
+        throw new AppError('無效的開始日期格式', 400);
+      }
     }
 
     if (toDate) {
-      query.createdAt.$lte = new Date(toDate);
+      try {
+        // 將前端的日期字串 (YYYY-MM-DD) 轉換為台灣時區的該日結束時間
+        const inputDate = DateTime.fromISO(toDate, { zone: 'Asia/Taipei' });
+        const endDateTime = getEndOfDay(inputDate);
+        query.createdAt.$lte = endDateTime.toJSDate();
+
+      } catch (error) {
+        console.error('解析結束日期失敗:', error);
+        throw new AppError('無效的結束日期格式', 400);
+      }
     }
   }
+
 
   // 計算分頁
   const skip = (page - 1) * limit;
@@ -52,6 +74,20 @@ export const getStoreOrders = async (storeId, options = {}) => {
     .populate('items.dishInstance', 'name price options')
     .populate('user', 'name email phone')
     .lean();
+
+
+  // 如果沒有訂單，記錄調試信息
+  if (orders.length === 0) {
+    // 檢查該店鋪是否有任何訂單
+    const anyOrders = await Order.countDocuments({ store: storeId });
+
+    // 檢查最近的訂單
+    const recentOrders = await Order.find({ store: storeId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('createdAt orderType status')
+      .lean();
+  }
 
   // 構建分頁信息
   const totalPages = Math.ceil(total / limit);
@@ -162,10 +198,6 @@ export const cancelOrder = async (orderId, reason, adminId) => {
     throw new AppError('訂單已被取消', 400);
   }
 
-  // if (order.status === 'paid') {
-  //   throw new AppError('已完成的訂單無法取消', 400);
-  // }
-
   // 更新訂單狀態
   order.status = 'cancelled';
   order.cancelReason = reason;
@@ -189,20 +221,35 @@ export const getOrderStats = async (storeId, options = {}) => {
   // 構建基本查詢條件
   const matchQuery = { store: storeId };
 
-  // 設置時間範圍
+  // 使用 Luxon 設置時間範圍
   if (fromDate || toDate) {
     matchQuery.createdAt = {};
+
     if (fromDate) {
-      matchQuery.createdAt.$gte = new Date(fromDate);
+      try {
+        const inputDate = DateTime.fromISO(fromDate, { zone: 'Asia/Taipei' });
+        const startDateTime = getStartOfDay(inputDate);
+        matchQuery.createdAt.$gte = startDateTime.toJSDate();
+      } catch (error) {
+        console.error('統計查詢 - 解析開始日期失敗:', error);
+        throw new AppError('無效的開始日期格式', 400);
+      }
     }
+
     if (toDate) {
-      matchQuery.createdAt.$lte = new Date(toDate);
+      try {
+        const inputDate = DateTime.fromISO(toDate, { zone: 'Asia/Taipei' });
+        const endDateTime = getEndOfDay(inputDate);
+        matchQuery.createdAt.$lte = endDateTime.toJSDate();
+      } catch (error) {
+        console.error('統計查詢 - 解析結束日期失敗:', error);
+        throw new AppError('無效的結束日期格式', 400);
+      }
     }
   } else {
     // 預設查詢最近30天
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    matchQuery.createdAt = { $gte: thirtyDaysAgo };
+    const thirtyDaysAgo = getTaiwanDateTime().minus({ days: 30 });
+    matchQuery.createdAt = { $gte: thirtyDaysAgo.toJSDate() };
   }
 
   // 根據 groupBy 設置分組格式
@@ -245,10 +292,10 @@ export const getOrderStats = async (storeId, options = {}) => {
         _id: dateFormat,
         totalOrders: { $sum: 1 },
         totalAmount: { $sum: '$total' },
-        paidOrders: {  // 原本是 completedOrders
-          $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] }  // 原本是 'completed'
+        paidOrders: {
+          $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] }
         },
-        unpaidOrders: {  // 新增
+        unpaidOrders: {
           $sum: { $cond: [{ $eq: ['$status', 'unpaid'] }, 1, 0] }
         },
         cancelledOrders: {
@@ -262,11 +309,11 @@ export const getOrderStats = async (storeId, options = {}) => {
     },
     {
       $addFields: {
-        paymentRate: {  // 原本是 completionRate
+        paymentRate: {
           $cond: [
             { $eq: ['$totalOrders', 0] },
             0,
-            { $divide: ['$paidOrders', '$totalOrders'] }  // 原本是 completedOrders
+            { $divide: ['$paidOrders', '$totalOrders'] }
           ]
         }
       }
@@ -295,13 +342,13 @@ export const getOrderStats = async (storeId, options = {}) => {
   const summary = {
     totalOrders: stats.reduce((sum, stat) => sum + stat.totalOrders, 0),
     totalAmount: stats.reduce((sum, stat) => sum + stat.totalAmount, 0),
-    paidOrders: stats.reduce((sum, stat) => sum + stat.paidOrders, 0),        // 原本是 completedOrders
-    unpaidOrders: stats.reduce((sum, stat) => sum + stat.unpaidOrders, 0),    // 新增
+    paidOrders: stats.reduce((sum, stat) => sum + stat.paidOrders, 0),
+    unpaidOrders: stats.reduce((sum, stat) => sum + stat.unpaidOrders, 0),
     cancelledOrders: stats.reduce((sum, stat) => sum + stat.cancelledOrders, 0)
   };
 
-  summary.paymentRate = summary.totalOrders > 0  // 原本是 completionRate
-    ? Math.round((summary.paidOrders / summary.totalOrders) * 100) / 100  // 原本是 completedOrders
+  summary.paymentRate = summary.totalOrders > 0
+    ? Math.round((summary.paidOrders / summary.totalOrders) * 100) / 100
     : 0;
   summary.averageAmount = summary.totalOrders > 0
     ? Math.round(summary.totalAmount / summary.totalOrders)
@@ -335,11 +382,27 @@ export const getPopularDishes = async (storeId, options = {}) => {
 
   if (fromDate || toDate) {
     matchQuery.createdAt = {};
+
     if (fromDate) {
-      matchQuery.createdAt.$gte = new Date(fromDate);
+      try {
+        const inputDate = DateTime.fromISO(fromDate, { zone: 'Asia/Taipei' });
+        const startDateTime = getStartOfDay(inputDate);
+        matchQuery.createdAt.$gte = startDateTime.toJSDate();
+      } catch (error) {
+        console.error('熱門餐點查詢 - 解析開始日期失敗:', error);
+        throw new AppError('無效的開始日期格式', 400);
+      }
     }
+
     if (toDate) {
-      matchQuery.createdAt.$lte = new Date(toDate);
+      try {
+        const inputDate = DateTime.fromISO(toDate, { zone: 'Asia/Taipei' });
+        const endDateTime = getEndOfDay(inputDate);
+        matchQuery.createdAt.$lte = endDateTime.toJSDate();
+      } catch (error) {
+        console.error('熱門餐點查詢 - 解析結束日期失敗:', error);
+        throw new AppError('無效的結束日期格式', 400);
+      }
     }
   }
 
