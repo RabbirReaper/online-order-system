@@ -31,8 +31,8 @@
     <DiscountModal v-if="showDiscountModal" :temp-discount="tempDiscount" @close="showDiscountModal = false"
       @append-discount="appendToDiscount" @clear-discount="clearDiscount" @confirm="confirmDiscount" />
 
-    <CheckoutModal v-if="showCheckoutModal" :total="checkoutTotal" @close="handleCloseCheckoutModal"
-      @online-payment="handleOnlinePayment" @cash-payment="handleOpenCashCalculator" />
+    <CheckoutModal v-model="showCheckoutModal" :total="checkoutTotal" @close="handleCloseCheckoutModal"
+      @payment-selected="handlePaymentSelected" />
 
     <CashCalculatorModal v-if="showCashCalculatorModal" :total="checkoutTotal" @close="handleCloseCashCalculator"
       @complete="handleCashPayment" />
@@ -125,29 +125,48 @@ const updateOrderStatus = async (orderId, status) => {
   }
 };
 
-// 處理線上付款
-const handleOnlinePayment = async () => {
+// 處理付款方式選擇
+const handlePaymentSelected = async (paymentData) => {
+  const { paymentMethod, paymentType } = paymentData;
+
   try {
-    const response = await api.orderAdmin.updateOrderStatus({
+    if (paymentMethod === 'cash') {
+      // 現金付款 - 開啟現金計算器
+      showCashCalculatorModal.value = true;
+    } else {
+      // 信用卡或 LINE Pay - 直接完成付款
+      await completePayment(paymentMethod, paymentType);
+    }
+  } catch (error) {
+    console.error('處理付款失敗:', error);
+    alert('處理付款失敗: ' + error.message);
+  }
+};
+
+// 完成付款
+const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') => {
+  try {
+    // 更新訂單狀態為已付款，並記錄付款方式
+    const response = await api.orderAdmin.updateOrder({
       brandId: counterStore.currentBrand,
       storeId: counterStore.currentStore,
       orderId: checkoutOrderId.value,
-      status: 'paid'
+      updateData: {
+        status: 'paid',
+        paymentMethod: paymentMethod,
+        paymentType: paymentType
+      }
     });
 
     if (response.success) {
       showCheckoutModal.value = false;
+      showCashCalculatorModal.value = false;
       await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
     }
   } catch (error) {
-    console.error('線上付款處理失敗:', error);
-    alert('線上付款處理失敗');
+    console.error('完成付款失敗:', error);
+    throw error;
   }
-};
-
-// 開啟現金計算器
-const handleOpenCashCalculator = () => {
-  showCashCalculatorModal.value = true;
 };
 
 // 關閉現金計算器
@@ -158,23 +177,13 @@ const handleCloseCashCalculator = () => {
 // 關閉結帳模態窗
 const handleCloseCheckoutModal = () => {
   showCheckoutModal.value = false;
+  checkoutOrderId.value = null;
 };
 
-// 處理現金付款
+// 處理現金付款完成
 const handleCashPayment = async () => {
   try {
-    const response = await api.orderAdmin.updateOrderStatus({
-      brandId: counterStore.currentBrand,
-      storeId: counterStore.currentStore,
-      orderId: checkoutOrderId.value,
-      status: 'paid'
-    });
-
-    if (response.success) {
-      showCashCalculatorModal.value = false;
-      showCheckoutModal.value = false;
-      await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
-    }
+    await completePayment('cash', 'On-site');
   } catch (error) {
     console.error('現金付款處理失敗:', error);
     alert('現金付款處理失敗');

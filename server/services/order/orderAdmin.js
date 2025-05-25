@@ -143,14 +143,17 @@ export const updateOrder = async (orderId, updateData, adminId) => {
     throw new AppError('訂單不存在', 404);
   }
 
-  // 可更新的欄位
+  // 可更新的欄位 - 新增 paymentMethod 和 paymentType
   const allowedFields = [
     'status',
     'manualAdjustment',
     'notes',
     'estimatedPickupTime',
     'deliveryInfo',
-    'dineInInfo'
+    'dineInInfo',
+    'paymentMethod',
+    'paymentType',
+    'discounts'
   ];
 
   // 更新允許的欄位
