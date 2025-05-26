@@ -54,7 +54,7 @@
 
           <!-- 單選類型 -->
           <div v-if="optionCategory.inputType === 'single'" class="row g-2">
-            <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
+            <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
               <div class="card p-2 text-center option-card"
                 :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
                 @click="selectOption(optionCategory, option, 'single')">
@@ -68,8 +68,8 @@
 
           <!-- 多選類型 -->
           <div v-else class="row g-2">
-            <div v-for="option in optionCategory.options" :key="option._id" class="col-4 col-md-2">
-              <div class="card p-2 text-center option-card"
+            <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+              <div class="card p-2 text-center option-card h-100"
                 :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
                 @click="selectOption(optionCategory, option, 'multiple')">
                 <div class="card-body p-1">
@@ -437,6 +437,7 @@ watch(
   cursor: pointer;
   transition: all 0.2s;
   border-width: 2px;
+  min-width: 80px;
 }
 
 .option-card:hover {
