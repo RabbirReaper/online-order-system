@@ -179,7 +179,7 @@ export const useCounterStore = defineStore('counter', () => {
     return dishTemplates.value.find(template => template._id === templateId);
   }
 
-  // 生成購物車項目的唯一鍵值
+  // 生成購物車項目的唯一鍵值（僅用於比較，不用於合併）
   function generateItemKey(templateId, options, note = '') {
     let optionsKey = '';
     if (options && options.length > 0) {
@@ -190,6 +190,11 @@ export const useCounterStore = defineStore('counter', () => {
     }
     const noteKey = note ? `:${note}` : '';
     return `${templateId}:${optionsKey}${noteKey}`;
+  }
+
+  // 生成唯一的購物車項目 ID（每次都不同）
+  function generateUniqueItemId() {
+    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   // 獲取餐點的預設選項
@@ -230,7 +235,7 @@ export const useCounterStore = defineStore('counter', () => {
     addDishToCart(dishTemplate, defaultOptions, '');
   }
 
-  // 添加餐點到購物車 - 統一資料結構
+  // 添加餐點到購物車 - 移除合併邏輯，每次都新增獨立項目
   function addDishToCart(dishTemplate, options = [], note = '') {
     // 計算最終價格
     let finalPrice = dishTemplate.basePrice;
@@ -242,35 +247,29 @@ export const useCounterStore = defineStore('counter', () => {
       });
     });
 
-    // 生成唯一鍵值
+    // 生成唯一的項目 ID（每次都不同）
+    const uniqueId = generateUniqueItemId();
+
+    // 生成鍵值（用於後續合併比較）
     const itemKey = generateItemKey(dishTemplate._id, options, note);
 
-    // 檢查是否已存在相同配置的項目
-    const existingIndex = cart.value.findIndex(item => item.key === itemKey);
+    // 創建新的購物車項目 - 每次都新增，不再檢查重複
+    const cartItem = {
+      id: uniqueId, // 唯一 ID
+      key: itemKey, // 用於合併比較的鍵值
+      dishInstance: {
+        templateId: dishTemplate._id,
+        name: dishTemplate.name,
+        basePrice: dishTemplate.basePrice,
+        finalPrice: finalPrice,
+        options: options // 完整的選項資料，包含 name 和 price
+      },
+      quantity: 1,
+      note: note || '',
+      subtotal: finalPrice
+    };
 
-    if (existingIndex !== -1) {
-      // 如果存在，增加數量
-      const existingItem = cart.value[existingIndex];
-      existingItem.quantity += 1;
-      existingItem.subtotal = finalPrice * existingItem.quantity;
-    } else {
-      // 創建新的購物車項目 - 使用與 cart.js 一致的結構
-      const cartItem = {
-        key: itemKey,
-        dishInstance: {
-          templateId: dishTemplate._id,
-          name: dishTemplate.name,
-          basePrice: dishTemplate.basePrice,
-          finalPrice: finalPrice,
-          options: options // 完整的選項資料，包含 name 和 price
-        },
-        quantity: 1,
-        note: note || '',
-        subtotal: finalPrice
-      };
-
-      cart.value.push(cartItem);
-    }
+    cart.value.push(cartItem);
   }
 
   // 移除購物車項目
@@ -334,40 +333,25 @@ export const useCounterStore = defineStore('counter', () => {
     // 生成新的鍵值
     const newKey = generateItemKey(dishTemplate._id, options, note);
 
-    // 檢查是否與其他項目重複（排除當前編輯的項目）
-    const duplicateIndex = cart.value.findIndex((item, index) =>
-      index !== currentItemIndex.value && item.key === newKey
-    );
+    // 更新當前項目（不再檢查重複，每個項目都是獨立的）
+    const currentQuantity = cart.value[currentItemIndex.value].quantity;
+    cart.value[currentItemIndex.value] = {
+      ...cart.value[currentItemIndex.value], // 保留原有的 id
+      key: newKey,
+      dishInstance: {
+        templateId: dishTemplate._id,
+        name: dishTemplate.name,
+        basePrice: dishTemplate.basePrice,
+        finalPrice: finalPrice,
+        options: options
+      },
+      quantity: currentQuantity,
+      note: note || '',
+      subtotal: finalPrice * currentQuantity
+    };
 
-    if (duplicateIndex !== -1) {
-      // 如果與其他項目重複，合併數量並刪除當前項目
-      const currentQuantity = cart.value[currentItemIndex.value].quantity;
-      cart.value[duplicateIndex].quantity += currentQuantity;
-      cart.value[duplicateIndex].subtotal = finalPrice * cart.value[duplicateIndex].quantity;
-
-      // 刪除當前編輯的項目
-      cart.value.splice(currentItemIndex.value, 1);
-      clearCurrentItem();
-    } else {
-      // 更新當前項目
-      const currentQuantity = cart.value[currentItemIndex.value].quantity;
-      cart.value[currentItemIndex.value] = {
-        key: newKey,
-        dishInstance: {
-          templateId: dishTemplate._id,
-          name: dishTemplate.name,
-          basePrice: dishTemplate.basePrice,
-          finalPrice: finalPrice,
-          options: options
-        },
-        quantity: currentQuantity,
-        note: note || '',
-        subtotal: finalPrice * currentQuantity
-      };
-
-      // 更新當前項目的引用
-      currentItem.value = { ...cart.value[currentItemIndex.value] };
-    }
+    // 更新當前項目的引用
+    currentItem.value = { ...cart.value[currentItemIndex.value] };
   }
 
   // 更新當前項目（保留原方法以維持兼容性）
@@ -405,21 +389,20 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 提交訂單 - 使用客戶訂單 API
-  async function checkout(orderType, customerInfo = {}) {
-    if (cart.value.length === 0) {
-      throw new Error('購物車是空的');
-    }
+  // 合併相同配置的購物車項目（在送出訂單時執行）
+  function mergeCartItems(cartItems) {
+    const mergedItems = {};
 
-    isCheckingOut.value = true;
+    cartItems.forEach(item => {
+      const key = item.key;
 
-    try {
-      // 準備訂單資料 - 轉換為後端期望的格式
-      const orderData = {
-        orderType: orderType, // 'dine_in', 'takeout'
-        paymentType: 'On-site',
-        paymentMethod: 'cash',
-        items: cart.value.map(item => ({
+      if (mergedItems[key]) {
+        // 如果已存在相同配置，合併數量
+        mergedItems[key].quantity += item.quantity;
+        mergedItems[key].subtotal += item.subtotal;
+      } else {
+        // 否則新增項目
+        mergedItems[key] = {
           templateId: item.dishInstance.templateId,
           name: item.dishInstance.name,
           basePrice: item.dishInstance.basePrice,
@@ -428,7 +411,31 @@ export const useCounterStore = defineStore('counter', () => {
           quantity: item.quantity,
           subtotal: item.subtotal,
           note: item.note || ''
-        })),
+        };
+      }
+    });
+
+    return Object.values(mergedItems);
+  }
+
+  // 提交訂單 - 使用客戶訂單 API，在這裡執行合併
+  async function checkout(orderType, customerInfo = {}) {
+    if (cart.value.length === 0) {
+      throw new Error('購物車是空的');
+    }
+
+    isCheckingOut.value = true;
+
+    try {
+      // 在送出訂單時合併相同配置的項目
+      const mergedItems = mergeCartItems(cart.value);
+
+      // 準備訂單資料 - 轉換為後端期望的格式
+      const orderData = {
+        orderType: orderType, // 'dine_in', 'takeout'
+        paymentType: 'On-site',
+        paymentMethod: 'cash',
+        items: mergedItems, // 使用合併後的項目
         customerInfo: customerInfo,
         notes: '',
         manualAdjustment: adjustment.value,
@@ -583,6 +590,7 @@ export const useCounterStore = defineStore('counter', () => {
     setDiscount,
     clearCart,
     cancelOrder,
+    mergeCartItems,
     checkout,
     selectOrder,
     formatTime,
