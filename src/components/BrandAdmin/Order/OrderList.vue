@@ -109,6 +109,33 @@
 
     <!-- 中部分：圖表顯示 -->
     <div v-else-if="allOrders.length > 0" class="row mb-4">
+      <!-- 總營業額顯示 -->
+      <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-body text-center py-4">
+            <div class="row align-items-center">
+              <div class="col-md-4">
+                <div class="summary-item">
+                  <h2 class="text-success mb-1 fw-bold">${{ summaryData.totalAmount.toLocaleString() }}</h2>
+                  <p class="text-muted mb-0 fs-5">總營業額</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="summary-item">
+                  <h2 class="text-primary mb-1 fw-bold">{{ summaryData.totalOrders }}</h2>
+                  <p class="text-muted mb-0 fs-5">總訂單數</p>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="summary-item">
+                  <h2 class="text-info mb-1 fw-bold">${{ summaryData.averageOrderValue.toLocaleString() }}</h2>
+                  <p class="text-muted mb-0 fs-5">平均客單價</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
@@ -133,26 +160,7 @@
       <div class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
-            <div class="row text-center">
-              <div class="col-6">
-                <h3 class="text-success">${{ summaryData.totalAmount }}</h3>
-                <p class="text-muted">總營業額</p>
-              </div>
-              <div class="col-6">
-                <h3 class="text-primary">{{ summaryData.totalOrders }}</h3>
-                <p class="text-muted">總訂單數</p>
-              </div>
-            </div>
-            <div class="row text-center mt-3">
-              <div class="col-6">
-                <h5 class="text-info">{{ summaryData.paidOrders }}</h5>
-                <p class="text-muted">已付款</p>
-              </div>
-              <div class="col-6">
-                <h5 class="text-warning">{{ summaryData.unpaidOrders }}</h5>
-                <p class="text-muted">未付款</p>
-              </div>
-            </div>
+            <PaymentMethodsPieChart :payment-methods="paymentMethodsData" :height="450" />
           </div>
         </div>
       </div>
@@ -253,6 +261,7 @@ import OrderDetailModal from '@/components/BrandAdmin/Order/OrderDetailModal.vue
 import HourlyOrdersLineChart from '@/components/BrandAdmin/Order/Charts/HourlyOrdersLineChart.vue';
 import OrderTypesPieChart from '@/components/BrandAdmin/Order/Charts/OrderTypesPieChart.vue';
 import DishSalesBarChart from '@/components/BrandAdmin/Order/Charts/DishSalesBarChart.vue';
+import PaymentMethodsPieChart from '@/components/BrandAdmin/Order/Charts/PaymentMethodsPieChart.vue';
 
 const route = useRoute();
 const brandId = computed(() => route.params.brandId);
@@ -284,7 +293,7 @@ const pagination = reactive({
   currentPage: 1,
   totalPages: 0,
   total: 0,
-  limit: 20
+  limit: 10
 });
 
 // 日期處理函數
@@ -434,12 +443,24 @@ const popularDishesData = computed(() => {
   return dishArray;
 });
 
+const paymentMethodsData = computed(() => {
+  const methods = {};
+
+  allOrders.value.forEach(order => {
+    const displayMethod = formatPaymentMethod(order.paymentMethod);
+    methods[displayMethod] = (methods[displayMethod] || 0) + 1;
+  });
+
+  return methods;
+});
+
 const summaryData = computed(() => {
   const data = {
     totalOrders: allOrders.value.length,
     totalAmount: 0,
     paidOrders: 0,
-    unpaidOrders: 0
+    unpaidOrders: 0,
+    averageOrderValue: 0
   };
 
   allOrders.value.forEach(order => {
@@ -450,6 +471,9 @@ const summaryData = computed(() => {
       data.unpaidOrders++;
     }
   });
+
+  // 計算平均客單價
+  data.averageOrderValue = data.totalOrders > 0 ? (data.totalAmount / data.totalOrders) : 0;
 
   return data;
 });
@@ -712,7 +736,7 @@ watch(() => route.params.storeId, async (newStoreId, oldStoreId) => {
 }
 
 .pagination .page-item.active .page-link {
-  background-color: #0d6efd;
+  background-color: #1a56b03e;
   border-color: #0d6efd;
 }
 
@@ -757,5 +781,33 @@ watch(() => route.params.storeId, async (newStoreId, oldStoreId) => {
   background-color: #6c757d;
   border-color: #6c757d;
   color: white;
+}
+
+/* 總營業額摘要樣式 */
+.summary-item {
+  padding: 1rem;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.summary-item:hover {
+  transform: translateY(-2px);
+}
+
+.summary-item h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .summary-item {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+  }
+
+  .summary-item h2 {
+    font-size: 2rem;
+  }
 }
 </style>
