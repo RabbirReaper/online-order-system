@@ -1,18 +1,18 @@
 <template>
   <div>
     <h5 class="mb-3">訂單詳情</h5>
-    <div v-if="cart.length === 0" class="text-center p-5 text-muted">
+    <div v-if="counterStore.cart.length === 0" class="text-center p-5 text-muted">
       <p>尚未選擇餐點</p>
     </div>
     <div v-else>
-      <div v-for="(item, index) in cart" :key="index" class="cart-item card mb-3 border-0 shadow-sm"
+      <div v-for="(item, index) in counterStore.cart" :key="index" class="cart-item card mb-3 border-0 shadow-sm"
         :class="{ 'editing': isCurrentlyEditing(index) }">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start mb-2">
             <h6 class="card-title mb-0 fw-bold">{{ item.dishInstance.name }}</h6>
             <div class="d-flex">
               <div class="item-price fw-bold me-2">${{ item.subtotal }}</div>
-              <button class="btn btn-sm btn-outline-danger" @click="$emit('removeFromCart', index)">
+              <button class="btn btn-sm btn-outline-danger" @click="counterStore.removeFromCart(index)">
                 <i class="bi bi-x"></i>
               </button>
             </div>
@@ -44,9 +44,10 @@
             </button>
 
             <div class="quantity-control d-flex align-items-center">
-              <button class="btn btn-sm btn-outline-secondary" @click="$emit('updateQuantity', index, -1)">-</button>
+              <button class="btn btn-sm btn-outline-secondary"
+                @click="counterStore.updateQuantity(index, -1)">-</button>
               <span class="mx-2">{{ item.quantity }}</span>
-              <button class="btn btn-sm btn-outline-secondary" @click="$emit('updateQuantity', index, 1)">+</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="counterStore.updateQuantity(index, 1)">+</button>
             </div>
           </div>
         </div>
@@ -55,19 +56,20 @@
       <div class="order-total mt-3">
         <div class="d-flex justify-content-between mb-2">
           <span>小計</span>
-          <span>${{ subtotal }}</span>
+          <span>${{ counterStore.subtotal }}</span>
         </div>
 
         <!-- 訂單調帳 -->
         <div class="d-flex justify-content-between mb-2">
           <div class="d-flex align-items-center">
             <span>訂單調帳</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2" @click="$emit('openAdjustmentModal')">
+            <button class="btn btn-sm btn-outline-secondary ms-2" @click="counterStore.openAdjustmentModal()">
               <i class="bi bi-pencil-square"></i>
             </button>
           </div>
-          <span :class="{ 'text-success': adjustment > 0, 'text-danger': adjustment < 0 }">
-            {{ adjustment > 0 ? '+' : '' }}${{ Math.abs(adjustment) }}
+          <span
+            :class="{ 'text-success': counterStore.manualAdjustment > 0, 'text-danger': counterStore.manualAdjustment < 0 }">
+            {{ counterStore.manualAdjustment > 0 ? '+' : '' }}${{ Math.abs(counterStore.manualAdjustment) }}
           </span>
         </div>
 
@@ -75,16 +77,16 @@
         <div class="d-flex justify-content-between mb-2">
           <div class="d-flex align-items-center">
             <span>訂單折扣</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2" @click="$emit('openDiscountModal')">
+            <button class="btn btn-sm btn-outline-secondary ms-2" @click="counterStore.openDiscountModal()">
               <i class="bi bi-percent"></i>
             </button>
           </div>
-          <span class="text-danger">${{ discount }}</span>
+          <span class="text-danger">${{ counterStore.totalDiscount }}</span>
         </div>
 
         <div class="d-flex justify-content-between fw-bold">
           <span>總計</span>
-          <span>${{ total }}</span>
+          <span>${{ counterStore.total }}</span>
         </div>
       </div>
     </div>
@@ -95,38 +97,11 @@
 import { computed } from 'vue';
 import { useCounterStore } from '@/stores/counter';
 
-const props = defineProps({
-  cart: {
-    type: Array,
-    required: true
-  },
-  subtotal: {
-    type: Number,
-    required: true
-  },
-  adjustment: {
-    type: Number,
-    required: true
-  },
-  discount: {
-    type: Number,
-    required: true
-  },
-  total: {
-    type: Number,
-    required: true
-  }
-});
-
 const emit = defineEmits([
-  'removeFromCart',
-  'selectCurrentItem',
-  'updateQuantity',
-  'openAdjustmentModal',
-  'openDiscountModal'
+  'selectCurrentItem'
 ]);
 
-// 使用 counter store 來檢查編輯狀態
+// 使用 counter store 獲取所有資料
 const counterStore = useCounterStore();
 
 // 檢查當前項目是否正在編輯

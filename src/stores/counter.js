@@ -16,51 +16,251 @@ export const useCounterStore = defineStore('counter', () => {
   const cart = ref([]);
   const currentItem = ref(null);
   const currentItemIndex = ref(null);
-  const adjustment = ref(0);
-  const discount = ref(0);
+  const manualAdjustment = ref(0); // 與 schema 保持一致
+  const totalDiscount = ref(0); // 與 schema 保持一致
   const isCheckingOut = ref(false);
-  const isEditMode = ref(false); // 新增編輯模式狀態
+  const isEditMode = ref(false);
 
   // 訂單相關
   const todayOrders = ref([]);
   const selectedOrder = ref(null);
   const currentDate = ref('');
 
-  // 計算屬性
+  // 模態框狀態管理
+  const modals = ref({
+    adjustment: {
+      show: false,
+      tempAdjustment: 0,
+      adjustmentType: 'add', // 'add' 或 'subtract'
+      editingOrder: null
+    },
+    discount: {
+      show: false,
+      tempDiscount: 0,
+      editingOrder: null
+    },
+    checkout: {
+      show: false,
+      total: 0,
+      orderId: null
+    },
+    cashCalculator: {
+      show: false,
+      total: 0
+    },
+    tableNumber: {
+      show: false
+    }
+  });
+
+  // 計算屬性 - 購物車
   const subtotal = computed(() => {
     return cart.value.reduce((total, item) => {
-      // 統一使用 subtotal 計算，與 cart.js 保持一致
       return total + (item.subtotal || 0);
     }, 0);
   });
 
   const total = computed(() => {
-    return Math.max(0, subtotal.value + adjustment.value - discount.value);
+    return Math.max(0, subtotal.value + manualAdjustment.value - totalDiscount.value);
   });
 
-  // 台灣時區日期處理工具函數 - 修復版
+  // 計算屬性 - 訂單相關（與 schema 命名一致）
+  const calculateOrderSubtotal = (order) => {
+    if (!order || !order.items) return 0;
+    return order.items.reduce((total, item) => total + (item.subtotal || 0), 0);
+  };
+
+  const calculateOrderTotalDiscount = (order) => {
+    if (!order || !order.discounts) return 0;
+    return order.discounts.reduce((total, discount) => total + (discount.amount || 0), 0);
+  };
+
+  const calculateOrderTotal = (order) => {
+    if (!order) return 0;
+    const itemsSubtotal = calculateOrderSubtotal(order);
+    const adjustment = order.manualAdjustment || 0;
+    const discounts = calculateOrderTotalDiscount(order);
+    return Math.max(0, itemsSubtotal + adjustment - discounts);
+  };
+
+  // 台灣時區日期處理工具函數
   const getTaiwanDate = (date = null) => {
     if (date) {
-      // 如果提供了日期，直接返回 YYYY-MM-DD 格式
       if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
         return date;
       }
       const targetDate = new Date(date);
       return targetDate.toISOString().split('T')[0];
     }
-
-    // 獲取當前台灣時間的日期
     const now = new Date();
-    // 台灣時區是 UTC+8
     const taiwanTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (8 * 3600000));
     return taiwanTime.toISOString().split('T')[0];
   };
 
   const getTaiwanDateTime = (date = null) => {
     const targetDate = date ? new Date(date) : new Date();
-    // 台灣時區是 UTC+8
     const taiwanTime = new Date(targetDate.getTime() + (targetDate.getTimezoneOffset() * 60000) + (8 * 3600000));
     return taiwanTime;
+  };
+
+  // 模態框管理方法
+  const openAdjustmentModal = (order = null) => {
+    if (order) {
+      modals.value.adjustment.editingOrder = order;
+      modals.value.adjustment.tempAdjustment = Math.abs(order.manualAdjustment || 0);
+      modals.value.adjustment.adjustmentType = (order.manualAdjustment || 0) >= 0 ? 'add' : 'subtract';
+    } else {
+      modals.value.adjustment.editingOrder = null;
+      modals.value.adjustment.tempAdjustment = Math.abs(manualAdjustment.value);
+      modals.value.adjustment.adjustmentType = manualAdjustment.value >= 0 ? 'add' : 'subtract';
+    }
+    modals.value.adjustment.show = true;
+  };
+
+  const openDiscountModal = (order = null) => {
+    if (order) {
+      modals.value.discount.editingOrder = order;
+      modals.value.discount.tempDiscount = calculateOrderTotalDiscount(order);
+    } else {
+      modals.value.discount.editingOrder = null;
+      modals.value.discount.tempDiscount = totalDiscount.value;
+    }
+    modals.value.discount.show = true;
+  };
+
+  const openCheckoutModal = (orderId, total) => {
+    modals.value.checkout.orderId = orderId;
+    modals.value.checkout.total = total;
+    modals.value.checkout.show = true;
+  };
+
+  const openCashCalculatorModal = (total) => {
+    modals.value.cashCalculator.total = total;
+    modals.value.cashCalculator.show = true;
+  };
+
+  const openTableNumberModal = () => {
+    modals.value.tableNumber.show = true;
+  };
+
+  const closeModal = (modalName) => {
+    if (modals.value[modalName]) {
+      modals.value[modalName].show = false;
+      // 重置相關狀態
+      if (modalName === 'adjustment') {
+        modals.value.adjustment.editingOrder = null;
+        modals.value.adjustment.tempAdjustment = 0;
+      } else if (modalName === 'discount') {
+        modals.value.discount.editingOrder = null;
+        modals.value.discount.tempDiscount = 0;
+      } else if (modalName === 'checkout') {
+        modals.value.checkout.orderId = null;
+        modals.value.checkout.total = 0;
+      }
+    }
+  };
+
+  // 調帳相關方法
+  const setAdjustmentType = (type) => {
+    modals.value.adjustment.adjustmentType = type;
+    modals.value.adjustment.tempAdjustment = 0;
+  };
+
+  const appendToAdjustment = (num) => {
+    modals.value.adjustment.tempAdjustment = parseInt(`${modals.value.adjustment.tempAdjustment}${num}`);
+  };
+
+  const clearAdjustment = () => {
+    modals.value.adjustment.tempAdjustment = 0;
+  };
+
+  const confirmAdjustment = async () => {
+    const newAdjustment = modals.value.adjustment.adjustmentType === 'add'
+      ? modals.value.adjustment.tempAdjustment
+      : -modals.value.adjustment.tempAdjustment;
+
+    if (modals.value.adjustment.editingOrder) {
+      // 更新訂單調帳
+      try {
+        const response = await api.orderAdmin.updateOrder({
+          brandId: currentBrand.value,
+          storeId: currentStore.value,
+          orderId: modals.value.adjustment.editingOrder._id,
+          updateData: { manualAdjustment: newAdjustment }
+        });
+
+        if (response.success) {
+          await fetchTodayOrders(currentBrand.value, currentStore.value);
+          if (selectedOrder.value && selectedOrder.value._id === modals.value.adjustment.editingOrder._id) {
+            const updatedOrder = await api.orderAdmin.getOrderById({
+              brandId: currentBrand.value,
+              storeId: currentStore.value,
+              orderId: modals.value.adjustment.editingOrder._id
+            });
+            if (updatedOrder.success) {
+              selectOrder(updatedOrder.order);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('更新訂單調帳失敗:', error);
+        throw new Error('調整訂單失敗');
+      }
+    } else {
+      // 更新購物車調帳
+      manualAdjustment.value = newAdjustment;
+    }
+
+    closeModal('adjustment');
+  };
+
+  // 折扣相關方法
+  const appendToDiscount = (num) => {
+    modals.value.discount.tempDiscount = parseInt(`${modals.value.discount.tempDiscount}${num}`);
+  };
+
+  const clearDiscount = () => {
+    modals.value.discount.tempDiscount = 0;
+  };
+
+  const confirmDiscount = async () => {
+    if (modals.value.discount.editingOrder) {
+      // 更新訂單折扣
+      try {
+        const response = await api.orderAdmin.updateOrder({
+          brandId: currentBrand.value,
+          storeId: currentStore.value,
+          orderId: modals.value.discount.editingOrder._id,
+          updateData: {
+            discounts: modals.value.discount.tempDiscount > 0
+              ? [{ amount: modals.value.discount.tempDiscount }]
+              : []
+          }
+        });
+
+        if (response.success) {
+          await fetchTodayOrders(currentBrand.value, currentStore.value);
+          if (selectedOrder.value && selectedOrder.value._id === modals.value.discount.editingOrder._id) {
+            const updatedOrder = await api.orderAdmin.getOrderById({
+              brandId: currentBrand.value,
+              storeId: currentStore.value,
+              orderId: modals.value.discount.editingOrder._id
+            });
+            if (updatedOrder.success) {
+              selectOrder(updatedOrder.order);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('更新訂單折扣失敗:', error);
+        throw new Error('調整訂單失敗');
+      }
+    } else {
+      // 更新購物車折扣
+      totalDiscount.value = modals.value.discount.tempDiscount;
+    }
+
+    closeModal('discount');
   };
 
   // 方法
@@ -71,8 +271,6 @@ export const useCounterStore = defineStore('counter', () => {
 
   function setActiveComponent(component) {
     activeComponent.value = component;
-
-    // 切換到訂單頁面時載入當日訂單
     if (component === 'Orders') {
       fetchTodayOrders(currentBrand.value, currentStore.value);
     }
@@ -102,8 +300,6 @@ export const useCounterStore = defineStore('counter', () => {
 
       if (response.success) {
         menuData.value = response.menu;
-
-        // 載入餐點模板詳細資料
         await fetchDishTemplates(brandId);
         await fetchOptionCategoriesWithOptions(brandId);
       }
@@ -125,10 +321,9 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 載入選項類別（使用統一的 API，確保資料結構一致）
+  // 載入選項類別
   async function fetchOptionCategoriesWithOptions(brandId) {
     try {
-      // 使用 getAllOptionCategories，它會 populate 完整的選項資料
       const response = await api.dish.getAllOptionCategories(brandId);
       if (response.success) {
         optionCategories.value = response.categories;
@@ -138,18 +333,16 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 改善當日訂單載入，正確處理台灣時區
+  // 載入當日訂單
   async function fetchTodayOrders(brandId, storeId) {
     const taiwanToday = getTaiwanDate();
     return await fetchOrdersByDate(brandId, storeId, taiwanToday);
   }
 
-  // 新增按日期載入訂單的方法 - 修復版
+  // 按日期載入訂單
   async function fetchOrdersByDate(brandId, storeId, dateString) {
     try {
-      // 確保日期格式正確 (YYYY-MM-DD)
       const normalizedDate = getTaiwanDate(dateString);
-
       const response = await api.orderAdmin.getStoreOrders({
         brandId,
         storeId,
@@ -159,10 +352,8 @@ export const useCounterStore = defineStore('counter', () => {
 
       if (response.success) {
         todayOrders.value = response.orders;
-        // 更新當前日期顯示
         const displayDate = new Date(normalizedDate + 'T00:00:00');
         currentDate.value = displayDate.toLocaleDateString('zh-TW');
-
         return response;
       } else {
         console.error('API 回應失敗:', response);
@@ -179,7 +370,7 @@ export const useCounterStore = defineStore('counter', () => {
     return dishTemplates.value.find(template => template._id === templateId);
   }
 
-  // 生成購物車項目的唯一鍵值（僅用於比較，不用於合併）
+  // 生成購物車項目的唯一鍵值
   function generateItemKey(templateId, options, note = '') {
     let optionsKey = '';
     if (options && options.length > 0) {
@@ -192,7 +383,7 @@ export const useCounterStore = defineStore('counter', () => {
     return `${templateId}:${optionsKey}${noteKey}`;
   }
 
-  // 生成唯一的購物車項目 ID（每次都不同）
+  // 生成唯一的購物車項目 ID
   function generateUniqueItemId() {
     return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -206,7 +397,6 @@ export const useCounterStore = defineStore('counter', () => {
         const category = optionCategories.value.find(cat => cat._id === categoryRef.categoryId);
 
         if (category && category.inputType === 'single' && category.options && category.options.length > 0) {
-          // 單選類型：選擇第一個選項作為預設
           const firstOption = category.options[0];
           const optionId = firstOption.refOption ? firstOption.refOption._id : firstOption._id;
           const optionName = firstOption.refOption ? firstOption.refOption.name : firstOption.name;
@@ -222,47 +412,40 @@ export const useCounterStore = defineStore('counter', () => {
             }]
           });
         }
-        // 多選類型：不預設選擇任何選項
       });
     }
 
     return defaultOptions;
   }
 
-  // 快速添加餐點到購物車（使用預設選項）
+  // 快速添加餐點到購物車
   function quickAddDishToCart(dishTemplate) {
     const defaultOptions = getDefaultOptionsForDish(dishTemplate);
     addDishToCart(dishTemplate, defaultOptions, '');
   }
 
-  // 添加餐點到購物車 - 移除合併邏輯，每次都新增獨立項目
+  // 添加餐點到購物車
   function addDishToCart(dishTemplate, options = [], note = '') {
-    // 計算最終價格
     let finalPrice = dishTemplate.basePrice;
 
-    // 加上選項價格
     options.forEach(category => {
       category.selections.forEach(selection => {
         finalPrice += selection.price || 0;
       });
     });
 
-    // 生成唯一的項目 ID（每次都不同）
     const uniqueId = generateUniqueItemId();
-
-    // 生成鍵值（用於後續合併比較）
     const itemKey = generateItemKey(dishTemplate._id, options, note);
 
-    // 創建新的購物車項目 - 每次都新增，不再檢查重複
     const cartItem = {
-      id: uniqueId, // 唯一 ID
-      key: itemKey, // 用於合併比較的鍵值
+      id: uniqueId,
+      key: itemKey,
       dishInstance: {
         templateId: dishTemplate._id,
         name: dishTemplate.name,
         basePrice: dishTemplate.basePrice,
         finalPrice: finalPrice,
-        options: options // 完整的選項資料，包含 name 和 price
+        options: options
       },
       quantity: 1,
       note: note || '',
@@ -276,11 +459,9 @@ export const useCounterStore = defineStore('counter', () => {
   function removeFromCart(index) {
     if (index >= 0 && index < cart.value.length) {
       cart.value.splice(index, 1);
-      // 如果刪除的是正在編輯的項目，清空編輯狀態
       if (currentItemIndex.value === index) {
         clearCurrentItem();
       } else if (currentItemIndex.value > index) {
-        // 如果刪除的項目在當前編輯項目之前，調整索引
         currentItemIndex.value--;
       }
     }
@@ -315,14 +496,13 @@ export const useCounterStore = defineStore('counter', () => {
     isEditMode.value = false;
   }
 
-  // 即時更新購物車項目（編輯模式專用）
+  // 即時更新購物車項目
   function updateCartItemRealtime(options, note = '') {
     if (currentItemIndex.value === null || !currentItem.value) return;
 
     const dishTemplate = getDishTemplate(currentItem.value.dishInstance.templateId);
     if (!dishTemplate) return;
 
-    // 計算新的最終價格
     let finalPrice = dishTemplate.basePrice;
     options.forEach(category => {
       category.selections.forEach(selection => {
@@ -330,13 +510,11 @@ export const useCounterStore = defineStore('counter', () => {
       });
     });
 
-    // 生成新的鍵值
     const newKey = generateItemKey(dishTemplate._id, options, note);
-
-    // 更新當前項目（不再檢查重複，每個項目都是獨立的）
     const currentQuantity = cart.value[currentItemIndex.value].quantity;
+
     cart.value[currentItemIndex.value] = {
-      ...cart.value[currentItemIndex.value], // 保留原有的 id
+      ...cart.value[currentItemIndex.value],
       key: newKey,
       dishInstance: {
         templateId: dishTemplate._id,
@@ -350,11 +528,10 @@ export const useCounterStore = defineStore('counter', () => {
       subtotal: finalPrice * currentQuantity
     };
 
-    // 更新當前項目的引用
     currentItem.value = { ...cart.value[currentItemIndex.value] };
   }
 
-  // 更新當前項目（保留原方法以維持兼容性）
+  // 更新當前項目
   function updateCurrentItem(updatedItem) {
     if (currentItemIndex.value !== null) {
       cart.value[currentItemIndex.value] = { ...updatedItem };
@@ -363,13 +540,13 @@ export const useCounterStore = defineStore('counter', () => {
   }
 
   // 設置調帳
-  function setAdjustment(amount) {
-    adjustment.value = amount;
+  function setManualAdjustment(amount) {
+    manualAdjustment.value = amount;
   }
 
   // 設置折扣
-  function setDiscount(amount) {
-    discount.value = amount;
+  function setTotalDiscount(amount) {
+    totalDiscount.value = amount;
   }
 
   // 清空購物車
@@ -377,8 +554,8 @@ export const useCounterStore = defineStore('counter', () => {
     cart.value = [];
     currentItem.value = null;
     currentItemIndex.value = null;
-    adjustment.value = 0;
-    discount.value = 0;
+    manualAdjustment.value = 0;
+    totalDiscount.value = 0;
     isEditMode.value = false;
   }
 
@@ -389,7 +566,7 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  // 合併相同配置的購物車項目（在送出訂單時執行）
+  // 合併相同配置的購物車項目
   function mergeCartItems(cartItems) {
     const mergedItems = {};
 
@@ -397,11 +574,9 @@ export const useCounterStore = defineStore('counter', () => {
       const key = item.key;
 
       if (mergedItems[key]) {
-        // 如果已存在相同配置，合併數量
         mergedItems[key].quantity += item.quantity;
         mergedItems[key].subtotal += item.subtotal;
       } else {
-        // 否則新增項目
         mergedItems[key] = {
           templateId: item.dishInstance.templateId,
           name: item.dishInstance.name,
@@ -418,7 +593,7 @@ export const useCounterStore = defineStore('counter', () => {
     return Object.values(mergedItems);
   }
 
-  // 提交訂單 - 使用客戶訂單 API，在這裡執行合併
+  // 提交訂單
   async function checkout(orderType, customerInfo = {}) {
     if (cart.value.length === 0) {
       throw new Error('購物車是空的');
@@ -427,29 +602,25 @@ export const useCounterStore = defineStore('counter', () => {
     isCheckingOut.value = true;
 
     try {
-      // 在送出訂單時合併相同配置的項目
       const mergedItems = mergeCartItems(cart.value);
 
-      // 準備訂單資料 - 轉換為後端期望的格式
       const orderData = {
-        orderType: orderType, // 'dine_in', 'takeout'
+        orderType: orderType,
         paymentType: 'On-site',
         paymentMethod: 'cash',
-        items: mergedItems, // 使用合併後的項目
+        items: mergedItems,
         customerInfo: customerInfo,
         notes: '',
-        manualAdjustment: adjustment.value,
-        discounts: discount.value > 0 ? [{ amount: discount.value }] : []
+        manualAdjustment: manualAdjustment.value,
+        discounts: totalDiscount.value > 0 ? [{ amount: totalDiscount.value }] : []
       };
 
-      // 根據訂單類型添加特定資訊
       if (orderType === 'dine_in' && customerInfo.tableNumber) {
         orderData.dineInInfo = {
           tableNumber: customerInfo.tableNumber
         };
       }
 
-      // 使用客戶訂單 API 創建訂單
       const response = await api.orderCustomer.createOrder({
         brandId: currentBrand.value,
         storeId: currentStore.value,
@@ -457,12 +628,8 @@ export const useCounterStore = defineStore('counter', () => {
       });
 
       if (response.success) {
-        // 清空購物車
         clearCart();
-
-        // 重新載入訂單列表
         await fetchTodayOrders(currentBrand.value, currentStore.value);
-
         return response.order;
       } else {
         throw new Error(response.message || '訂單提交失敗');
@@ -480,7 +647,7 @@ export const useCounterStore = defineStore('counter', () => {
     selectedOrder.value = order;
   }
 
-  // 格式化時間 - 使用台灣時區
+  // 格式化時間
   function formatTime(dateTime) {
     const date = new Date(dateTime);
     return date.toLocaleTimeString('zh-TW', {
@@ -490,7 +657,7 @@ export const useCounterStore = defineStore('counter', () => {
     });
   }
 
-  // 格式化日期時間 - 使用台灣時區
+  // 格式化日期時間
   function formatDateTime(dateTime) {
     const date = new Date(dateTime);
     return date.toLocaleString('zh-TW', {
@@ -553,17 +720,38 @@ export const useCounterStore = defineStore('counter', () => {
     cart,
     currentItem,
     currentItemIndex,
-    adjustment,
-    discount,
+    manualAdjustment,
+    totalDiscount,
     isCheckingOut,
     isEditMode,
     todayOrders,
     selectedOrder,
     currentDate,
+    modals,
 
     // 計算屬性
     subtotal,
     total,
+
+    // 訂單計算方法
+    calculateOrderSubtotal,
+    calculateOrderTotalDiscount,
+    calculateOrderTotal,
+
+    // 模態框管理
+    openAdjustmentModal,
+    openDiscountModal,
+    openCheckoutModal,
+    openCashCalculatorModal,
+    openTableNumberModal,
+    closeModal,
+    setAdjustmentType,
+    appendToAdjustment,
+    clearAdjustment,
+    confirmAdjustment,
+    appendToDiscount,
+    clearDiscount,
+    confirmDiscount,
 
     // 方法
     setBrandAndStore,
@@ -586,8 +774,8 @@ export const useCounterStore = defineStore('counter', () => {
     clearCurrentItem,
     updateCartItemRealtime,
     updateCurrentItem,
-    setAdjustment,
-    setDiscount,
+    setManualAdjustment,
+    setTotalDiscount,
     clearCart,
     cancelOrder,
     mergeCartItems,

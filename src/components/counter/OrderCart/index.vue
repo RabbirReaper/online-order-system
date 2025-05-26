@@ -4,16 +4,12 @@
     <div class="order-details flex-grow-1 overflow-auto">
       <template v-if="counterStore.selectedOrder && isOrdersActive">
         <!-- 訂單詳情模式 -->
-        <OrderDetails :selected-order="counterStore.selectedOrder" @open-adjustment-modal="openAdjustmentModal"
-          @open-discount-modal="openDiscountModal" />
+        <OrderDetails :selected-order="counterStore.selectedOrder" />
       </template>
 
       <template v-else>
         <!-- 購物車模式 -->
-        <ShoppingCart :cart="counterStore.cart" :subtotal="counterStore.subtotal" :adjustment="counterStore.adjustment"
-          :discount="counterStore.discount" :total="counterStore.total" @remove-from-cart="counterStore.removeFromCart"
-          @select-current-item="handleSelectCurrentItem" @update-quantity="counterStore.updateQuantity"
-          @open-adjustment-modal="openCartAdjustmentModal" @open-discount-modal="openCartDiscountModal" />
+        <ShoppingCart @select-current-item="handleSelectCurrentItem" />
       </template>
     </div>
 
@@ -24,27 +20,31 @@
       @submit-order="submitOrder" />
 
     <!-- 模態框 -->
-    <AdjustmentModal v-if="showAdjustmentModal" :temp-adjustment="tempAdjustment" :adjustment-type="adjustmentType"
-      @close="showAdjustmentModal = false" @set-adjustment-type="setAdjustmentType"
-      @append-adjustment="appendToAdjustment" @clear-adjustment="clearAdjustment" @confirm="confirmAdjustment" />
+    <AdjustmentModal v-if="counterStore.modals.adjustment.show"
+      :temp-adjustment="counterStore.modals.adjustment.tempAdjustment"
+      :adjustment-type="counterStore.modals.adjustment.adjustmentType" @close="counterStore.closeModal('adjustment')"
+      @set-adjustment-type="counterStore.setAdjustmentType" @append-adjustment="counterStore.appendToAdjustment"
+      @clear-adjustment="counterStore.clearAdjustment" @confirm="handleConfirmAdjustment" />
 
-    <DiscountModal v-if="showDiscountModal" :temp-discount="tempDiscount" @close="showDiscountModal = false"
-      @append-discount="appendToDiscount" @clear-discount="clearDiscount" @confirm="confirmDiscount" />
+    <DiscountModal v-if="counterStore.modals.discount.show" :temp-discount="counterStore.modals.discount.tempDiscount"
+      @close="counterStore.closeModal('discount')" @append-discount="counterStore.appendToDiscount"
+      @clear-discount="counterStore.clearDiscount" @confirm="handleConfirmDiscount" />
 
-    <CheckoutModal v-model="showCheckoutModal" :total="checkoutTotal" @close="handleCloseCheckoutModal"
-      @payment-selected="handlePaymentSelected" />
+    <CheckoutModal v-model="counterStore.modals.checkout.show" :total="counterStore.modals.checkout.total"
+      @close="counterStore.closeModal('checkout')" @payment-selected="handlePaymentSelected" />
 
-    <CashCalculatorModal v-if="showCashCalculatorModal" :total="checkoutTotal" @close="handleCloseCashCalculator"
+    <CashCalculatorModal v-if="counterStore.modals.cashCalculator.show"
+      :total="counterStore.modals.cashCalculator.total" @close="counterStore.closeModal('cashCalculator')"
       @complete="handleCashPayment" />
 
     <!-- 桌號輸入模態框 -->
-    <TableNumberModal v-if="showTableNumberModal" @close="showTableNumberModal = false"
+    <TableNumberModal v-if="counterStore.modals.tableNumber.show" @close="counterStore.closeModal('tableNumber')"
       @confirm="handleTableNumberConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useCounterStore } from '@/stores/counter';
 import api from '@/api';
 
@@ -67,21 +67,6 @@ const props = defineProps({
 // 使用 Pinia store
 const counterStore = useCounterStore();
 
-// 調帳和折扣相關狀態
-const showAdjustmentModal = ref(false);
-const showDiscountModal = ref(false);
-const tempAdjustment = ref(0);
-const tempDiscount = ref(0);
-const adjustmentType = ref('add'); // 'add' 或 'subtract'
-const editingOrder = ref(null);
-
-// 結帳相關狀態
-const showCheckoutModal = ref(false);
-const showCashCalculatorModal = ref(false);
-const showTableNumberModal = ref(false);
-const checkoutTotal = ref(0);
-const checkoutOrderId = ref(null);
-
 // 計算屬性
 const isOrdersActive = computed(() => counterStore.activeComponent === 'Orders');
 
@@ -90,9 +75,8 @@ const updateOrderStatus = async (orderId, status) => {
   try {
     if (status === 'paid') {
       // 如果是完成訂單（結帳），顯示結帳模態框
-      checkoutOrderId.value = orderId;
-      checkoutTotal.value = calculateOrderTotal(counterStore.selectedOrder);
-      showCheckoutModal.value = true;
+      const total = counterStore.calculateOrderTotal(counterStore.selectedOrder);
+      counterStore.openCheckoutModal(orderId, total);
     } else {
       // 其他狀態變更
       const response = await api.orderAdmin.updateOrderStatus({
@@ -132,7 +116,7 @@ const handlePaymentSelected = async (paymentData) => {
   try {
     if (paymentMethod === 'cash') {
       // 現金付款 - 開啟現金計算器
-      showCashCalculatorModal.value = true;
+      counterStore.openCashCalculatorModal(counterStore.modals.checkout.total);
     } else {
       // 信用卡或 LINE Pay - 直接完成付款
       await completePayment(paymentMethod, paymentType);
@@ -159,25 +143,14 @@ const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') 
     });
 
     if (response.success) {
-      showCheckoutModal.value = false;
-      showCashCalculatorModal.value = false;
+      counterStore.closeModal('checkout');
+      counterStore.closeModal('cashCalculator');
       await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
     }
   } catch (error) {
     console.error('完成付款失敗:', error);
     throw error;
   }
-};
-
-// 關閉現金計算器
-const handleCloseCashCalculator = () => {
-  showCashCalculatorModal.value = false;
-};
-
-// 關閉結帳模態窗
-const handleCloseCheckoutModal = () => {
-  showCheckoutModal.value = false;
-  checkoutOrderId.value = null;
 };
 
 // 處理現金付款完成
@@ -227,7 +200,7 @@ const printOrder = () => {
           `).join('<br>')}
         </div>
         <div class="total">
-          總計: $${calculateOrderTotal(order)}
+          總計: $${counterStore.calculateOrderTotal(order)}
         </div>
       </body>
     </html>
@@ -251,7 +224,7 @@ const submitOrder = async () => {
 
     if (orderType === 'dine_in') {
       // 內用需要桌號
-      showTableNumberModal.value = true;
+      counterStore.openTableNumberModal();
     } else {
       // 外帶直接結帳
       await counterStore.checkout(orderType);
@@ -265,7 +238,7 @@ const submitOrder = async () => {
 
 // 處理桌號確認
 const handleTableNumberConfirm = async (tableNumber) => {
-  showTableNumberModal.value = false;
+  counterStore.closeModal('tableNumber');
 
   try {
     await counterStore.checkout('dine_in', { tableNumber });
@@ -276,144 +249,34 @@ const handleTableNumberConfirm = async (tableNumber) => {
   }
 };
 
-// 處理選擇當前編輯項目 - 簡化版本
+// 處理選擇當前編輯項目
 const handleSelectCurrentItem = (item, index) => {
   // 直接設置編輯狀態
   counterStore.selectCurrentItem(item, index);
   console.log('開始編輯項目:', item, 'index:', index);
 };
 
-// 調帳相關函數
-const openCartAdjustmentModal = () => {
-  tempAdjustment.value = Math.abs(counterStore.adjustment);
-  adjustmentType.value = counterStore.adjustment >= 0 ? 'add' : 'subtract';
-  editingOrder.value = null;
-  showAdjustmentModal.value = true;
-};
-
-const openAdjustmentModal = (order) => {
-  if (order) {
-    editingOrder.value = order;
-    tempAdjustment.value = Math.abs(order.manualAdjustment || 0);
-    adjustmentType.value = (order.manualAdjustment || 0) >= 0 ? 'add' : 'subtract';
-    showAdjustmentModal.value = true;
+// 處理調帳確認
+const handleConfirmAdjustment = async () => {
+  try {
+    await counterStore.confirmAdjustment();
+  } catch (error) {
+    console.error('調帳失敗:', error);
+    alert(error.message || '調帳失敗');
   }
 };
 
-const setAdjustmentType = (type) => {
-  adjustmentType.value = type;
-  tempAdjustment.value = 0;
-};
-
-const appendToAdjustment = (num) => {
-  tempAdjustment.value = parseInt(`${tempAdjustment.value}${num}`);
-};
-
-const clearAdjustment = () => {
-  tempAdjustment.value = 0;
-};
-
-const confirmAdjustment = async () => {
-  const newAdjustment = adjustmentType.value === 'add' ? tempAdjustment.value : -tempAdjustment.value;
-
-  if (editingOrder.value) {
-    // 更新訂單調帳
-    try {
-      const response = await api.orderAdmin.updateOrder({
-        brandId: counterStore.currentBrand,
-        storeId: counterStore.currentStore,
-        orderId: editingOrder.value._id,
-        updateData: { manualAdjustment: newAdjustment }
-      });
-
-      if (response.success) {
-        await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
-        if (counterStore.selectedOrder && counterStore.selectedOrder._id === editingOrder.value._id) {
-          const updatedOrder = await api.orderAdmin.getOrderById({
-            brandId: counterStore.currentBrand,
-            storeId: counterStore.currentStore,
-            orderId: editingOrder.value._id
-          });
-          if (updatedOrder.success) {
-            counterStore.selectOrder(updatedOrder.order);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('更新訂單調帳失敗:', error);
-      alert('調整訂單失敗');
-    }
-  } else {
-    // 更新購物車調帳
-    counterStore.setAdjustment(newAdjustment);
+// 處理折扣確認
+const handleConfirmDiscount = async () => {
+  try {
+    await counterStore.confirmDiscount();
+  } catch (error) {
+    console.error('折扣失敗:', error);
+    alert(error.message || '折扣失敗');
   }
-
-  showAdjustmentModal.value = false;
-};
-
-// 折扣相關函數
-const openCartDiscountModal = () => {
-  tempDiscount.value = counterStore.discount;
-  editingOrder.value = null;
-  showDiscountModal.value = true;
-};
-
-const openDiscountModal = (order) => {
-  if (order) {
-    editingOrder.value = order;
-    const totalDiscount = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0;
-    tempDiscount.value = totalDiscount;
-    showDiscountModal.value = true;
-  }
-};
-
-const appendToDiscount = (num) => {
-  tempDiscount.value = parseInt(`${tempDiscount.value}${num}`);
-};
-
-const clearDiscount = () => {
-  tempDiscount.value = 0;
-};
-
-const confirmDiscount = async () => {
-  if (editingOrder.value) {
-    // 更新訂單折扣
-    try {
-      const response = await api.orderAdmin.updateOrder({
-        brandId: counterStore.currentBrand,
-        storeId: counterStore.currentStore,
-        orderId: editingOrder.value._id,
-        updateData: {
-          discounts: tempDiscount.value > 0 ? [{ amount: tempDiscount.value }] : []
-        }
-      });
-
-      if (response.success) {
-        await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
-      }
-    } catch (error) {
-      console.error('更新訂單折扣失敗:', error);
-      alert('調整訂單失敗');
-    }
-  } else {
-    // 更新購物車折扣
-    counterStore.setDiscount(tempDiscount.value);
-  }
-
-  showDiscountModal.value = false;
 };
 
 // 輔助函數
-const calculateOrderTotal = (order) => {
-  if (!order.items) return 0;
-
-  const itemsTotal = order.items.reduce((total, item) => total + (item.subtotal || 0), 0);
-  const adjustment = order.manualAdjustment || 0;
-  const discounts = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0;
-
-  return Math.max(0, itemsTotal + adjustment - discounts);
-};
-
 const formatOrderType = (orderType) => {
   const typeMap = {
     'dine_in': '內用',
