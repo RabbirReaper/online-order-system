@@ -4,6 +4,9 @@
       <!-- 左側邊欄 -->
       <div class="col-md-1 bg-dark text-white sidebar d-flex flex-column">
         <div class="sidebar-content flex-grow-1 d-flex flex-column p-3">
+          <div class="time-display text-center mb-3">
+            <div class="fs-6">{{ currentTime }}</div>
+          </div>
           <button class="btn mb-3"
             :class="counterStore.activeComponent === 'DineIn' ? 'btn-primary' : 'btn-outline-light'"
             @click="counterStore.setActiveComponent('DineIn')">
@@ -54,7 +57,9 @@ const route = useRoute();
 const router = useRouter();
 const brandId = route.params.brandId;
 const storeId = route.params.storeId;
-
+const currentTime = computed(() => {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+});
 // 使用 Pinia store
 const counterStore = useCounterStore();
 
