@@ -10,6 +10,46 @@
     <!-- 上部分：時間選擇和篩選 -->
     <div class="card mb-4">
       <div class="card-body">
+        <!-- 快速日期選擇器 -->
+        <div class="row align-items-center mb-3">
+          <div class="col-md-6">
+            <label class="form-label">快速選擇日期</label>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-outline-primary" @click="adjustDate(-1)" :disabled="loading">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+
+              <div class="quick-date-selector">
+                <button class="btn btn-primary" @click="setToday" :disabled="loading">
+                  <i class="bi bi-calendar-day me-1"></i>今天
+                </button>
+                <div class="current-date-display">
+                  {{ formatSelectedDateRange() }}
+                </div>
+              </div>
+
+              <button class="btn btn-outline-primary" @click="adjustDate(1)" :disabled="loading || isToday()">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">快速期間選擇</label>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-sm btn-outline-secondary" @click="setDateRange('today')"
+                :class="{ 'active': isCurrentRange('today') }">今天</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="setDateRange('yesterday')"
+                :class="{ 'active': isCurrentRange('yesterday') }">昨天</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="setDateRange('week')"
+                :class="{ 'active': isCurrentRange('week') }">本週</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="setDateRange('month')"
+                :class="{ 'active': isCurrentRange('month') }">本月</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 詳細日期和篩選選項 -->
         <div class="row align-items-center">
           <div class="col-md-3">
             <label class="form-label">開始日期</label>
@@ -68,76 +108,7 @@
     </div>
 
     <!-- 中部分：圖表顯示 -->
-    <div v-else-if="statsData" class="row mb-4">
-      <!-- 調試信息 - 開發時可以顯示，正式版本可以移除 -->
-      <div class="col-12 mb-3" v-if="true">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h6 class="mb-0">調試信息（開發用）</h6>
-            <button class="btn btn-sm btn-outline-warning" @click="fetchData">
-              <i class="bi bi-arrow-clockwise me-1"></i>重新載入數據
-            </button>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-12 mb-3">
-                <div class="alert alert-warning">
-                  <h6><i class="bi bi-exclamation-triangle me-2"></i>後端聚合查詢問題</h6>
-                  <p class="mb-2">檢測到以下問題：</p>
-                  <ul class="mb-2">
-                    <li v-if="orders.length > 0 && (!statsData?.details || statsData.details.length === 0)">
-                      <strong>統計聚合失敗：</strong> 有 {{ orders.length }} 筆訂單，但統計API返回空的details
-                    </li>
-                    <li v-if="orders.length > 0 && popularDishesData.length === 0">
-                      <strong>熱門餐點聚合失敗：</strong> 有訂單但無法聚合餐點數據
-                    </li>
-                  </ul>
-                  <p class="mb-0">
-                    <strong>修復建議：</strong>
-                    1. 檢查後端 orderAdmin.js 的聚合查詢邏輯
-                    2. 確認訂單的 createdAt 字段格式
-                    3. 檢查 DishInstance 與訂單的關聯是否正確
-                  </p>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <h6>統計數據結構:</h6>
-                <pre
-                  style="font-size: 11px; max-height: 150px; overflow-y: auto;">{{ JSON.stringify(statsData, null, 2) }}</pre>
-                <div class="mt-2">
-                  <small class="text-muted">
-                    訂單總數: {{ orders.length }}/{{ pagination.total }}
-                  </small>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <h6>時段數據:</h6>
-                <pre
-                  style="font-size: 11px; max-height: 150px; overflow-y: auto;">{{JSON.stringify(hourlyChartData.filter(h => h.count > 0).slice(0, 5), null, 2)}}</pre>
-                <div class="mt-2">
-                  <small class="text-muted">
-                    有數據時段: {{hourlyChartData.filter(h => h.count > 0).length}}/24
-                  </small>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <h6>訂單類型:</h6>
-                <pre
-                  style="font-size: 11px; max-height: 80px; overflow-y: auto;">{{ JSON.stringify(orderTypesData, null, 2) }}</pre>
-                <h6 class="mt-2">熱門餐點:</h6>
-                <pre
-                  style="font-size: 11px; max-height: 80px; overflow-y: auto;">{{ JSON.stringify(popularDishesData.slice(0, 3), null, 2) }}</pre>
-                <div class="mt-2">
-                  <small class="text-muted">
-                    餐點數據: {{ popularDishesData.length }} 項
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div v-else-if="allOrders.length > 0" class="row mb-4">
       <div class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
@@ -155,7 +126,7 @@
       <div class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
-            <DishSalesBarChart :dish-sales="popularDishesData" :height="300" />
+            <DishSalesBarChart :dish-sales="popularDishesData" :height="450" />
           </div>
         </div>
       </div>
@@ -164,27 +135,33 @@
           <div class="card-body">
             <div class="row text-center">
               <div class="col-6">
-                <h3 class="text-success">${{ statsData.summary?.totalAmount || 0 }}</h3>
+                <h3 class="text-success">${{ summaryData.totalAmount }}</h3>
                 <p class="text-muted">總營業額</p>
               </div>
               <div class="col-6">
-                <h3 class="text-primary">{{ statsData.summary?.totalOrders || 0 }}</h3>
+                <h3 class="text-primary">{{ summaryData.totalOrders }}</h3>
                 <p class="text-muted">總訂單數</p>
               </div>
             </div>
             <div class="row text-center mt-3">
               <div class="col-6">
-                <h5 class="text-info">{{ statsData.summary?.paidOrders || 0 }}</h5>
+                <h5 class="text-info">{{ summaryData.paidOrders }}</h5>
                 <p class="text-muted">已付款</p>
               </div>
               <div class="col-6">
-                <h5 class="text-warning">{{ statsData.summary?.unpaidOrders || 0 }}</h5>
+                <h5 class="text-warning">{{ summaryData.unpaidOrders }}</h5>
                 <p class="text-muted">未付款</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 無資料提示 -->
+    <div v-else-if="!loading" class="alert alert-info text-center mb-4">
+      <i class="bi bi-info-circle me-2"></i>
+      所選時間範圍內沒有訂單資料
     </div>
 
     <!-- 下部分：訂單列表 -->
@@ -263,7 +240,8 @@
     </div>
 
     <!-- 訂單詳情彈窗 -->
-    <OrderDetailModal :visible="showOrderDetail" :order="selectedOrder" @close="closeOrderDetail" />
+    <OrderDetailModal :visible="showOrderDetail" :order="selectedOrder" :storeName="storeName"
+      @close="closeOrderDetail" />
   </div>
 </template>
 
@@ -285,6 +263,7 @@ const loading = ref(true);
 const error = ref(false);
 const errorMessage = ref('');
 const storeName = ref('');
+const currentDateRange = ref(''); // 記錄當前選擇的日期範圍類型
 
 // 篩選條件
 const filters = reactive({
@@ -296,8 +275,7 @@ const filters = reactive({
 
 // 資料狀態
 const orders = ref([]);
-const statsData = ref(null);
-const popularDishesData = ref([]);
+const allOrders = ref([]); // 儲存所有訂單資料，用於圖表計算
 const showOrderDetail = ref(false);
 const selectedOrder = ref(null);
 
@@ -309,117 +287,183 @@ const pagination = reactive({
   limit: 20
 });
 
-// 初始化日期範圍（最近7天）
-const initializeDateRange = () => {
-  const today = new Date();
-  const weekAgo = new Date();
-  weekAgo.setDate(today.getDate() - 7);
-
-  filters.toDate = today.toISOString().split('T')[0];
-  filters.fromDate = weekAgo.toISOString().split('T')[0];
+// 日期處理函數
+const formatDate = (date) => {
+  return date.toISOString().split('T')[0];
 };
 
-// 計算圖表資料
-const hourlyChartData = computed(() => {
-  console.log('Computing hourlyChartData, statsData:', statsData.value);
+const isToday = () => {
+  const today = formatDate(new Date());
+  return filters.fromDate === today && filters.toDate === today;
+};
 
-  // 如果統計API的details為空，但有訂單數據，嘗試從訂單列表生成簡單的時段統計
-  if (!statsData.value?.details || statsData.value.details.length === 0) {
-    console.log('No statsData.details found, generating from orders data');
+const formatSelectedDateRange = () => {
+  if (!filters.fromDate || !filters.toDate) return '請選擇日期';
 
-    if (orders.value && orders.value.length > 0) {
-      console.log('Generating hourly data from orders:', orders.value.length);
-
-      // 從訂單數據生成時段統計
-      const hourlyStats = {};
-      orders.value.forEach(order => {
-        const date = new Date(order.createdAt);
-        const hour = date.getHours();
-        hourlyStats[hour] = (hourlyStats[hour] || 0) + 1;
-      });
-
-      const hourlyData = [];
-      for (let hour = 0; hour < 24; hour++) {
-        const hourStr = String(hour).padStart(2, '0') + ':00';
-        hourlyData.push({
-          time: hourStr,
-          count: hourlyStats[hour] || 0
-        });
-      }
-
-      console.log('Generated hourlyData from orders:', hourlyData);
-      return hourlyData;
-    }
-
-    // 如果連訂單都沒有，返回全零數據
-    const hourlyData = [];
-    for (let hour = 0; hour < 24; hour++) {
-      const hourStr = String(hour).padStart(2, '0') + ':00';
-      hourlyData.push({
-        time: hourStr,
-        count: 0
-      });
-    }
-    return hourlyData;
+  if (filters.fromDate === filters.toDate) {
+    return new Date(filters.fromDate).toLocaleDateString('zh-TW');
   }
 
-  console.log('statsData.details:', statsData.value.details);
+  return `${new Date(filters.fromDate).toLocaleDateString('zh-TW')} - ${new Date(filters.toDate).toLocaleDateString('zh-TW')}`;
+};
 
+const setToday = () => {
+  const today = new Date();
+  filters.fromDate = formatDate(today);
+  filters.toDate = formatDate(today);
+  currentDateRange.value = 'today';
+  applyFilters();
+};
+
+const adjustDate = (days) => {
+  const fromDate = new Date(filters.fromDate);
+  const toDate = new Date(filters.toDate);
+
+  fromDate.setDate(fromDate.getDate() + days);
+  toDate.setDate(toDate.getDate() + days);
+
+  // 不能選擇未來的日期
+  const today = new Date();
+  if (toDate > today) return;
+
+  filters.fromDate = formatDate(fromDate);
+  filters.toDate = formatDate(toDate);
+  currentDateRange.value = '';
+  applyFilters();
+};
+
+const setDateRange = (range) => {
+  const today = new Date();
+
+  switch (range) {
+    case 'today':
+      filters.fromDate = formatDate(today);
+      filters.toDate = formatDate(today);
+      break;
+    case 'yesterday':
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      filters.fromDate = formatDate(yesterday);
+      filters.toDate = formatDate(yesterday);
+      break;
+    case 'week':
+      const weekStart = new Date();
+      weekStart.setDate(today.getDate() - today.getDay()); // 週日開始
+      filters.fromDate = formatDate(weekStart);
+      filters.toDate = formatDate(today);
+      break;
+    case 'month':
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      filters.fromDate = formatDate(monthStart);
+      filters.toDate = formatDate(today);
+      break;
+  }
+
+  currentDateRange.value = range;
+  applyFilters();
+};
+
+const isCurrentRange = (range) => {
+  return currentDateRange.value === range;
+};
+
+// 初始化日期範圍（今天）
+const initializeDateRange = () => {
+  setToday();
+};
+
+// 從訂單資料計算圖表資料
+const hourlyChartData = computed(() => {
+  const hourlyStats = {};
+
+  // 初始化24小時
+  for (let hour = 0; hour < 24; hour++) {
+    hourlyStats[hour] = 0;
+  }
+
+  // 統計每小時的訂單數
+  allOrders.value.forEach(order => {
+    const date = new Date(order.createdAt);
+    const hour = date.getHours();
+    hourlyStats[hour]++;
+  });
+
+  // 轉換為圖表格式
   const hourlyData = [];
   for (let hour = 0; hour < 24; hour++) {
     const hourStr = String(hour).padStart(2, '0') + ':00';
-    const hourData = statsData.value.details.find(detail => {
-      if (detail._id?.hour !== undefined) {
-        return detail._id.hour === hour;
-      }
-      return false;
-    });
-
     hourlyData.push({
       time: hourStr,
-      count: hourData ? hourData.totalOrders : 0
+      count: hourlyStats[hour]
     });
   }
 
-  console.log('Generated hourlyData:', hourlyData);
   return hourlyData;
 });
 
 const orderTypesData = computed(() => {
-  console.log('Computing orderTypesData, statsData:', statsData.value);
-
-  // 如果統計API的details為空，但有訂單數據，從訂單列表生成類型統計
-  if (!statsData.value?.details || statsData.value.details.length === 0) {
-    console.log('No statsData.details found for orderTypes, generating from orders');
-
-    if (orders.value && orders.value.length > 0) {
-      const types = {};
-      orders.value.forEach(order => {
-        const displayType = formatOrderType(order.orderType);
-        types[displayType] = (types[displayType] || 0) + 1;
-      });
-
-      console.log('Generated orderTypesData from orders:', types);
-      return types;
-    }
-
-    return {};
-  }
-
   const types = {};
-  statsData.value.details.forEach(detail => {
-    console.log('Processing detail for orderTypes:', detail);
-    if (detail.orderTypes) {
-      Object.keys(detail.orderTypes).forEach(type => {
-        const displayType = formatOrderType(type);
-        types[displayType] = (types[displayType] || 0) + detail.orderTypes[type];
+
+  allOrders.value.forEach(order => {
+    const displayType = formatOrderType(order.orderType);
+    types[displayType] = (types[displayType] || 0) + 1;
+  });
+
+  return types;
+});
+
+const popularDishesData = computed(() => {
+  const dishStats = {};
+
+  allOrders.value.forEach(order => {
+    if (order.items && order.items.length > 0) {
+      order.items.forEach(item => {
+        const dishName = getDishName(item);
+        const quantity = item.quantity || 1;
+        dishStats[dishName] = (dishStats[dishName] || 0) + quantity;
       });
     }
   });
 
-  console.log('Generated orderTypesData:', types);
-  return types;
+  // 轉換為數組並排序
+  const dishArray = Object.entries(dishStats)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10); // 只取前10名
+
+  return dishArray;
 });
+
+const summaryData = computed(() => {
+  const data = {
+    totalOrders: allOrders.value.length,
+    totalAmount: 0,
+    paidOrders: 0,
+    unpaidOrders: 0
+  };
+
+  allOrders.value.forEach(order => {
+    data.totalAmount += order.total || 0;
+    if (order.status === 'paid') {
+      data.paidOrders++;
+    } else if (order.status === 'unpaid') {
+      data.unpaidOrders++;
+    }
+  });
+
+  return data;
+});
+
+// 獲取餐點名稱
+const getDishName = (item) => {
+  if (!item || !item.dishInstance) return '未知餐點';
+
+  if (typeof item.dishInstance === 'object') {
+    return item.dishInstance.name || '未知餐點';
+  }
+
+  return '未知餐點';
+};
 
 // API 調用
 const fetchStoreInfo = async () => {
@@ -437,19 +481,31 @@ const fetchStoreInfo = async () => {
   }
 };
 
-const fetchOrders = async () => {
+const fetchAllOrders = async () => {
   try {
-    console.log('Fetching orders with params:', {
+    // 獲取所有訂單（不分頁，用於圖表計算）
+    const allOrdersResponse = await api.orderAdmin.getStoreOrders({
       brandId: brandId.value,
       storeId: storeId.value,
       fromDate: filters.fromDate,
       toDate: filters.toDate,
       status: filters.status || undefined,
       orderType: filters.orderType || undefined,
-      page: pagination.currentPage,
-      limit: pagination.limit
+      page: 1,
+      limit: 1000 // 取大一點的數量確保獲得所有資料
     });
 
+    if (allOrdersResponse.success) {
+      allOrders.value = allOrdersResponse.orders || [];
+    }
+  } catch (err) {
+    console.error('獲取所有訂單失敗:', err);
+    throw err;
+  }
+};
+
+const fetchOrders = async () => {
+  try {
     const response = await api.orderAdmin.getStoreOrders({
       brandId: brandId.value,
       storeId: storeId.value,
@@ -461,93 +517,13 @@ const fetchOrders = async () => {
       limit: pagination.limit
     });
 
-    console.log('Orders API response:', response);
-
     if (response.success) {
       orders.value = response.orders || [];
       pagination.total = response.pagination?.total || 0;
       pagination.totalPages = response.pagination?.totalPages || 0;
-
-      console.log('Set orders to:', orders.value);
-      console.log('Set pagination to:', {
-        total: pagination.total,
-        totalPages: pagination.totalPages,
-        currentPage: pagination.currentPage
-      });
-    } else {
-      console.log('Orders API returned success: false');
     }
   } catch (err) {
     console.error('獲取訂單列表失敗:', err);
-    throw err;
-  }
-};
-
-const fetchStats = async () => {
-  try {
-    console.log('Fetching stats with params:', {
-      brandId: brandId.value,
-      storeId: storeId.value,
-      fromDate: filters.fromDate,
-      toDate: filters.toDate,
-      groupBy: 'hour'
-    });
-
-    const response = await api.orderAdmin.getOrderStats({
-      brandId: brandId.value,
-      storeId: storeId.value,
-      fromDate: filters.fromDate,
-      toDate: filters.toDate,
-      groupBy: 'hour'
-    });
-
-    console.log('Stats API response:', response);
-
-    if (response.success) {
-      statsData.value = response.stats;
-      console.log('Set statsData to:', statsData.value);
-    } else {
-      console.log('Stats API returned success: false');
-    }
-  } catch (err) {
-    console.error('獲取訂單統計失敗:', err);
-    throw err;
-  }
-};
-
-const fetchPopularDishes = async () => {
-  try {
-    console.log('Fetching popular dishes with params:', {
-      brandId: brandId.value,
-      storeId: storeId.value,
-      fromDate: filters.fromDate,
-      toDate: filters.toDate,
-      limit: 10
-    });
-
-    const response = await api.orderAdmin.getPopularDishes({
-      brandId: brandId.value,
-      storeId: storeId.value,
-      fromDate: filters.fromDate,
-      toDate: filters.toDate,
-      limit: 10
-    });
-
-    console.log('Popular dishes API response:', response);
-
-    if (response.success) {
-      const processedData = response.popularDishes?.map(dish => ({
-        name: dish.dishName,
-        count: dish.totalQuantity
-      })) || [];
-
-      popularDishesData.value = processedData;
-      console.log('Set popularDishesData to:', popularDishesData.value);
-    } else {
-      console.log('Popular dishes API returned success: false');
-    }
-  } catch (err) {
-    console.error('獲取熱門餐點失敗:', err);
     throw err;
   }
 };
@@ -559,9 +535,8 @@ const fetchData = async () => {
 
   try {
     await Promise.all([
-      fetchOrders(),
-      fetchStats(),
-      fetchPopularDishes()
+      fetchAllOrders(), // 用於圖表
+      fetchOrders()     // 用於列表顯示
     ]);
   } catch (err) {
     error.value = true;
@@ -578,6 +553,7 @@ const handleDateChange = () => {
       alert('開始日期不能晚於結束日期');
       return;
     }
+    currentDateRange.value = ''; // 清除快速選擇狀態
     applyFilters();
   }
 };
@@ -596,13 +572,12 @@ const resetFilters = () => {
   filters.orderType = '';
   initializeDateRange();
   pagination.currentPage = 1;
-  fetchData();
 };
 
 const changePage = (page) => {
   if (page < 1 || page > pagination.totalPages) return;
   pagination.currentPage = page;
-  fetchOrders();
+  fetchOrders(); // 只需要重新獲取列表資料
 };
 
 const getPageNumbers = () => {
@@ -747,5 +722,40 @@ watch(() => route.params.storeId, async (newStoreId, oldStoreId) => {
 
 .badge {
   font-size: 0.75rem;
+}
+
+/* 快速日期選擇器樣式 */
+.quick-date-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 200px;
+}
+
+.current-date-display {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-align: center;
+}
+
+/* 快速期間選擇按鈕 */
+.btn-sm.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+/* 按鈕hover效果 */
+.btn-outline-primary:hover {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
 }
 </style>

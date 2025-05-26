@@ -26,7 +26,7 @@
                   <div class="col-md-6">
                     <p class="mb-1"><strong>訂單編號:</strong> {{ getOrderNumber(order) }}</p>
                     <p class="mb-1"><strong>訂單時間:</strong> {{ formatDateTime(order.createdAt) }}</p>
-                    <p class="mb-1"><strong>店家:</strong> {{ getStoreName(order.store) }}</p>
+                    <p class="mb-1"><strong>店家:</strong> {{ props.storeName }}</p>
                     <p class="mb-1" v-if="order.deliveryPlatform">
                       <strong>外送平台:</strong> {{ order.deliveryPlatform }}
                     </p>
@@ -139,8 +139,8 @@
                         <td>{{ getDishName(item) }}</td>
                         <td>
                           <div v-if="getDishOptions(item).length > 0">
-                            <div v-for="option in getDishOptions(item)" :key="option.categoryName" class="mb-1">
-                              <small><strong>{{ option.categoryName }}:</strong></small>
+                            <div v-for="option in getDishOptions(item)" :key="option.optionCategoryName" class="mb-1">
+                              <small><strong>{{ option.optionCategoryName }}:</strong></small>
                               <div v-for="selection in option.selections" :key="selection.name" class="ms-2">
                                 <small>{{ selection.name }}
                                   <span v-if="selection.price > 0">(+${{ selection.price }})</span>
@@ -249,6 +249,10 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  storeName: {
+    type: String,
+    default: '未知店家'
+  },
   visible: {
     type: Boolean,
     default: false
@@ -265,14 +269,6 @@ const getOrderNumber = (order) => {
     return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`;
   }
   return order._id || '';
-};
-
-// 獲取店鋪名稱
-const getStoreName = (store) => {
-  if (typeof store === 'object' && store !== null) {
-    return store.name || '未知店家';
-  }
-  return '未知店家';
 };
 
 // 獲取餐點名稱
