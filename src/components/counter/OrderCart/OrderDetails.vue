@@ -48,7 +48,7 @@
           <div class="d-flex align-items-center">
             <span>訂單調帳</span>
             <button class="btn btn-sm btn-outline-secondary ms-2" @click="$emit('openAdjustmentModal', selectedOrder)"
-              :disabled="selectedOrder.status !== 'unpaid'">
+              :disabled="selectedOrder.status == 'cancelled'">
               <i class="bi bi-pencil-square"></i>
             </button>
           </div>
