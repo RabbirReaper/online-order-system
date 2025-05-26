@@ -326,11 +326,8 @@ const router = createRouter({
         {
           path: 'orders/reports',
           name: 'brand-admin-reports',
-          component: Placeholder,
-          props: {
-            title: '銷售報表功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Order/Reports/ReportsView.vue'),
+          meta: { requiresAuth: true, title: '銷售報表' }
         },
         // 促銷管理 - 優惠券
         {
