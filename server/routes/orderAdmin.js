@@ -51,25 +51,4 @@ router.post('/brands/:brandId/stores/:storeId/orders/:orderId/cancel',
   orderController.cancelOrder
 );
 
-// 訂單統計路由（後台）
-// 獲取訂單統計（支援日期範圍和分組）
-router.get('/brands/:brandId/stores/:storeId/stats',
-  authenticate('admin'),
-  requireRole('boss', 'brand_admin', 'store_admin'),
-  requireBrandAccess,
-  requireStoreAccess,
-  requirePermission('view_reports'),
-  orderController.getOrderStats
-);
-
-// 獲取熱門餐點
-router.get('/brands/:brandId/stores/:storeId/popular-dishes',
-  authenticate('admin'),
-  requireRole('boss', 'brand_admin', 'store_admin'),
-  requireBrandAccess,
-  requireStoreAccess,
-  requirePermission('view_reports'),
-  orderController.getPopularDishes
-);
-
 export default router;

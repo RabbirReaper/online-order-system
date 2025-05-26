@@ -71,39 +71,3 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     order: cancelledOrder
   });
 });
-
-// 獲取訂單統計
-export const getOrderStats = asyncHandler(async (req, res) => {
-  const { storeId } = req.params;
-
-  const options = {
-    fromDate: req.query.fromDate,
-    toDate: req.query.toDate,
-    groupBy: req.query.groupBy || 'day'
-  };
-
-  const stats = await orderService.getOrderStats(storeId, options);
-
-  res.json({
-    success: true,
-    stats
-  });
-});
-
-// 獲取熱門餐點
-export const getPopularDishes = asyncHandler(async (req, res) => {
-  const { storeId } = req.params;
-
-  const options = {
-    fromDate: req.query.fromDate,
-    toDate: req.query.toDate,
-    limit: parseInt(req.query.limit, 10) || 10
-  };
-
-  const popularDishes = await orderService.getPopularDishes(storeId, options);
-
-  res.json({
-    success: true,
-    popularDishes
-  });
-});

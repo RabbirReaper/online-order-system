@@ -29,6 +29,4 @@ export const {
   getOrderById,
   updateOrder,
   cancelOrder,
-  getOrderStats,
-  getPopularDishes
 } = orderAdmin;
