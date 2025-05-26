@@ -58,16 +58,11 @@
           </span>
         </div>
 
-        <!-- 訂單折扣 -->
-        <div class="d-flex justify-content-between mb-2">
-          <div class="d-flex align-items-center">
-            <span>訂單折扣</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2" @click="counterStore.openDiscountModal(selectedOrder)"
-              :disabled="selectedOrder.status !== 'unpaid'">
-              <i class="bi bi-percent"></i>
-            </button>
-          </div>
-          <span class="text-danger">${{ counterStore.calculateOrderTotalDiscount(selectedOrder) }}</span>
+        <!-- 訂單折扣 - 只顯示，不可編輯 -->
+        <div v-if="counterStore.calculateOrderTotalDiscount(selectedOrder) > 0"
+          class="d-flex justify-content-between mb-2">
+          <span>訂單折扣</span>
+          <span class="text-danger">-${{ counterStore.calculateOrderTotalDiscount(selectedOrder) }}</span>
         </div>
 
         <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-2">

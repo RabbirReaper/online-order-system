@@ -26,10 +26,6 @@
       @set-adjustment-type="counterStore.setAdjustmentType" @append-adjustment="counterStore.appendToAdjustment"
       @clear-adjustment="counterStore.clearAdjustment" @confirm="handleConfirmAdjustment" />
 
-    <DiscountModal v-if="counterStore.modals.discount.show" :temp-discount="counterStore.modals.discount.tempDiscount"
-      @close="counterStore.closeModal('discount')" @append-discount="counterStore.appendToDiscount"
-      @clear-discount="counterStore.clearDiscount" @confirm="handleConfirmDiscount" />
-
     <CheckoutModal v-model="counterStore.modals.checkout.show" :total="counterStore.modals.checkout.total"
       @close="counterStore.closeModal('checkout')" @payment-selected="handlePaymentSelected" />
 
@@ -52,7 +48,6 @@ import OrderDetails from './OrderDetails.vue';
 import ShoppingCart from './ShoppingCart.vue';
 import ActionButtons from './ActionButtons.vue';
 import AdjustmentModal from '../modals/AdjustmentModal.vue';
-import DiscountModal from '../modals/DiscountModal.vue';
 import CheckoutModal from '../modals/CheckoutModal.vue';
 import CashCalculatorModal from '../modals/CashCalculatorModal.vue';
 import TableNumberModal from '../modals/TableNumberModal.vue';
@@ -263,16 +258,6 @@ const handleConfirmAdjustment = async () => {
   } catch (error) {
     console.error('調帳失敗:', error);
     alert(error.message || '調帳失敗');
-  }
-};
-
-// 處理折扣確認
-const handleConfirmDiscount = async () => {
-  try {
-    await counterStore.confirmDiscount();
-  } catch (error) {
-    console.error('折扣失敗:', error);
-    alert(error.message || '折扣失敗');
   }
 };
 

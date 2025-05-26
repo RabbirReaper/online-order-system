@@ -53,7 +53,7 @@
         </div>
       </div>
 
-      <div class="order-total mt-3">
+      <div class="order-total mt-3 card">
         <div class="d-flex justify-content-between mb-2">
           <span>小計</span>
           <span>${{ counterStore.subtotal }}</span>
@@ -73,18 +73,13 @@
           </span>
         </div>
 
-        <!-- 訂單折扣 -->
-        <div class="d-flex justify-content-between mb-2">
-          <div class="d-flex align-items-center">
-            <span>訂單折扣</span>
-            <button class="btn btn-sm btn-outline-secondary ms-2" @click="counterStore.openDiscountModal()">
-              <i class="bi bi-percent"></i>
-            </button>
-          </div>
-          <span class="text-danger">${{ counterStore.totalDiscount }}</span>
+        <!-- 訂單折扣 - 只顯示，不可編輯 -->
+        <div v-if="counterStore.totalDiscount > 0" class="d-flex justify-content-between mb-2">
+          <span>訂單折扣</span>
+          <span class="text-danger">-${{ counterStore.totalDiscount }}</span>
         </div>
 
-        <div class="d-flex justify-content-between fw-bold">
+        <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-2">
           <span>總計</span>
           <span>${{ counterStore.total }}</span>
         </div>

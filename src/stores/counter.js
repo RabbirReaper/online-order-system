@@ -34,11 +34,6 @@ export const useCounterStore = defineStore('counter', () => {
       adjustmentType: 'add', // 'add' 或 'subtract'
       editingOrder: null
     },
-    discount: {
-      show: false,
-      tempDiscount: 0,
-      editingOrder: null
-    },
     checkout: {
       show: false,
       total: 0,
@@ -117,17 +112,6 @@ export const useCounterStore = defineStore('counter', () => {
     modals.value.adjustment.show = true;
   };
 
-  const openDiscountModal = (order = null) => {
-    if (order) {
-      modals.value.discount.editingOrder = order;
-      modals.value.discount.tempDiscount = calculateOrderTotalDiscount(order);
-    } else {
-      modals.value.discount.editingOrder = null;
-      modals.value.discount.tempDiscount = totalDiscount.value;
-    }
-    modals.value.discount.show = true;
-  };
-
   const openCheckoutModal = (orderId, total) => {
     modals.value.checkout.orderId = orderId;
     modals.value.checkout.total = total;
@@ -150,9 +134,6 @@ export const useCounterStore = defineStore('counter', () => {
       if (modalName === 'adjustment') {
         modals.value.adjustment.editingOrder = null;
         modals.value.adjustment.tempAdjustment = 0;
-      } else if (modalName === 'discount') {
-        modals.value.discount.editingOrder = null;
-        modals.value.discount.tempDiscount = 0;
       } else if (modalName === 'checkout') {
         modals.value.checkout.orderId = null;
         modals.value.checkout.total = 0;
@@ -212,55 +193,6 @@ export const useCounterStore = defineStore('counter', () => {
     }
 
     closeModal('adjustment');
-  };
-
-  // 折扣相關方法
-  const appendToDiscount = (num) => {
-    modals.value.discount.tempDiscount = parseInt(`${modals.value.discount.tempDiscount}${num}`);
-  };
-
-  const clearDiscount = () => {
-    modals.value.discount.tempDiscount = 0;
-  };
-
-  const confirmDiscount = async () => {
-    if (modals.value.discount.editingOrder) {
-      // 更新訂單折扣
-      try {
-        const response = await api.orderAdmin.updateOrder({
-          brandId: currentBrand.value,
-          storeId: currentStore.value,
-          orderId: modals.value.discount.editingOrder._id,
-          updateData: {
-            discounts: modals.value.discount.tempDiscount > 0
-              ? [{ amount: modals.value.discount.tempDiscount }]
-              : []
-          }
-        });
-
-        if (response.success) {
-          await fetchTodayOrders(currentBrand.value, currentStore.value);
-          if (selectedOrder.value && selectedOrder.value._id === modals.value.discount.editingOrder._id) {
-            const updatedOrder = await api.orderAdmin.getOrderById({
-              brandId: currentBrand.value,
-              storeId: currentStore.value,
-              orderId: modals.value.discount.editingOrder._id
-            });
-            if (updatedOrder.success) {
-              selectOrder(updatedOrder.order);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('更新訂單折扣失敗:', error);
-        throw new Error('調整訂單失敗');
-      }
-    } else {
-      // 更新購物車折扣
-      totalDiscount.value = modals.value.discount.tempDiscount;
-    }
-
-    closeModal('discount');
   };
 
   // 方法
@@ -740,7 +672,6 @@ export const useCounterStore = defineStore('counter', () => {
 
     // 模態框管理
     openAdjustmentModal,
-    openDiscountModal,
     openCheckoutModal,
     openCashCalculatorModal,
     openTableNumberModal,
@@ -749,9 +680,6 @@ export const useCounterStore = defineStore('counter', () => {
     appendToAdjustment,
     clearAdjustment,
     confirmAdjustment,
-    appendToDiscount,
-    clearDiscount,
-    confirmDiscount,
 
     // 方法
     setBrandAndStore,
