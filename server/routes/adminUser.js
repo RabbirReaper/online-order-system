@@ -20,6 +20,14 @@ router.get('/brands/:brandId/users',
   adminUserController.getAllUsers
 );
 
+// 獲取指定日期範圍內新加入的用戶
+router.get('/brands/:brandId/users/new-in-range',
+  requireRole('boss', 'brand_admin', 'store_admin'),
+  requireBrandAccess,
+  requirePermission('view_reports'),
+  adminUserController.getNewUsersInRange
+);
+
 // 獲取特定用戶詳情
 router.get('/brands/:brandId/users/:id',
   requireRole('boss', 'brand_admin', 'store_admin'),

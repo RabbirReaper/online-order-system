@@ -20,6 +20,26 @@ export default function (apiClient) {
     },
 
     /**
+     * 獲取指定日期範圍內新加入的用戶 (管理員功能)
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.startDate - 開始日期 (YYYY-MM-DD 格式)
+     * @param {string} params.endDate - 結束日期 (YYYY-MM-DD 格式)
+     * @param {number} [params.page] - 頁碼 (默認 1)
+     * @param {number} [params.limit] - 每頁數量 (默認 20)
+     * @returns {Promise} - API 回應
+     */
+    getNewUsersInRange({ brandId, startDate, endDate, ...queryParams }) {
+      return apiClient.get(`/admin-user/brands/${brandId}/users/new-in-range`, {
+        params: {
+          startDate,
+          endDate,
+          ...queryParams
+        }
+      });
+    },
+
+    /**
      * 獲取單個用戶詳情 (管理員功能)
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID

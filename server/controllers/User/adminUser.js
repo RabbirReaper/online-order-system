@@ -44,6 +44,40 @@ export const getUserById = asyncHandler(async (req, res) => {
 });
 
 /**
+ * 獲取指定日期範圍內新加入的用戶 (admin功能)
+ */
+export const getNewUsersInRange = asyncHandler(async (req, res) => {
+  const { brandId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  // 驗證必要參數
+  if (!startDate || !endDate) {
+    return res.status(400).json({
+      success: false,
+      message: '請提供開始日期 (startDate) 和結束日期 (endDate)'
+    });
+  }
+
+  const options = {
+    brandId,
+    startDate,
+    endDate,
+    page: parseInt(req.query.page, 10) || 1,
+    limit: parseInt(req.query.limit, 10) || 20
+  };
+
+  const result = await userService.profile.getNewUsersInRange(options);
+
+  res.json({
+    success: true,
+    message: `成功獲取 ${result.dateRange.startDate} 至 ${result.dateRange.endDate} 期間新加入的用戶`,
+    users: result.users,
+    pagination: result.pagination,
+    dateRange: result.dateRange
+  });
+});
+
+/**
  * 切換用戶啟用狀態 (admin功能)
  */
 export const toggleUserStatus = asyncHandler(async (req, res) => {

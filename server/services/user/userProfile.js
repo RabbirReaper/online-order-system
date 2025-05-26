@@ -360,3 +360,66 @@ export const toggleUserStatus = async (userId, isActive) => {
 
   return userResponse;
 };
+
+/**
+ * 獲取指定日期範圍內新加入的用戶
+ * @param {Object} options - 查詢選項
+ * @param {String} options.brandId - 品牌ID
+ * @param {Date|String} options.startDate - 開始日期
+ * @param {Date|String} options.endDate - 結束日期
+ * @param {Number} options.page - 頁碼
+ * @param {Number} options.limit - 每頁數量
+ * @returns {Promise<Object>} 用戶列表與分頁資訊
+ */
+export const getNewUsersInRange = async (options = {}) => {
+  const { brandId, startDate, endDate, page = 1, limit = 20 } = options;
+
+  // 使用日期工具處理開始和結束時間
+  const start = getStartOfDay(startDate);
+  const end = getEndOfDay(endDate);
+
+  // 構建查詢條件
+  const queryConditions = {
+    brand: brandId,
+    createdAt: {
+      $gte: start.toJSDate(),
+      $lte: end.toJSDate()
+    }
+  };
+
+  // 計算分頁
+  const skip = (page - 1) * limit;
+
+  // 查詢總數
+  const total = await User.countDocuments(queryConditions);
+
+  // 查詢用戶
+  const users = await User.find(queryConditions)
+    .select('-password -resetPasswordToken -resetPasswordExpire')
+    .sort({ createdAt: -1 }) // 按創建時間降序排列
+    .skip(skip)
+    .limit(limit);
+
+  // 處理分頁信息
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+
+  return {
+    users,
+    pagination: {
+      total,
+      totalPages,
+      currentPage: page,
+      limit,
+      hasNextPage,
+      hasPrevPage
+    },
+    dateRange: {
+      startDate: start.toFormat('yyyy-MM-dd'),
+      endDate: end.toFormat('yyyy-MM-dd'),
+      startDateTime: start.toISO(),
+      endDateTime: end.toISO()
+    }
+  };
+};
