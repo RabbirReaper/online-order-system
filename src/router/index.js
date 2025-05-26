@@ -310,16 +310,18 @@ const router = createRouter({
           component: () => import('@/components/BrandAdmin/Inventory/StockLog.vue'),
           meta: { requiresAuth: true, title: '庫存變更記錄' }
         },
-
-        // 訂單管理（預留）
+        // 訂單管理路由
         {
           path: 'orders',
           name: 'brand-admin-orders',
-          component: Placeholder,
-          props: {
-            title: '訂單管理功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Order/OrderStoreSelect.vue'),
+          meta: { requiresAuth: true, title: '選擇店鋪' }
+        },
+        {
+          path: 'orders/store/:storeId',
+          name: 'brand-admin-store-orders',
+          component: () => import('@/components/BrandAdmin/Order/OrderList.vue'),
+          meta: { requiresAuth: true, title: '訂單列表' }
         },
         {
           path: 'orders/reports',
