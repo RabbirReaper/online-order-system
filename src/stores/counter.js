@@ -539,7 +539,7 @@ export const useCounterStore = defineStore('counter', () => {
       const orderData = {
         orderType: orderType,
         paymentType: 'On-site',
-        paymentMethod: 'cash',
+        paymentMethod: '',
         items: mergedItems,
         customerInfo: customerInfo,
         notes: '',
@@ -552,7 +552,7 @@ export const useCounterStore = defineStore('counter', () => {
           tableNumber: customerInfo.tableNumber
         };
       }
-
+      console.log('提交訂單數據:', orderData);
       const response = await api.orderCustomer.createOrder({
         brandId: currentBrand.value,
         storeId: currentStore.value,

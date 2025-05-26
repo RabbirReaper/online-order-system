@@ -99,7 +99,7 @@ const orderSchema = new mongoose.Schema({
   }, // 付款類型
   paymentMethod: {
     type: String,
-    enum: ['cash', 'credit_card', 'line_pay', 'other'],
+    enum: ['cash', 'credit_card', 'line_pay', 'other', ''],
   }, // 付款方式
   onlinePaymentCode: { type: String }, // 線上付款代碼 (例如：LINE Pay)
   customerInfo: {
