@@ -1,7 +1,6 @@
 <template>
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1>銷售報表</h1>
       <router-link :to="`/admin/${brandId}/orders`" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>返回訂單管理
       </router-link>
