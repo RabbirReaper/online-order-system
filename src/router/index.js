@@ -399,11 +399,8 @@ const router = createRouter({
         {
           path: 'customers',
           name: 'brand-admin-customers',
-          component: Placeholder,
-          props: {
-            title: '顧客管理功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Customer/List.vue'),
+          meta: { requiresAuth: true, title: '顧客管理' }
         },
         // 系統設置（預留）
         {
