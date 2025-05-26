@@ -551,14 +551,14 @@ watch(
 }
 
 .menu-item-card .card {
-  border: 1px solid #f1f3f4;
+  border: 1px solid #1b5a7a;
   border-radius: 8px;
   box-shadow: none;
   transition: all 0.15s ease;
 }
 
 .menu-item-card:hover .card {
-  border-color: #e5e7eb;
+  border-color: #b89e5c;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
