@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, markRaw } from 'vue';
+import { computed, onMounted, markRaw, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useCounterStore } from '@/stores/counter';
 import DineIn from '@/components/counter/DineIn.vue';
@@ -57,9 +57,20 @@ const route = useRoute();
 const router = useRouter();
 const brandId = route.params.brandId;
 const storeId = route.params.storeId;
-const currentTime = computed(() => {
-  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-});
+
+const currentTime = ref('')
+
+// 每秒更新一次時間（你也可以改成每 10 秒、60 秒）
+const updateTime = () => {
+  const now = new Date()
+  currentTime.value = now.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+let timer = null
+
+
 // 使用 Pinia store
 const counterStore = useCounterStore();
 
@@ -85,11 +96,18 @@ onMounted(async () => {
   // 設置品牌和店鋪ID
   counterStore.setBrandAndStore(brandId, storeId);
 
+  updateTime()
+  timer = setInterval(updateTime, 1000 * 60) // 每秒更新
+
   // 載入初始數據
   await counterStore.fetchStoreData(brandId, storeId);
   await counterStore.fetchMenuData(brandId, storeId);
   await counterStore.fetchTodayOrders(brandId, storeId);
 });
+
+onUnmounted(() => {
+  clearInterval(timer)
+})
 </script>
 
 <style scoped>
