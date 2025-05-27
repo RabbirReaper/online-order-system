@@ -36,11 +36,19 @@
     <!-- 桌號輸入模態框 -->
     <TableNumberModal v-if="counterStore.modals.tableNumber.show" @close="counterStore.closeModal('tableNumber')"
       @confirm="handleTableNumberConfirm" />
+
+    <!-- 取消確認模態框 -->
+    <CancelConfirmModal 
+      v-model="showCancelModal" 
+      :order-info="orderToCancel"
+      @confirm="handleCancelConfirm"
+      @cancel="handleCancelModalClose" 
+    />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useCounterStore } from '@/stores/counter';
 import api from '@/api';
 
@@ -51,6 +59,7 @@ import AdjustmentModal from '../modals/AdjustmentModal.vue';
 import CheckoutModal from '../modals/CheckoutModal.vue';
 import CashCalculatorModal from '../modals/CashCalculatorModal.vue';
 import TableNumberModal from '../modals/TableNumberModal.vue';
+import CancelConfirmModal from '../modals/CancelConfirmModal.vue';
 
 const props = defineProps({
   activeComponent: {
@@ -62,6 +71,10 @@ const props = defineProps({
 // 使用 Pinia store
 const counterStore = useCounterStore();
 
+// 取消確認modal相關狀態
+const showCancelModal = ref(false);
+const orderToCancel = ref(null);
+
 // 計算屬性
 const isOrdersActive = computed(() => counterStore.activeComponent === 'Orders');
 
@@ -72,13 +85,19 @@ const updateOrderStatus = async (orderId, status) => {
       // 如果是完成訂單（結帳），顯示結帳模態框
       const total = counterStore.calculateOrderTotal(counterStore.selectedOrder);
       counterStore.openCheckoutModal(orderId, total);
+    } else if (status === 'cancelled') {
+      // 顯示取消確認modal
+      orderToCancel.value = counterStore.selectedOrder;
+      showCancelModal.value = true;
     } else {
-      // 其他狀態變更
-      const response = await api.orderAdmin.updateOrderStatus({
+      // 其他狀態變更 - 使用新的updateOrder API
+      const response = await api.orderAdmin.updateOrder({
         brandId: counterStore.currentBrand,
         storeId: counterStore.currentStore,
         orderId: orderId,
-        status: status
+        updateData: {
+          status: status
+        }
       });
 
       if (response.success) {
@@ -104,6 +123,51 @@ const updateOrderStatus = async (orderId, status) => {
   }
 };
 
+// 處理取消確認
+const handleCancelConfirm = async (cancelData) => {
+  try {
+    const { orderId, reason } = cancelData;
+    
+    // 使用專門的取消訂單API
+    const response = await api.orderAdmin.cancelOrder({
+      brandId: counterStore.currentBrand,
+      storeId: counterStore.currentStore,
+      orderId: orderId,
+      reason: reason
+    });
+
+    if (response.success) {
+      // 關閉modal
+      showCancelModal.value = false;
+      orderToCancel.value = null;
+      
+      // 重新載入訂單列表
+      await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
+
+      // 如果是當前選中的訂單，重新載入詳情
+      if (counterStore.selectedOrder && counterStore.selectedOrder._id === orderId) {
+        const updatedOrder = await api.orderAdmin.getOrderById({
+          brandId: counterStore.currentBrand,
+          storeId: counterStore.currentStore,
+          orderId: orderId
+        });
+        if (updatedOrder.success) {
+          counterStore.selectOrder(updatedOrder.order);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('取消訂單失敗:', error);
+    alert(error.message || '取消訂單失敗');
+  }
+};
+
+// 處理取消modal關閉
+const handleCancelModalClose = () => {
+  showCancelModal.value = false;
+  orderToCancel.value = null;
+};
+
 // 處理付款方式選擇
 const handlePaymentSelected = async (paymentData) => {
   const { paymentMethod, paymentType } = paymentData;
@@ -125,7 +189,7 @@ const handlePaymentSelected = async (paymentData) => {
 // 完成付款
 const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') => {
   try {
-    // 更新訂單狀態為已付款，並記錄付款方式
+    // 使用新的updateOrder API更新訂單狀態為已付款，並記錄付款方式
     const response = await api.orderAdmin.updateOrder({
       brandId: counterStore.currentBrand,
       storeId: counterStore.currentStore,
