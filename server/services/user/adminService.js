@@ -124,7 +124,7 @@ export const createAdmin = async (adminData) => {
   }
 
   // 管理權限驗證
-  if (adminData.role !== 'boss' && (!adminData.manage || !Array.isArray(adminData.manage) || adminData.manage.length === 0)) {
+  if (adminData.role !== 'boss' && adminData.role !== 'brand_admin' &&(!adminData.manage || !Array.isArray(adminData.manage) || adminData.manage.length === 0)) {
     throw new AppError('非老闆角色必須指定管理的店鋪', 400);
   }
 
