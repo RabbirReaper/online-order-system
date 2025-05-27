@@ -18,9 +18,6 @@
 
     <div class="content-wrapper">
       <div class="auth-card">
-        <div v-if="errorMessage" class="alert alert-danger">
-          {{ errorMessage }}
-        </div>
         <form @submit.prevent="handleNextStep">
           <div class="mb-3">
             <label for="name" class="form-label">姓名 <span class="text-danger">*</span></label>
@@ -37,10 +34,10 @@
               <input type="tel" class="form-control" id="phone" v-model="userData.phone" placeholder="請輸入您的手機號碼"
                 required>
               <button class="btn btn-outline-secondary" type="button" @click="sendVerificationCode"
-                :disabled="isCodeSending || countdown > 0">
+                :disabled="isCodeSending">
                 <span v-if="isCodeSending" class="spinner-border spinner-border-sm me-1" role="status"
                   aria-hidden="true"></span>
-                {{ countdown > 0 ? `重新發送(${countdown}s)` : '獲取驗證碼' }}
+                {{ getVerificationButtonText() }}
               </button>
             </div>
             <small class="form-text text-muted">驗證碼將發送到您的手機</small>
@@ -71,6 +68,9 @@
               </button>
             </div>
           </div>
+          <div v-if="errorMessage" class="alert alert-danger">
+            {{ errorMessage }}
+          </div>
           <div class="mb-4 form-check">
             <input class="form-check-input" type="checkbox" id="agreeTerms" v-model="agreeTerms" required>
             <label class="form-check-label" for="agreeTerms">
@@ -79,7 +79,7 @@
             </label>
           </div>
           <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary py-2" :disabled="isLoading || !isFormValid">
+            <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
               <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
                 aria-hidden="true"></span>
               註冊
@@ -309,6 +309,17 @@ const closeVerificationModal = () => {
   // 可以在這裡添加模態框關閉後的邏輯
 };
 
+// 獲取驗證碼按鈕文字
+const getVerificationButtonText = () => {
+  if (isCodeSending.value) {
+    return '發送中...';
+  }
+  if (countdown.value > 0) {
+    return `重新發送(${countdown.value}s)`;
+  }
+  return '獲取驗證碼';
+};
+
 // 開始倒計時
 const startCountdown = (seconds) => {
   countdown.value = seconds;
@@ -323,29 +334,54 @@ const startCountdown = (seconds) => {
   }, 1000);
 };
 
+// 驗證手機號碼格式
+const validatePhoneNumber = (phone) => {
+  if (!phone) {
+    return '請輸入手機號碼';
+  }
+  
+  // 移除空格和特殊字符
+  const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+  
+  // 台灣手機號碼格式驗證
+  if (!/^09\d{8}$/.test(cleanPhone)) {
+    return '請輸入正確的台灣手機號碼格式（例：0912345678）';
+  }
+  
+  return null;
+};
+
 // 發送驗證碼
 const sendVerificationCode = async () => {
-  // 驗證手機號碼
-  if (!userData.phone || !/^\d{10,}$/.test(userData.phone)) {
-    errorMessage.value = '請輸入有效的手機號碼';
-    if (errorModal.value) {
-      errorModal.value.show();
-    }
-    return;
-  }
-
   try {
+    // 清除之前的錯誤訊息
     errorMessage.value = '';
-    isCodeSending.value = true;
 
-    if (!brandId.value) {
-      throw new Error('無法獲取品牌資訊');
+    // 驗證手機號碼
+    const phoneError = validatePhoneNumber(userData.phone);
+    if (phoneError) {
+      errorMessage.value = phoneError;
+      return;
     }
+
+    // 檢查是否在倒計時中
+    if (countdown.value > 0) {
+      errorMessage.value = `請等待 ${countdown.value} 秒後再重新發送驗證碼`;
+      return;
+    }
+
+    // 檢查品牌ID
+    if (!brandId.value) {
+      errorMessage.value = '無法獲取品牌資訊，請重新整理頁面後再試';
+      return;
+    }
+
+    isCodeSending.value = true;
 
     // 調用發送驗證碼 API
     const response = await api.userAuth.sendVerificationCode({
       brandId: brandId.value,
-      phone: userData.phone,
+      phone: userData.phone.replace(/[\s\-\(\)]/g, ''), // 清理手機號碼格式
       purpose: 'register'
     });
 
@@ -359,14 +395,14 @@ const sendVerificationCode = async () => {
   } catch (error) {
     console.error('發送驗證碼失敗:', error);
 
-    if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '發送驗證碼失敗，請稍後再試';
+    if (error.response?.status === 429) {
+      errorMessage.value = '發送驗證碼過於頻繁，請稍後再試';
+    } else if (error.response?.status === 400) {
+      errorMessage.value = error.response.data.message || '手機號碼格式不正確或已被註冊';
+    } else if (error.response?.data?.message) {
+      errorMessage.value = error.response.data.message;
     } else {
-      errorMessage.value = '發送驗證碼失敗，請稍後再試';
-    }
-
-    if (errorModal.value) {
-      errorModal.value.show();
+      errorMessage.value = '發送驗證碼失敗，請檢查網路連線後再試';
     }
   } finally {
     isCodeSending.value = false;
@@ -377,17 +413,22 @@ const sendVerificationCode = async () => {
 const handleNextStep = async () => {
   // 表單驗證
   if (!isFormValid.value) {
-    errorMessage.value = '請填寫所有必填欄位';
-    if (errorModal.value) {
-      errorModal.value.show();
-    }
-    return;
-  }
-
-  if (userData.password !== confirmPassword.value) {
-    errorMessage.value = '兩次輸入的密碼不一致';
-    if (errorModal.value) {
-      errorModal.value.show();
+    if (!userData.name) {
+      errorMessage.value = '請輸入姓名';
+    } else if (!userData.phone) {
+      errorMessage.value = '請輸入手機號碼';
+    } else if (!userData.password) {
+      errorMessage.value = '請設置密碼';
+    } else if (userData.password.length < 8) {
+      errorMessage.value = '密碼長度至少需要8個字元';
+    } else if (!confirmPassword.value) {
+      errorMessage.value = '請確認密碼';
+    } else if (userData.password !== confirmPassword.value) {
+      errorMessage.value = '兩次輸入的密碼不一致';
+    } else if (!verificationCode.value) {
+      errorMessage.value = '請輸入驗證碼';
+    } else if (!agreeTerms.value) {
+      errorMessage.value = '請同意服務條款和隱私政策';
     }
     return;
   }
@@ -400,13 +441,13 @@ const handleNextStep = async () => {
       throw new Error('無法獲取品牌資訊');
     }
 
-    // 然後註冊用戶
+    // 註冊用戶
     const response = await api.userAuth.register({
       brandId: brandId.value,
       userData: {
         name: userData.name,
         email: userData.email || '', // 電子郵件現在可以為空
-        phone: userData.phone,
+        phone: userData.phone.replace(/[\s\-\(\)]/g, ''), // 清理手機號碼格式
         password: userData.password,
         brand: brandId.value
       },
@@ -427,14 +468,21 @@ const handleNextStep = async () => {
   } catch (error) {
     console.error('註冊失敗:', error);
 
-    if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '註冊失敗，請檢查您的資料';
+    if (error.response?.status === 400) {
+      const errorMsg = error.response.data.message;
+      if (errorMsg.includes('驗證碼')) {
+        errorMessage.value = '驗證碼錯誤或已過期，請重新獲取驗證碼';
+      } else if (errorMsg.includes('手機號碼')) {
+        errorMessage.value = '該手機號碼已被註冊，請使用其他號碼或前往登入';
+      } else {
+        errorMessage.value = errorMsg || '註冊失敗，請檢查您的資料';
+      }
+    } else if (error.response?.status === 429) {
+      errorMessage.value = '操作過於頻繁，請稍後再試';
+    } else if (error.response?.data?.message) {
+      errorMessage.value = error.response.data.message;
     } else {
-      errorMessage.value = '註冊失敗，請稍後再試';
-    }
-
-    if (errorModal.value) {
-      errorModal.value.show();
+      errorMessage.value = '註冊失敗，請檢查網路連線後再試';
     }
   } finally {
     isLoading.value = false;
