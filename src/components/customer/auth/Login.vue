@@ -18,25 +18,34 @@
 
     <div class="content-wrapper">
       <div class="auth-card">
-        <div v-if="errorMessage" class="alert alert-danger">
-          {{ errorMessage }}
-        </div>
-        <form @submit.prevent="handleLogin">
+        <form @submit.prevent="handleLogin" :class="{ 'was-validated': wasValidated }" novalidate>
           <div class="mb-3">
             <label for="phone" class="form-label">手機號碼</label>
-            <input type="tel" class="form-control" id="phone" v-model="credentials.phone" placeholder="請輸入您的手機號碼"
-              required>
+            <input type="tel" class="form-control"
+              :class="{ 'is-invalid': fieldErrors.phone, 'is-valid': isFieldValid('phone') }" id="phone"
+              v-model="credentials.phone" placeholder="請輸入您的手機號碼" pattern="^09\d{8}$" required
+              @blur="validateField('phone')" @input="clearFieldError('phone')">
+            <div class="invalid-feedback">
+              {{ fieldErrors.phone || '請輸入有效的手機號碼格式 (09xxxxxxxx)' }}
+            </div>
           </div>
+
           <div class="mb-4">
             <label for="password" class="form-label">密碼</label>
             <div class="input-group">
-              <input :type="showPassword ? 'text' : 'password'" class="form-control" id="password"
-                v-model="credentials.password" placeholder="請輸入密碼" required>
+              <input :type="showPassword ? 'text' : 'password'" class="form-control"
+                :class="{ 'is-invalid': fieldErrors.password, 'is-valid': isFieldValid('password') }" id="password"
+                v-model="credentials.password" placeholder="請輸入密碼" minlength="6" required
+                @blur="validateField('password')" @input="clearFieldError('password')">
               <button class="btn btn-outline-secondary" type="button" @click="togglePasswordVisibility">
                 <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
               </button>
+              <div class="invalid-feedback">
+                {{ fieldErrors.password }}
+              </div>
             </div>
           </div>
+
           <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="rememberMe" v-model="rememberMe">
@@ -46,6 +55,7 @@
             </div>
             <router-link to="/auth/forgot-password" class="text-decoration-none">忘記密碼？</router-link>
           </div>
+
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
               <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
@@ -56,6 +66,13 @@
               還沒有帳號？立即註冊
             </button>
           </div>
+
+          <!-- 使用 BAlert 顯示錯誤訊息 -->
+          <BAlert :show="formErrors.length > 0" variant="danger" class="mt-3 mb-0">
+            <div v-for="error in formErrors" :key="error" class="mb-1 last:mb-0">
+              {{ error }}
+            </div>
+          </BAlert>
         </form>
       </div>
     </div>
@@ -66,6 +83,7 @@
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { BAlert } from 'bootstrap-vue-next'; // 確保已安裝 bootstrap-vue-next
 
 // 路由相關
 const router = useRouter();
@@ -80,10 +98,94 @@ const credentials = reactive({
 
 // 狀態管理
 const isLoading = ref(false);
-const errorMessage = ref('');
+const formErrors = ref([]); // 改為陣列來存放多個錯誤
 const successMessage = ref('您已成功登入系統');
 const showPassword = ref(false);
 const rememberMe = ref(false);
+const wasValidated = ref(false); // Bootstrap 驗證狀態
+const fieldErrors = reactive({}); // 個別欄位錯誤
+const touchedFields = reactive({}); // 追蹤已觸摸的欄位
+
+// 驗證規則
+const validationRules = {
+  phone: {
+    required: true,
+    pattern: /^09\d{8}$/,
+    message: '請輸入有效的手機號碼格式 (09xxxxxxxx)'
+  },
+  password: {
+    required: true,
+    minLength: 6,
+    message: '密碼長度至少需要6個字元'
+  }
+};
+
+// 驗證單一欄位
+const validateField = (fieldName) => {
+  touchedFields[fieldName] = true;
+  const value = credentials[fieldName];
+  const rules = validationRules[fieldName];
+
+  if (!rules) return true;
+
+  // 必填驗證
+  if (rules.required && (!value || value.trim() === '')) {
+    fieldErrors[fieldName] = `${getFieldDisplayName(fieldName)}為必填欄位`;
+    return false;
+  }
+
+  // 最小長度驗證
+  if (rules.minLength && value.length < rules.minLength) {
+    fieldErrors[fieldName] = rules.message;
+    return false;
+  }
+
+  // 正規表達式驗證
+  if (rules.pattern && !rules.pattern.test(value)) {
+    fieldErrors[fieldName] = rules.message;
+    return false;
+  }
+
+  // 清除錯誤
+  delete fieldErrors[fieldName];
+  return true;
+};
+
+// 清除欄位錯誤
+const clearFieldError = (fieldName) => {
+  if (fieldErrors[fieldName]) {
+    delete fieldErrors[fieldName];
+  }
+};
+
+// 檢查欄位是否有效
+const isFieldValid = (fieldName) => {
+  return touchedFields[fieldName] && !fieldErrors[fieldName] && credentials[fieldName];
+};
+
+// 獲取欄位顯示名稱
+const getFieldDisplayName = (fieldName) => {
+  const displayNames = {
+    phone: '手機號碼',
+    password: '密碼'
+  };
+  return displayNames[fieldName] || fieldName;
+};
+
+// 驗證整個表單
+const validateForm = () => {
+  let isValid = true;
+
+  // 驗證所有欄位
+  Object.keys(validationRules).forEach(fieldName => {
+    if (!validateField(fieldName)) {
+      isValid = false;
+    }
+  });
+
+  wasValidated.value = true;
+  return isValid;
+};
 
 // 從 URL 查詢參數中恢復上次使用的手機號碼
 onMounted(async () => {
@@ -102,7 +204,7 @@ onMounted(async () => {
   }
 
   // 清除舊的錯誤訊息
-  errorMessage.value = '';
+  formErrors.value = [];
 
   // 如果是從註冊頁面跳轉過來，顯示成功訊息
   if (route.query.registered === 'true') {
@@ -131,7 +233,15 @@ const goToRegister = () => {
 // 處理登入
 const handleLogin = async () => {
   try {
-    errorMessage.value = '';
+    // 清除之前的錯誤
+    formErrors.value = [];
+
+    // 驗證表單
+    if (!validateForm()) {
+      formErrors.value = ['請檢查並修正表單中的錯誤'];
+      return;
+    }
+
     isLoading.value = true;
 
     // 從 URL 或 sessionStorage 獲取品牌 ID
@@ -159,10 +269,23 @@ const handleLogin = async () => {
   } catch (error) {
     console.error('登入失敗:', error);
 
+    // 處理不同類型的錯誤
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '登入失敗，請檢查您的手機號碼和密碼';
+      const errorData = error.response.data;
+
+      if (errorData.errors && Array.isArray(errorData.errors)) {
+        // 如果伺服器回傳錯誤陣列
+        formErrors.value = errorData.errors;
+      } else if (errorData.message) {
+        // 如果伺服器回傳單一錯誤訊息
+        formErrors.value = [errorData.message];
+      } else {
+        formErrors.value = ['登入失敗，請檢查您的手機號碼和密碼'];
+      }
+    } else if (error.message) {
+      formErrors.value = [error.message];
     } else {
-      errorMessage.value = '登入失敗，請稍後再試';
+      formErrors.value = ['登入失敗，請稍後再試'];
     }
 
   } finally {
@@ -269,6 +392,28 @@ const handleLogin = async () => {
 .form-check-input:checked {
   background-color: #d35400;
   border-color: #d35400;
+}
+
+/* 自訂驗證樣式 */
+.input-group .form-control.is-invalid {
+  border-right: 1px solid #dc3545;
+}
+
+.input-group .form-control.is-valid {
+  border-right: 1px solid #198754;
+}
+
+.input-group .invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875em;
+  color: #dc3545;
+}
+
+/* 最後一個錯誤訊息不需要底部邊距 */
+.last\:mb-0:last-child {
+  margin-bottom: 0 !important;
 }
 
 @media (max-width: 576px) {
