@@ -22,7 +22,33 @@
             @click="counterStore.setActiveComponent('Orders')">
             訂單
           </button>
-          <button class="btn btn-warning mt-auto" @click="refreshData">更新資料</button>
+
+          <!-- 增強版更新資料按鈕 -->
+          <button class="btn mt-auto refresh-btn" :class="{
+            'btn-warning': !isRefreshing && !isOnCooldown && !refreshSuccess,
+            'btn-secondary': isRefreshing,
+            'btn-dark': isOnCooldown,
+            'btn-success': refreshSuccess && showSuccessMessage,
+            'refreshing': isRefreshing,
+            'disabled': isOnCooldown
+          }" :disabled="isRefreshing || isOnCooldown" @click="handleRefreshData">
+            <!-- 載入中的動畫 -->
+            <span v-if="isRefreshing" class="spinner-border spinner-border-sm me-2" role="status"
+              aria-hidden="true"></span>
+
+            <!-- 更新圖示 -->
+            <i v-else-if="!isOnCooldown" class="bi bi-arrow-clockwise me-1"
+              :class="{ 'spin-once': showSpinAnimation }"></i>
+
+            <!-- 冷卻時間圖示 -->
+            <i v-else class="bi bi-clock me-1"></i>
+
+            <!-- 按鈕文字 -->
+            <span v-if="isRefreshing">更新中</span>
+            <span v-else-if="isOnCooldown">{{ cooldownSeconds }}s</span>
+            <span v-else-if="refreshSuccess && showSuccessMessage">完成!</span>
+            <span v-else class="fs-6">更新</span>
+          </button>
         </div>
       </div>
 
@@ -70,9 +96,21 @@ const updateTime = () => {
 }
 let timer = null
 
-
 // 使用 Pinia store
 const counterStore = useCounterStore();
+
+// 新增的按鈕狀態
+const isRefreshing = ref(false);
+const isOnCooldown = ref(false);
+const cooldownSeconds = ref(0);
+const refreshSuccess = ref(false);
+const showSuccessMessage = ref(false);
+const showSpinAnimation = ref(false);
+
+// 計時器引用
+let cooldownTimer = null;
+let successTimer = null;
+let spinTimer = null;
 
 // 組件映射
 const componentMap = {
@@ -86,9 +124,85 @@ const currentActiveComponent = computed(() => {
   return componentMap[counterStore.activeComponent];
 });
 
-// 重新整理數據
+// 原有的重新整理數據函數
 const refreshData = async () => {
   await counterStore.refreshData(brandId, storeId);
+};
+
+// 處理更新資料點擊（增強版）
+const handleRefreshData = async () => {
+  if (isRefreshing.value || isOnCooldown.value) return;
+
+  try {
+    // 開始更新動畫
+    isRefreshing.value = true;
+    refreshSuccess.value = false;
+    showSuccessMessage.value = false;
+
+    // 觸發一次旋轉動畫
+    triggerSpinAnimation();
+
+    // 呼叫實際的更新函數
+    await refreshData();
+
+    // 更新成功
+    refreshSuccess.value = true;
+    showSuccessMessage.value = true;
+
+    // 2秒後隱藏成功訊息
+    successTimer = setTimeout(() => {
+      showSuccessMessage.value = false;
+      refreshSuccess.value = false;
+    }, 2000);
+
+  } catch (error) {
+    console.error('更新資料失敗:', error);
+    // 可以添加錯誤提示，但保持簡潔
+    // alert('更新失敗，請稍後再試');
+  } finally {
+    isRefreshing.value = false;
+    startCooldown();
+  }
+};
+
+// 開始冷卻倒計時
+const startCooldown = () => {
+  isOnCooldown.value = true;
+  cooldownSeconds.value = 5;
+
+  cooldownTimer = setInterval(() => {
+    cooldownSeconds.value--;
+
+    if (cooldownSeconds.value <= 0) {
+      clearInterval(cooldownTimer);
+      isOnCooldown.value = false;
+      cooldownSeconds.value = 0;
+    }
+  }, 1000);
+};
+
+// 觸發旋轉動畫
+const triggerSpinAnimation = () => {
+  showSpinAnimation.value = true;
+  spinTimer = setTimeout(() => {
+    showSpinAnimation.value = false;
+  }, 600);
+};
+
+// 清理計時器
+const cleanup = () => {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer);
+  }
+  if (successTimer) {
+    clearTimeout(successTimer);
+  }
+  if (spinTimer) {
+    clearTimeout(spinTimer);
+  }
+  if (timer) {
+    clearInterval(timer);
+  }
 };
 
 // 生命周期鉤子
@@ -97,7 +211,7 @@ onMounted(async () => {
   counterStore.setBrandAndStore(brandId, storeId);
 
   updateTime()
-  timer = setInterval(updateTime, 1000 * 60) // 每秒更新
+  timer = setInterval(updateTime, 1000 * 60) // 每分鐘更新
 
   // 載入初始數據
   await counterStore.fetchStoreData(brandId, storeId);
@@ -106,8 +220,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  clearInterval(timer)
-})
+  cleanup();
+});
 </script>
 
 <style scoped>
@@ -176,5 +290,117 @@ onUnmounted(() => {
 .app-container .col-md-3 {
   padding-left: 0 !important;
   padding-right: 0 !important;
+}
+
+/* ==================== 新增的更新按鈕樣式 ==================== */
+
+.refresh-btn {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  min-height: 38px;
+}
+
+/* 按鈕點擊效果 */
+.refresh-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* 更新中狀態 */
+.refresh-btn.refreshing {
+  cursor: wait;
+}
+
+/* 冷卻中狀態 */
+.refresh-btn.disabled {
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
+/* 旋轉動畫 */
+.spin-once {
+  animation: spinOnce 0.6s ease-in-out;
+}
+
+@keyframes spinOnce {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 懸停效果 */
+.refresh-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 成功狀態的閃爍效果 */
+.refresh-btn.btn-success {
+  animation: successFlash 0.5s ease-in-out;
+}
+
+@keyframes successFlash {
+  0% {
+    background-color: #ffc107;
+    transform: scale(1);
+  }
+
+  50% {
+    background-color: #28a745;
+    transform: scale(1.05);
+  }
+
+  100% {
+    background-color: #28a745;
+    transform: scale(1);
+  }
+}
+
+/* 載入動畫的自定義樣式 */
+.spinner-border-sm {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* 冷卻時間數字的脈衝效果 */
+.refresh-btn.disabled span {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 適應側邊欄的緊湊樣式 */
+.sidebar .refresh-btn {
+  font-size: 0.8rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.sidebar .refresh-btn i {
+  font-size: 0.875rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .refresh-btn {
+    font-size: 0.75rem;
+  }
 }
 </style>
