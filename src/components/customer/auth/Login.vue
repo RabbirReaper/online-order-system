@@ -26,7 +26,7 @@
               v-model="credentials.phone" placeholder="請輸入您的手機號碼" pattern="^09\d{8}$" required
               @blur="validateField('phone')" @input="clearFieldError('phone')">
             <div class="invalid-feedback">
-              {{ fieldErrors.phone || '請輸入有效的手機號碼格式 (09xxxxxxxx)' }}
+              {{ fieldErrors.phone }}
             </div>
           </div>
 
@@ -55,6 +55,12 @@
             </div>
             <router-link to="/auth/forgot-password" class="text-decoration-none">忘記密碼？</router-link>
           </div>
+          <!-- 使用 BAlert 顯示錯誤訊息 -->
+          <BAlert :show="formErrors.length > 0" variant="danger" class="mb-3 mb-0">
+            <div v-for="error in formErrors" :key="error" class="mb-1 last:mb-0">
+              {{ error }}
+            </div>
+          </BAlert>
 
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
@@ -67,12 +73,6 @@
             </button>
           </div>
 
-          <!-- 使用 BAlert 顯示錯誤訊息 -->
-          <BAlert :show="formErrors.length > 0" variant="danger" class="mt-3 mb-0">
-            <div v-for="error in formErrors" :key="error" class="mb-1 last:mb-0">
-              {{ error }}
-            </div>
-          </BAlert>
         </form>
       </div>
     </div>
