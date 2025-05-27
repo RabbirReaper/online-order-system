@@ -38,12 +38,8 @@
       @confirm="handleTableNumberConfirm" />
 
     <!-- 取消確認模態框 -->
-    <CancelConfirmModal 
-      v-model="showCancelModal" 
-      :order-info="orderToCancel"
-      @confirm="handleCancelConfirm"
-      @cancel="handleCancelModalClose" 
-    />
+    <CancelConfirmModal v-model="showCancelModal" :order-info="orderToCancel" @confirm="handleCancelConfirm"
+      @cancel="handleCancelModalClose" />
   </div>
 </template>
 
@@ -127,7 +123,7 @@ const updateOrderStatus = async (orderId, status) => {
 const handleCancelConfirm = async (cancelData) => {
   try {
     const { orderId, reason } = cancelData;
-    
+
     // 使用專門的取消訂單API
     const response = await api.orderAdmin.cancelOrder({
       brandId: counterStore.currentBrand,
@@ -140,7 +136,7 @@ const handleCancelConfirm = async (cancelData) => {
       // 關閉modal
       showCancelModal.value = false;
       orderToCancel.value = null;
-      
+
       // 重新載入訂單列表
       await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
 

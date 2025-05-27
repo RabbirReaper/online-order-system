@@ -267,32 +267,37 @@ export const useCounterStore = defineStore('counter', () => {
 
   // 載入當日訂單
   async function fetchTodayOrders(brandId, storeId) {
-    const taiwanToday = getTaiwanDate();
-    return await fetchOrdersByDate(brandId, storeId, taiwanToday);
+    const today = new Date(); // 直接使用當前時間
+    return await fetchOrdersByDate(brandId, storeId, today);
   }
 
   // 按日期載入訂單
-  async function fetchOrdersByDate(brandId, storeId, dateString) {
+  async function fetchOrdersByDate(brandId, storeId, date) {
     try {
-      const normalizedDate = getTaiwanDate(dateString);
+      // 確保 date 是 Date 對象
+      const targetDate = date instanceof Date ? date : new Date(date);
+
       const response = await api.orderAdmin.getStoreOrders({
         brandId,
         storeId,
-        fromDate: normalizedDate,
-        toDate: normalizedDate
+        fromDate: targetDate,
+        toDate: targetDate
       });
 
       if (response.success) {
         todayOrders.value = response.orders;
-        const displayDate = new Date(normalizedDate + 'T00:00:00');
-        currentDate.value = displayDate.toLocaleDateString('zh-TW');
+        currentDate.value = targetDate.toLocaleDateString('zh-TW');
+
         return response;
       } else {
-        console.error('API 回應失敗:', response);
+        console.error('❌ API 回應失敗:', response);
         throw new Error(response.message || '獲取訂單失敗');
       }
     } catch (error) {
-      console.error('載入訂單失敗:', error);
+      console.error('💥 載入訂單失敗:', {
+        錯誤: error.message,
+        參數: { brandId, storeId, date }
+      });
       throw error;
     }
   }
