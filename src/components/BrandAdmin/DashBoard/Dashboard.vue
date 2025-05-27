@@ -18,8 +18,11 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">{{ brandName }} 品牌儀表板</h4>
         <div class="btn-group">
-          <button class="btn btn-outline-secondary" @click="refreshData">
-            <i class="bi bi-arrow-clockwise me-1"></i>刷新數據
+          <button class="btn btn-outline-secondary" @click="refreshData" :disabled="isRefreshing">
+            <span v-if="isRefreshing" class="spinner-border spinner-border-sm me-1" role="status"
+              aria-hidden="true"></span>
+            <i v-else class="bi bi-arrow-clockwise me-1"></i>
+            {{ isRefreshing ? '刷新中...' : '刷新數據' }}
           </button>
           <router-link :to="`/admin/${brandId}/stores`" class="btn btn-primary">
             <i class="bi bi-shop me-1"></i>管理店鋪
@@ -74,10 +77,10 @@
               <h2 class="mt-3">NT$ {{ formatNumber(stats.weeklySales || 0) }}</h2>
               <div class="small mt-2">
                 <span class="badge bg-success me-1" v-if="stats.salesGrowth > 0">
-                  <i class="bi bi-graph-up me-1"></i>較上週 +{{ stats.salesGrowth }}%
+                  <i class="bi bi-graph-up me-1"></i>較上週 +{{ stats.salesGrowth.toFixed(1) }}%
                 </span>
                 <span class="badge bg-danger me-1" v-else-if="stats.salesGrowth < 0">
-                  <i class="bi bi-graph-down me-1"></i>較上週 {{ stats.salesGrowth }}%
+                  <i class="bi bi-graph-down me-1"></i>較上週 {{ stats.salesGrowth.toFixed(1) }}%
                 </span>
                 <span class="badge bg-secondary" v-else>
                   <i class="bi bi-dash me-1"></i>與上週持平
@@ -179,7 +182,7 @@
                         :class="getStoreGrowth(store._id) > 0 ? 'text-success' : getStoreGrowth(store._id) < 0 ? 'text-danger' : 'text-muted'">
                         <i class="bi"
                           :class="getStoreGrowth(store._id) > 0 ? 'bi-arrow-up' : getStoreGrowth(store._id) < 0 ? 'bi-arrow-down' : 'bi-dash'"></i>
-                        {{ getStoreGrowth(store._id) > 0 ? '+' : '' }}{{ getStoreGrowth(store._id) }}%
+                        {{ getStoreGrowth(store._id) > 0 ? '+' : '' }}{{ getStoreGrowth(store._id).toFixed(1) }}%
                       </small>
                     </div>
                   </td>
@@ -234,19 +237,19 @@
                 <tr>
                   <th>訂單編號</th>
                   <th>店鋪</th>
-                  <th>顧客</th>
+                  <th>取餐方式</th>
                   <th>金額</th>
                   <th>狀態</th>
                   <th>下單時間</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="order in recentOrders" :key="order.id">
+                <tr v-for="order in recentOrders" :key="order._id">
                   <td>
-                    <span class="fw-medium">#{{ order.id }}</span>
+                    <span class="fw-medium">{{ getOrderNumber(order) }}</span>
                   </td>
                   <td>{{ order.storeName }}</td>
-                  <td>{{ order.customerName }}</td>
+                  <td>{{ formatOrderType(order.orderType) }}</td>
                   <td>NT$ {{ formatNumber(order.total) }}</td>
                   <td>
                     <span class="badge rounded-pill" :class="getOrderStatusClass(order.status)">
@@ -326,7 +329,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/api';
 
@@ -336,6 +339,7 @@ const brandId = computed(() => route.params.brandId);
 
 // 狀態變數
 const isLoading = ref(true);
+const isRefreshing = ref(false);
 const error = ref('');
 const brandName = ref('');
 const stores = ref([]);
@@ -348,8 +352,15 @@ const stats = ref({
   weeklyOrders: 0,
   averageOrderValue: 0
 });
+const orderTypeMap = {
+  'dine_in': '內用',
+  'takeout': '外帶',
+  'delivery': '外送',
+  'foodpanda': 'Foodpanda',
+  'ubereats': 'UberEats',
+};
 
-// 模擬的店鋪銷售數據 (實際應從 API 獲取)
+// 店鋪銷售數據
 const storeSalesData = ref({});
 
 // 格式化數字 (加入千位分隔符)
@@ -391,6 +402,10 @@ const formatBusinessHours = (businessHours) => {
   }).join(', ');
 };
 
+const formatOrderType = (orderType) => {
+  return orderTypeMap[orderType] || '其他';
+};
+
 // 獲取店鋪本週銷售額
 const getStoreSales = (storeId) => {
   return storeSalesData.value[storeId]?.weeklySales || 0;
@@ -401,12 +416,20 @@ const getStoreGrowth = (storeId) => {
   return storeSalesData.value[storeId]?.salesGrowth || 0;
 };
 
+// 獲取訂單編號
+const getOrderNumber = (order) => {
+  if (order.platformOrderId) return order.platformOrderId;
+  if (order.orderDateCode && order.sequence) {
+    return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`;
+  }
+  return order._id || '';
+};
+
 // 根據訂單狀態返回對應的樣式類
 const getOrderStatusClass = (status) => {
   switch (status) {
-    case 'completed': return 'bg-success';
-    case 'processing': return 'bg-primary';
-    case 'pending': return 'bg-warning';
+    case 'paid': return 'bg-success';
+    case 'unpaid': return 'bg-warning';
     case 'cancelled': return 'bg-danger';
     default: return 'bg-secondary';
   }
@@ -415,9 +438,8 @@ const getOrderStatusClass = (status) => {
 // 根據訂單狀態返回對應的文字
 const getOrderStatusText = (status) => {
   switch (status) {
-    case 'completed': return '已完成';
-    case 'processing': return '處理中';
-    case 'pending': return '待處理';
+    case 'paid': return '已付款';
+    case 'unpaid': return '未付款';
     case 'cancelled': return '已取消';
     default: return '未知';
   }
@@ -436,11 +458,162 @@ const formatDate = (dateString) => {
   });
 };
 
+// 日期處理函數
+const getWeekStart = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day; // Sunday is 0
+  return new Date(d.setDate(diff));
+};
+
+const getWeekEnd = (date) => {
+  const weekStart = getWeekStart(date);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  return weekEnd;
+};
+
+const formatDateForAPI = (date) => {
+  return date.toISOString().split('T')[0];
+};
+
+// 獲取店鋪列表
+const fetchStores = async () => {
+  try {
+    const response = await api.store.getAllStores({ brandId: brandId.value });
+    if (response && response.stores) {
+      stores.value = response.stores.slice(0, 5); // 僅顯示前5間店鋪
+
+      // 更新統計數據
+      stats.value.storeCount = response.stores.length;
+      stats.value.activeStoreCount = response.stores.filter(store => store.isActive).length;
+    }
+  } catch (err) {
+    console.error('獲取店鋪列表失敗:', err);
+    throw err;
+  }
+};
+
+// 獲取訂單數據並計算統計
+const fetchOrdersAndCalculateStats = async () => {
+  try {
+    // 獲取本週和上週的日期範圍
+    const today = new Date();
+    const thisWeekStart = getWeekStart(today);
+    const thisWeekEnd = getWeekEnd(today);
+
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    const lastWeekEnd = new Date(thisWeekEnd);
+    lastWeekEnd.setDate(thisWeekEnd.getDate() - 7);
+
+    // 獲取所有店鋪列表（如果還沒有的話）
+    if (stores.value.length === 0) {
+      const storesResponse = await api.store.getAllStores({ brandId: brandId.value });
+      if (storesResponse && storesResponse.stores) {
+        stores.value = storesResponse.stores;
+      }
+    }
+
+    // 獲取本週訂單
+    const thisWeekOrdersPromises = stores.value.map(store =>
+      api.orderAdmin.getStoreOrders({
+        brandId: brandId.value,
+        storeId: store._id,
+        fromDate: formatDateForAPI(thisWeekStart),
+        toDate: formatDateForAPI(thisWeekEnd),
+        page: 1,
+        limit: 1000
+      }).catch(err => {
+        console.warn(`獲取店鋪 ${store._id} 本週訂單失敗:`, err);
+        return { success: false, orders: [] };
+      })
+    );
+
+    // 獲取上週訂單
+    const lastWeekOrdersPromises = stores.value.map(store =>
+      api.orderAdmin.getStoreOrders({
+        brandId: brandId.value,
+        storeId: store._id,
+        fromDate: formatDateForAPI(lastWeekStart),
+        toDate: formatDateForAPI(lastWeekEnd),
+        page: 1,
+        limit: 1000
+      }).catch(err => {
+        console.warn(`獲取店鋪 ${store._id} 上週訂單失敗:`, err);
+        return { success: false, orders: [] };
+      })
+    );
+
+    const [thisWeekResponses, lastWeekResponses] = await Promise.all([
+      Promise.all(thisWeekOrdersPromises),
+      Promise.all(lastWeekOrdersPromises)
+    ]);
+
+    // 合併本週訂單
+    const thisWeekOrders = thisWeekResponses.flatMap(response => {
+      if (response.success && response.orders) {
+        return response.orders.map(order => ({
+          ...order,
+          storeName: stores.value.find(s => s._id === order.store)?.name || '未知店鋪'
+        }));
+      }
+      return [];
+    });
+
+    // 合併上週訂單
+    const lastWeekOrders = lastWeekResponses.flatMap(response => {
+      if (response.success && response.orders) {
+        return response.orders;
+      }
+      return [];
+    });
+
+    // 計算統計數據
+    const thisWeekSales = thisWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const lastWeekSales = lastWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const thisWeekOrderCount = thisWeekOrders.length;
+
+    stats.value.weeklySales = thisWeekSales;
+    stats.value.weeklyOrders = thisWeekOrderCount;
+    stats.value.averageOrderValue = thisWeekOrderCount > 0 ? (thisWeekSales / thisWeekOrderCount) : 0;
+    stats.value.salesGrowth = lastWeekSales > 0 ? ((thisWeekSales - lastWeekSales) / lastWeekSales * 100) : 0;
+
+    // 計算每個店鋪的銷售數據
+    stores.value.forEach(store => {
+      const storeThisWeekOrders = thisWeekOrders.filter(order => order.store === store._id);
+      const storeLastWeekOrders = lastWeekOrders.filter(order => order.store === store._id);
+
+      const storeThisWeekSales = storeThisWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const storeLastWeekSales = storeLastWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+
+      storeSalesData.value[store._id] = {
+        weeklySales: storeThisWeekSales,
+        salesGrowth: storeLastWeekSales > 0 ? ((storeThisWeekSales - storeLastWeekSales) / storeLastWeekSales * 100) : 0
+      };
+    });
+
+    // 設置最近訂單（按時間排序，取前5筆）
+    recentOrders.value = thisWeekOrders
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5);
+
+  } catch (err) {
+    console.error('獲取訂單數據失敗:', err);
+    throw err;
+  }
+};
+
 // 加載數據
-const loadData = async () => {
+const loadData = async (isRefresh = false) => {
   if (!brandId.value) return;
 
-  isLoading.value = true;
+  if (isRefresh) {
+    isRefreshing.value = true;
+  } else {
+    isLoading.value = true;
+  }
+
   error.value = '';
 
   try {
@@ -451,72 +624,23 @@ const loadData = async () => {
     }
 
     // 獲取店鋪列表
-    const storesResponse = await api.store.getAllStores({ brandId: brandId.value });
-    if (storesResponse && storesResponse.stores) {
-      stores.value = storesResponse.stores.slice(0, 5); // 僅顯示前5間店鋪
+    await fetchStores();
 
-      // 更新統計數據
-      stats.value.storeCount = storesResponse.stores.length;
-      stats.value.activeStoreCount = storesResponse.stores.filter(store => store.isActive).length;
-    }
-
-    // 由於目前沒有實際的訂單和銷售數據 API，這裡使用模擬數據
-    simulateData();
+    // 獲取訂單數據並計算統計
+    await fetchOrdersAndCalculateStats();
 
   } catch (err) {
     console.error('獲取數據失敗:', err);
     error.value = '無法載入數據，請稍後再試';
   } finally {
     isLoading.value = false;
+    isRefreshing.value = false;
   }
 };
 
 // 刷新數據
 const refreshData = () => {
-  loadData();
-};
-
-// 模擬數據 (實際項目中應替換為真實 API 調用)
-const simulateData = () => {
-  // 模擬銷售統計
-  stats.value.weeklySales = Math.floor(Math.random() * 500000) + 100000;
-  stats.value.salesGrowth = Math.floor(Math.random() * 40) - 10; // -10% 到 +30%
-  stats.value.weeklyOrders = Math.floor(Math.random() * 500) + 100;
-  stats.value.averageOrderValue = Math.floor(stats.value.weeklySales / stats.value.weeklyOrders);
-
-  // 模擬店鋪銷售數據
-  stores.value.forEach(store => {
-    storeSalesData.value[store._id] = {
-      weeklySales: Math.floor(Math.random() * 100000) + 10000,
-      salesGrowth: Math.floor(Math.random() * 60) - 20 // -20% 到 +40%
-    };
-  });
-
-  // 模擬最近訂單
-  recentOrders.value = [];
-  const orderStatuses = ['completed', 'processing', 'pending', 'cancelled'];
-  const currentDate = new Date();
-
-  for (let i = 0; i < 5; i++) {
-    const randomStore = stores.value[Math.floor(Math.random() * stores.value.length)];
-    if (!randomStore) continue;
-
-    const orderDate = new Date(currentDate);
-    orderDate.setHours(currentDate.getHours() - Math.floor(Math.random() * 24)); // 過去 24 小時內的訂單
-
-    recentOrders.value.push({
-      id: Math.floor(Math.random() * 10000) + 10000,
-      storeId: randomStore._id,
-      storeName: randomStore.name,
-      customerName: `顧客${Math.floor(Math.random() * 1000) + 1}`,
-      total: Math.floor(Math.random() * 1000) + 100,
-      status: orderStatuses[Math.floor(Math.random() * orderStatuses.length)],
-      createdAt: orderDate.toISOString()
-    });
-  }
-
-  // 依照時間排序，最新的在前
-  recentOrders.value.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  loadData(true);
 };
 
 // 生命週期鉤子
