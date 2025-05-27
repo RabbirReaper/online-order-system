@@ -559,7 +559,7 @@ const saveAddress = async () => {
     if (successModal.value) {
       successModal.value.show();
     }
-
+    loadUserProfile();
   } catch (error) {
     console.error('保存地址失敗:', error);
 
