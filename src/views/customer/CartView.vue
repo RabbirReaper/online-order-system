@@ -86,6 +86,16 @@
         </div>
       </div>
 
+      <!-- Error Message Display -->
+      <div v-if="errorMsg" class="error-message-container position-fixed w-100 p-3" 
+           style="bottom: 80px; max-width: 540px; left: 50%; transform: translateX(-50%); z-index: 1050;">
+        <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ errorMsg }}
+          <button type="button" class="btn-close" aria-label="Close" @click="clearError"></button>
+        </div>
+      </div>
+
       <!-- Fixed Bottom Button -->
       <div v-if="cartItems.length > 0"
         class="checkout-button position-fixed bottom-0 start-50 translate-middle-x w-100 bg-white p-3 shadow-lg d-flex justify-content-center"
@@ -136,6 +146,9 @@ const cartStore = useCartStore();
 
 // 購物車內容
 const cartItems = computed(() => cartStore.items);
+
+// 錯誤訊息
+const errorMsg = ref('');
 
 // 表單資料
 const orderRemarks = ref('');
@@ -189,6 +202,23 @@ const isFormValid = computed(() => {
 
   return true;
 });
+
+// 清除錯誤訊息
+const clearError = () => {
+  errorMsg.value = '';
+};
+
+// 顯示錯誤訊息並自動清除
+const showError = (message) => {
+  errorMsg.value = message;
+  // 5秒後自動清除
+  setTimeout(() => {
+    if (errorMsg.value === message) {
+      clearError();
+    }
+  }, 5000);
+};
+
 // 方法
 const goBack = () => {
   if (cartStore.currentBrand && cartStore.currentStore) {
@@ -218,7 +248,7 @@ const editItem = (index) => {
       brandId: cartStore.currentBrand,
       storeId: cartStore.currentStore
     });
-    alert('無法編輯商品：缺少必要資訊');
+    showError('無法編輯商品：缺少必要資訊');
     return;
   }
 
@@ -253,9 +283,12 @@ const calculateTotal = () => {
 
 const checkout = () => {
   if (!isFormValid.value) {
-    alert('請填寫所有必要資訊');
+    showError('請填寫所有必要資訊');
     return;
   }
+
+  // 清除之前的錯誤訊息
+  clearError();
 
   // 顯示確認對話框
   if (confirmModal) {
@@ -266,6 +299,8 @@ const checkout = () => {
 // 在 CartView.vue 中添加調試信息
 const submitOrder = async () => {
   try {
+    // 清除之前的錯誤訊息
+    clearError();
 
     const mappedOrderType = (() => {
       switch (orderType.value) {
@@ -357,18 +392,18 @@ const submitOrder = async () => {
       confirmModal.hide();
     }
 
-    let errorMsg = '訂單提交失敗，請稍後再試';
+    let errorMessage = '訂單提交失敗，請稍後再試';
 
     if (error.errors) {
       const errorMessages = Object.values(error.errors).join('\n');
-      errorMsg = `請檢查以下資訊：\n${errorMessages}`;
+      errorMessage = `請檢查以下資訊：\n${errorMessages}`;
     } else if (typeof error === 'string') {
-      errorMsg = error;
+      errorMessage = error;
     } else if (error.message) {
-      errorMsg = error.message;
+      errorMessage = error.message;
     }
 
-    alert(errorMsg);
+    showError(errorMessage);
   }
 };
 
@@ -456,6 +491,21 @@ onMounted(() => {
   padding: 0 15px;
 }
 
+.error-message-container {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
 /* Fix for iOS input styling */
 input[type="datetime-local"] {
   appearance: none;
@@ -466,6 +516,13 @@ input[type="datetime-local"] {
 @media (max-width: 576px) {
   .container-wrapper {
     max-width: 100%;
+  }
+  
+  .error-message-container {
+    left: 0 !important;
+    right: 0;
+    transform: none !important;
+    max-width: 100% !important;
   }
 }
 </style>
