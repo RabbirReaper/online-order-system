@@ -140,6 +140,7 @@
                 <th>最低警告值</th>
                 <th>補貨目標</th>
                 <th>追蹤庫存</th>
+                <th>可販售庫存</th>
                 <th>售完狀態</th>
                 <th width="250">操作</th>
               </tr>
@@ -169,6 +170,11 @@
                 <td>
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" :checked="item.isInventoryTracked" disabled>
+                  </div>
+                </td>
+                <td>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" :checked="item.enableAvailableStock" disabled>
                   </div>
                 </td>
                 <td>
