@@ -7,7 +7,9 @@
 
       <CategoryNavigator v-if="menu.list && menu.list.length > 0" :categories="menu.list" />
 
-      <MenuCategoryList :menu-list="menu.list" :menu-items="menuItems" @select-item="selectItem" />
+      <!-- 修改：傳遞 brandId 和 storeId 給 MenuCategoryList -->
+      <MenuCategoryList :menu-list="menu.list" :menu-items="menuItems" :brandId="brandId" :storeId="storeId"
+        @select-item="selectItem" />
 
       <!-- Shopping Cart Button -->
       <div v-if="cart.length > 0" class="position-fixed bottom-0 start-50 translate-middle-x mb-4"

@@ -44,13 +44,27 @@
                   {{ selectedCategory.name }}
                 </h5>
                 <div class="menu-items-grid">
-                  <div v-for="dish in selectedCategory.dishes" :key="dish._id" class="menu-item-card"
-                    :class="{ 'selected-dish': selectedDish && selectedDish._id === dish.dishTemplate._id }"
-                    @click="quickSelectDish(dish.dishTemplate)">
+                  <div v-for="dish in selectedCategory.dishes" :key="dish._id" class="menu-item-card" :class="{
+                    'selected-dish': selectedDish && selectedDish._id === dish.dishTemplate._id,
+                    'sold-out': isDishSoldOut(dish.dishTemplate._id)
+                  }" @click="handleDishClick(dish.dishTemplate)">
                     <div class="card h-100">
                       <div class="card-body">
-                        <h6 class="card-title">{{ dish.dishTemplate.name }}</h6>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                          <h6 class="card-title mb-0">{{ dish.dishTemplate.name }}</h6>
+                          <!-- 庫存狀態顯示 -->
+                          <div v-if="getInventoryInfo(dish.dishTemplate._id)" class="inventory-badge">
+                            <span v-if="getInventoryInfo(dish.dishTemplate._id).enableAvailableStock" class="badge"
+                              :class="getStockBadgeClass(dish.dishTemplate._id)">
+                              {{ getInventoryInfo(dish.dishTemplate._id).availableStock }}
+                            </span>
+                          </div>
+                        </div>
                         <p class="card-text price">${{ dish.price || dish.dishTemplate.basePrice }}</p>
+                        <!-- 售完遮罩 -->
+                        <div v-if="isDishSoldOut(dish.dishTemplate._id)" class="sold-out-overlay">
+                          <span class="sold-out-text">售完</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -123,6 +137,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useCounterStore } from '@/stores/counter';
+import api from '@/api';
 
 const props = defineProps({
   brandId: {
@@ -162,6 +177,8 @@ const selectedDish = ref(null);
 const selectedOptions = ref({}); // { categoryId: [optionIds] }
 const itemNote = ref('');
 const selectedCategoryId = ref(null); // 新增：選中的類別ID
+const inventoryData = ref({}); // 庫存資料 { dishTemplateId: inventoryInfo }
+const isLoadingInventory = ref(false);
 
 // 計算屬性 - 根據主題動態設定樣式
 const headerClass = computed(() => `bg-${props.themeClass}`);
@@ -234,6 +251,77 @@ const getOptionPrice = (option) => {
   return option.refOption ? (option.refOption.price || 0) : (option.price || 0);
 };
 
+// 庫存相關方法
+const getInventoryInfo = (dishTemplateId) => {
+  return inventoryData.value[dishTemplateId] || null;
+};
+
+const isDishSoldOut = (dishTemplateId) => {
+  const inventory = getInventoryInfo(dishTemplateId);
+  if (!inventory) return false;
+
+  // 如果啟用了可用庫存機制，檢查可用庫存是否為 0
+  if (inventory.enableAvailableStock) {
+    return inventory.availableStock <= 0;
+  }
+
+  // 檢查是否手動設為售完
+  return inventory.isSoldOut;
+};
+
+const getStockBadgeClass = (dishTemplateId) => {
+  const inventory = getInventoryInfo(dishTemplateId);
+  if (!inventory || !inventory.enableAvailableStock) return '';
+
+  if (inventory.availableStock <= 0) {
+    return 'bg-danger text-white';
+  } else if (inventory.availableStock <= 5) {
+    return 'bg-warning text-dark';
+  } else {
+    return 'bg-success text-white';
+  }
+};
+
+// 載入庫存資料
+const loadInventoryData = async () => {
+  if (!props.brandId || !props.storeId || !menuCategories.value.length) return;
+
+  isLoadingInventory.value = true;
+
+  try {
+    // 獲取店鋪所有餐點庫存
+    const response = await api.inventory.getStoreInventory({
+      brandId: props.brandId,
+      storeId: props.storeId,
+      inventoryType: 'DishTemplate'
+    });
+
+    if (response.success) {
+      const inventoryMap = {};
+
+      // 將庫存資料按餐點模板 ID 建立對應關係
+      response.inventory.forEach(item => {
+        if (item.dish && item.dish._id) {
+          inventoryMap[item.dish._id] = {
+            inventoryId: item._id,
+            enableAvailableStock: item.enableAvailableStock,
+            availableStock: item.availableStock,
+            totalStock: item.totalStock,
+            isSoldOut: item.isSoldOut,
+            isInventoryTracked: item.isInventoryTracked
+          };
+        }
+      });
+
+      inventoryData.value = inventoryMap;
+    }
+  } catch (error) {
+    console.error('載入庫存資料失敗:', error);
+  } finally {
+    isLoadingInventory.value = false;
+  }
+};
+
 // 方法
 const loadMenuData = async () => {
   isLoading.value = true;
@@ -245,6 +333,8 @@ const loadMenuData = async () => {
     if (menuCategories.value.length > 0) {
       selectedCategoryId.value = menuCategories.value[0]._id;
     }
+    // 載入庫存資料
+    await loadInventoryData();
   } catch (error) {
     console.error('載入菜單資料失敗:', error);
     errorMessage.value = error.message || '載入菜單資料失敗';
@@ -256,6 +346,19 @@ const loadMenuData = async () => {
 // 新增：選擇類別
 const selectCategory = (categoryId) => {
   selectedCategoryId.value = categoryId;
+};
+
+// 處理餐點點擊
+const handleDishClick = (dishTemplate) => {
+  // 檢查餐點是否售完
+  if (isDishSoldOut(dishTemplate._id)) {
+    // 可以顯示提示訊息
+    // alert('此餐點目前售完，無法點選');
+    return;
+  }
+
+  // 原來的快速選擇邏輯
+  quickSelectDish(dishTemplate);
 };
 
 // 快速選擇餐點（加入購物車並進入編輯模式）
@@ -398,6 +501,8 @@ onMounted(async () => {
   } else if (menuCategories.value.length > 0) {
     // 如果菜單資料已存在，自動選擇第一個類別
     selectedCategoryId.value = menuCategories.value[0]._id;
+    // 載入庫存資料
+    await loadInventoryData();
   }
 });
 
@@ -426,6 +531,16 @@ watch(
     }
   },
   { immediate: true }
+);
+
+// 監聽菜單變化，載入庫存資料
+watch(
+  menuCategories,
+  async (newCategories) => {
+    if (newCategories.length > 0) {
+      await loadInventoryData();
+    }
+  }
 );
 </script>
 
@@ -544,9 +659,10 @@ watch(
 .menu-item-card {
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
 }
 
-.menu-item-card:hover {
+.menu-item-card:not(.sold-out):hover {
   transform: translateY(-1px);
 }
 
@@ -555,9 +671,10 @@ watch(
   border-radius: 8px;
   box-shadow: none;
   transition: all 0.15s ease;
+  position: relative;
 }
 
-.menu-item-card:hover .card {
+.menu-item-card:not(.sold-out):hover .card {
   border-color: #b89e5c;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
@@ -567,6 +684,17 @@ watch(
   border-width: 2px;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
   background-color: #fff7ed;
+}
+
+/* 售完狀態樣式 */
+.menu-item-card.sold-out {
+  cursor: not-allowed;
+}
+
+.menu-item-card.sold-out .card {
+  opacity: 0.6;
+  border-color: #dc3545;
+  background-color: #f8f9fa;
 }
 
 .menu-item-card .card-body {
@@ -592,6 +720,46 @@ watch(
   font-weight: 600;
   font-size: 0.875rem;
   margin: 0;
+}
+
+/* 庫存相關樣式 */
+.inventory-badge {
+  position: relative;
+  z-index: 1;
+}
+
+.inventory-badge .badge {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* 售完遮罩 */
+.sold-out-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  z-index: 2;
+}
+
+.sold-out-text {
+  color: white;
+  font-weight: bold;
+  font-size: 1.1rem;
+  background-color: #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .option-category-title {
