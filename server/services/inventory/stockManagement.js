@@ -316,13 +316,8 @@ export const reduceStock = async (reduceData) => {
   // 查找庫存項目
   const inventoryItem = await getInventoryItem(storeId, inventoryId);
 
-  // 如果不追蹤庫存，直接返回成功
-  if (!inventoryItem.isInventoryTracked) {
-    return true;
-  }
-
   // 檢查總庫存是否足夠
-  if (inventoryItem.totalStock < quantity) {
+  if (inventoryItem.enableAvailableStock && inventoryItem.totalStock < quantity) {
     throw new AppError('庫存不足', 400);
   }
 
@@ -331,7 +326,7 @@ export const reduceStock = async (reduceData) => {
   const previousAvailableStock = inventoryItem.availableStock;
 
   // 扣減總庫存
-  inventoryItem.totalStock -= quantity;
+  inventoryItem.totalStock = Math.max(0, inventoryItem.totalStock - quantity);
 
   // 如果啟用可用庫存，同時扣減可用庫存
   if (inventoryItem.enableAvailableStock) {
