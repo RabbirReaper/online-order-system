@@ -82,7 +82,7 @@
               <input :type="showPassword ? 'text' : 'password'" class="form-control" id="password"
                 v-model="userData.password"
                 :class="{ 'is-invalid': fieldErrors.password, 'is-valid': isFieldValid('password') }"
-                placeholder="請設置密碼 (8-64位，英文數字及!@#$%^&*)" @blur="validateField('password')"
+                placeholder="請設置密碼 8-64位，只能包含英文數字及!@#$%^&*" @blur="validateField('password')"
                 @input="clearFieldError('password')" required>
               <button class="btn btn-outline-secondary" type="button" @click="togglePasswordVisibility">
                 <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
@@ -251,7 +251,7 @@ const validationRules = {
     minLength: 8,
     maxLength: 64,
     pattern: /^[a-zA-Z0-9!@#$%^&*]+$/,
-    message: '密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)'
+    message: '密碼必須8-64個字元，只能包含英文、數字和符號 !@#$%^&*'
   },
   confirmPassword: {
     required: true,
