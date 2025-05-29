@@ -185,11 +185,14 @@ const handlePaymentSelected = async (paymentData) => {
 // 完成付款
 const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') => {
   try {
+    // 使用模態框中儲存的 orderId，而不是當前選中的訂單
+    const orderId = counterStore.modals.checkout.orderId;
+
     // 使用新的updateOrder API更新訂單狀態為已付款，並記錄付款方式
     const response = await api.orderAdmin.updateOrder({
       brandId: counterStore.currentBrand,
       storeId: counterStore.currentStore,
-      orderId: counterStore.selectedOrder._id,
+      orderId: orderId, // 使用正確的 orderId
       updateData: {
         status: 'paid',
         paymentMethod: paymentMethod,
@@ -198,9 +201,24 @@ const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') 
     });
 
     if (response.success) {
+      // 關閉模態框
       counterStore.closeModal('checkout');
       counterStore.closeModal('cashCalculator');
+
+      // 重新載入訂單列表
       await counterStore.fetchTodayOrders(counterStore.currentBrand, counterStore.currentStore);
+
+      // ✅ 重新載入當前選中訂單的詳情（這是關鍵！）
+      if (counterStore.selectedOrder && counterStore.selectedOrder._id === orderId) {
+        const updatedOrder = await api.orderAdmin.getOrderById({
+          brandId: counterStore.currentBrand,
+          storeId: counterStore.currentStore,
+          orderId: orderId
+        });
+        if (updatedOrder.success) {
+          counterStore.selectOrder(updatedOrder.order);
+        }
+      }
     }
   } catch (error) {
     console.error('完成付款失敗:', error);
