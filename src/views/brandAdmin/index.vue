@@ -146,11 +146,6 @@
               @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)">
               <template #icon><i class="bi bi-gear me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/settings`">
-                <i class="bi bi-sliders me-2"></i>
-                品牌設置
-              </router-link>
-
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/account-settings`">
                 <i class="bi bi-person-gear me-2"></i>
                 帳號設置
