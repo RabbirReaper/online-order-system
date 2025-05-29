@@ -321,10 +321,6 @@ export const reduceStock = async (reduceData) => {
     throw new AppError('庫存不足', 400);
   }
 
-  if (inventoryItem.isSoldOut) {
-    throw new AppError('此項目暫停販售，無法減少庫存', 400);
-  }
-
   // 記錄先前的庫存
   const previousTotalStock = inventoryItem.totalStock;
   const previousAvailableStock = inventoryItem.availableStock;
@@ -402,6 +398,11 @@ export const reduceInventoryForOrder = async (order) => {
       if (!inventoryItem) {
         console.warn(`餐點模板 ${dishInstance.templateId} 在店鋪 ${order.store} 沒有庫存記錄，跳過庫存扣除`);
         continue;
+      }
+
+      if (inventoryItem.isSoldOut) {
+        // throw new AppError(`餐點 ${inventoryItem.itemName} 已停售`, 400);
+        continue; // 之後要處理 回滾邏輯
       }
 
       // 如果沒有啟用庫存追蹤，跳過
