@@ -410,16 +410,11 @@ export const useCartStore = defineStore('cart', () => {
         orderData.estimatedPickupTime = estimatedPickupTime.value;
       }
 
-      console.log('=== Pinia 提交訂單資料 ===');
-      console.log('品牌ID:', currentBrand.value);
-      console.log('店鋪ID:', currentStore.value);
-      console.log('訂單資料:', JSON.stringify(orderData, null, 2));
-      console.log('========================');
-
-      // 檢查 API 是否存在
-      if (!api.orderCustomer || !api.orderCustomer.createOrder) {
-        throw new Error('API orderCustomer.createOrder 未定義');
-      }
+      // console.log('=== Pinia 提交訂單資料 ===');
+      // console.log('品牌ID:', currentBrand.value);
+      // console.log('店鋪ID:', currentStore.value);
+      // console.log('訂單資料:', JSON.stringify(orderData, null, 2));
+      // console.log('========================');
 
       // 提交訂單
       const response = await api.orderCustomer.createOrder({
@@ -428,9 +423,9 @@ export const useCartStore = defineStore('cart', () => {
         orderData
       });
 
-      console.log('=== API 回應 ===');
-      console.log('Response:', response);
-      console.log('===============');
+      // console.log('=== API 回應 ===');
+      // console.log('Response:', response);
+      // console.log('===============');
 
       if (response && response.success) {
         // 將訂單 ID 和資料存儲到 sessionStorage
