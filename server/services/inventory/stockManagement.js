@@ -321,6 +321,10 @@ export const reduceStock = async (reduceData) => {
     throw new AppError('庫存不足', 400);
   }
 
+  if (inventoryItem.isSoldOut) {
+    throw new AppError('此項目暫停販售，無法減少庫存', 400);
+  }
+
   // 記錄先前的庫存
   const previousTotalStock = inventoryItem.totalStock;
   const previousAvailableStock = inventoryItem.availableStock;
