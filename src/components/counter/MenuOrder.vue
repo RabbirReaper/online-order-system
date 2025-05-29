@@ -53,8 +53,14 @@
                         <div class="d-flex justify-content-between align-items-start mb-2">
                           <h6 class="card-title mb-0">{{ dish.dishTemplate.name }}</h6>
                           <!-- 庫存狀態顯示 -->
-                          <div v-if="getInventoryInfo(dish.dishTemplate._id)" class="inventory-badge">
-                            <span v-if="getInventoryInfo(dish.dishTemplate._id).enableAvailableStock" class="badge"
+                          <div
+                            v-if="getInventoryInfo(dish.dishTemplate._id) && (getInventoryInfo(dish.dishTemplate._id).enableAvailableStock || getInventoryInfo(dish.dishTemplate._id).isSoldOut)"
+                            class="inventory-badge">
+                            <span v-if="getInventoryInfo(dish.dishTemplate._id).isSoldOut"
+                              class="badge bg-danger text-white">
+                              暫停供應
+                            </span>
+                            <span v-else-if="getInventoryInfo(dish.dishTemplate._id).enableAvailableStock" class="badge"
                               :class="getStockBadgeClass(dish.dishTemplate._id)">
                               {{ getInventoryInfo(dish.dishTemplate._id).availableStock }}
                             </span>
@@ -63,7 +69,10 @@
                         <p class="card-text price">${{ dish.price || dish.dishTemplate.basePrice }}</p>
                         <!-- 售完遮罩 -->
                         <div v-if="isDishSoldOut(dish.dishTemplate._id)" class="sold-out-overlay">
-                          <span class="sold-out-text">售完</span>
+                          <span class="sold-out-text"
+                            :class="{ 'suspended': getInventoryInfo(dish.dishTemplate._id)?.isSoldOut }">
+                            {{ getInventoryInfo(dish.dishTemplate._id)?.isSoldOut ? '暫停供應' : '售完' }}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -260,18 +269,30 @@ const isDishSoldOut = (dishTemplateId) => {
   const inventory = getInventoryInfo(dishTemplateId);
   if (!inventory) return false;
 
-  // 如果啟用了可用庫存機制，檢查可用庫存是否為 0
+  // 最高優先級：手動設為售完
+  if (inventory.isSoldOut) {
+    return true;
+  }
+
+  // 次級：如果啟用了可用庫存機制，檢查可用庫存是否為 0
   if (inventory.enableAvailableStock) {
     return inventory.availableStock <= 0;
   }
 
-  // 檢查是否手動設為售完
-  return inventory.isSoldOut;
+  return false;
 };
 
 const getStockBadgeClass = (dishTemplateId) => {
   const inventory = getInventoryInfo(dishTemplateId);
-  if (!inventory || !inventory.enableAvailableStock) return '';
+  if (!inventory) return '';
+
+  // 如果手動售完，直接返回紅色
+  if (inventory.isSoldOut) {
+    return 'bg-danger text-white';
+  }
+
+  // 如果沒有啟用可用庫存，不顯示badge
+  if (!inventory.enableAvailableStock) return '';
 
   if (inventory.availableStock <= 0) {
     return 'bg-danger text-white';
@@ -352,8 +373,6 @@ const selectCategory = (categoryId) => {
 const handleDishClick = (dishTemplate) => {
   // 檢查餐點是否售完
   if (isDishSoldOut(dishTemplate._id)) {
-    // 可以顯示提示訊息
-    // alert('此餐點目前售完，無法點選');
     return;
   }
 
@@ -760,6 +779,11 @@ watch(
   padding: 0.5rem 1rem;
   border-radius: 4px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* 暫停供應的樣式 */
+.sold-out-text.suspended {
+  background-color: #6c757d;
 }
 
 .option-category-title {

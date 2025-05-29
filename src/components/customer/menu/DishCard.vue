@@ -5,15 +5,18 @@
       <div class="item-img-overlay"></div>
       <!-- 售完遮罩 -->
       <div v-if="isDishSoldOut" class="sold-out-overlay">
-        <span class="sold-out-text">售完</span>
+        <span class="sold-out-text">{{ isSoldOut ? '暫停供應' : '售完' }}</span>
       </div>
     </div>
     <div class="item-content">
       <div class="d-flex justify-content-between align-items-start mb-2">
         <h5 class="item-title">{{ item.name }}</h5>
         <!-- 庫存狀態顯示 -->
-        <div v-if="enableAvailableStock" class="inventory-badge">
-          <span class="badge" :class="stockBadgeClass">
+        <div v-if="enableAvailableStock || isSoldOut" class="inventory-badge">
+          <span v-if="isSoldOut" class="badge bg-danger text-white">
+            售完
+          </span>
+          <span v-else-if="enableAvailableStock" class="badge" :class="stockBadgeClass">
             庫存{{ availableStock }}
           </span>
         </div>
@@ -41,6 +44,10 @@ const props = defineProps({
   availableStock: {
     type: Number,
     default: 0
+  },
+  isSoldOut: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -48,13 +55,23 @@ const emit = defineEmits(['select-item']);
 
 // 計算屬性
 const isDishSoldOut = computed(() => {
+  // 最高優先級：手動設為售完
+  if (props.isSoldOut) {
+    return true;
+  }
+
+  // 次級：如果啟用庫存且庫存為0
   if (props.enableAvailableStock) {
     return props.availableStock <= 0;
   }
+
   return false;
 });
 
 const stockBadgeClass = computed(() => {
+  // 如果手動售完，不需要計算庫存顏色
+  if (props.isSoldOut) return '';
+
   if (!props.enableAvailableStock) return '';
 
   if (props.availableStock <= 0) {

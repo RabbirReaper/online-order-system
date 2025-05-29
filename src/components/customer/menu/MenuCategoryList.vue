@@ -23,6 +23,7 @@
           <div v-for="item in getItemsInCategory(category)" :key="item._id" class="col">
             <DishCard :item="item" :enableAvailableStock="getInventoryInfo(item._id)?.enableAvailableStock || false"
               :availableStock="getInventoryInfo(item._id)?.availableStock || 0"
+              :isSoldOut="getInventoryInfo(item._id)?.isSoldOut || false"
               @select-item="$emit('select-item', item._id)" />
           </div>
         </div>
