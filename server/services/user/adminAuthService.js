@@ -24,6 +24,7 @@ export const adminLogin = async (credentials, session) => {
 
   // 查找管理員，包含新的字段
   const admin = await Admin.findOne({ name })
+    .select('+password')
     .populate('brand', 'name')
     .populate('store', 'name');
 
