@@ -13,9 +13,13 @@
         <div class="ms-2">
           <select class="form-select" v-model="filterRole" @change="handleFilter">
             <option value="">所有角色</option>
-            <option value="boss">總管理員</option>
+            <option value="primary_system_admin">系統主管理員</option>
+            <option value="system_admin">系統管理員</option>
+            <option value="primary_brand_admin">品牌主管理員</option>
             <option value="brand_admin">品牌管理員</option>
+            <option value="primary_store_admin">店鋪主管理員</option>
             <option value="store_admin">店鋪管理員</option>
+            <option value="employee">員工</option>
           </select>
         </div>
 
@@ -51,7 +55,7 @@
                 <th>用戶名</th>
                 <th>角色</th>
                 <th>所屬品牌</th>
-                <th>管理店鋪</th>
+                <th>所屬店鋪</th>
                 <th>最後登入</th>
                 <th>狀態</th>
                 <th>操作</th>
@@ -59,18 +63,35 @@
             </thead>
             <tbody>
               <tr v-for="admin in filteredAdmins" :key="admin._id">
-                <td>{{ admin.name }}</td>
                 <td>
-                  <span class="badge" :class="getRoleBadgeClass(admin.role)">
-                    {{ getRoleLabel(admin.role) }}
+                  <div class="d-flex align-items-center">
+                    <div>
+                      <div class="fw-bold">{{ admin.name }}</div>
+                      <small class="text-muted" v-if="admin.createdBy">
+                        由 {{ admin.createdBy.name }} 創建
+                      </small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div>
+                    <span class="badge" :class="getRoleBadgeClass(admin.role)">
+                      {{ getRoleLabel(admin.role) }}
+                    </span>
+                    <div v-if="admin.role.startsWith('primary_')" class="small text-primary mt-1">
+                      <i class="bi bi-star-fill me-1"></i>主管理員
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span v-if="admin.brand">
+                    {{ admin.brand.name }}
                   </span>
+                  <span v-else class="text-muted">-</span>
                 </td>
                 <td>
-                  {{ admin.brand?.name || '-' }}
-                </td>
-                <td>
-                  <span v-if="admin.manage && admin.manage.length > 0">
-                    {{ admin.manage.length }} 個店鋪
+                  <span v-if="admin.store">
+                    {{ admin.store.name }}
                   </span>
                   <span v-else class="text-muted">-</span>
                 </td>
@@ -88,15 +109,16 @@
                 <td>
                   <div class="btn-group">
                     <router-link :to="`/admin/${brandId}/admins/edit/${admin._id}`"
-                      class="btn btn-sm btn-outline-primary">
+                      class="btn btn-sm btn-outline-primary" v-if="canEditAdmin(admin)">
                       <i class="bi bi-pencil me-1"></i>編輯
                     </router-link>
                     <button type="button" class="btn btn-sm"
                       :class="admin.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
-                      @click="toggleStatus(admin)">
+                      @click="toggleStatus(admin)" v-if="canToggleAdmin(admin)">
                       <i class="bi bi-power me-1"></i>{{ admin.isActive ? '停用' : '啟用' }}
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" @click="confirmDelete(admin)">
+                    <button type="button" class="btn btn-sm btn-outline-danger" @click="confirmDelete(admin)"
+                      v-if="canDeleteAdmin(admin)">
                       <i class="bi bi-trash me-1"></i>刪除
                     </button>
                   </div>
@@ -136,6 +158,10 @@
           </div>
           <div class="modal-body" v-if="adminToDelete">
             <p>確定要刪除管理員 <strong>{{ adminToDelete.name }}</strong> 嗎？</p>
+            <div class="alert alert-warning mt-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>角色：</strong>{{ getRoleLabel(adminToDelete.role) }}
+            </div>
             <div class="alert alert-danger mt-3">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               此操作無法撤銷！刪除後將無法復原。
@@ -164,6 +190,7 @@
           <div class="modal-body" v-if="adminToToggle">
             <p>
               確定要將「<strong>{{ adminToToggle.name }}</strong>」
+              ({{ getRoleLabel(adminToToggle.role) }})
               {{ adminToToggle.isActive ? '停用' : '啟用' }}嗎？
             </p>
 
@@ -223,13 +250,18 @@ const adminToDelete = ref(null);
 const isDeleting = ref(false);
 const statusModal = ref(null);
 const adminToToggle = ref(null);
+const currentUserRole = ref('');
 
 // 角色標籤對應
 const getRoleLabel = (role) => {
   const labels = {
-    'boss': '總管理員',
+    'primary_system_admin': '系統主管理員',
+    'system_admin': '系統管理員',
+    'primary_brand_admin': '品牌主管理員',
     'brand_admin': '品牌管理員',
-    'store_admin': '店鋪管理員'
+    'primary_store_admin': '店鋪主管理員',
+    'store_admin': '店鋪管理員',
+    'employee': '員工'
   };
   return labels[role] || role;
 };
@@ -237,11 +269,29 @@ const getRoleLabel = (role) => {
 // 角色徽章樣式
 const getRoleBadgeClass = (role) => {
   const classes = {
-    'boss': 'bg-danger',
-    'brand_admin': 'bg-primary',
-    'store_admin': 'bg-info'
+    'primary_system_admin': 'bg-danger',
+    'system_admin': 'bg-warning',
+    'primary_brand_admin': 'bg-primary',
+    'brand_admin': 'bg-info',
+    'primary_store_admin': 'bg-success',
+    'store_admin': 'bg-secondary',
+    'employee': 'bg-light text-dark'
   };
   return classes[role] || 'bg-secondary';
+};
+
+// 權限檢查函數
+const canEditAdmin = (admin) => {
+  // 簡化版權限檢查，實際應該根據後端返回的權限資訊
+  return true; // 暫時允許所有操作，後端會進行實際權限檢查
+};
+
+const canToggleAdmin = (admin) => {
+  return true; // 暫時允許所有操作，後端會進行實際權限檢查
+};
+
+const canDeleteAdmin = (admin) => {
+  return true; // 暫時允許所有操作，後端會進行實際權限檢查
 };
 
 // 計算過濾後的管理員列表
@@ -253,7 +303,8 @@ const filteredAdmins = computed(() => {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(admin =>
       admin.name.toLowerCase().includes(query) ||
-      (admin.brand?.name && admin.brand.name.toLowerCase().includes(query))
+      (admin.brand?.name && admin.brand.name.toLowerCase().includes(query)) ||
+      (admin.store?.name && admin.store.name.toLowerCase().includes(query))
     );
   }
 
@@ -312,8 +363,7 @@ const fetchAdmins = async () => {
   errorMessage.value = '';
 
   try {
-    const params = {};
-    params.brandId = brandId.value;
+    const params = { brandId: brandId.value };
 
     const response = await api.admin.getAllAdmins(params);
     if (response && response.admins) {
@@ -331,6 +381,18 @@ const fetchAdmins = async () => {
     }
   } finally {
     isLoading.value = false;
+  }
+};
+
+// 獲取當前用戶角色
+const getCurrentUserRole = async () => {
+  try {
+    const response = await api.adminAuth.checkStatus();
+    if (response.loggedIn) {
+      currentUserRole.value = response.role;
+    }
+  } catch (error) {
+    console.error('獲取用戶角色失敗:', error);
   }
 };
 
@@ -358,7 +420,8 @@ const confirmToggleStatus = async () => {
     statusModal.value.hide();
   } catch (error) {
     console.error('切換狀態失敗:', error);
-    alert('切換狀態失敗，請稍後再試');
+    const errorMsg = error.response?.data?.message || '切換狀態失敗，請稍後再試';
+    alert(errorMsg);
   }
 };
 
@@ -386,7 +449,8 @@ const deleteAdmin = async () => {
     );
   } catch (error) {
     console.error('刪除管理員失敗:', error);
-    alert('刪除管理員時發生錯誤');
+    const errorMsg = error.response?.data?.message || '刪除管理員時發生錯誤';
+    alert(errorMsg);
   } finally {
     isDeleting.value = false;
   }
@@ -416,7 +480,8 @@ onMounted(() => {
     });
   }
 
-  // 載入管理員列表
+  // 載入資料
+  getCurrentUserRole();
   fetchAdmins();
 });
 </script>
@@ -434,5 +499,9 @@ onMounted(() => {
 
 .btn-group .btn {
   padding: 0.25rem 0.5rem;
+}
+
+.fw-bold {
+  font-weight: 600;
 }
 </style>

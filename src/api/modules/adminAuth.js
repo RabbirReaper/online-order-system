@@ -48,10 +48,16 @@ export default function (apiClient) {
         return {
           loggedIn: res.loggedIn,
           role: res.role,
-          manage: res.manage || []
+          brand: res.brand,
+          store: res.store
         };
       } catch (error) {
-        return { loggedIn: false, role: null, manage: [] };
+        return {
+          loggedIn: false,
+          role: null,
+          brand: null,
+          store: null
+        };
       }
     }
   };

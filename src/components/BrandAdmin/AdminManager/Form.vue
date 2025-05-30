@@ -33,20 +33,20 @@
             <select class="form-select" id="adminRole" v-model="formData.role" :class="{ 'is-invalid': errors.role }"
               required>
               <option value="">請選擇...</option>
-              <option value="boss">總管理員</option>
-              <option value="brand_admin">品牌管理員</option>
-              <option value="store_admin">店鋪管理員</option>
+              <option v-for="role in availableRoles" :key="role.value" :value="role.value">
+                {{ role.label }}
+              </option>
             </select>
             <div class="invalid-feedback" v-if="errors.role">{{ errors.role }}</div>
             <div class="form-text">
-              <strong>總管理員</strong>：擁有系統最高權限<br>
-              <strong>品牌管理員</strong>：管理特定品牌及其店鋪<br>
-              <strong>店鋪管理員</strong>：管理特定店鋪
+              <div v-for="role in availableRoles" :key="role.value" v-show="formData.role === role.value">
+                <strong>{{ role.label }}：</strong>{{ role.description }}
+              </div>
             </div>
           </div>
 
-          <!-- 所屬品牌 (品牌管理員和店鋪管理員需要) -->
-          <div class="mb-3" v-if="formData.role === 'brand_admin' || formData.role === 'store_admin'">
+          <!-- 所屬品牌 (根據角色顯示) -->
+          <div class="mb-3" v-if="needsBrand">
             <label for="adminBrand" class="form-label required">所屬品牌</label>
             <select class="form-select" id="adminBrand" v-model="formData.brand" :class="{ 'is-invalid': errors.brand }"
               required>
@@ -56,6 +56,19 @@
               </option>
             </select>
             <div class="invalid-feedback" v-if="errors.brand">{{ errors.brand }}</div>
+          </div>
+
+          <!-- 所屬店鋪 (根據角色顯示) -->
+          <div class="mb-3" v-if="needsStore">
+            <label for="adminStore" class="form-label required">所屬店鋪</label>
+            <select class="form-select" id="adminStore" v-model="formData.store" :class="{ 'is-invalid': errors.store }"
+              required>
+              <option value="">請選擇...</option>
+              <option v-for="store in stores" :key="store._id" :value="store._id">
+                {{ store.name }}
+              </option>
+            </select>
+            <div class="invalid-feedback" v-if="errors.store">{{ errors.store }}</div>
           </div>
 
           <!-- 啟用狀態 -->
@@ -70,94 +83,17 @@
           </div>
         </div>
 
-        <!-- 權限設定區塊 (只有店鋪管理員需要) -->
-        <div class="mb-4" v-if="formData.role === 'store_admin' && stores.length > 0">
-          <h6 class="border-bottom pb-2 mb-3 d-flex justify-content-between">
-            <span>店鋪權限設定</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" @click="addManageItem">
-              <i class="bi bi-plus-circle me-1"></i>新增店鋪
-            </button>
-          </h6>
-
-          <!-- 店鋪權限列表 -->
-          <div v-if="formData.manage.length > 0">
-            <div v-for="(item, index) in formData.manage" :key="index" class="card mb-3">
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-5 mb-3">
-                    <label class="form-label required">店鋪</label>
-                    <select v-model="item.store" class="form-select"
-                      :class="{ 'is-invalid': getItemError(index, 'store') }">
-                      <option value="">選擇店鋪</option>
-                      <option v-for="store in stores" :key="store._id" :value="store._id"
-                        :disabled="isStoreAlreadySelected(store._id, index)">
-                        {{ store.name }}
-                      </option>
-                    </select>
-                    <div class="invalid-feedback" v-if="getItemError(index, 'store')">{{ getItemError(index, 'store') }}
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label required">權限</label>
-                    <div>
-                      <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" :id="`order_system_${index}`"
-                          v-model="item.permission" value="order_system">
-                        <label class="form-check-label" :for="`order_system_${index}`">
-                          點餐系統
-                        </label>
-                      </div>
-                      <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" :id="`view_reports_${index}`"
-                          v-model="item.permission" value="view_reports">
-                        <label class="form-check-label" :for="`view_reports_${index}`">
-                          查看報表
-                        </label>
-                      </div>
-                      <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" :id="`edit_backend_${index}`"
-                          v-model="item.permission" value="edit_backend">
-                        <label class="form-check-label" :for="`edit_backend_${index}`">
-                          編輯後台
-                        </label>
-                      </div>
-                      <div class="form-check form-check-inline">
-                        <!-- TODO: 目前權限邏輯尚未實作，暫時顯示所有權限選項。
-                             未來應限制只有品牌管理員才能給予 manage_staff 權限 -->
-                        <input class="form-check-input" type="checkbox" :id="`manage_staff_${index}`"
-                          v-model="item.permission" value="manage_staff">
-                        <label class="form-check-label" :for="`manage_staff_${index}`">
-                          員工管理
-                        </label>
-                      </div>
-                    </div>
-                    <div class="form-text">
-                      <small>
-                        點餐系統：登入前台點餐系統、庫存管理<br>
-                        查看報表：查看後台資料、記帳<br>
-                        編輯後台：編輯後臺資料<br>
-                        員工管理：員工權限管理
-                      </small>
-                    </div>
-                    <div class="text-danger small mt-1" v-if="getItemError(index, 'permission')">
-                      {{ getItemError(index, 'permission') }}
-                    </div>
-                  </div>
-                  <div class="col-md-1 mb-3">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="button" class="btn btn-outline-danger btn-sm d-block"
-                      @click="removeManageItem(index)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
+        <!-- 角色說明區塊 -->
+        <div class="mb-4" v-if="formData.role">
+          <h6 class="border-bottom pb-2 mb-3">角色權限說明</h6>
+          <div class="alert alert-info">
+            <h6 class="alert-heading">{{ getRoleLabel(formData.role) }}</h6>
+            <p class="mb-2">{{ getRoleDescription(formData.role) }}</p>
+            <hr>
+            <div class="mb-0">
+              <strong>權限範圍：</strong>{{ getRoleScope(formData.role) }}<br>
+              <strong>管理層級：</strong>{{ getRoleLevel(formData.role) }}
             </div>
-          </div>
-
-          <!-- 無權限設定提示 -->
-          <div class="alert alert-light text-center py-3" v-else>
-            <div class="text-muted">尚未設定任何店鋪權限</div>
           </div>
         </div>
 
@@ -216,13 +152,73 @@ const isEditMode = computed(() => !!route.params.id);
 // 從路由中獲取品牌ID
 const brandId = computed(() => route.params.brandId);
 
+// 角色定義
+const roleDefinitions = {
+  'primary_system_admin': {
+    label: '系統主管理員',
+    description: '擁有系統最高權限，可管理所有品牌和店鋪',
+    scope: '全系統',
+    level: '最高級',
+    needsBrand: false,
+    needsStore: false
+  },
+  'system_admin': {
+    label: '系統管理員',
+    description: '系統級管理權限，可管理品牌和店鋪（不包含管理員管理）',
+    scope: '全系統',
+    level: '高級',
+    needsBrand: false,
+    needsStore: false
+  },
+  'primary_brand_admin': {
+    label: '品牌主管理員',
+    description: '品牌主管理員，可管理品牌下所有店鋪和管理員',
+    scope: '品牌級',
+    level: '中高級',
+    needsBrand: true,
+    needsStore: false
+  },
+  'brand_admin': {
+    label: '品牌管理員',
+    description: '品牌管理權限，可管理品牌設定和店鋪（不包含管理員管理）',
+    scope: '品牌級',
+    level: '中級',
+    needsBrand: true,
+    needsStore: false
+  },
+  'primary_store_admin': {
+    label: '店鋪主管理員',
+    description: '店鋪主管理員，可管理店鋪所有功能和員工',
+    scope: '店鋪級',
+    level: '中級',
+    needsBrand: true,
+    needsStore: true
+  },
+  'store_admin': {
+    label: '店鋪管理員',
+    description: '店鋪管理權限，可管理店鋪營運（不包含員工管理）',
+    scope: '店鋪級',
+    level: '基礎',
+    needsBrand: true,
+    needsStore: true
+  },
+  'employee': {
+    label: '員工',
+    description: '基礎員工權限，可使用點餐系統和基本庫存管理',
+    scope: '店鋪級',
+    level: '基礎',
+    needsBrand: true,
+    needsStore: true
+  }
+};
+
 // 表單數據
 const formData = reactive({
   name: '',
   password: '',
   role: '',
   brand: '',
-  manage: [],
+  store: '',
   isActive: true
 });
 
@@ -235,30 +231,77 @@ const successMessage = ref('');
 const formErrors = ref([]);
 const brands = ref([]);
 const stores = ref([]);
+const currentUserRole = ref('');
+const availableRoles = ref([]);
 
-// 獲取品項錯誤
-const getItemError = (index, field) => {
-  return errors[`manage.${index}.${field}`];
+// 計算屬性
+const needsBrand = computed(() => {
+  return roleDefinitions[formData.role]?.needsBrand || false;
+});
+
+const needsStore = computed(() => {
+  return roleDefinitions[formData.role]?.needsStore || false;
+});
+
+// 角色相關方法
+const getRoleLabel = (role) => {
+  return roleDefinitions[role]?.label || role;
 };
 
-// 檢查店鋪是否已被選擇
-const isStoreAlreadySelected = (storeId, currentIndex) => {
-  return formData.manage.some((item, index) =>
-    index !== currentIndex && item.store === storeId
-  );
+const getRoleDescription = (role) => {
+  return roleDefinitions[role]?.description || '';
 };
 
-// 新增管理項目
-const addManageItem = () => {
-  formData.manage.push({
-    store: '',
-    permission: []
-  });
+const getRoleScope = (role) => {
+  return roleDefinitions[role]?.scope || '';
 };
 
-// 移除管理項目
-const removeManageItem = (index) => {
-  formData.manage.splice(index, 1);
+const getRoleLevel = (role) => {
+  return roleDefinitions[role]?.level || '';
+};
+
+// 獲取可用角色列表（基於當前用戶權限）
+const getAvailableRoles = async () => {
+  try {
+    const response = await api.adminAuth.checkStatus();
+    if (response.loggedIn) {
+      currentUserRole.value = response.role;
+
+      // 根據當前用戶角色決定可創建的角色
+      const allRoles = Object.keys(roleDefinitions);
+      const userCanCreate = [];
+
+      // 簡化的權限邏輯，實際應該根據後端返回的權限資訊
+      switch (response.role) {
+        case 'primary_system_admin':
+          userCanCreate.push(...allRoles);
+          break;
+        case 'system_admin':
+          userCanCreate.push('brand_admin', 'store_admin', 'employee');
+          break;
+        case 'primary_brand_admin':
+          userCanCreate.push('brand_admin', 'primary_store_admin', 'store_admin', 'employee');
+          break;
+        case 'brand_admin':
+          userCanCreate.push('store_admin', 'employee');
+          break;
+        case 'primary_store_admin':
+          userCanCreate.push('store_admin', 'employee');
+          break;
+        default:
+          // 其他角色不能創建管理員
+          break;
+      }
+
+      availableRoles.value = userCanCreate.map(role => ({
+        value: role,
+        label: roleDefinitions[role].label,
+        description: roleDefinitions[role].description
+      }));
+    }
+  } catch (error) {
+    console.error('獲取用戶權限失敗:', error);
+  }
 };
 
 // 重置表單
@@ -272,7 +315,7 @@ const resetForm = () => {
     formData.password = '';
     formData.role = '';
     formData.brand = '';
-    formData.manage = [];
+    formData.store = '';
     formData.isActive = true;
   }
 
@@ -301,9 +344,9 @@ const validateForm = () => {
     errors.password = '密碼為必填項';
     formErrors.value.push('密碼為必填項');
     isValid = false;
-  } else if (!isEditMode.value && formData.password.length < 6) {
-    errors.password = '密碼長度至少 6 個字元';
-    formErrors.value.push('密碼長度至少 6 個字元');
+  } else if (!isEditMode.value && formData.password.length < 8) {
+    errors.password = '密碼長度至少需要8個字元';
+    formErrors.value.push('密碼長度至少需要8個字元');
     isValid = false;
   }
 
@@ -314,27 +357,18 @@ const validateForm = () => {
     isValid = false;
   }
 
-  // 驗證品牌（品牌管理員和店鋪管理員）
-  if ((formData.role === 'brand_admin' || formData.role === 'store_admin') && !formData.brand) {
+  // 驗證品牌（需要品牌的角色）
+  if (needsBrand.value && !formData.brand) {
     errors.brand = '請選擇所屬品牌';
     formErrors.value.push('請選擇所屬品牌');
     isValid = false;
   }
 
-  // 驗證店鋪權限（店鋪管理員）
-  if (formData.role === 'store_admin') {
-    formData.manage.forEach((item, index) => {
-      if (!item.store) {
-        errors[`manage.${index}.store`] = '請選擇店鋪';
-        formErrors.value.push(`第 ${index + 1} 個權限設定未選擇店鋪`);
-        isValid = false;
-      }
-      if (!item.permission || item.permission.length === 0) {
-        errors[`manage.${index}.permission`] = '請至少選擇一個權限';
-        formErrors.value.push(`第 ${index + 1} 個權限設定未選擇任何權限`);
-        isValid = false;
-      }
-    });
+  // 驗證店鋪（需要店鋪的角色）
+  if (needsStore.value && !formData.store) {
+    errors.store = '請選擇所屬店鋪';
+    formErrors.value.push('請選擇所屬店鋪');
+    isValid = false;
   }
 
   return isValid;
@@ -384,7 +418,7 @@ const fetchAdminData = async () => {
       formData.name = admin.name;
       formData.role = admin.role;
       formData.brand = admin.brand?._id || '';
-      formData.manage = admin.manage || [];
+      formData.store = admin.store?._id || '';
       formData.isActive = admin.isActive;
     } else {
       formErrors.value = ['獲取管理員資料失敗'];
@@ -419,14 +453,6 @@ const submitForm = async () => {
     const submitData = {
       ...formData
     };
-
-    // 根據角色處理資料
-    if (submitData.role === 'boss') {
-      delete submitData.brand;
-      delete submitData.manage;
-    } else if (submitData.role === 'brand_admin') {
-      delete submitData.manage;
-    }
 
     let response;
 
@@ -482,27 +508,32 @@ const submitForm = async () => {
 
 // 監聽角色變化
 watch(() => formData.role, (newRole) => {
-  // 清除品牌和管理設定
-  if (newRole === 'boss') {
+  // 清除不需要的欄位
+  if (!roleDefinitions[newRole]?.needsBrand) {
     formData.brand = '';
-    formData.manage = [];
-  } else if (newRole === 'brand_admin') {
-    formData.manage = [];
+  }
+  if (!roleDefinitions[newRole]?.needsStore) {
+    formData.store = '';
   }
 });
 
 // 監聽品牌變化
 watch(() => formData.brand, () => {
   // 當品牌改變時，重新獲取店鋪列表
-  fetchStores();
+  if (formData.brand) {
+    fetchStores();
+  } else {
+    stores.value = [];
+  }
   // 清除現有的店鋪選擇
-  formData.manage.forEach(item => {
-    item.store = '';
-  });
+  formData.store = '';
 });
 
 // 生命週期鉤子
 onMounted(() => {
+  // 獲取可用角色
+  getAvailableRoles();
+
   // 獲取品牌列表
   fetchBrands();
 
@@ -535,7 +566,8 @@ onMounted(() => {
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
-.form-check-inline {
-  margin-right: 1rem;
+.alert-heading {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
 }
 </style>

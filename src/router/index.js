@@ -6,13 +6,12 @@ import Placeholder from '@/components/common/Placeholder.vue'
 const checkAdminAuth = async () => {
   try {
     const response = await api.adminAuth.checkStatus()
-    console.log('登入狀態:', response)
+    console.log('管理員登入狀態:', response)
     return response;
   } catch (error) {
     console.error('檢查管理員登入狀態失敗', error)
-    return { loggedIn: false, role: null, manage: [] }
+    return { loggedIn: false, role: null, brand: null, store: null }
   }
-  // return { loggedIn: true, role: 'boss', manage: [] }
 }
 
 // 檢查用戶登入狀態
@@ -74,7 +73,7 @@ const router = createRouter({
     {
       path: '/boss',
       component: () => import('@/views/boss/index.vue'),
-      meta: { requiresAdminAuth: true, role: 'boss' },
+      meta: { requiresAdminAuth: true, role: ['primary_system_admin', 'system_admin'] },
       children: [
         {
           path: '',
@@ -518,7 +517,7 @@ router.beforeEach(async (to, from, next) => {
 
   // 管理員授權檢查
   if (to.matched.some(record => record.meta.requiresAdminAuth)) {
-    const { loggedIn, role, manage } = await checkAdminAuth()
+    const { loggedIn, role, brand, store } = await checkAdminAuth()
 
     if (!loggedIn) {
       return next({
@@ -528,30 +527,38 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // 檢查角色權限
-    if (to.meta.role && to.meta.role !== role) {
-      if (role === 'boss') {
-        // boss 擁有所有權限，允許訪問
-        return next()
-      }
+    if (to.meta.role) {
+      const allowedRoles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role];
 
-      // 根據路徑選擇重定向
-      if (role === 'brand_admin' || role === 'store_admin') {
+      if (!allowedRoles.includes(role)) {
+        // 根據角色選擇重定向路徑
+        let redirectPath = '/admin/login';
+
+        if (role === 'primary_system_admin' || role === 'system_admin') {
+          redirectPath = '/boss';
+        } else if (brand?._id) {
+          redirectPath = `/admin/${brand._id}`;
+        }
+
         alert('您沒有權限訪問此頁面')
-        return next('/admin')
+        return next(redirectPath)
       }
+    }
 
-      return next('/admin/login')
+    // 檢查品牌權限
+    if (to.params.brandId && role !== 'primary_system_admin' && role !== 'system_admin') {
+      if (!brand || brand._id !== to.params.brandId) {
+        alert('您沒有權限管理此品牌')
+        return next('/admin/login')
+      }
     }
 
     // 檢查店鋪權限
-    if (to.params.storeId && role !== 'boss') {
-      const hasStorePermission = manage.some(
-        m => m.store === to.params.storeId
-      )
-
-      if (!hasStorePermission) {
+    if (to.params.storeId &&
+      (role === 'primary_store_admin' || role === 'store_admin' || role === 'employee')) {
+      if (!store || store._id !== to.params.storeId) {
         alert('您沒有權限管理此店鋪')
-        return next('/admin')
+        return next(`/admin/${brand._id}`)
       }
     }
   }

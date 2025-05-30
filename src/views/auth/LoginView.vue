@@ -55,16 +55,21 @@
               </form>
 
               <div class="mt-4 text-center">
-                <p class="text-secondary mb-0">選擇角色登入 (測試用)</p>
-                <div class="btn-group mt-2">
-                  <button class="btn btn-sm btn-outline-secondary" @click="loginAsBoss">
-                    系統管理員
+                <p class="text-secondary mb-0">快速登入 (測試用)</p>
+                <div class="btn-group-vertical mt-2 w-100">
+                  <button class="btn btn-sm btn-outline-secondary mb-1" @click="loginAs('admin', '12345678')">
+                    系統主管理員
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary" @click="loginAsBrandAdmin">
-                    品牌管理員
+                  <button class="btn btn-sm btn-outline-secondary mb-1"
+                    @click="loginAs('test_brand_admin', 'password123')">
+                    品牌主管理員
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary" @click="loginAsStoreAdmin">
-                    店鋪管理員
+                  <button class="btn btn-sm btn-outline-secondary mb-1"
+                    @click="loginAs('test_store_admin', 'password123')">
+                    店鋪主管理員
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary" @click="loginAs('test_employee', 'password123')">
+                    員工
                   </button>
                 </div>
               </div>
@@ -108,19 +113,21 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    // 實際 API 呼叫
+    // 調用管理員認證 API
     const response = await api.adminAuth.login({
       name: formData.username,
       password: formData.password
     });
 
-
-    // 只在登入成功後進行跳轉
+    // 檢查登入是否成功
     if (response.success) {
-      console.log('登入成功');
-      // 如果有重定向參數，則導航到該頁面，否則導航到預設頁面
-      const redirectPath = route.query.redirect || '/boss';
-      router.push(redirectPath);
+      console.log('登入成功:', response);
+
+      // 根據角色和品牌/店鋪資訊決定重定向路徑
+      const redirectPath = getRedirectPath(response.role, response.brand, response.store);
+      const finalPath = route.query.redirect || redirectPath;
+
+      router.push(finalPath);
     } else {
       // 處理成功請求但業務邏輯失敗的情況
       loginError.value = response.message || '登入失敗，請稍後再試';
@@ -139,23 +146,34 @@ const handleLogin = async () => {
   }
 };
 
-// 修正後的測試登入功能
-const loginAsBoss = async () => {
-  formData.username = 'boss';
-  formData.password = '123456';
-  await handleLogin();  // 實際執行登入認證
+// 根據角色和品牌/店鋪資訊決定重定向路徑
+const getRedirectPath = (role, brand, store) => {
+  if (!role) return '/admin/login';
+
+  // 系統級管理員導向 boss 頁面
+  if (role === 'primary_system_admin' || role === 'system_admin') {
+    return '/boss';
+  }
+
+  // 品牌級管理員導向品牌管理頁面
+  if ((role === 'primary_brand_admin' || role === 'brand_admin') && brand?._id) {
+    return `/admin/${brand._id}`;
+  }
+
+  // 店鋪級管理員和員工導向品牌管理頁面（具體店鋪權限由後端控制）
+  if ((role === 'primary_store_admin' || role === 'store_admin' || role === 'employee') && brand?._id) {
+    return `/admin/${brand._id}`;
+  }
+
+  // 默認返回登入頁面
+  return '/admin/login';
 };
 
-const loginAsBrandAdmin = async () => {
-  formData.username = 'brand_admin';
-  formData.password = 'password';
-  await handleLogin();  // 實際執行登入認證
-};
-
-const loginAsStoreAdmin = async () => {
-  formData.username = 'store_admin';
-  formData.password = 'password';
-  await handleLogin();  // 實際執行登入認證
+// 快速登入功能
+const loginAs = async (username, password) => {
+  formData.username = username;
+  formData.password = password;
+  await handleLogin();
 };
 </script>
 
@@ -204,5 +222,9 @@ img {
   100% {
     transform: scale(1);
   }
+}
+
+.btn-group-vertical .btn {
+  font-size: 0.875rem;
 }
 </style>

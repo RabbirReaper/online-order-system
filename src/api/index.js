@@ -3,6 +3,7 @@
 import axios from 'axios';
 import adminAuthApi from './modules/adminAuth.js';
 import userAuthApi from './modules/userAuth.js';
+import authApi from './modules/auth.js';
 import storeApi from './modules/store.js';
 import brandApi from './modules/brand.js';
 import inventoryApi from './modules/inventory.js';
@@ -52,6 +53,7 @@ apiClient.interceptors.response.use(
 export default {
   adminAuth: adminAuthApi(apiClient),
   userAuth: userAuthApi(apiClient),
+  auth: authApi(apiClient), // 向後兼容
   store: storeApi(apiClient),
   brand: brandApi(apiClient),
   inventory: inventoryApi(apiClient),
