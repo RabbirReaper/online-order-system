@@ -4,7 +4,7 @@
  */
 
 import Store from '../../models/Store/Store.js';
-import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_LEVELS, ROLE_SCOPES } from '../../config/permissions.js';
+import { ROLE_LEVELS, ROLE_SCOPES } from '../../config/permissions.js';
 
 /**
  * 角色檢查 middleware
@@ -171,35 +171,6 @@ export const requireStoreAccess = async (req, res, next) => {
 };
 
 /**
- * 權限檢查 middleware
- * @param {...String} permissions - 需要的權限列表
- */
-export const requirePermission = (...permissions) => (req, res, next) => {
-  if (!req.auth || req.auth.type !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      message: '需要管理員權限'
-    });
-  }
-
-  const userPermissions = ROLE_PERMISSIONS[req.auth.role] || [];
-
-  // 檢查是否擁有所需權限（只需要擁有其中一個）
-  const hasPermission = permissions.some(permission =>
-    userPermissions.includes(permission)
-  );
-
-  if (!hasPermission) {
-    return res.status(403).json({
-      success: false,
-      message: '權限不足'
-    });
-  }
-
-  next();
-};
-
-/**
  * 成員管理權限檢查
  */
 export const requireMemberManagement = (req, res, next) => {
@@ -210,13 +181,13 @@ export const requireMemberManagement = (req, res, next) => {
     });
   }
 
-  // 只有 primary 角色才能管理成員
-  const isPrimary = req.auth.role.startsWith('primary_');
+  // 檢查是否有管理成員的權限
+  const canManageRoles = ['primary_system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'];
 
-  if (!isPrimary) {
+  if (!canManageRoles.includes(req.auth.role)) {
     return res.status(403).json({
       success: false,
-      message: '只有主管理員才能管理成員'
+      message: '沒有管理成員的權限'
     });
   }
 

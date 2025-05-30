@@ -12,6 +12,25 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
   const brand = ref(null);
   const store = ref(null);
 
+  // 角色管理權限矩陣 - 與後端保持一致
+  const roleManagementMatrix = {
+    'primary_system_admin': [
+      'primary_system_admin', 'system_admin', 'primary_brand_admin',
+      'brand_admin', 'primary_store_admin', 'store_admin', 'employee'
+    ],
+    'system_admin': [
+      'primary_brand_admin', 'brand_admin', 'primary_store_admin',
+      'store_admin', 'employee'
+    ],
+    'primary_brand_admin': [
+      'brand_admin', 'primary_store_admin', 'store_admin', 'employee'
+    ],
+    'brand_admin': ['primary_store_admin', 'store_admin', 'employee'],
+    'primary_store_admin': ['store_admin', 'employee'],
+    'store_admin': [],
+    'employee': []
+  };
+
   // 計算屬性 (computed)
   const adminName = computed(() => {
     return admin.value?.name || '訪客';
@@ -72,6 +91,16 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 
   const isPrimaryRole = computed(() => {
     return role.value?.startsWith('primary_') || false;
+  });
+
+  // 檢查是否可以管理成員
+  const canManageMembers = computed(() => {
+    return ['primary_system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'].includes(role.value);
+  });
+
+  // 獲取可管理的角色列表
+  const managableRoles = computed(() => {
+    return roleManagementMatrix[role.value] || [];
   });
 
   // 方法 (actions)
@@ -168,6 +197,12 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     }
   }
 
+  // 檢查是否可以管理特定角色
+  function canManageRole(targetRole) {
+    const allowedRoles = roleManagementMatrix[role.value] || [];
+    return allowedRoles.includes(targetRole);
+  }
+
   // 檢查權限
   function hasPermission(permission) {
     // 簡化版權限檢查，實際應該根據後端返回的詳細權限資訊
@@ -184,7 +219,8 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
       ],
       'brand_admin': [
         'manage_brand', 'manage_stores', 'manage_menu', 'manage_inventory',
-        'manage_orders', 'view_reports', 'manage_promotions', 'manage_customers'
+        'manage_orders', 'view_reports', 'manage_promotions', 'manage_customers',
+        'manage_store_admins' // 新增：可以管理店鋪級管理員
       ],
       'primary_store_admin': [
         'manage_store', 'manage_menu', 'manage_inventory', 'manage_orders',
@@ -244,6 +280,8 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     canManageBrand,
     canManageStore,
     isPrimaryRole,
+    canManageMembers,
+    managableRoles,
 
     // 方法
     login,
@@ -251,6 +289,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     checkAuthStatus,
     changePassword,
     hasPermission,
+    canManageRole,
     canAccessBrand,
     canAccessStore,
     clearError

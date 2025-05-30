@@ -4,8 +4,7 @@ import {
   authenticate,
   requireRole,
   requireBrandAccess,
-  requireStoreAccess,
-  requirePermission
+  requireStoreAccess
 } from '../middlewares/auth/index.js';
 
 const router = express.Router();
@@ -17,7 +16,6 @@ router.get('/brands/:brandId/stores/:storeId/orders',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_orders', 'view_reports'),
   orderController.getStoreOrders
 );
 
@@ -27,7 +25,6 @@ router.get('/brands/:brandId/stores/:storeId/orders/:orderId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_orders', 'view_reports'),
   orderController.getOrderById
 );
 
@@ -37,7 +34,6 @@ router.put('/brands/:brandId/stores/:storeId/orders/:orderId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_orders'),
   orderController.updateOrder
 );
 
@@ -47,7 +43,6 @@ router.post('/brands/:brandId/stores/:storeId/orders/:orderId/cancel',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_orders'),
   orderController.cancelOrder
 );
 

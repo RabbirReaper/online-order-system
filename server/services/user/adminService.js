@@ -8,7 +8,7 @@ import Admin from '../../models/User/Admin.js';
 import Brand from '../../models/Brand/Brand.js';
 import Store from '../../models/Store/Store.js';
 import { AppError } from '../../middlewares/error.js';
-import { ROLE_LEVELS, ROLE_SCOPES } from '../../config/permissions.js';
+import { ROLE_LEVELS, ROLE_SCOPES, ROLE_MANAGEMENT_MATRIX, canManageRole } from '../../config/permissions.js';
 
 /**
  * 獲取所有管理員
@@ -143,16 +143,8 @@ export const createAdmin = async (currentAdmin, adminData) => {
   }
 
   // 檢查是否有權限創建此角色
-  const currentLevel = ROLE_LEVELS[currentAdmin.role] || 0;
-  const targetLevel = ROLE_LEVELS[adminData.role] || 0;
-
-  if (currentLevel <= targetLevel) {
-    throw new AppError('無權創建同級或更高級別的管理員', 403);
-  }
-
-  // 檢查是否為primary角色才能創建管理員
-  if (!currentAdmin.role.startsWith('primary_')) {
-    throw new AppError('只有主管理員才能創建新成員', 403);
+  if (!canManageRole(currentAdmin.role, adminData.role)) {
+    throw new AppError(`您無權創建 ${adminData.role} 角色的管理員`, 403);
   }
 
   // 密碼強度驗證
@@ -200,17 +192,9 @@ export const updateAdmin = async (adminId, currentAdmin, updateData) => {
     throw new AppError('管理員不存在', 404);
   }
 
-  // 檢查權限
-  const currentLevel = ROLE_LEVELS[currentAdmin.role] || 0;
-  const targetLevel = ROLE_LEVELS[admin.role] || 0;
-
-  if (currentLevel <= targetLevel) {
-    throw new AppError('無權編輯同級或更高級別的管理員', 403);
-  }
-
-  // 檢查是否為primary角色才能編輯管理員
-  if (!currentAdmin.role.startsWith('primary_')) {
-    throw new AppError('只有主管理員才能編輯成員', 403);
+  // 檢查是否有權限管理此角色
+  if (!canManageRole(currentAdmin.role, admin.role)) {
+    throw new AppError('無權編輯此管理員', 403);
   }
 
   // 不允許更改用戶名和密碼
@@ -220,9 +204,8 @@ export const updateAdmin = async (adminId, currentAdmin, updateData) => {
 
   // 檢查角色變更
   if (updateData.role && updateData.role !== admin.role) {
-    const newTargetLevel = ROLE_LEVELS[updateData.role] || 0;
-    if (currentLevel <= newTargetLevel) {
-      throw new AppError('無權將管理員提升至同級或更高級別', 403);
+    if (!canManageRole(currentAdmin.role, updateData.role)) {
+      throw new AppError('無權將管理員設置為此角色', 403);
     }
 
     // 檢查primary角色的唯一性
@@ -267,12 +250,9 @@ export const deleteAdmin = async (adminId, currentAdmin) => {
     throw new AppError('管理員不存在', 404);
   }
 
-  // 檢查權限
-  const currentLevel = ROLE_LEVELS[currentAdmin.role] || 0;
-  const targetLevel = ROLE_LEVELS[admin.role] || 0;
-
-  if (currentLevel <= targetLevel) {
-    throw new AppError('無權刪除同級或更高級別的管理員', 403);
+  // 檢查是否有權限刪除此角色
+  if (!canManageRole(currentAdmin.role, admin.role)) {
+    throw new AppError('無權刪除此管理員', 403);
   }
 
   // 防止刪除最後一個primary_system_admin
@@ -303,12 +283,9 @@ export const toggleAdminStatus = async (adminId, currentAdmin, isActive) => {
     throw new AppError('管理員不存在', 404);
   }
 
-  // 檢查權限
-  const currentLevel = ROLE_LEVELS[currentAdmin.role] || 0;
-  const targetLevel = ROLE_LEVELS[admin.role] || 0;
-
-  if (currentLevel <= targetLevel) {
-    throw new AppError('無權操作同級或更高級別的管理員', 403);
+  // 檢查是否有權限操作此角色
+  if (!canManageRole(currentAdmin.role, admin.role)) {
+    throw new AppError('無權操作此管理員', 403);
   }
 
   // 防止停用最後一個primary_system_admin

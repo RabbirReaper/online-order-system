@@ -13,7 +13,6 @@ import {
   requireSystemLevel,
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission,
   requireMemberManagement,
   requireScopeMatch
 } from '../middlewares/auth/index.js';
@@ -26,7 +25,6 @@ router.use(authenticate('admin'));
 // 獲取所有管理員 (系統級 - 不帶brandId參數)
 router.get('/',
   requireSystemLevel,
-  requirePermission('manage_system_admins'),
   getAllAdmins
 );
 
@@ -34,7 +32,6 @@ router.get('/',
 router.get('/brands/:brandId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_brand_admins', 'manage_system_admins'),
   getAllAdmins
 );
 
@@ -43,7 +40,6 @@ router.get('/brands/:brandId/stores/:storeId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'primary_store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_store_admins', 'manage_brand_admins', 'manage_system_admins'),
   getAllAdmins
 );
 
@@ -57,32 +53,29 @@ router.get('/:id',
 // 創建系統級管理員 (僅限primary_system_admin)
 router.post('/',
   requireRole('primary_system_admin'),
-  requirePermission('manage_system_admins'),
   createAdmin
 );
 
 // 創建品牌級管理員
 router.post('/brands/:brandId',
-  requireRole('primary_system_admin', 'primary_brand_admin'),
+  requireRole('primary_system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireMemberManagement,
-  requirePermission('manage_brand_admins', 'manage_system_admins'),
   createAdmin
 );
 
 // 創建店鋪級管理員
 router.post('/brands/:brandId/stores/:storeId',
-  requireRole('primary_system_admin', 'primary_brand_admin', 'primary_store_admin'),
+  requireRole('primary_system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'),
   requireBrandAccess,
   requireStoreAccess,
   requireMemberManagement,
-  requirePermission('manage_store_admins', 'manage_brand_admins', 'manage_system_admins'),
   createAdmin
 );
 
 // 更新管理員 (根據管理員層級限制)
 router.put('/:id',
-  requireRole('primary_system_admin', 'primary_brand_admin', 'primary_store_admin'),
+  requireRole('primary_system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'),
   requireMemberManagement,
   requireScopeMatch,
   updateAdmin
@@ -90,7 +83,7 @@ router.put('/:id',
 
 // 刪除管理員 (根據管理員層級限制)
 router.delete('/:id',
-  requireRole('primary_system_admin', 'primary_brand_admin', 'primary_store_admin'),
+  requireRole('primary_system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'),
   requireMemberManagement,
   requireScopeMatch,
   deleteAdmin
@@ -98,7 +91,7 @@ router.delete('/:id',
 
 // 切換管理員狀態
 router.patch('/:id/status',
-  requireRole('primary_system_admin', 'primary_brand_admin', 'primary_store_admin'),
+  requireRole('primary_system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'),
   requireMemberManagement,
   requireScopeMatch,
   toggleAdminStatus

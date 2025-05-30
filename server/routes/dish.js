@@ -5,8 +5,7 @@ import * as optionController from '../controllers/Dish/option.js';
 import {
   authenticate,
   requireRole,
-  requireBrandAccess,
-  requirePermission
+  requireBrandAccess
 } from '../middlewares/auth/index.js';
 
 const router = express.Router();
@@ -27,7 +26,6 @@ router.post('/brands/:brandId/templates',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   dishTemplateController.createDishTemplate
 );
 
@@ -36,7 +34,6 @@ router.put('/brands/:brandId/templates/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   dishTemplateController.updateDishTemplate
 );
 
@@ -45,7 +42,6 @@ router.delete('/brands/:brandId/templates/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   dishTemplateController.deleteDishTemplate
 );
 
@@ -70,7 +66,6 @@ router.post('/brands/:brandId/option-categories',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   optionCategoryController.createOptionCategory
 );
 
@@ -79,7 +74,6 @@ router.put('/brands/:brandId/option-categories/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   optionCategoryController.updateOptionCategory
 );
 
@@ -88,7 +82,6 @@ router.delete('/brands/:brandId/option-categories/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   optionCategoryController.deleteOptionCategory
 );
 
@@ -108,7 +101,6 @@ router.post('/brands/:brandId/options',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   optionController.createOption
 );
 
@@ -117,7 +109,6 @@ router.put('/brands/:brandId/options/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   optionController.updateOption
 );
 
@@ -126,7 +117,6 @@ router.delete('/brands/:brandId/options/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_menu'),
   optionController.deleteOption
 );
 

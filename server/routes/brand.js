@@ -4,7 +4,7 @@ import {
   authenticate,
   requireRole,
   requireSystemLevel,
-  requirePermission
+  requireBrandAccess
 } from '../middlewares/auth/index.js';
 
 const router = express.Router();
@@ -13,15 +13,14 @@ const router = express.Router();
 router.get('/',
   authenticate('admin'),
   requireSystemLevel,
-  requirePermission('manage_brands'),
   brandController.getAllBrands
 );
 
-// 獲取單個品牌（僅限系統級管理員）
-router.get('/:id',
+// 獲取單個品牌（系統級可看所有，品牌級只能看自己的）
+router.get('/:brandId',
   authenticate('admin'),
-  requireSystemLevel,
-  requirePermission('manage_brands'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
   brandController.getBrandById
 );
 
@@ -29,7 +28,6 @@ router.get('/:id',
 router.post('/',
   authenticate('admin'),
   requireSystemLevel,
-  requirePermission('manage_brands'),
   brandController.createBrand
 );
 
@@ -37,7 +35,6 @@ router.post('/',
 router.put('/:id',
   authenticate('admin'),
   requireSystemLevel,
-  requirePermission('manage_brands'),
   brandController.updateBrand
 );
 
@@ -45,7 +42,6 @@ router.put('/:id',
 router.delete('/:id',
   authenticate('admin'),
   requireRole('primary_system_admin'),
-  requirePermission('manage_brands'),
   brandController.deleteBrand
 );
 
@@ -53,7 +49,6 @@ router.delete('/:id',
 router.get('/:id/stores',
   authenticate('admin'),
   requireSystemLevel,
-  requirePermission('manage_brands'),
   brandController.getBrandStores
 );
 
@@ -61,7 +56,6 @@ router.get('/:id/stores',
 router.put('/:id/toggle',
   authenticate('admin'),
   requireRole('primary_system_admin'),
-  requirePermission('manage_brands'),
   brandController.toggleBrandActive
 );
 

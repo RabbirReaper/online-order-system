@@ -1,126 +1,9 @@
 /**
- * 權限配置檔
- * 定義系統中所有的權限和角色權限映射
+ * RBAC 權限配置檔
+ * 在純 RBAC 設計中，角色本身就定義了權限範圍
  */
 
-// 基礎權限定義
-export const PERMISSIONS = {
-  // 系統管理權限
-  MANAGE_SYSTEM: 'manage_system',
-  MANAGE_BRANDS: 'manage_brands',
-  MANAGE_SYSTEM_ADMINS: 'manage_system_admins',
-
-  // 品牌管理權限
-  MANAGE_BRAND: 'manage_brand',
-  MANAGE_STORES: 'manage_stores',
-  MANAGE_BRAND_ADMINS: 'manage_brand_admins',
-
-  // 店鋪管理權限
-  MANAGE_STORE: 'manage_store',
-  MANAGE_STORE_ADMINS: 'manage_store_admins',
-
-  // 業務操作權限
-  ORDER_SYSTEM: 'order_system',
-  VIEW_REPORTS: 'view_reports',
-  EDIT_BACKEND: 'edit_backend',
-  MANAGE_INVENTORY: 'manage_inventory',
-  MANAGE_MENU: 'manage_menu',
-  MANAGE_CUSTOMERS: 'manage_customers',
-  MANAGE_ORDERS: 'manage_orders',
-  MANAGE_PROMOTIONS: 'manage_promotions'
-};
-
-// 角色權限映射
-export const ROLE_PERMISSIONS = {
-  primary_system_admin: [
-    PERMISSIONS.MANAGE_SYSTEM,
-    PERMISSIONS.MANAGE_BRANDS,
-    PERMISSIONS.MANAGE_SYSTEM_ADMINS,
-    PERMISSIONS.MANAGE_BRAND,
-    PERMISSIONS.MANAGE_STORES,
-    PERMISSIONS.MANAGE_BRAND_ADMINS,
-    PERMISSIONS.MANAGE_STORE,
-    PERMISSIONS.MANAGE_STORE_ADMINS,
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EDIT_BACKEND,
-    PERMISSIONS.MANAGE_INVENTORY,
-    PERMISSIONS.MANAGE_MENU,
-    PERMISSIONS.MANAGE_CUSTOMERS,
-    PERMISSIONS.MANAGE_ORDERS,
-    PERMISSIONS.MANAGE_PROMOTIONS
-  ],
-  system_admin: [
-    PERMISSIONS.MANAGE_BRANDS,
-    PERMISSIONS.MANAGE_BRAND,
-    PERMISSIONS.MANAGE_STORES,
-    PERMISSIONS.MANAGE_STORE,
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EDIT_BACKEND,
-    PERMISSIONS.MANAGE_INVENTORY,
-    PERMISSIONS.MANAGE_MENU,
-    PERMISSIONS.MANAGE_CUSTOMERS,
-    PERMISSIONS.MANAGE_ORDERS,
-    PERMISSIONS.MANAGE_PROMOTIONS
-  ],
-  primary_brand_admin: [
-    PERMISSIONS.MANAGE_BRAND,
-    PERMISSIONS.MANAGE_STORES,
-    PERMISSIONS.MANAGE_BRAND_ADMINS,
-    PERMISSIONS.MANAGE_STORE,
-    PERMISSIONS.MANAGE_STORE_ADMINS,
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EDIT_BACKEND,
-    PERMISSIONS.MANAGE_INVENTORY,
-    PERMISSIONS.MANAGE_MENU,
-    PERMISSIONS.MANAGE_CUSTOMERS,
-    PERMISSIONS.MANAGE_ORDERS,
-    PERMISSIONS.MANAGE_PROMOTIONS
-  ],
-  brand_admin: [
-    PERMISSIONS.MANAGE_BRAND,
-    PERMISSIONS.MANAGE_STORES,
-    PERMISSIONS.MANAGE_STORE,
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EDIT_BACKEND,
-    PERMISSIONS.MANAGE_INVENTORY,
-    PERMISSIONS.MANAGE_MENU,
-    PERMISSIONS.MANAGE_CUSTOMERS,
-    PERMISSIONS.MANAGE_ORDERS,
-    PERMISSIONS.MANAGE_PROMOTIONS
-  ],
-  primary_store_admin: [
-    PERMISSIONS.MANAGE_STORE,
-    PERMISSIONS.MANAGE_STORE_ADMINS,
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EDIT_BACKEND,
-    PERMISSIONS.MANAGE_INVENTORY,
-    PERMISSIONS.MANAGE_MENU,
-    PERMISSIONS.MANAGE_CUSTOMERS,
-    PERMISSIONS.MANAGE_ORDERS,
-    PERMISSIONS.MANAGE_PROMOTIONS
-  ],
-  store_admin: [
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.VIEW_REPORTS,
-    PERMISSIONS.EDIT_BACKEND,
-    PERMISSIONS.MANAGE_INVENTORY,
-    PERMISSIONS.MANAGE_MENU,
-    PERMISSIONS.MANAGE_CUSTOMERS,
-    PERMISSIONS.MANAGE_ORDERS,
-    PERMISSIONS.MANAGE_PROMOTIONS
-  ],
-  employee: [
-    PERMISSIONS.ORDER_SYSTEM,
-    PERMISSIONS.MANAGE_INVENTORY
-  ]
-};
-
-// 角色層級定義
+// 角色層級定義 - 用於比較角色高低
 export const ROLE_LEVELS = {
   primary_system_admin: 7,
   system_admin: 6,
@@ -131,33 +14,99 @@ export const ROLE_LEVELS = {
   employee: 1
 };
 
-// 角色範圍定義
+// 角色範圍定義 - 決定管理範圍
 export const ROLE_SCOPES = {
-  primary_system_admin: 'system',
-  system_admin: 'system',
-  primary_brand_admin: 'brand',
-  brand_admin: 'brand',
-  primary_store_admin: 'store',
-  store_admin: 'store',
-  employee: 'store'
+  primary_system_admin: 'system',  // 可管理整個系統
+  system_admin: 'system',          // 可管理整個系統
+  primary_brand_admin: 'brand',    // 可管理特定品牌
+  brand_admin: 'brand',            // 可管理特定品牌
+  primary_store_admin: 'store',    // 可管理特定店鋪
+  store_admin: 'store',            // 可管理特定店鋪
+  employee: 'store'                // 只能在特定店鋪工作
 };
 
-// 權限描述
-export const PERMISSION_DESCRIPTIONS = {
-  [PERMISSIONS.MANAGE_SYSTEM]: '系統管理',
-  [PERMISSIONS.MANAGE_BRANDS]: '品牌管理',
-  [PERMISSIONS.MANAGE_SYSTEM_ADMINS]: '系統管理員管理',
-  [PERMISSIONS.MANAGE_BRAND]: '品牌設定管理',
-  [PERMISSIONS.MANAGE_STORES]: '店鋪管理',
-  [PERMISSIONS.MANAGE_BRAND_ADMINS]: '品牌管理員管理',
-  [PERMISSIONS.MANAGE_STORE]: '店鋪設定管理',
-  [PERMISSIONS.MANAGE_STORE_ADMINS]: '店鋪管理員管理',
-  [PERMISSIONS.ORDER_SYSTEM]: '訂單系統操作',
-  [PERMISSIONS.VIEW_REPORTS]: '查看報表',
-  [PERMISSIONS.EDIT_BACKEND]: '編輯後台資料',
-  [PERMISSIONS.MANAGE_INVENTORY]: '庫存管理',
-  [PERMISSIONS.MANAGE_MENU]: '菜單管理',
-  [PERMISSIONS.MANAGE_CUSTOMERS]: '客戶管理',
-  [PERMISSIONS.MANAGE_ORDERS]: '訂單管理',
-  [PERMISSIONS.MANAGE_PROMOTIONS]: '促銷管理'
+// 角色能力描述 - 用於前端顯示和文檔
+export const ROLE_CAPABILITIES = {
+  primary_system_admin: {
+    name: '系統主管理員',
+    description: '系統最高權限，可管理所有品牌、店鋪和管理員',
+    scope: '全系統',
+    canManage: ['所有品牌', '所有店鋪', '所有管理員', '系統設定']
+  },
+  system_admin: {
+    name: '系統管理員',
+    description: '系統級操作權限，可管理品牌和店鋪，但不能管理其他系統管理員',
+    scope: '全系統',
+    canManage: ['所有品牌', '所有店鋪', '品牌和店鋪管理員']
+  },
+  primary_brand_admin: {
+    name: '品牌主管理員',
+    description: '品牌完整管理權限，可管理品牌下所有店鋪和人員',
+    scope: '單一品牌',
+    canManage: ['品牌設定', '所有店鋪', '品牌內所有管理員和員工']
+  },
+  brand_admin: {
+    name: '品牌管理員',
+    description: '品牌營運管理權限，可管理店鋪和業務，但不能管理人員',
+    scope: '單一品牌',
+    canManage: ['品牌設定', '所有店鋪', '菜單', '庫存', '訂單', '促銷']
+  },
+  primary_store_admin: {
+    name: '店鋪主管理員',
+    description: '店鋪完整管理權限，可管理店鋪所有功能和員工',
+    scope: '單一店鋪',
+    canManage: ['店鋪設定', '菜單', '庫存', '訂單', '促銷', '店鋪員工']
+  },
+  store_admin: {
+    name: '店鋪管理員',
+    description: '店鋪營運管理權限，可管理日常營運，但不能管理員工',
+    scope: '單一店鋪',
+    canManage: ['店鋪設定', '菜單', '庫存', '訂單', '促銷']
+  },
+  employee: {
+    name: '員工',
+    description: '基本操作權限，可使用點餐系統和基本庫存管理',
+    scope: '單一店鋪',
+    canManage: ['點餐系統', '基本庫存操作']
+  }
+};
+
+// 角色管理權限 - 定義誰可以管理誰
+export const ROLE_MANAGEMENT_MATRIX = {
+  primary_system_admin: [
+    'primary_system_admin', 'system_admin', 'primary_brand_admin',
+    'brand_admin', 'primary_store_admin', 'store_admin', 'employee'
+  ],
+  system_admin: [
+    'primary_brand_admin', 'brand_admin', 'primary_store_admin',
+    'store_admin', 'employee'
+  ],
+  primary_brand_admin: [
+    'brand_admin', 'primary_store_admin', 'store_admin', 'employee'
+  ],
+  brand_admin: ['primary_store_admin', 'store_admin', 'employee'],
+  primary_store_admin: ['store_admin', 'employee'],
+  store_admin: [], // 不能管理其他管理員
+  employee: [] // 不能管理其他管理員
+};
+
+// 輔助函數 - 檢查角色是否可以管理目標角色
+export const canManageRole = (managerRole, targetRole) => {
+  const allowedRoles = ROLE_MANAGEMENT_MATRIX[managerRole] || [];
+  return allowedRoles.includes(targetRole);
+};
+
+// 輔助函數 - 檢查是否為主管理員角色
+export const isPrimaryRole = (role) => {
+  return role.startsWith('primary_');
+};
+
+// 輔助函數 - 獲取角色範圍
+export const getRoleScope = (role) => {
+  return ROLE_SCOPES[role] || 'unknown';
+};
+
+// 輔助函數 - 獲取角色層級
+export const getRoleLevel = (role) => {
+  return ROLE_LEVELS[role] || 0;
 };

@@ -6,8 +6,7 @@ import {
   authenticate,
   requireRole,
   requireBrandAccess,
-  requireStoreAccess,
-  requirePermission
+  requireStoreAccess
 } from '../middlewares/auth/index.js';
 
 const router = express.Router();
@@ -18,7 +17,6 @@ router.get('/brands/:brandId',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_stores'),
   storeController.getAllStores
 );
 
@@ -32,7 +30,6 @@ router.post('/brands/:brandId',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_stores'),
   storeController.createStore
 );
 
@@ -41,7 +38,6 @@ router.put('/brands/:brandId/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_stores'),
   storeController.updateStore
 );
 
@@ -49,7 +45,6 @@ router.put('/brands/:brandId/:id',
 router.delete('/brands/:brandId/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin'),
-  requirePermission('manage_stores'),
   storeController.deleteStore
 );
 
@@ -65,7 +60,6 @@ router.put('/brands/:brandId/:id/business-hours',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('edit_backend'),
   storeController.updateStoreBusinessHours
 );
 
@@ -75,7 +69,6 @@ router.put('/brands/:brandId/:id/announcements',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('edit_backend'),
   storeController.updateStoreAnnouncements
 );
 
@@ -90,7 +83,6 @@ router.put('/brands/:brandId/:id/service-settings',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('edit_backend'),
   storeController.updateServiceSettings
 );
 
@@ -101,7 +93,6 @@ router.get('/brands/:brandId/:storeId/inventory',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory', 'view_reports'),
   inventoryController.getStoreInventory
 );
 
@@ -111,7 +102,6 @@ router.post('/brands/:brandId/:storeId/inventory',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.createInventory
 );
 
@@ -121,7 +111,6 @@ router.get('/brands/:brandId/:storeId/inventory/summary',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('view_reports'),
   inventoryController.getStockChangeSummary
 );
 
@@ -131,7 +120,6 @@ router.get('/brands/:brandId/:storeId/inventory/health',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('view_reports'),
   inventoryController.getInventoryHealthReport
 );
 
@@ -141,7 +129,6 @@ router.get('/brands/:brandId/:storeId/inventory/logs',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('view_reports'),
   inventoryController.getInventoryLogs
 );
 
@@ -151,7 +138,6 @@ router.post('/brands/:brandId/:storeId/inventory/bulk',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.bulkUpdateInventory
 );
 
@@ -161,7 +147,6 @@ router.post('/brands/:brandId/:storeId/inventory/initialize-dishes',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.initializeDishInventory
 );
 
@@ -171,7 +156,6 @@ router.get('/brands/:brandId/:storeId/inventory/:inventoryId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory', 'view_reports'),
   inventoryController.getInventoryItem
 );
 
@@ -181,7 +165,6 @@ router.put('/brands/:brandId/:storeId/inventory/:inventoryId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.updateInventory
 );
 
@@ -191,7 +174,6 @@ router.put('/brands/:brandId/:storeId/inventory/:inventoryId/available-stock',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.setAvailableStock
 );
 
@@ -201,7 +183,6 @@ router.post('/brands/:brandId/:storeId/inventory/:inventoryId/reduce',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.reduceStock
 );
 
@@ -211,7 +192,6 @@ router.post('/brands/:brandId/:storeId/inventory/:inventoryId/add',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.addStock
 );
 
@@ -221,7 +201,6 @@ router.post('/brands/:brandId/:storeId/inventory/:inventoryId/damage',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.processDamage
 );
 
@@ -231,7 +210,6 @@ router.put('/brands/:brandId/:storeId/inventory/:inventoryId/sold-out',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_inventory'),
   inventoryController.toggleSoldOut
 );
 
@@ -241,7 +219,6 @@ router.get('/brands/:brandId/:storeId/inventory/:inventoryId/trends',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('view_reports'),
   inventoryController.getStockTrends
 );
 
@@ -251,7 +228,6 @@ router.get('/brands/:brandId/:storeId/inventory/:inventoryId/stats',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('view_reports'),
   inventoryController.getItemInventoryStats
 );
 
@@ -267,7 +243,6 @@ router.post('/brands/:brandId/:storeId/menu',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.createMenu
 );
 
@@ -277,7 +252,6 @@ router.put('/brands/:brandId/:storeId/menu/:menuId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.updateMenu
 );
 
@@ -287,7 +261,6 @@ router.delete('/brands/:brandId/:storeId/menu/:menuId',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.deleteMenu
 );
 
@@ -297,7 +270,6 @@ router.put('/brands/:brandId/:storeId/menu/:menuId/toggle',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.toggleMenuActive
 );
 
@@ -307,7 +279,6 @@ router.put('/brands/:brandId/:storeId/menu/:menuId/toggle-item',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.toggleMenuItem
 );
 
@@ -317,7 +288,6 @@ router.put('/brands/:brandId/:storeId/menu/:menuId/category-order',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.updateCategoryOrder
 );
 
@@ -327,7 +297,6 @@ router.put('/brands/:brandId/:storeId/menu/:menuId/dish-order',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.updateDishOrder
 );
 
@@ -337,7 +306,6 @@ router.post('/brands/:brandId/:storeId/menu/:menuId/dish',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.addDishToMenu
 );
 
@@ -347,7 +315,6 @@ router.delete('/brands/:brandId/:storeId/menu/:menuId/dish',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission('manage_menu'),
   menuController.removeDishFromMenu
 );
 

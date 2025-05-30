@@ -6,8 +6,7 @@ import * as pointInstanceController from '../controllers/Promotion/pointInstance
 import {
   authenticate,
   requireRole,
-  requireBrandAccess,
-  requirePermission
+  requireBrandAccess
 } from '../middlewares/auth/index.js';
 
 const router = express.Router();
@@ -18,7 +17,6 @@ router.get('/brands/:brandId/coupons/templates',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   couponTemplateController.getAllCouponTemplates
 );
 
@@ -27,7 +25,6 @@ router.get('/brands/:brandId/coupons/templates/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   couponTemplateController.getCouponTemplateById
 );
 
@@ -36,7 +33,6 @@ router.post('/brands/:brandId/coupons/templates',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   couponTemplateController.createCouponTemplate
 );
 
@@ -45,7 +41,6 @@ router.put('/brands/:brandId/coupons/templates/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   couponTemplateController.updateCouponTemplate
 );
 
@@ -54,7 +49,6 @@ router.delete('/brands/:brandId/coupons/templates/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   couponTemplateController.deleteCouponTemplate
 );
 
@@ -64,7 +58,6 @@ router.get('/brands/:brandId/coupons/instances/admin',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('view_reports'),
   couponInstanceController.getAllCouponInstances
 );
 
@@ -73,7 +66,6 @@ router.post('/brands/:brandId/coupons/instances/issue',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   couponInstanceController.issueCouponToUser
 );
 
@@ -96,7 +88,6 @@ router.get('/brands/:brandId/points/rules',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('view_reports', 'manage_promotions'),
   pointRuleController.getAllPointRules
 );
 
@@ -105,7 +96,6 @@ router.get('/brands/:brandId/points/rules/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('view_reports', 'manage_promotions'),
   pointRuleController.getPointRuleById
 );
 
@@ -114,7 +104,6 @@ router.post('/brands/:brandId/points/rules',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   pointRuleController.createPointRule
 );
 
@@ -123,7 +112,6 @@ router.put('/brands/:brandId/points/rules/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   pointRuleController.updatePointRule
 );
 
@@ -132,7 +120,6 @@ router.delete('/brands/:brandId/points/rules/:id',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   pointRuleController.deletePointRule
 );
 
@@ -155,7 +142,6 @@ router.post('/brands/:brandId/points/add',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('manage_promotions'),
   pointInstanceController.addPointsToUser
 );
 

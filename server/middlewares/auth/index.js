@@ -9,7 +9,6 @@ import {
   requireSystemLevel,
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission,
   requireMemberManagement,
   requireHigherRole,
   requireScopeMatch
@@ -22,7 +21,6 @@ export {
   requireSystemLevel,
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission,
   requireMemberManagement,
   requireHigherRole,
   requireScopeMatch

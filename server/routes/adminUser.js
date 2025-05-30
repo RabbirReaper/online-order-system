@@ -3,8 +3,7 @@ import * as adminUserController from '../controllers/User/adminUser.js';
 import {
   authenticate,
   requireRole,
-  requireBrandAccess,
-  requirePermission
+  requireBrandAccess
 } from '../middlewares/auth/index.js';
 
 const router = express.Router();
@@ -16,7 +15,6 @@ router.use(authenticate('admin'));
 router.get('/brands/:brandId/users',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('manage_customers'),
   adminUserController.getAllUsers
 );
 
@@ -24,7 +22,6 @@ router.get('/brands/:brandId/users',
 router.get('/brands/:brandId/users/new-in-range',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('manage_customers'),
   adminUserController.getNewUsersInRange
 );
 
@@ -32,7 +29,6 @@ router.get('/brands/:brandId/users/new-in-range',
 router.get('/brands/:brandId/users/:id',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('manage_customers'),
   adminUserController.getUserById
 );
 
@@ -40,7 +36,6 @@ router.get('/brands/:brandId/users/:id',
 router.patch('/brands/:brandId/users/:id/status',
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('manage_customers'),
   adminUserController.toggleUserStatus
 );
 

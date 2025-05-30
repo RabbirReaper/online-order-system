@@ -19,8 +19,8 @@ export const getAllBrands = asyncHandler(async (req, res) => {
 // 獲取單個品牌
 export const getBrandById = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const brand = await brandService.getBrandById(id);
+    const { brandId } = req.params;
+    const brand = await brandService.getBrandById(brandId);
 
     res.json({
       success: true,

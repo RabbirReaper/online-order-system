@@ -121,7 +121,7 @@
 
           <!-- 右側 - 取消和儲存按鈕 -->
           <div>
-            <router-link :to="`/admin/${brandId}/admins`" class="btn btn-secondary me-2" :disabled="isSubmitting">
+            <router-link :to="`/admin/${brandId}/store-admins`" class="btn btn-secondary me-2" :disabled="isSubmitting">
               <i class="bi bi-x-circle me-1"></i>取消
             </router-link>
             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -267,31 +267,27 @@ const getAvailableRoles = async () => {
     if (response.loggedIn) {
       currentUserRole.value = response.role;
 
-      // 根據當前用戶角色決定可創建的角色
-      const allRoles = Object.keys(roleDefinitions);
-      const userCanCreate = [];
+      // 角色管理權限矩陣 - 與後端保持一致
+      const roleManagementMatrix = {
+        'primary_system_admin': [
+          'primary_system_admin', 'system_admin', 'primary_brand_admin',
+          'brand_admin', 'primary_store_admin', 'store_admin', 'employee'
+        ],
+        'system_admin': [
+          'primary_brand_admin', 'brand_admin', 'primary_store_admin',
+          'store_admin', 'employee'
+        ],
+        'primary_brand_admin': [
+          'brand_admin', 'primary_store_admin', 'store_admin', 'employee'
+        ],
+        'brand_admin': ['primary_store_admin', 'store_admin', 'employee'], // 更新：brand_admin 現在可以管理店鋪級角色
+        'primary_store_admin': ['store_admin', 'employee'],
+        'store_admin': [],
+        'employee': []
+      };
 
-      // 簡化的權限邏輯，實際應該根據後端返回的權限資訊
-      switch (response.role) {
-        case 'primary_system_admin':
-          userCanCreate.push(...allRoles);
-          break;
-        case 'system_admin':
-          userCanCreate.push('brand_admin', 'store_admin', 'employee');
-          break;
-        case 'primary_brand_admin':
-          userCanCreate.push('brand_admin', 'primary_store_admin', 'store_admin', 'employee');
-          break;
-        case 'brand_admin':
-          userCanCreate.push('store_admin', 'employee');
-          break;
-        case 'primary_store_admin':
-          userCanCreate.push('store_admin', 'employee');
-          break;
-        default:
-          // 其他角色不能創建管理員
-          break;
-      }
+      // 根據當前用戶角色獲取可創建的角色
+      const userCanCreate = roleManagementMatrix[response.role] || [];
 
       availableRoles.value = userCanCreate.map(role => ({
         value: role,
