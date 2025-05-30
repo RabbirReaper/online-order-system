@@ -374,19 +374,19 @@ const router = createRouter({
         // 用戶管理（預留）
         // 管理員管理
         {
-          path: 'admins',
+          path: 'store-admins',
           name: 'brand-admin-admins',
           component: () => import('@/components/BrandAdmin/AdminManager/List.vue'),
           meta: { requiresAuth: true, title: '管理員管理' }
         },
         {
-          path: 'admins/create',
+          path: 'store-admins/create',
           name: 'brand-admin-admin-create',
           component: () => import('@/components/BrandAdmin/AdminManager/Form.vue'),
           meta: { requiresAuth: true, title: '新增管理員' }
         },
         {
-          path: 'admins/edit/:id',
+          path: 'store-admins/edit/:id',
           name: 'brand-admin-admin-edit',
           component: () => import('@/components/BrandAdmin/AdminManager/Form.vue'),
           props: true,

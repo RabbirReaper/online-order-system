@@ -33,7 +33,7 @@
       </div>
 
       <div>
-        <router-link :to="`/admin/${brandId}/admins/create`" class="btn btn-primary">
+        <router-link :to="`/admin/${brandId}/store-admins/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增管理員
         </router-link>
       </div>
@@ -108,7 +108,7 @@
                 </td>
                 <td>
                   <div class="btn-group">
-                    <router-link :to="`/admin/${brandId}/admins/edit/${admin._id}`"
+                    <router-link :to="`/admin/${brandId}/store-admins/edit/${admin._id}`"
                       class="btn btn-sm btn-outline-primary" v-if="canEditAdmin(admin)">
                       <i class="bi bi-pencil me-1"></i>編輯
                     </router-link>
@@ -135,7 +135,7 @@
       <i class="bi bi-info-circle me-2 fs-4"></i>
       <p class="mb-0">{{ searchQuery || filterRole || filterStatus ? '沒有符合搜尋條件的管理員' : '尚未創建任何管理員' }}</p>
       <div class="mt-3" v-if="!searchQuery && !filterRole && !filterStatus">
-        <router-link :to="`/admin/${brandId}/admins/create`" class="btn btn-primary">
+        <router-link :to="`/admin/${brandId}/store-admins/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增第一個管理員
         </router-link>
       </div>
