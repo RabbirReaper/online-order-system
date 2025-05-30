@@ -395,7 +395,7 @@ export const resetPassword = async (phone, code, newPassword, brandId) => {
   }
 
   // 檢查新密碼是否與當前密碼相同
-  const isSamePassword = await bcrypt.compare(newPassword, user.password);
+  const isSamePassword = await user.comparePassword(newPassword);
   if (isSamePassword) {
     throw new AppError('新密碼不能與當前密碼相同', 400);
   }
@@ -439,7 +439,7 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
   }
 
   // 確保新舊密碼不同
-  const isSamePassword = await bcrypt.compare(newPassword, user.password);
+  const isSamePassword = await user.comparePassword(newPassword);
   if (isSamePassword) {
     throw new AppError('新密碼不能與當前密碼相同', 400);
   }

@@ -31,9 +31,9 @@ export const authenticate = (userType = 'admin') => async (req, res, next) => {
         });
       }
 
-      // 查詢管理員資料
+      // 查詢管理員資料，包含新的 brand 和 store 字段
       const admin = await Admin.findById(req.session.adminId)
-        .select('role brand manage isActive');
+        .select('role brand store isActive');
 
       if (!admin) {
         req.session.destroy();
@@ -57,7 +57,7 @@ export const authenticate = (userType = 'admin') => async (req, res, next) => {
         type: 'admin',
         role: admin.role,
         brand: admin.brand,
-        manage: admin.manage || []
+        store: admin.store
       };
 
     } else if (userType === 'user') {

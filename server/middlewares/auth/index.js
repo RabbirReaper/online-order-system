@@ -6,18 +6,26 @@
 import { authenticate } from './authentication.js';
 import {
   requireRole,
+  requireSystemLevel,
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission
+  requirePermission,
+  requireMemberManagement,
+  requireHigherRole,
+  requireScopeMatch
 } from './authorization.js';
 
 // 統一匯出
 export {
   authenticate,
   requireRole,
+  requireSystemLevel,
   requireBrandAccess,
   requireStoreAccess,
-  requirePermission
+  requirePermission,
+  requireMemberManagement,
+  requireHigherRole,
+  requireScopeMatch
 };
 
 // 預設的管理員認證

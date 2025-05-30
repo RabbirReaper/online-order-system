@@ -14,33 +14,33 @@ router.use(authenticate('admin'));
 
 // 獲取特定品牌下的所有用戶
 router.get('/brands/:brandId/users',
-  requireRole('boss', 'brand_admin', 'store_admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('view_reports'),
+  requirePermission('manage_customers'),
   adminUserController.getAllUsers
 );
 
 // 獲取指定日期範圍內新加入的用戶
 router.get('/brands/:brandId/users/new-in-range',
-  requireRole('boss', 'brand_admin', 'store_admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('view_reports'),
+  requirePermission('manage_customers'),
   adminUserController.getNewUsersInRange
 );
 
 // 獲取特定用戶詳情
 router.get('/brands/:brandId/users/:id',
-  requireRole('boss', 'brand_admin', 'store_admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
-  requirePermission('view_reports'),
+  requirePermission('manage_customers'),
   adminUserController.getUserById
 );
 
 // 切換用戶啟用狀態
 router.patch('/brands/:brandId/users/:id/status',
-  requireRole('boss', 'brand_admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  requirePermission('edit_backend'),
+  requirePermission('manage_customers'),
   adminUserController.toggleUserStatus
 );
 

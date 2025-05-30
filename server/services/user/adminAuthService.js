@@ -22,8 +22,10 @@ export const adminLogin = async (credentials, session) => {
     throw new AppError('用戶名和密碼為必填欄位', 400);
   }
 
-  // 查找管理員
-  const admin = await Admin.findOne({ name }).select('+password');
+  // 查找管理員，包含新的字段
+  const admin = await Admin.findOne({ name })
+    .populate('brand', 'name')
+    .populate('store', 'name');
 
   if (!admin) {
     throw new AppError('用戶名或密碼錯誤', 401);
@@ -48,20 +50,13 @@ export const adminLogin = async (credentials, session) => {
   // 設置會話
   session.adminId = admin._id;
   session.adminRole = admin.role;
-
-  // 處理管理權限
-  const manageInfo = Array.isArray(admin.manage)
-    ? admin.manage.map(m => ({
-      store: m.store,
-      permission: m.permission
-    }))
-    : [];
-
-  session.manage = manageInfo;
+  session.adminBrand = admin.brand?._id;
+  session.adminStore = admin.store?._id;
 
   return {
     role: admin.role,
-    manage: manageInfo
+    brand: admin.brand,
+    store: admin.store
   };
 };
 
@@ -114,7 +109,7 @@ export const changeAdminPassword = async (adminId, currentPassword, newPassword)
   }
 
   // 確保新舊密碼不同
-  const isSamePassword = await bcrypt.compare(newPassword, admin.password);
+  const isSamePassword = await admin.comparePassword(newPassword);
   if (isSamePassword) {
     throw new AppError('新密碼不能與當前密碼相同', 400);
   }
@@ -133,25 +128,22 @@ export const changeAdminPassword = async (adminId, currentPassword, newPassword)
  */
 export const checkAdminStatus = async (session) => {
   if (!session.adminId) {
-    return { loggedIn: false, role: null, manage: [] };
+    return { loggedIn: false, role: null, brand: null, store: null };
   }
 
-  const admin = await Admin.findById(session.adminId).select('role manage');
+  const admin = await Admin.findById(session.adminId)
+    .select('role brand store')
+    .populate('brand', 'name')
+    .populate('store', 'name');
 
   if (!admin) {
-    return { loggedIn: false, role: null, manage: [] };
+    return { loggedIn: false, role: null, brand: null, store: null };
   }
-
-  const manageInfo = Array.isArray(admin.manage)
-    ? admin.manage.map(m => ({
-      store: m.store,
-      permission: m.permission
-    }))
-    : [];
 
   return {
     loggedIn: true,
     role: admin.role,
-    manage: manageInfo
+    brand: admin.brand,
+    store: admin.store
   };
 };
