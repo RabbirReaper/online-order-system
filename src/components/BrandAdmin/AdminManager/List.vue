@@ -13,8 +13,6 @@
         <div class="ms-2">
           <select class="form-select" v-model="filterRole" @change="handleFilter">
             <option value="">所有角色</option>
-            <option value="primary_system_admin">系統主管理員</option>
-            <option value="system_admin">系統管理員</option>
             <option value="primary_brand_admin">品牌主管理員</option>
             <option value="brand_admin">品牌管理員</option>
             <option value="primary_store_admin">店鋪主管理員</option>
@@ -251,6 +249,7 @@ const isDeleting = ref(false);
 const statusModal = ref(null);
 const adminToToggle = ref(null);
 const currentUserRole = ref('');
+const currentUserRoleLabel = ref('');
 
 // 角色標籤對應
 const getRoleLabel = (role) => {
@@ -390,6 +389,7 @@ const getCurrentUserRole = async () => {
     const response = await api.adminAuth.checkStatus();
     if (response.loggedIn) {
       currentUserRole.value = response.role;
+      currentUserRoleLabel.value = getRoleLabel(response.role);
     }
   } catch (error) {
     console.error('獲取用戶角色失敗:', error);

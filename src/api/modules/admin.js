@@ -22,11 +22,11 @@ export default function (apiClient) {
         const { brandId, storeId, ...queryParams } = params;
         return apiClient.get(`/admin/brands/${brandId}/stores/${storeId}`, { params: queryParams });
       } else if (params.brandId) {
-        // 品牌級別的管理員查詢
+        // 品牌級別的管理員查詢 - 只顯示品牌相關的管理員，不包括系統管理員
         const { brandId, ...queryParams } = params;
         return apiClient.get(`/admin/brands/${brandId}`, { params: queryParams });
       } else {
-        // 系統級別的管理員查詢
+        // 系統級別的管理員查詢 - 顯示所有管理員
         return apiClient.get('/admin', { params });
       }
     },

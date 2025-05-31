@@ -25,24 +25,57 @@ export const getAllAdmins = async (currentAdmin, options = {}) => {
 
   // 系統級管理員可以查看所有
   if (currentScope === 'system') {
-    // 不限制查詢條件
+    // 如果指定了brandId，表示在品牌頁面查詢，需要過濾掉系統管理員
+    if (brandId) {
+      queryConditions.brand = brandId;
+      // 過濾掉系統級管理員，只顯示品牌相關的管理員
+      queryConditions.role = {
+        $nin: ['primary_system_admin', 'system_admin']
+      };
+    }
+    // 如果沒有指定brandId，表示在系統頁面查詢，顯示所有管理員
   }
   // 品牌級管理員只能查看同品牌的
   else if (currentScope === 'brand') {
     queryConditions.brand = currentAdmin.brand;
+    // 品牌級管理員不應該看到系統管理員
+    queryConditions.role = {
+      $nin: ['primary_system_admin', 'system_admin']
+    };
   }
   // 店鋪級管理員只能查看同店鋪的
   else if (currentScope === 'store') {
     queryConditions.store = currentAdmin.store;
+    // 店鋪級管理員不應該看到系統管理員
+    queryConditions.role = {
+      $nin: ['primary_system_admin', 'system_admin']
+    };
   }
 
   // 額外的篩選條件
   if (role) {
-    queryConditions.role = role;
-  }
-
-  if (brandId && currentScope === 'system') {
-    queryConditions.brand = brandId;
+    // 如果已經設定了role條件（系統管理員過濾），需要與新的role條件合併
+    if (queryConditions.role && queryConditions.role.$nin) {
+      // 確保指定的role不在排除列表中
+      if (!queryConditions.role.$nin.includes(role)) {
+        queryConditions.role = role;
+      } else {
+        // 如果指定的role在排除列表中，返回空結果
+        return {
+          admins: [],
+          pagination: {
+            total: 0,
+            totalPages: 0,
+            currentPage: page,
+            limit,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        };
+      }
+    } else {
+      queryConditions.role = role;
+    }
   }
 
   if (storeId && ['system', 'brand'].includes(currentScope)) {

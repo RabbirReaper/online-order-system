@@ -94,7 +94,7 @@
           <template #button-content>
             <i class="bi bi-person-circle"></i>
           </template>
-          <h6 class="dropdown-header">系統管理員</h6>
+          <h6 class="dropdown-header">{{ currentUserRoleLabel }}</h6>
           <b-dropdown-item :to="{ name: 'account-settings' }">設置</b-dropdown-item>
           <b-dropdown-divider></b-dropdown-divider>
           <b-dropdown-item @click="handleLogout">登出</b-dropdown-item>
@@ -110,9 +110,9 @@
           <BDropdown text="" size="sm" variant="outline-secondary">
             <template #button-content>
               <i class="bi bi-person-circle me-1"></i>
-              系統管理員
+              {{ currentUserRoleLabel }}
             </template>
-            <h6 class="dropdown-header">系統管理員</h6>
+            <h6 class="dropdown-header">{{ currentUserRoleLabel }}</h6>
             <b-dropdown-item :to="{ name: 'account-settings' }">設置</b-dropdown-item>
             <b-dropdown-divider></b-dropdown-divider>
             <b-dropdown-item @click="handleLogout">登出</b-dropdown-item>
@@ -141,8 +141,26 @@ const route = useRoute();
 // 側邊欄是否顯示 (用於移動版)
 const showSidebar = ref(false);
 
+// 狀態變數
+const currentUserRole = ref('');
+const currentUserRoleLabel = ref('載入中...');
+
 // 已展開的折疊項目ID列表
 const expandedItems = ref(['brandManagement', 'adminManagement', 'systemSettings']); // 預設全部展開
+
+// 角色標籤對應
+const getRoleLabel = (role) => {
+  const labels = {
+    'primary_system_admin': '系統主管理員',
+    'system_admin': '系統管理員',
+    'primary_brand_admin': '品牌主管理員',
+    'brand_admin': '品牌管理員',
+    'primary_store_admin': '店鋪主管理員',
+    'store_admin': '店鋪管理員',
+    'employee': '員工'
+  };
+  return labels[role] || role;
+};
 
 // 檢查特定折疊項是否應該展開
 const isExpanded = (id) => {
@@ -190,6 +208,23 @@ const getPageTitle = () => {
   }
 };
 
+// 獲取當前用戶角色
+const fetchCurrentUserRole = async () => {
+  try {
+    const response = await api.adminAuth.checkStatus();
+    if (response.loggedIn) {
+      currentUserRole.value = response.role;
+      currentUserRoleLabel.value = getRoleLabel(response.role);
+    } else {
+      // 如果未登入，重定向到登入頁面
+      router.push('/admin/login');
+    }
+  } catch (error) {
+    console.error('獲取用戶角色失敗:', error);
+    currentUserRoleLabel.value = '未知角色';
+  }
+};
+
 // 處理登出
 const handleLogout = async () => {
   try {
@@ -208,6 +243,9 @@ watch(() => route.path, () => {
 
 // 生命週期鉤子
 onMounted(() => {
+  // 載入用戶角色
+  fetchCurrentUserRole();
+
   // 監聽頁面變更事件
   window.addEventListener('change-page', (event) => {
     if (event.detail && event.detail.name) {

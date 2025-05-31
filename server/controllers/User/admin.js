@@ -12,8 +12,9 @@ export const getAllAdmins = asyncHandler(async (req, res) => {
 
   const options = {
     role: req.query.role,
-    brandId: req.query.brandId,
-    storeId: req.query.storeId,
+    // 優先從路由參數取得 brandId，其次從查詢參數
+    brandId: req.params.brandId || req.query.brandId,
+    storeId: req.params.storeId || req.query.storeId,
     page: parseInt(req.query.page, 10) || 1,
     limit: parseInt(req.query.limit, 10) || 20
   };

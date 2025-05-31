@@ -179,7 +179,7 @@
           <template #button-content>
             <i class="bi bi-person-circle"></i>
           </template>
-          <h6 class="dropdown-header">{{ currentUserRole }}</h6>
+          <h6 class="dropdown-header">{{ currentUserRoleLabel }}</h6>
           <b-dropdown-item :to="`/admin/${brandId}/account-settings`">設置</b-dropdown-item>
           <b-dropdown-divider></b-dropdown-divider>
           <b-dropdown-item @click="handleLogout">登出</b-dropdown-item>
@@ -195,7 +195,7 @@
           <BDropdown text="" size="sm" variant="outline-secondary">
             <template #button-content>
               <i class="bi bi-person-circle me-1"></i>
-              {{ currentUserRole }}
+              {{ currentUserRoleLabel }}
             </template>
             <h6 class="dropdown-header">{{ currentBrandName }}</h6>
             <b-dropdown-item :to="`/admin/${brandId}/account-settings`">設置</b-dropdown-item>
@@ -230,12 +230,27 @@ const brandId = computed(() => route.params.brandId);
 const showSidebar = ref(false);
 
 // 狀態變數
-const currentUserRole = ref('品牌管理員');
+const currentUserRole = ref('');
+const currentUserRoleLabel = ref('載入中...');
 const currentBrandName = ref('載入中...');
 const isLoading = ref(true);
 
 // 已展開的折疊項目ID列表
 const expandedItems = ref([]);
+
+// 角色標籤對應
+const getRoleLabel = (role) => {
+  const labels = {
+    'primary_system_admin': '系統主管理員',
+    'system_admin': '系統管理員',
+    'primary_brand_admin': '品牌主管理員',
+    'brand_admin': '品牌管理員',
+    'primary_store_admin': '店鋪主管理員',
+    'store_admin': '店鋪管理員',
+    'employee': '員工'
+  };
+  return labels[role] || role;
+};
 
 // 檢查特定折疊項是否應該展開
 const isExpanded = (id) => {
@@ -302,6 +317,23 @@ const getPageTitle = () => {
   return '品牌儀表板';
 };
 
+// 獲取當前用戶角色
+const fetchCurrentUserRole = async () => {
+  try {
+    const response = await api.adminAuth.checkStatus();
+    if (response.loggedIn) {
+      currentUserRole.value = response.role;
+      currentUserRoleLabel.value = getRoleLabel(response.role);
+    } else {
+      // 如果未登入，重定向到登入頁面
+      router.push('/admin/login');
+    }
+  } catch (error) {
+    console.error('獲取用戶角色失敗:', error);
+    currentUserRoleLabel.value = '未知角色';
+  }
+};
+
 // 獲取品牌資訊
 const fetchBrandInfo = async () => {
   if (!brandId.value) return;
@@ -346,9 +378,9 @@ watch(() => brandId.value, (newId, oldId) => {
 
 // 生命週期鉤子
 onMounted(() => {
-  // 載入品牌資訊
+  // 載入用戶角色和品牌資訊
+  fetchCurrentUserRole();
   fetchBrandInfo();
-
 });
 </script>
 
