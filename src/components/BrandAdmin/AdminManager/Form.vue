@@ -472,8 +472,8 @@ const submitForm = async () => {
 
     // 延遲導航，讓用戶看到成功訊息
     setTimeout(() => {
-      router.push(`/admin/${brandId.value}/admins`);
-    }, 1000);
+      router.push(`/admin/${brandId.value}/store-admins`);
+    }, 500);
   } catch (error) {
     console.error('儲存管理員時發生錯誤:', error);
 
