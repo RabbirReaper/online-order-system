@@ -45,19 +45,6 @@
             </div>
           </div>
 
-          <!-- 所屬品牌 (根據角色顯示) -->
-          <div class="mb-3" v-if="needsBrand">
-            <label for="adminBrand" class="form-label required">所屬品牌</label>
-            <select class="form-select" id="adminBrand" v-model="formData.brand" :class="{ 'is-invalid': errors.brand }"
-              required>
-              <option value="">請選擇...</option>
-              <option v-for="brand in brands" :key="brand._id" :value="brand._id">
-                {{ brand.name }}
-              </option>
-            </select>
-            <div class="invalid-feedback" v-if="errors.brand">{{ errors.brand }}</div>
-          </div>
-
           <!-- 所屬店鋪 (根據角色顯示) -->
           <div class="mb-3" v-if="needsStore">
             <label for="adminStore" class="form-label required">所屬店鋪</label>
@@ -229,7 +216,6 @@ const errors = reactive({});
 const isSubmitting = ref(false);
 const successMessage = ref('');
 const formErrors = ref([]);
-const brands = ref([]);
 const stores = ref([]);
 const currentUserRole = ref('');
 const availableRoles = ref([]);
@@ -310,7 +296,7 @@ const resetForm = () => {
     formData.name = '';
     formData.password = '';
     formData.role = '';
-    formData.brand = '';
+    formData.brand = brandId.value; // 自動設定為當前品牌
     formData.store = '';
     formData.isActive = true;
   }
@@ -353,13 +339,6 @@ const validateForm = () => {
     isValid = false;
   }
 
-  // 驗證品牌（需要品牌的角色）
-  if (needsBrand.value && !formData.brand) {
-    errors.brand = '請選擇所屬品牌';
-    formErrors.value.push('請選擇所屬品牌');
-    isValid = false;
-  }
-
   // 驗證店鋪（需要店鋪的角色）
   if (needsStore.value && !formData.store) {
     errors.store = '請選擇所屬店鋪';
@@ -370,28 +349,15 @@ const validateForm = () => {
   return isValid;
 };
 
-// 獲取品牌列表
-const fetchBrands = async () => {
-  try {
-    const response = await api.brand.getAllBrands();
-    if (response && response.brands) {
-      brands.value = response.brands;
-    }
-  } catch (error) {
-    console.error('獲取品牌列表失敗:', error);
-    formErrors.value.push('無法獲取品牌資料，請稍後再試');
-  }
-};
-
 // 獲取店鋪列表
 const fetchStores = async () => {
-  if (!formData.brand) {
+  if (!brandId.value) {
     stores.value = [];
     return;
   }
 
   try {
-    const response = await api.store.getAllStores({ brandId: formData.brand });
+    const response = await api.store.getAllStores({ brandId: brandId.value });
     if (response && response.stores) {
       stores.value = response.stores;
     }
@@ -413,7 +379,7 @@ const fetchAdminData = async () => {
       // 填充表單資料
       formData.name = admin.name;
       formData.role = admin.role;
-      formData.brand = admin.brand?._id || '';
+      formData.brand = admin.brand?._id || brandId.value; // 如果沒有品牌則使用當前品牌
       formData.store = admin.store?._id || '';
       formData.isActive = admin.isActive;
     } else {
@@ -449,6 +415,11 @@ const submitForm = async () => {
     const submitData = {
       ...formData
     };
+
+    // 確保品牌設定為當前品牌ID（針對需要品牌的角色）
+    if (needsBrand.value) {
+      submitData.brand = brandId.value;
+    }
 
     let response;
 
@@ -507,31 +478,25 @@ watch(() => formData.role, (newRole) => {
   // 清除不需要的欄位
   if (!roleDefinitions[newRole]?.needsBrand) {
     formData.brand = '';
+  } else {
+    // 自動設定品牌為當前品牌
+    formData.brand = brandId.value;
   }
   if (!roleDefinitions[newRole]?.needsStore) {
     formData.store = '';
   }
 });
 
-// 監聽品牌變化
-watch(() => formData.brand, () => {
-  // 當品牌改變時，重新獲取店鋪列表
-  if (formData.brand) {
-    fetchStores();
-  } else {
-    stores.value = [];
-  }
-  // 清除現有的店鋪選擇
-  formData.store = '';
-});
-
 // 生命週期鉤子
 onMounted(() => {
+  // 自動設定品牌為當前品牌
+  formData.brand = brandId.value;
+
   // 獲取可用角色
   getAvailableRoles();
 
-  // 獲取品牌列表
-  fetchBrands();
+  // 獲取店鋪列表
+  fetchStores();
 
   // 如果是編輯模式，獲取管理員資料
   if (isEditMode.value) {
