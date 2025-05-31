@@ -82,7 +82,7 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/customerAuth';
 import { BAlert } from 'bootstrap-vue-next'; // 確保已安裝 bootstrap-vue-next
 
 // 路由相關

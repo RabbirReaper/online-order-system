@@ -33,7 +33,7 @@ import MenuHeader from '@/components/customer/menu/MenuHeader.vue';
 import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue';
 import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue';
 import { useCartStore } from '@/stores/cart';
-import { useAuthStore } from '@/stores/auth'; // 添加 authStore
+import { useAuthStore } from '@/stores/customerAuth'; // 添加 authStore
 
 const route = useRoute();
 const router = useRouter();
