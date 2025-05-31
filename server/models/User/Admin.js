@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
-const SYSTEM_BRAND_ID = new mongoose.Types.ObjectId('000000000000000000000000');
-
 const AdminSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -29,15 +27,23 @@ const AdminSchema = new mongoose.Schema({
     ],
     required: true
   },
+  // 系統級管理員: null，品牌級管理員: ObjectId
   brand: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Brand',
-    required: true,
-    default: function () {
-      if (['primary_system_admin', 'system_admin'].includes(this.role)) {
-        return SYSTEM_BRAND_ID;
-      }
-      return undefined;
+    required: function () {
+      return !['primary_system_admin', 'system_admin'].includes(this.role);
+    },
+    validate: {
+      validator: function (value) {
+        // 系統級角色必須是 null
+        if (['primary_system_admin', 'system_admin'].includes(this.role)) {
+          return value === null || value === undefined;
+        }
+        // 其他角色必須有品牌
+        return !!value;
+      },
+      message: '角色與品牌設定不符'
     }
   },
   store: {
@@ -69,10 +75,28 @@ const AdminSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-AdminSchema.index({ brand: 1, name: 1 }, { unique: true });
-
+// 索引設定
 AdminSchema.index({ brand: 1, store: 1 });
 
+// 核心索引：品牌內名稱唯一性
+AdminSchema.index(
+  { brand: 1, name: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { brand: { $ne: null } }
+  }
+);
+
+// 核心索引：系統級名稱唯一性
+AdminSchema.index(
+  { name: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { brand: null }
+  }
+);
+
+// Primary 角色唯一性索引
 AdminSchema.index(
   { role: 1 },
   {
@@ -97,8 +121,6 @@ AdminSchema.index(
   }
 );
 
-AdminSchema.statics.SYSTEM_BRAND_ID = SYSTEM_BRAND_ID;
-
 AdminSchema.pre('save', async function (next) {
   if (this.isModified('password')) {
     try {
@@ -109,8 +131,9 @@ AdminSchema.pre('save', async function (next) {
     }
   }
 
+  // 系統級管理員設置為 null
   if (['primary_system_admin', 'system_admin'].includes(this.role)) {
-    this.brand = SYSTEM_BRAND_ID;
+    this.brand = null;
     this.store = undefined;
   }
 
@@ -143,14 +166,7 @@ AdminSchema.methods.isPrimaryRole = function () {
 };
 
 AdminSchema.methods.isSystemAdmin = function () {
-  return this.brand.toString() === SYSTEM_BRAND_ID.toString();
-};
-
-AdminSchema.methods.getActualBrandId = function () {
-  if (this.isSystemAdmin()) {
-    return null;
-  }
-  return this.brand;
+  return this.brand === null;
 };
 
 AdminSchema.methods.getRoleScope = function () {

@@ -5,8 +5,9 @@ import Store from '../../models/Store/Store.js';
 import { AppError } from '../../middlewares/error.js';
 import { ROLE_LEVELS, ROLE_SCOPES, ROLE_MANAGEMENT_MATRIX, canManageRole } from '../../config/permissions.js';
 
-const SYSTEM_BRAND_ID = new mongoose.Types.ObjectId('000000000000000000000000');
-
+/**
+ * 檢查名稱唯一性 - Null 值方案
+ */
 async function checkNameUniqueness(name, brandId = null, excludeId = null) {
   const query = { name };
 
@@ -14,11 +15,8 @@ async function checkNameUniqueness(name, brandId = null, excludeId = null) {
     query._id = { $ne: excludeId };
   }
 
-  if (brandId === null) {
-    query.brand = SYSTEM_BRAND_ID;
-  } else {
-    query.brand = brandId;
-  }
+  // 核心邏輯：系統級用 null，品牌級用實際 brandId
+  query.brand = brandId;
 
   const existingAdmin = await Admin.findOne(query);
   return !existingAdmin;
@@ -76,31 +74,16 @@ export const getAllAdmins = async (currentAdmin, options = {}) => {
   }
 
   const skip = (page - 1) * limit;
-
   const total = await Admin.countDocuments(queryConditions);
 
-  let admins = await Admin.find(queryConditions)
+  const admins = await Admin.find(queryConditions)
     .select('-password')
-    .populate({
-      path: 'brand',
-      select: 'name',
-      match: { _id: { $ne: SYSTEM_BRAND_ID } }
-    })
+    .populate('brand', 'name')
     .populate('store', 'name')
     .populate('createdBy', 'name')
     .sort({ role: 1, name: 1 })
     .skip(skip)
     .limit(limit);
-
-  admins = admins.map(admin => {
-    const adminObj = admin.toObject();
-
-    if (adminObj.brand && adminObj.brand.toString() === SYSTEM_BRAND_ID.toString()) {
-      adminObj.brand = null;
-    }
-
-    return adminObj;
-  });
 
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
@@ -120,13 +103,9 @@ export const getAllAdmins = async (currentAdmin, options = {}) => {
 };
 
 export const getAdminById = async (adminId, currentAdmin) => {
-  let admin = await Admin.findById(adminId)
+  const admin = await Admin.findById(adminId)
     .select('-password')
-    .populate({
-      path: 'brand',
-      select: 'name',
-      match: { _id: { $ne: SYSTEM_BRAND_ID } }
-    })
+    .populate('brand', 'name')
     .populate('store', 'name')
     .populate('createdBy', 'name');
 
@@ -136,9 +115,7 @@ export const getAdminById = async (adminId, currentAdmin) => {
 
   const currentScope = ROLE_SCOPES[currentAdmin.role];
 
-  const isTargetSystemAdmin = admin.brand && admin.brand.toString() === SYSTEM_BRAND_ID.toString();
-
-  if (currentScope === 'brand' && !isTargetSystemAdmin && admin.brand?.toString() !== currentAdmin.brand?.toString()) {
+  if (currentScope === 'brand' && admin.brand?.toString() !== currentAdmin.brand?.toString()) {
     throw new AppError('無權查看此管理員', 403);
   }
 
@@ -146,12 +123,7 @@ export const getAdminById = async (adminId, currentAdmin) => {
     throw new AppError('無權查看此管理員', 403);
   }
 
-  const adminObj = admin.toObject();
-  if (isTargetSystemAdmin) {
-    adminObj.brand = null;
-  }
-
-  return adminObj;
+  return admin;
 };
 
 export const createAdmin = async (currentAdmin, adminData) => {
@@ -178,11 +150,12 @@ export const createAdmin = async (currentAdmin, adminData) => {
 
   const processedData = await processAdminData(currentAdmin, adminData);
 
-  let checkBrandId = null;
+  // 確定檢查範圍 - 極簡邏輯
+  let checkBrandId;
   if (['primary_system_admin', 'system_admin'].includes(processedData.role)) {
-    checkBrandId = null;
+    checkBrandId = null;  // 系統級
   } else {
-    checkBrandId = processedData.brand;
+    checkBrandId = processedData.brand;  // 品牌級
   }
 
   const isNameUnique = await checkNameUniqueness(adminData.name, checkBrandId);
@@ -224,13 +197,13 @@ export const updateAdmin = async (adminId, currentAdmin, updateData) => {
   delete updateData.createdBy;
 
   if (updateData.name && updateData.name !== admin.name) {
-    let checkBrandId = null;
+    let checkBrandId;
     const currentRole = updateData.role || admin.role;
 
     if (['primary_system_admin', 'system_admin'].includes(currentRole)) {
-      checkBrandId = null;
+      checkBrandId = null;  // 系統級
     } else {
-      checkBrandId = updateData.brand || admin.brand;
+      checkBrandId = updateData.brand || admin.brand;  // 品牌級
     }
 
     const isNameUnique = await checkNameUniqueness(updateData.name, checkBrandId, adminId);
@@ -348,7 +321,8 @@ async function processAdminData(currentAdmin, adminData, existingAdmin = null) {
   const currentScope = ROLE_SCOPES[currentAdmin.role];
 
   if (['primary_system_admin', 'system_admin'].includes(targetRole)) {
-    processedData.brand = SYSTEM_BRAND_ID;
+    // 系統級角色設置為 null
+    processedData.brand = null;
     delete processedData.store;
   } else if (['primary_brand_admin', 'brand_admin'].includes(targetRole)) {
     delete processedData.store;
@@ -359,10 +333,6 @@ async function processAdminData(currentAdmin, adminData, existingAdmin = null) {
       } else {
         processedData.brand = currentAdmin.brand;
       }
-    }
-
-    if (processedData.brand.toString() === SYSTEM_BRAND_ID.toString()) {
-      throw new AppError('無效的品牌ID', 400);
     }
 
     const brand = await Brand.findById(processedData.brand);
