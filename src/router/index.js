@@ -79,46 +79,47 @@ const router = createRouter({
           path: '',
           redirect: { name: 'brand-list' }
         },
+        // 品牌管理路由
         {
           path: 'brands',
           name: 'brand-list',
-          component: () => import('@/components/Boss/BrandList.vue')
+          component: () => import('@/components/Boss/Brand/List.vue')
         },
         {
           path: 'brands/create',
           name: 'brand-create',
-          component: () => import('@/components/Boss/BrandForm.vue')
+          component: () => import('@/components/Boss/Brand/Form.vue')
         },
         {
           path: 'brands/edit/:id',
           name: 'brand-edit',
-          component: () => import('@/components/Boss/BrandForm.vue'),
+          component: () => import('@/components/Boss/Brand/Form.vue'),
           props: true
         },
         {
           path: 'brands/detail/:id',
           name: 'brand-detail',
-          component: () => import('@/components/Boss/BrandDetail.vue'),
+          component: () => import('@/components/Boss/Brand/Detail.vue'),
           props: true
         },
+        // 管理員管理路由
         {
           path: 'admins',
-          name: 'admin-list',
-          component: Placeholder,
-          props: {
-            title: '管理員功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          name: 'boss-admin-list',
+          component: () => import('@/components/Boss/AdminManager/List.vue')
         },
         {
           path: 'admins/create',
-          name: 'admin-create',
-          component: Placeholder,
-          props: {
-            title: '管理員功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          name: 'boss-admin-create',
+          component: () => import('@/components/Boss/AdminManager/Form.vue')
         },
+        {
+          path: 'admins/edit/:id',
+          name: 'boss-admin-edit',
+          component: () => import('@/components/Boss/AdminManager/Form.vue'),
+          props: true
+        },
+        // 系統設置路由
         {
           path: 'settings',
           name: 'system-settings',

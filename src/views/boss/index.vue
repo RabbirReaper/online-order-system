@@ -38,12 +38,12 @@
               @toggle="(expanded) => handleSectionToggle('adminManagement', expanded)">
               <template #icon><i class="bi bi-people me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="{ name: 'admin-list' }">
+              <router-link class="nav-link ps-4 py-2" :to="{ name: 'boss-admin-list' }">
                 <i class="bi bi-person-lines-fill me-2"></i>
                 管理員列表
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="{ name: 'admin-create' }">
+              <router-link class="nav-link ps-4 py-2" :to="{ name: 'boss-admin-create' }">
                 <i class="bi bi-person-plus me-2"></i>
                 新增管理員
               </router-link>
@@ -200,8 +200,9 @@ const getPageTitle = () => {
     case 'brand-create': return '新增品牌';
     case 'brand-edit': return '編輯品牌';
     case 'brand-detail': return '品牌詳情';
-    case 'admin-list': return '管理員列表';
-    case 'admin-create': return '新增管理員';
+    case 'boss-admin-list': return '管理員列表';
+    case 'boss-admin-create': return '新增管理員';
+    case 'boss-admin-edit': return '編輯管理員';
     case 'system-settings': return '系統設置';
     case 'account-settings': return '帳號設置';
     default: return '系統總管理';
