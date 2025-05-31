@@ -278,9 +278,10 @@ const fetchLinkedCategories = async () => {
   try {
     const response = await api.dish.getAllOptionCategories(brandId.value);
     if (response && response.categories) {
-      // 找出包含此選項的類別
+      // 找出包含此選項的類別 - 修正匹配邏輯
       linkedCategories.value = response.categories.filter(category =>
-        category.options && category.options.some(opt => opt.refOption === route.params.id)
+        category.options && category.options.some(opt => opt.refOption._id === route.params.id
+        )
       );
     }
   } catch (error) {
