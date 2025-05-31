@@ -5,7 +5,9 @@ const AdminSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'admin name cannot be blank'],
-    unique: true
+  },
+  phone: {
+    type: String
   },
   password: {
     type: String,
