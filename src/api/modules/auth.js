@@ -40,29 +40,6 @@ export default function (apiClient) {
     },
 
     /**
-     * 檢查管理員登入狀態（向後兼容，建議使用 adminAuth.checkStatus）
-     * @returns {Promise<Object>} - 登入狀態信息
-     */
-    async checkAdminStatus() {
-      try {
-        const res = await apiClient.get('/admin-auth/check-status');
-        return {
-          loggedIn: res.loggedIn,
-          role: res.role,
-          brand: res.brand,
-          store: res.store
-        };
-      } catch (error) {
-        return {
-          loggedIn: false,
-          role: null,
-          brand: null,
-          store: null
-        };
-      }
-    },
-
-    /**
      * 檢查顧客登入狀態
      * @param {string} brandId - 品牌ID
      * @returns {Promise<Object>} - 登入狀態信息
