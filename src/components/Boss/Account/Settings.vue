@@ -35,20 +35,6 @@
               <div class="form-text">角色無法修改</div>
             </div>
 
-            <!-- 所屬品牌 -->
-            <div class="mb-3" v-if="profileData.brand">
-              <label for="brand" class="form-label">所屬品牌</label>
-              <input type="text" class="form-control" id="brand" :value="profileData.brand.name" readonly />
-              <div class="form-text">所屬品牌無法修改</div>
-            </div>
-
-            <!-- 所屬店鋪 -->
-            <div class="mb-3" v-if="profileData.store">
-              <label for="store" class="form-label">所屬店鋪</label>
-              <input type="text" class="form-control" id="store" :value="profileData.store.name" readonly />
-              <div class="form-text">所屬店鋪無法修改</div>
-            </div>
-
             <!-- 最後登入時間 -->
             <div class="mb-3">
               <label for="lastLogin" class="form-label">最後登入時間</label>
@@ -60,10 +46,8 @@
             <div class="mb-3">
               <label class="form-label">帳號狀態</label>
               <div>
-                <span class="badge fs-6" :class="profileData.isActive ? 'bg-success' : 'bg-secondary'">
-                  <i class="bi me-1"
-                    :class="profileData.isActive ? 'bi-check-circle-fill' : 'bi-pause-circle-fill'"></i>
-                  {{ profileData.isActive ? '啟用中' : '已停用' }}
+                <span class="badge bg-success fs-6">
+                  <i class="bi bi-check-circle-fill me-1"></i>啟用中
                 </span>
               </div>
             </div>
@@ -73,12 +57,6 @@
               <label for="createdAt" class="form-label">建立時間</label>
               <input type="text" class="form-control" id="createdAt"
                 :value="profileData.createdAt ? formatDate(profileData.createdAt) : '無記錄'" readonly />
-            </div>
-
-            <!-- 創建者 -->
-            <div class="mb-3" v-if="profileData.createdBy">
-              <label for="createdBy" class="form-label">創建者</label>
-              <input type="text" class="form-control" id="createdBy" :value="profileData.createdBy.name" readonly />
             </div>
 
             <!-- 表單錯誤訊息 -->
@@ -125,7 +103,8 @@
               <div class="input-group">
                 <input :type="showCurrentPassword ? 'text' : 'password'" class="form-control" id="currentPassword"
                   v-model="passwordData.currentPassword" :class="{ 'is-invalid': passwordErrors.currentPassword }"
-                  required />
+                  required @blur="validatePasswordField('currentPassword')"
+                  @input="touchedPasswordFields.currentPassword && validatePasswordField('currentPassword')" />
                 <button class="btn btn-outline-secondary" type="button" @click="toggleCurrentPasswordVisibility">
                   <i class="bi" :class="showCurrentPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
@@ -139,13 +118,15 @@
               <label for="newPassword" class="form-label required">新密碼</label>
               <div class="input-group">
                 <input :type="showNewPassword ? 'text' : 'password'" class="form-control" id="newPassword"
-                  v-model="passwordData.newPassword" :class="{ 'is-invalid': passwordErrors.newPassword }" required />
+                  v-model="passwordData.newPassword" :class="{ 'is-invalid': passwordErrors.newPassword }" required
+                  @blur="validatePasswordField('newPassword')"
+                  @input="touchedPasswordFields.newPassword && validatePasswordField('newPassword')" />
                 <button class="btn btn-outline-secondary" type="button" @click="toggleNewPasswordVisibility">
                   <i class="bi" :class="showNewPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
               </div>
               <div class="invalid-feedback" v-if="passwordErrors.newPassword">{{ passwordErrors.newPassword }}</div>
-              <div class="form-text">密碼長度至少 8 個字元</div>
+              <div class="form-text">密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)</div>
             </div>
 
             <!-- 確認新密碼 -->
@@ -154,7 +135,8 @@
               <div class="input-group">
                 <input :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword"
                   v-model="passwordData.confirmPassword" :class="{ 'is-invalid': passwordErrors.confirmPassword }"
-                  required />
+                  required @blur="validatePasswordField('confirmPassword')"
+                  @input="touchedPasswordFields.confirmPassword && validatePasswordField('confirmPassword')" />
                 <button class="btn btn-outline-secondary" type="button" @click="toggleConfirmPasswordVisibility">
                   <i class="bi" :class="showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
@@ -204,34 +186,8 @@
       </div>
     </div>
 
-    <!-- 右側信息 -->
+    <!-- 右側安全提示 -->
     <div class="col-lg-4">
-      <!-- 權限範圍卡片 -->
-      <div class="card mb-3" v-if="profileData.role">
-        <div class="card-header bg-success text-white">
-          <h6 class="mb-0">
-            <i class="bi bi-shield-check me-2"></i>權限範圍
-          </h6>
-        </div>
-        <div class="card-body">
-          <div class="mb-2">
-            <strong>管理層級：</strong>{{ getRoleScope(profileData.role) }}
-          </div>
-          <div class="mb-2" v-if="profileData.brand">
-            <strong>管理品牌：</strong>{{ profileData.brand.name }}
-          </div>
-          <div class="mb-2" v-if="profileData.store">
-            <strong>管理店鋪：</strong>{{ profileData.store.name }}
-          </div>
-          <hr>
-          <div>
-            <strong>角色說明：</strong>
-            <p class="text-muted small mb-0">{{ getRoleDescription(profileData.role) }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 安全提示卡片 -->
       <div class="card">
         <div class="card-header bg-info text-white">
           <h6 class="mb-0">
@@ -256,7 +212,7 @@
               </li>
               <li class="mb-2">
                 <i class="bi bi-check-circle text-success me-2"></i>
-                及時退出系統
+                定期檢查帳號活動
               </li>
             </ul>
           </div>
@@ -264,7 +220,7 @@
           <div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle me-2"></i>
             <strong>重要提醒：</strong>
-            請妥善保管您的登入資訊，不要與他人分享您的帳號密碼。
+            作為系統主管理員，您的帳號安全至關重要。請妥善保管您的登入資訊。
           </div>
         </div>
       </div>
@@ -274,24 +230,15 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
 import api from '@/api';
-
-// 路由
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
 
 // 狀態管理
 const profileData = reactive({
   name: '',
   phone: '',
   role: '',
-  brand: null,
-  store: null,
   lastLogin: null,
-  createdAt: null,
-  createdBy: null,
-  isActive: true
+  createdAt: null
 });
 
 const passwordData = reactive({
@@ -317,56 +264,105 @@ const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 
-// 角色定義
-const roleDefinitions = {
-  'primary_system_admin': {
-    label: '系統主管理員',
-    description: '擁有系統最高權限，可管理所有品牌和店鋪',
-    scope: '系統級'
+// 密碼驗證規則
+const passwordValidationRules = {
+  currentPassword: {
+    required: true,
+    message: '請輸入當前密碼'
   },
-  'system_admin': {
-    label: '系統管理員',
-    description: '系統級管理權限，可管理品牌和店鋪（不包含管理員管理）',
-    scope: '系統級'
+  newPassword: {
+    required: true,
+    minLength: 8,
+    maxLength: 64,
+    pattern: /^[a-zA-Z0-9!@#$%^&*]+$/,
+    message: '密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)'
   },
-  'primary_brand_admin': {
-    label: '品牌主管理員',
-    description: '品牌主管理員，可管理品牌下所有店鋪和管理員',
-    scope: '品牌級'
-  },
-  'brand_admin': {
-    label: '品牌管理員',
-    description: '品牌管理權限，可管理品牌設定和店鋪（不包含管理員管理）',
-    scope: '品牌級'
-  },
-  'primary_store_admin': {
-    label: '店鋪主管理員',
-    description: '店鋪主管理員，可管理店鋪所有功能和員工',
-    scope: '店鋪級'
-  },
-  'store_admin': {
-    label: '店鋪管理員',
-    description: '店鋪管理權限，可管理店鋪營運（不包含員工管理）',
-    scope: '店鋪級'
-  },
-  'employee': {
-    label: '員工',
-    description: '基礎員工權限，可使用點餐系統和基本庫存管理',
-    scope: '店鋪級'
+  confirmPassword: {
+    required: true,
+    match: 'newPassword',
+    message: '兩次輸入的密碼不一致'
   }
 };
 
-// 角色相關方法
+// 觸碰過的欄位記錄
+const touchedPasswordFields = reactive({});
+
+// 驗證單一密碼欄位
+const validatePasswordField = (fieldName) => {
+  touchedPasswordFields[fieldName] = true;
+  const rule = passwordValidationRules[fieldName];
+  if (!rule) return true;
+
+  let value;
+  if (fieldName === 'confirmPassword') {
+    value = passwordData.confirmPassword;
+  } else {
+    value = passwordData[fieldName];
+  }
+
+  // 必填驗證
+  if (rule.required) {
+    if (!value || value.trim() === '') {
+      passwordErrors[fieldName] = '此欄位為必填';
+      return false;
+    }
+  }
+
+  // 如果不是必填且為空，則跳過其他驗證
+  if (!rule.required && (!value || value.trim() === '')) {
+    delete passwordErrors[fieldName];
+    return true;
+  }
+
+  // 最小長度驗證
+  if (rule.minLength && value.length < rule.minLength) {
+    passwordErrors[fieldName] = `密碼長度至少需要 ${rule.minLength} 個字元`;
+    return false;
+  }
+
+  // 最大長度驗證
+  if (rule.maxLength && value.length > rule.maxLength) {
+    passwordErrors[fieldName] = `密碼長度不能超過 ${rule.maxLength} 個字元`;
+    return false;
+  }
+
+  // 正則表達式驗證（密碼格式）
+  if (rule.pattern && !rule.pattern.test(value)) {
+    passwordErrors[fieldName] = rule.message;
+    return false;
+  }
+
+  // 匹配驗證（用於確認密碼）
+  if (rule.match) {
+    const matchValue = passwordData[rule.match];
+    if (value !== matchValue) {
+      passwordErrors[fieldName] = rule.message;
+      return false;
+    }
+  }
+
+  // 檢查新舊密碼是否相同
+  if (fieldName === 'newPassword' && passwordData.currentPassword && value === passwordData.currentPassword) {
+    passwordErrors[fieldName] = '新密碼不能與當前密碼相同';
+    return false;
+  }
+
+  delete passwordErrors[fieldName];
+  return true;
+};
+
+// 角色標籤對應
 const getRoleLabel = (role) => {
-  return roleDefinitions[role]?.label || role;
-};
-
-const getRoleDescription = (role) => {
-  return roleDefinitions[role]?.description || '';
-};
-
-const getRoleScope = (role) => {
-  return roleDefinitions[role]?.scope || '';
+  const labels = {
+    'primary_system_admin': '系統主管理員',
+    'system_admin': '系統管理員',
+    'primary_brand_admin': '品牌主管理員',
+    'brand_admin': '品牌管理員',
+    'primary_store_admin': '店鋪主管理員',
+    'store_admin': '店鋪管理員',
+    'employee': '員工'
+  };
+  return labels[role] || role;
 };
 
 // 格式化日期
@@ -391,20 +387,18 @@ const passwordStrength = computed(() => {
   let strength = 0;
 
   // 長度檢查
-  if (password.length >= 8) strength += 25;
-  if (password.length >= 12) strength += 15;
+  if (password.length >= 8) strength += 30;
+  if (password.length >= 12) strength += 20;
+  if (password.length >= 16) strength += 20;
 
-  // 包含小寫字母
-  if (/[a-z]/.test(password)) strength += 15;
-
-  // 包含大寫字母
-  if (/[A-Z]/.test(password)) strength += 15;
+  // 包含字母
+  if (/[a-zA-Z]/.test(password)) strength += 15;
 
   // 包含數字
-  if (/\d/.test(password)) strength += 15;
+  if (/\d/.test(password)) strength += 10;
 
-  // 包含特殊字符
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 15;
+  // 包含符號
+  if (/[!@#$%^&*]/.test(password)) strength += 5;
 
   return Math.min(strength, 100);
 });
@@ -452,44 +446,22 @@ const toggleConfirmPasswordVisibility = () => {
 const validatePasswordForm = () => {
   Object.keys(passwordErrors).forEach(key => delete passwordErrors[key]);
   passwordFormErrors.value = [];
+
   let isValid = true;
 
-  // 驗證當前密碼
-  if (!passwordData.currentPassword) {
-    passwordErrors.currentPassword = '請輸入當前密碼';
-    passwordFormErrors.value.push('請輸入當前密碼');
-    isValid = false;
-  }
+  // 驗證所有密碼相關欄位
+  ['currentPassword', 'newPassword', 'confirmPassword'].forEach(field => {
+    if (!validatePasswordField(field)) {
+      isValid = false;
+    }
+  });
 
-  // 驗證新密碼
-  if (!passwordData.newPassword) {
-    passwordErrors.newPassword = '請輸入新密碼';
-    passwordFormErrors.value.push('請輸入新密碼');
-    isValid = false;
-  } else if (passwordData.newPassword.length < 8) {
-    passwordErrors.newPassword = '新密碼長度至少需要8個字元';
-    passwordFormErrors.value.push('新密碼長度至少需要8個字元');
-    isValid = false;
-  }
-
-  // 驗證確認密碼
-  if (!passwordData.confirmPassword) {
-    passwordErrors.confirmPassword = '請確認新密碼';
-    passwordFormErrors.value.push('請確認新密碼');
-    isValid = false;
-  } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-    passwordErrors.confirmPassword = '兩次輸入的密碼不一致';
-    passwordFormErrors.value.push('兩次輸入的密碼不一致');
-    isValid = false;
-  }
-
-  // 檢查新舊密碼是否相同
-  if (passwordData.currentPassword && passwordData.newPassword &&
-    passwordData.currentPassword === passwordData.newPassword) {
-    passwordErrors.newPassword = '新密碼不能與當前密碼相同';
-    passwordFormErrors.value.push('新密碼不能與當前密碼相同');
-    isValid = false;
-  }
+  // 收集所有錯誤訊息
+  Object.values(passwordErrors).forEach(error => {
+    if (error && !passwordFormErrors.value.includes(error)) {
+      passwordFormErrors.value.push(error);
+    }
+  });
 
   return isValid;
 };
@@ -501,6 +473,7 @@ const resetPasswordForm = () => {
   passwordData.confirmPassword = '';
 
   Object.keys(passwordErrors).forEach(key => delete passwordErrors[key]);
+  Object.keys(touchedPasswordFields).forEach(key => delete touchedPasswordFields[key]);
   passwordFormErrors.value = [];
   passwordSuccessMessage.value = '';
 
@@ -518,12 +491,8 @@ const fetchUserProfile = async () => {
       profileData.name = admin.name;
       profileData.phone = admin.phone || '';
       profileData.role = admin.role;
-      profileData.brand = admin.brand;
-      profileData.store = admin.store;
       profileData.lastLogin = admin.lastLogin;
       profileData.createdAt = admin.createdAt;
-      profileData.createdBy = admin.createdBy;
-      profileData.isActive = admin.isActive;
     }
   } catch (error) {
     console.error('獲取用戶資料失敗:', error);

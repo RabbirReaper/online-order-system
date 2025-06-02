@@ -125,7 +125,8 @@
               <div class="input-group">
                 <input :type="showCurrentPassword ? 'text' : 'password'" class="form-control" id="currentPassword"
                   v-model="passwordData.currentPassword" :class="{ 'is-invalid': passwordErrors.currentPassword }"
-                  required />
+                  required @blur="validatePasswordField('currentPassword')"
+                  @input="touchedPasswordFields.currentPassword && validatePasswordField('currentPassword')" />
                 <button class="btn btn-outline-secondary" type="button" @click="toggleCurrentPasswordVisibility">
                   <i class="bi" :class="showCurrentPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
@@ -139,13 +140,15 @@
               <label for="newPassword" class="form-label required">新密碼</label>
               <div class="input-group">
                 <input :type="showNewPassword ? 'text' : 'password'" class="form-control" id="newPassword"
-                  v-model="passwordData.newPassword" :class="{ 'is-invalid': passwordErrors.newPassword }" required />
+                  v-model="passwordData.newPassword" :class="{ 'is-invalid': passwordErrors.newPassword }" required
+                  @blur="validatePasswordField('newPassword')"
+                  @input="touchedPasswordFields.newPassword && validatePasswordField('newPassword')" />
                 <button class="btn btn-outline-secondary" type="button" @click="toggleNewPasswordVisibility">
                   <i class="bi" :class="showNewPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
               </div>
               <div class="invalid-feedback" v-if="passwordErrors.newPassword">{{ passwordErrors.newPassword }}</div>
-              <div class="form-text">密碼長度至少 8 個字元</div>
+              <div class="form-text">密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)</div>
             </div>
 
             <!-- 確認新密碼 -->
@@ -154,7 +157,8 @@
               <div class="input-group">
                 <input :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword"
                   v-model="passwordData.confirmPassword" :class="{ 'is-invalid': passwordErrors.confirmPassword }"
-                  required />
+                  required @blur="validatePasswordField('confirmPassword')"
+                  @input="touchedPasswordFields.confirmPassword && validatePasswordField('confirmPassword')" />
                 <button class="btn btn-outline-secondary" type="button" @click="toggleConfirmPasswordVisibility">
                   <i class="bi" :class="showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
@@ -317,6 +321,93 @@ const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 
+// 密碼驗證規則
+const passwordValidationRules = {
+  currentPassword: {
+    required: true,
+    message: '請輸入當前密碼'
+  },
+  newPassword: {
+    required: true,
+    minLength: 8,
+    maxLength: 64,
+    pattern: /^[a-zA-Z0-9!@#$%^&*]+$/,
+    message: '密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)'
+  },
+  confirmPassword: {
+    required: true,
+    match: 'newPassword',
+    message: '兩次輸入的密碼不一致'
+  }
+};
+
+// 觸碰過的欄位記錄
+const touchedPasswordFields = reactive({});
+
+// 驗證單一密碼欄位
+const validatePasswordField = (fieldName) => {
+  touchedPasswordFields[fieldName] = true;
+  const rule = passwordValidationRules[fieldName];
+  if (!rule) return true;
+
+  let value;
+  if (fieldName === 'confirmPassword') {
+    value = passwordData.confirmPassword;
+  } else {
+    value = passwordData[fieldName];
+  }
+
+  // 必填驗證
+  if (rule.required) {
+    if (!value || value.trim() === '') {
+      passwordErrors[fieldName] = '此欄位為必填';
+      return false;
+    }
+  }
+
+  // 如果不是必填且為空，則跳過其他驗證
+  if (!rule.required && (!value || value.trim() === '')) {
+    delete passwordErrors[fieldName];
+    return true;
+  }
+
+  // 最小長度驗證
+  if (rule.minLength && value.length < rule.minLength) {
+    passwordErrors[fieldName] = `密碼長度至少需要 ${rule.minLength} 個字元`;
+    return false;
+  }
+
+  // 最大長度驗證
+  if (rule.maxLength && value.length > rule.maxLength) {
+    passwordErrors[fieldName] = `密碼長度不能超過 ${rule.maxLength} 個字元`;
+    return false;
+  }
+
+  // 正則表達式驗證（密碼格式）
+  if (rule.pattern && !rule.pattern.test(value)) {
+    passwordErrors[fieldName] = rule.message;
+    return false;
+  }
+
+  // 匹配驗證（用於確認密碼）
+  if (rule.match) {
+    const matchValue = passwordData[rule.match];
+    if (value !== matchValue) {
+      passwordErrors[fieldName] = rule.message;
+      return false;
+    }
+  }
+
+  // 檢查新舊密碼是否相同
+  if (fieldName === 'newPassword' && passwordData.currentPassword && value === passwordData.currentPassword) {
+    passwordErrors[fieldName] = '新密碼不能與當前密碼相同';
+    return false;
+  }
+
+  delete passwordErrors[fieldName];
+  return true;
+};
+
 // 角色定義
 const roleDefinitions = {
   'primary_system_admin': {
@@ -391,20 +482,18 @@ const passwordStrength = computed(() => {
   let strength = 0;
 
   // 長度檢查
-  if (password.length >= 8) strength += 25;
-  if (password.length >= 12) strength += 15;
+  if (password.length >= 8) strength += 30;
+  if (password.length >= 12) strength += 20;
+  if (password.length >= 16) strength += 20;
 
-  // 包含小寫字母
-  if (/[a-z]/.test(password)) strength += 15;
-
-  // 包含大寫字母
-  if (/[A-Z]/.test(password)) strength += 15;
+  // 包含字母
+  if (/[a-zA-Z]/.test(password)) strength += 15;
 
   // 包含數字
-  if (/\d/.test(password)) strength += 15;
+  if (/\d/.test(password)) strength += 10;
 
-  // 包含特殊字符
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 15;
+  // 包含符號
+  if (/[!@#$%^&*]/.test(password)) strength += 5;
 
   return Math.min(strength, 100);
 });
@@ -452,44 +541,22 @@ const toggleConfirmPasswordVisibility = () => {
 const validatePasswordForm = () => {
   Object.keys(passwordErrors).forEach(key => delete passwordErrors[key]);
   passwordFormErrors.value = [];
+
   let isValid = true;
 
-  // 驗證當前密碼
-  if (!passwordData.currentPassword) {
-    passwordErrors.currentPassword = '請輸入當前密碼';
-    passwordFormErrors.value.push('請輸入當前密碼');
-    isValid = false;
-  }
+  // 驗證所有密碼相關欄位
+  ['currentPassword', 'newPassword', 'confirmPassword'].forEach(field => {
+    if (!validatePasswordField(field)) {
+      isValid = false;
+    }
+  });
 
-  // 驗證新密碼
-  if (!passwordData.newPassword) {
-    passwordErrors.newPassword = '請輸入新密碼';
-    passwordFormErrors.value.push('請輸入新密碼');
-    isValid = false;
-  } else if (passwordData.newPassword.length < 8) {
-    passwordErrors.newPassword = '新密碼長度至少需要8個字元';
-    passwordFormErrors.value.push('新密碼長度至少需要8個字元');
-    isValid = false;
-  }
-
-  // 驗證確認密碼
-  if (!passwordData.confirmPassword) {
-    passwordErrors.confirmPassword = '請確認新密碼';
-    passwordFormErrors.value.push('請確認新密碼');
-    isValid = false;
-  } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-    passwordErrors.confirmPassword = '兩次輸入的密碼不一致';
-    passwordFormErrors.value.push('兩次輸入的密碼不一致');
-    isValid = false;
-  }
-
-  // 檢查新舊密碼是否相同
-  if (passwordData.currentPassword && passwordData.newPassword &&
-    passwordData.currentPassword === passwordData.newPassword) {
-    passwordErrors.newPassword = '新密碼不能與當前密碼相同';
-    passwordFormErrors.value.push('新密碼不能與當前密碼相同');
-    isValid = false;
-  }
+  // 收集所有錯誤訊息
+  Object.values(passwordErrors).forEach(error => {
+    if (error && !passwordFormErrors.value.includes(error)) {
+      passwordFormErrors.value.push(error);
+    }
+  });
 
   return isValid;
 };
@@ -501,6 +568,7 @@ const resetPasswordForm = () => {
   passwordData.confirmPassword = '';
 
   Object.keys(passwordErrors).forEach(key => delete passwordErrors[key]);
+  Object.keys(touchedPasswordFields).forEach(key => delete touchedPasswordFields[key]);
   passwordFormErrors.value = [];
   passwordSuccessMessage.value = '';
 

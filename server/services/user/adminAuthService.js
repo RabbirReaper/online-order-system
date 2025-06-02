@@ -79,7 +79,35 @@ export const adminLogout = async (session) => {
 };
 
 /**
- * 管理員修改密碼
+ * 驗證密碼強度
+ * @param {string} password - 要驗證的密碼
+ * @returns {Object} 驗證結果
+ */
+const validatePasswordStrength = (password) => {
+  const errors = [];
+
+  // 長度驗證
+  if (password.length < 8) {
+    errors.push('密碼長度至少需要8個字元');
+  }
+
+  if (password.length > 64) {
+    errors.push('密碼長度不能超過64個字元');
+  }
+
+  // 字符格式驗證
+  if (!/^[a-zA-Z0-9!@#$%^&*]+$/.test(password)) {
+    errors.push('密碼只能包含英文、數字和符號(!@#$%^&*)');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+/**
+ * 管理員修改密碼（增強版）
  * @param {String} adminId - 管理員ID
  * @param {String} currentPassword - 當前密碼
  * @param {String} newPassword - 新密碼
@@ -91,8 +119,9 @@ export const changeAdminPassword = async (adminId, currentPassword, newPassword)
   }
 
   // 密碼強度驗證
-  if (newPassword.length < 8) {
-    throw new AppError('新密碼長度至少需要8個字元', 400);
+  const passwordValidation = validatePasswordStrength(newPassword);
+  if (!passwordValidation.isValid) {
+    throw new AppError(passwordValidation.errors.join('；'), 400);
   }
 
   // 查找管理員
@@ -178,9 +207,11 @@ export const getCurrentAdminProfile = async (session) => {
 };
 
 /**
- * 更新當前登入管理員的基本資料（簡化版）
+ * 更新當前登入管理員的基本資料
  * @param {Object} session - 會話對象
  * @param {Object} updateData - 更新資料
+ * @param {string} updateData.name - 用戶名
+ * @param {string} [updateData.phone] - 電話號碼
  * @returns {Promise<Object>} 更新後的管理員資料
  */
 export const updateCurrentAdminProfile = async (session, updateData) => {
@@ -195,30 +226,60 @@ export const updateCurrentAdminProfile = async (session, updateData) => {
     throw new AppError('用戶名為必填項', 400);
   }
 
+  if (name.trim().length < 2) {
+    throw new AppError('用戶名至少需要2個字元', 400);
+  }
+
+  // 電話號碼格式驗證（如果有提供）
+  if (phone && !/^[\d\-\+\(\)\s]+$/.test(phone)) {
+    throw new AppError('請輸入有效的電話號碼', 400);
+  }
+
   const admin = await Admin.findById(session.adminId);
 
   if (!admin) {
     throw new AppError('管理員不存在', 404);
   }
 
+  // 檢查管理員是否啟用
   if (!admin.isActive) {
     throw new AppError('此帳號已被停用', 403);
   }
 
-  // 安全地更新指定欄位
-  admin.name = name.trim();
-  if (phone !== undefined) {
-    admin.phone = phone ? phone.trim() : '';
+  // 檢查用戶名是否已被其他管理員使用
+  if (name.trim() !== admin.name) {
+    // 確定檢查範圍 - 根據管理員類型
+    let checkBrandId;
+    if (['primary_system_admin', 'system_admin'].includes(admin.role)) {
+      checkBrandId = null;  // 系統級
+    } else {
+      checkBrandId = admin.brand;  // 品牌級
+    }
+
+    const existingAdmin = await Admin.findOne({
+      name: name.trim(),
+      brand: checkBrandId,
+      _id: { $ne: admin._id }
+    });
+
+    if (existingAdmin) {
+      const scope = checkBrandId ? '此品牌內' : '系統內';
+      throw new AppError(`此用戶名在${scope}已被使用`, 400);
+    }
   }
+
+  // 更新資料
+  admin.name = name.trim();
+  admin.phone = phone ? phone.trim() : '';
 
   await admin.save();
 
-  // 返回完整資料
-  return await Admin.findById(admin._id)
+  // 返回更新後的資料（不包含密碼）
+  const updatedAdmin = await Admin.findById(admin._id)
     .select('-password')
     .populate('brand', 'name')
     .populate('store', 'name')
     .populate('createdBy', 'name');
+
+  return updatedAdmin;
 };
-
-
