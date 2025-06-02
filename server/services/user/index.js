@@ -43,9 +43,7 @@ export const {
   createAdmin,
   updateAdmin,
   deleteAdmin,
-  toggleAdminStatus,
-  updateAdminPermissions,
-  checkPermission
+  toggleAdminStatus
 } = adminService;
 
 // 簡單導出用戶資料服務，方便直接調用
