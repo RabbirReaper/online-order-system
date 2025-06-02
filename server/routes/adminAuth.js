@@ -3,7 +3,9 @@ import {
   adminLogin,
   adminLogout,
   changeAdminPassword,
-  checkAdminStatus
+  checkAdminStatus,
+  getProfile,
+  updateProfile
 } from '../controllers/User/adminAuth.js';
 import {
   authenticate
@@ -22,5 +24,10 @@ router.get('/check-status', checkAdminStatus);
 
 // 修改管理員密碼（需要認證）
 router.post('/change-password', authenticate('admin'), changeAdminPassword);
+
+// 獲取當前管理員資料（需要認證）
+router.get('/profile', authenticate('admin'), getProfile);
+
+router.put('/profile', authenticate('admin'), updateProfile);
 
 export default router;

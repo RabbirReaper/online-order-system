@@ -129,14 +129,12 @@ const router = createRouter({
             message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
+        // Boss 路由中的帳號設置 (大約在第 89 行)
         {
           path: 'account',
           name: 'account-settings',
-          component: Placeholder,
-          props: {
-            title: '系統設置功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/Boss/Account/Settings.vue'),
+          meta: { requiresAuth: true, title: '帳號設置' }
         }
       ]
     },
@@ -409,14 +407,12 @@ const router = createRouter({
             message: '這個區塊目前尚未開發，請稍後再試。'
           }
         },
+        // 品牌管理員路由中的帳號設置
         {
           path: 'account-settings',
           name: 'brand-admin-account-settings',
-          component: Placeholder,
-          props: {
-            title: '帳號設置功能',
-            message: '這個區塊目前尚未開發，請稍後再試。'
-          }
+          component: () => import('@/components/BrandAdmin/Account/Settings.vue'),
+          meta: { requiresAuth: true, title: '帳號設置' }
         }
       ]
     },

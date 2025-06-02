@@ -148,3 +148,77 @@ export const checkAdminStatus = async (session) => {
     store: admin.store
   };
 };
+
+/**
+ * 獲取當前登入管理員的完整資料
+ * @param {Object} session - 會話對象
+ * @returns {Promise<Object>} 管理員完整資料
+ */
+export const getCurrentAdminProfile = async (session) => {
+  if (!session.adminId) {
+    throw new AppError('未登入', 401);
+  }
+
+  const admin = await Admin.findById(session.adminId)
+    .select('-password')
+    .populate('brand', 'name')
+    .populate('store', 'name')
+    .populate('createdBy', 'name');
+
+  if (!admin) {
+    throw new AppError('管理員不存在', 404);
+  }
+
+  // 檢查管理員是否啟用
+  if (!admin.isActive) {
+    throw new AppError('此帳號已被停用', 403);
+  }
+
+  return admin;
+};
+
+/**
+ * 更新當前登入管理員的基本資料（簡化版）
+ * @param {Object} session - 會話對象
+ * @param {Object} updateData - 更新資料
+ * @returns {Promise<Object>} 更新後的管理員資料
+ */
+export const updateCurrentAdminProfile = async (session, updateData) => {
+  if (!session.adminId) {
+    throw new AppError('未登入', 401);
+  }
+
+  const { name, phone } = updateData;
+
+  // 基本驗證
+  if (!name || !name.trim()) {
+    throw new AppError('用戶名為必填項', 400);
+  }
+
+  const admin = await Admin.findById(session.adminId);
+
+  if (!admin) {
+    throw new AppError('管理員不存在', 404);
+  }
+
+  if (!admin.isActive) {
+    throw new AppError('此帳號已被停用', 403);
+  }
+
+  // 安全地更新指定欄位
+  admin.name = name.trim();
+  if (phone !== undefined) {
+    admin.phone = phone ? phone.trim() : '';
+  }
+
+  await admin.save();
+
+  // 返回完整資料
+  return await Admin.findById(admin._id)
+    .select('-password')
+    .populate('brand', 'name')
+    .populate('store', 'name')
+    .populate('createdBy', 'name');
+};
+
+

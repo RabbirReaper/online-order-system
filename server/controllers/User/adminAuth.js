@@ -57,3 +57,30 @@ export const checkAdminStatus = asyncHandler(async (req, res) => {
     ...status
   });
 });
+
+/**
+ * 獲取當前管理員資料
+ */
+export const getProfile = asyncHandler(async (req, res) => {
+  const admin = await adminAuthService.getCurrentAdminProfile(req.session);
+
+  res.json({
+    success: true,
+    admin
+  });
+});
+
+/**
+ * 更新當前管理員資料
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const updateData = req.body;
+
+  const updatedAdmin = await adminAuthService.updateCurrentAdminProfile(req.session, updateData);
+
+  res.json({
+    success: true,
+    message: '管理員資料更新成功',
+    admin: updatedAdmin
+  });
+});

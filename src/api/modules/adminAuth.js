@@ -59,6 +59,35 @@ export default function (apiClient) {
           store: null
         };
       }
+    },
+
+    /**
+     * 獲取當前管理員的完整資料
+     * @returns {Promise<Object>} - 管理員資料
+     */
+    async getProfile() {
+      try {
+        const res = await apiClient.get('/admin-auth/profile');
+        return res;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    /**
+     * 更新當前管理員的基本資料
+     * @param {Object} data - 更新資料
+     * @param {string} data.name - 用戶名
+     * @param {string} [data.phone] - 電話號碼
+     * @returns {Promise<Object>} - 更新結果
+     */
+    async updateProfile(data) {
+      try {
+        const res = await apiClient.put('/admin-auth/profile', data);
+        return res;
+      } catch (error) {
+        throw error;
+      }
     }
   };
 }

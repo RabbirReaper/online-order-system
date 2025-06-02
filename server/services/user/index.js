@@ -33,7 +33,9 @@ export const {
   adminLogin,
   adminLogout,
   changeAdminPassword,
-  checkAdminStatus
+  checkAdminStatus,
+  getCurrentAdminProfile,
+  updateCurrentAdminProfile
 } = adminAuthService;
 
 // 簡單導出管理員服務，方便直接調用
