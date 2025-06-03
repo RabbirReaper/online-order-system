@@ -18,9 +18,6 @@
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
                     <li><a class="dropdown-item" href="#" @click.prevent="$emit('account')">會員專區</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="$emit('account')">我的點數</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="$emit('account')">我的優惠券</a></li>
-                    <li><a class="dropdown-item" href="#" @click.prevent="$emit('account')">我的訂單</a></li>
                     <li>
                       <hr class="dropdown-divider">
                     </li>
