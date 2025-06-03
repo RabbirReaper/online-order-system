@@ -128,14 +128,6 @@
             <div class="rules-list">
               <div class="rule-item">
                 <i class="bi bi-check-circle-fill text-success me-2"></i>
-                點數可用於抵扣訂單金額，1點 = 1元
-              </div>
-              <div class="rule-item">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                點數自獲得日起有效期為365天
-              </div>
-              <div class="rule-item">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>
                 使用點數時將優先使用即將到期的點數
               </div>
               <div class="rule-item">
