@@ -3,6 +3,28 @@
     <!-- 顧客資訊 - 只在非內用模式下顯示 -->
     <div v-if="orderType !== 'dineIn'">
       <h6 class="mb-3 fw-bold">顧客資訊</h6>
+
+      <!-- 登入提示 - 如果未登入且表單為空時顯示 -->
+      <div v-if="!isLoggedIn && !localCustomerInfo.name && !localCustomerInfo.phone" class="alert alert-info mb-3">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-info-circle-fill me-2"></i>
+          <div class="flex-grow-1">
+            <small>已經是會員了嗎？</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary" @click="goToLogin">
+            會員登入
+          </button>
+        </div>
+      </div>
+
+      <!-- 已登入用戶提示 -->
+      <div v-if="isLoggedIn && userProfile" class="alert alert-success mb-3">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <small>您好，我們已自動填入您的登入資料</small>
+        </div>
+      </div>
+
       <div class="row g-3 mb-3">
         <div class="col-md-6">
           <label for="customerName" class="form-label">姓名 <span class="text-danger">*</span></label>
@@ -91,7 +113,13 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/customerAuth';
+import api from '@/api';
+
+const router = useRouter();
+const authStore = useAuthStore();
 
 const props = defineProps({
   customerInfo: {
@@ -121,6 +149,14 @@ const localCustomerInfo = ref({
 });
 const localPaymentMethod = ref(props.paymentMethod);
 
+// 用戶認證相關狀態
+const userProfile = ref(null);
+const isLoadingProfile = ref(false);
+
+// 計算屬性
+const isLoggedIn = computed(() => authStore.isLoggedIn);
+const currentBrandId = computed(() => authStore.currentBrandId || sessionStorage.getItem('currentBrandId'));
+
 // 信用卡資訊
 const creditCardInfo = ref({
   number: '',
@@ -128,6 +164,65 @@ const creditCardInfo = ref({
   cvv: '',
   name: ''
 });
+
+// 載入用戶資料
+const loadUserProfile = async () => {
+  if (!isLoggedIn.value || !currentBrandId.value) {
+    return;
+  }
+
+  try {
+    isLoadingProfile.value = true;
+    const response = await api.user.getUserProfile(currentBrandId.value);
+    userProfile.value = response.profile;
+
+    // 如果表單還沒有資料，自動填入用戶資料
+    if (!localCustomerInfo.value.name && !localCustomerInfo.value.phone) {
+      autoFillUserInfo();
+    }
+  } catch (error) {
+    console.error('載入用戶資料失敗:', error);
+  } finally {
+    isLoadingProfile.value = false;
+  }
+};
+
+// 自動填入用戶資料
+const autoFillUserInfo = () => {
+  if (!userProfile.value) return;
+
+  localCustomerInfo.value = {
+    name: userProfile.value.name || '',
+    phone: userProfile.value.phone || ''
+  };
+
+  // 通知父組件更新
+  emit('update:customerInfo', { ...localCustomerInfo.value });
+};
+
+// 檢查認證狀態並載入用戶資料
+const checkAuthAndLoadProfile = async () => {
+  if (!currentBrandId.value) {
+    return;
+  }
+
+  // 檢查認證狀態
+  await authStore.checkAuthStatus();
+
+  // 如果已登入，載入用戶資料
+  if (authStore.isLoggedIn) {
+    await loadUserProfile();
+  }
+};
+
+// 跳轉到登入頁面
+const goToLogin = () => {
+  const currentPath = router.currentRoute.value.fullPath;
+  router.push({
+    path: '/auth/login',
+    query: { redirect: currentPath }
+  });
+};
 
 // 手動處理輸入事件，避免遞歸更新
 const updateName = (event) => {
@@ -170,6 +265,15 @@ watch(localPaymentMethod, (newVal) => {
   emit('update:paymentMethod', newVal);
 });
 
+// 監聽認證狀態變化
+watch(() => authStore.isLoggedIn, async (newVal) => {
+  if (newVal) {
+    await loadUserProfile();
+  } else {
+    userProfile.value = null;
+  }
+});
+
 // 格式化信用卡號碼（每 4 位加一個空格）
 const formatCardNumber = (e) => {
   let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
@@ -191,6 +295,11 @@ const formatExpiryDate = (e) => {
 
   creditCardInfo.value.expiry = value;
 };
+
+// 組件掛載後檢查認證狀態
+onMounted(async () => {
+  await checkAuthAndLoadProfile();
+});
 </script>
 
 <style scoped>
@@ -220,5 +329,27 @@ const formatExpiryDate = (e) => {
 
 .text-danger {
   color: #dc3545;
+}
+
+.alert-info {
+  background-color: #e7f3ff;
+  border-color: #b8daff;
+  color: #31708f;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.btn-outline-primary {
+  color: #d35400;
+  border-color: #d35400;
+}
+
+.btn-outline-primary:hover {
+  background-color: #d35400;
+  border-color: #d35400;
 }
 </style>
