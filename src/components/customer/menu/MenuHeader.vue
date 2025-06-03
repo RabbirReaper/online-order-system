@@ -17,7 +17,7 @@
                     <span class="login-text">{{ customerName }}</span>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
-                    <li><a class="dropdown-item" href="#" @click.prevent="$emit('account')">會員專區</a></li>
+                    <li><a class="dropdown-item" href="/member">會員專區</a></li>
                     <li>
                       <hr class="dropdown-divider">
                     </li>

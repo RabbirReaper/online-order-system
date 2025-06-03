@@ -5,8 +5,7 @@
       <Transition name="fade-slide" appear>
         <MenuHeader v-if="!isLoading || store.name" :store-name="store.name" :store-image="store.image"
           :announcements="store.announcements" :business-hours="store.businessHours" :is-logged-in="isLoggedIn"
-          :customer-name="customerName" :store-address="store.address" @login="handleLogin" @account="handleAccount"
-          @logout="handleLogout" />
+          :customer-name="customerName" :store-address="store.address" @login="handleLogin" @logout="handleLogout" />
       </Transition>
 
       <!-- 骨架載入動畫 for MenuHeader -->
@@ -225,10 +224,6 @@ const loadMenuItems = async () => {
 // 登入相關方法
 const handleLogin = () => {
   router.push({ name: 'customer-login' });
-};
-
-const handleAccount = () => {
-  router.push({ name: 'customer-profile' });
 };
 
 const handleLogout = async () => {

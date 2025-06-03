@@ -263,7 +263,7 @@ const handleLogin = async () => {
     // 顯示成功訊息
     successMessage.value = '您已成功登入系統';
 
-    const redirectPath = route.query.redirect || '/profile';
+    const redirectPath = route.query.redirect || '/member';
     router.push(redirectPath);
 
   } catch (error) {
