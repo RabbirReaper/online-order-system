@@ -296,9 +296,9 @@ const pagination = reactive({
   limit: 10
 });
 
-// 日期處理函數
+// 簡化的日期處理函數 - 使用本地時區
 const formatDate = (date) => {
-  return date.toISOString().split('T')[0];
+  return date.toLocaleDateString('en-CA'); // 返回 YYYY-MM-DD 格式
 };
 
 const isToday = () => {
@@ -310,10 +310,10 @@ const formatSelectedDateRange = () => {
   if (!filters.fromDate || !filters.toDate) return '請選擇日期';
 
   if (filters.fromDate === filters.toDate) {
-    return new Date(filters.fromDate).toLocaleDateString('zh-TW');
+    return new Date(filters.fromDate + 'T00:00:00').toLocaleDateString('zh-TW');
   }
 
-  return `${new Date(filters.fromDate).toLocaleDateString('zh-TW')} - ${new Date(filters.toDate).toLocaleDateString('zh-TW')}`;
+  return `${new Date(filters.fromDate + 'T00:00:00').toLocaleDateString('zh-TW')} - ${new Date(filters.toDate + 'T00:00:00').toLocaleDateString('zh-TW')}`;
 };
 
 const setToday = () => {
@@ -325,8 +325,8 @@ const setToday = () => {
 };
 
 const adjustDate = (days) => {
-  const fromDate = new Date(filters.fromDate);
-  const toDate = new Date(filters.toDate);
+  const fromDate = new Date(filters.fromDate + 'T00:00:00');
+  const toDate = new Date(filters.toDate + 'T00:00:00');
 
   fromDate.setDate(fromDate.getDate() + days);
   toDate.setDate(toDate.getDate() + days);
@@ -655,7 +655,7 @@ const closeOrderDetail = () => {
   selectedOrder.value = null;
 };
 
-// 格式化函數
+// 格式化函數 - 簡化時間顯示，讓瀏覽器處理本地時區
 const formatDateTime = (dateStr) => {
   const date = new Date(dateStr);
   return date.toLocaleString('zh-TW', {

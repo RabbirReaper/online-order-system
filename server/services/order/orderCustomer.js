@@ -7,7 +7,7 @@ import Order from '../../models/Order/Order.js';
 import DishInstance from '../../models/Dish/DishInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import * as inventoryService from '../inventory/stockManagement.js';
-import { getTaiwanDateTime, formatDateTime } from '../../utils/date.js';
+import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils/date.js';
 
 /**
  * 創建訂單
@@ -208,27 +208,29 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
 };
 
 /**
- * 生成訂單編號
+ * 生成訂單編號 - 使用增強的日期工具
  * @returns {Promise<Object>} 訂單編號信息
  */
 export const generateOrderNumber = async () => {
-  const today = getTaiwanDateTime();
-  const year = today.year.toString().slice(-2);
-  const month = String(today.month).padStart(2, '0');
-  const day = String(today.day).padStart(2, '0');
-  const orderDateCode = `${year}${month}${day}`;
+  try {
+    // 使用統一的日期代碼生成函數
+    const orderDateCode = generateDateCode();
 
-  // 獲取當天的最後一個序號
-  const lastOrder = await Order.findOne({
-    orderDateCode
-  }).sort({ sequence: -1 });
+    // 獲取當天的最後一個序號
+    const lastOrder = await Order.findOne({
+      orderDateCode
+    }).sort({ sequence: -1 });
 
-  const sequence = lastOrder ? lastOrder.sequence + 1 : 1;
+    const sequence = lastOrder ? lastOrder.sequence + 1 : 1;
 
-  return {
-    orderDateCode,
-    sequence
-  };
+    return {
+      orderDateCode,
+      sequence
+    };
+  } catch (error) {
+    console.error('生成訂單編號失敗:', error);
+    throw new AppError('生成訂單編號失敗', 500);
+  }
 };
 
 /**

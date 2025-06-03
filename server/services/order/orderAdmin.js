@@ -5,8 +5,7 @@
 
 import Order from '../../models/Order/Order.js';
 import { AppError } from '../../middlewares/error.js';
-import { getTaiwanDateTime, getStartOfDay, getEndOfDay } from '../../utils/date.js';
-import { DateTime } from 'luxon';
+import { parseDateString, getStartOfDay, getEndOfDay } from '../../utils/date.js';
 
 /**
  * 獲取店鋪訂單列表
@@ -28,17 +27,15 @@ export const getStoreOrders = async (storeId, options = {}) => {
     query.orderType = orderType;
   }
 
-  // 使用 Luxon 正確處理台灣時區的日期範圍
+  // 使用新的 date utils 處理台灣時區的日期範圍
   if (fromDate || toDate) {
     query.createdAt = {};
 
     if (fromDate) {
       try {
-        // 將前端的日期字串 (YYYY-MM-DD) 轉換為台灣時區的該日開始時間
-        const inputDate = DateTime.fromISO(fromDate, { zone: 'Asia/Taipei' });
-        const startDateTime = getStartOfDay(inputDate);
+        // 使用 parseDateString 解析前端傳來的 YYYY-MM-DD 格式
+        const startDateTime = getStartOfDay(parseDateString(fromDate));
         query.createdAt.$gte = startDateTime.toJSDate();
-
       } catch (error) {
         console.error('解析開始日期失敗:', error);
         throw new AppError('無效的開始日期格式', 400);
@@ -47,18 +44,15 @@ export const getStoreOrders = async (storeId, options = {}) => {
 
     if (toDate) {
       try {
-        // 將前端的日期字串 (YYYY-MM-DD) 轉換為台灣時區的該日結束時間
-        const inputDate = DateTime.fromISO(toDate, { zone: 'Asia/Taipei' });
-        const endDateTime = getEndOfDay(inputDate);
+        // 使用 parseDateString 解析前端傳來的 YYYY-MM-DD 格式
+        const endDateTime = getEndOfDay(parseDateString(toDate));
         query.createdAt.$lte = endDateTime.toJSDate();
-
       } catch (error) {
         console.error('解析結束日期失敗:', error);
         throw new AppError('無效的結束日期格式', 400);
       }
     }
   }
-
 
   // 計算分頁
   const skip = (page - 1) * limit;
@@ -75,7 +69,6 @@ export const getStoreOrders = async (storeId, options = {}) => {
     .populate('user', 'name email phone')
     .lean();
 
-
   // 如果沒有訂單，記錄調試信息
   if (orders.length === 0) {
     // 檢查該店鋪是否有任何訂單
@@ -87,6 +80,12 @@ export const getStoreOrders = async (storeId, options = {}) => {
       .limit(5)
       .select('createdAt orderType status')
       .lean();
+
+    // console.log(`店鋪 ${storeId} 查詢結果:`, {
+    //   查詢條件: query,
+    //   總訂單數: anyOrders,
+    //   最近訂單: recentOrders
+    // });
   }
 
   // 構建分頁信息
@@ -143,7 +142,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
     throw new AppError('訂單不存在', 404);
   }
 
-  // 可更新的欄位 - 新增 paymentMethod 和 paymentType
+  // 可更新的欄位
   const allowedFields = [
     'status',
     'manualAdjustment',

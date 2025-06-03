@@ -218,12 +218,10 @@ const filteredOrders = computed(() => {
   return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
-// 台灣時區日期處理
-const getTaiwanDate = (date = null) => {
+// 簡化的日期處理 - 讓瀏覽器處理本地時區
+const getLocalDate = (date = null) => {
   const targetDate = date ? new Date(date) : new Date();
-  // 轉換為台灣時區 (UTC+8)
-  const taiwanTime = new Date(targetDate.getTime() + (8 * 60 * 60 * 1000));
-  return taiwanTime.toISOString().split('T')[0];
+  return targetDate.toLocaleDateString('en-CA'); // 返回 YYYY-MM-DD 格式
 };
 
 // 方法
@@ -406,9 +404,9 @@ const printOrder = () => {
 
 // 初始化
 onMounted(() => {
-  const taiwanToday = getTaiwanDate();
-  selectedDate.value = taiwanToday;
-  maxDate.value = taiwanToday;
+  const today = getLocalDate();
+  selectedDate.value = today;
+  maxDate.value = today;
 
   fetchOrdersByDate();
 

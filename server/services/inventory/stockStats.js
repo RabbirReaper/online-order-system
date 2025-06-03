@@ -6,7 +6,14 @@
 import mongoose from 'mongoose';
 import Inventory from '../../models/Store/Inventory.js';
 import StockLog from '../../models/Store/StockLog.js';
-import { getStartOfDay, getEndOfDay } from '../../utils/date.js';
+import {
+  parseDateString,
+  getStartOfDay,
+  getEndOfDay,
+  createDateRange,
+  getTaiwanDateTime,
+  dateDifference
+} from '../../utils/date.js';
 
 /**
  * 獲取庫存變更日誌
@@ -56,16 +63,28 @@ export const getInventoryLogs = async (options = {}) => {
     query.stockType = stockType;
   }
 
-  // 過濾日期範圍
+  // 使用新的日期工具處理日期範圍
   if (startDate || endDate) {
     query.createdAt = {};
 
     if (startDate) {
-      query.createdAt.$gte = startDate;
+      try {
+        const startDateTime = getStartOfDay(parseDateString(startDate));
+        query.createdAt.$gte = startDateTime.toJSDate();
+      } catch (error) {
+        console.error('解析開始日期失敗:', error);
+        throw new Error('無效的開始日期格式');
+      }
     }
 
     if (endDate) {
-      query.createdAt.$lte = endDate;
+      try {
+        const endDateTime = getEndOfDay(parseDateString(endDate));
+        query.createdAt.$lte = endDateTime.toJSDate();
+      } catch (error) {
+        console.error('解析結束日期失敗:', error);
+        throw new Error('無效的結束日期格式');
+      }
     }
   }
 
@@ -119,20 +138,30 @@ export const getStockTrends = async (options = {}) => {
     itemId,  // 這是 inventory._id
     inventoryType = 'DishTemplate',
     stockType = 'totalStock',
-    days = 30
+    days = 30,
+    period = null // 新增：支援使用預設期間
   } = options;
 
-  // 計算開始日期
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  startDate.setHours(0, 0, 0, 0);
+  let startDate, endDate;
+
+  if (period) {
+    // 使用新的日期範圍功能
+    const range = createDateRange(period);
+    startDate = range.start.toJSDate();
+    endDate = range.end.toJSDate();
+  } else {
+    // 使用指定天數
+    const now = getTaiwanDateTime();
+    startDate = now.minus({ days }).startOf('day').toJSDate();
+    endDate = now.endOf('day').toJSDate();
+  }
 
   // 構建查詢條件
   const logQuery = {
     store: storeId,
     inventoryType,
     stockType,
-    createdAt: { $gte: startDate }
+    createdAt: { $gte: startDate, $lte: endDate }
   };
 
   // 查找 inventory 項目以獲取正確的查詢條件
@@ -159,8 +188,7 @@ export const getStockTrends = async (options = {}) => {
 
   // 生成日期範圍內的每一天
   const currentDate = new Date(startDate);
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
+  const today = new Date(endDate);
 
   // 查詢初始庫存
   let initialStock = 0;
@@ -281,19 +309,15 @@ export const getItemInventoryStats = async (options = {}) => {
     };
   }
 
-  // 計算 7 天和 30 天前的日期
-  const today = new Date();
-  const last7Days = new Date(today);
-  last7Days.setDate(last7Days.getDate() - 7);
-
-  const last30Days = new Date(today);
-  last30Days.setDate(last30Days.getDate() - 30);
+  // 使用新的日期範圍功能
+  const last7DaysRange = createDateRange('last7Days');
+  const last30DaysRange = createDateRange('last30Days');
 
   // 構建查詢條件
   const logQuery = {
     store: storeId,
     inventoryType: inventory.inventoryType,
-    createdAt: { $gte: last30Days }
+    createdAt: { $gte: last30DaysRange.start.toJSDate() }
   };
 
   // 根據庫存類型設置正確的查詢條件
@@ -306,7 +330,7 @@ export const getItemInventoryStats = async (options = {}) => {
   const logs = await StockLog.find(logQuery);
 
   // 處理統計數據
-  const last7DaysLogs = logs.filter(log => log.createdAt >= last7Days);
+  const last7DaysLogs = logs.filter(log => log.createdAt >= last7DaysRange.start.toJSDate());
   const stats = {
     last7Days: {
       consumed: 0,
@@ -476,7 +500,8 @@ export const getStockChangeSummary = async (options = {}) => {
     startDate,
     endDate,
     inventoryType,
-    groupBy = 'changeType'
+    groupBy = 'changeType',
+    period = null // 新增：支援使用預設期間
   } = options;
 
   // 構建查詢條件
@@ -488,10 +513,25 @@ export const getStockChangeSummary = async (options = {}) => {
     matchConditions.inventoryType = inventoryType;
   }
 
-  if (startDate || endDate) {
+  // 處理日期範圍
+  if (period) {
+    // 使用預設期間
+    const range = createDateRange(period);
+    matchConditions.createdAt = {
+      $gte: range.start.toJSDate(),
+      $lte: range.end.toJSDate()
+    };
+  } else if (startDate || endDate) {
+    // 使用自訂日期範圍
     matchConditions.createdAt = {};
-    if (startDate) matchConditions.createdAt.$gte = new Date(startDate);
-    if (endDate) matchConditions.createdAt.$lte = new Date(endDate);
+    if (startDate) {
+      const startDateTime = getStartOfDay(parseDateString(startDate));
+      matchConditions.createdAt.$gte = startDateTime.toJSDate();
+    }
+    if (endDate) {
+      const endDateTime = getEndOfDay(parseDateString(endDate));
+      matchConditions.createdAt.$lte = endDateTime.toJSDate();
+    }
   }
 
   // 構建聚合管道
