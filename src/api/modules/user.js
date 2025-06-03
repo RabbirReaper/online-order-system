@@ -58,43 +58,5 @@ export default function (apiClient) {
     deleteAddress({ brandId, addressId }) {
       return apiClient.delete(`/user/brands/${brandId}/addresses/${addressId}`);
     },
-
-    // 後台管理功能 (需要管理員權限)
-    /**
-     * 獲取所有用戶 (管理員功能)
-     * @param {Object} params - 查詢參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {string} [params.search] - 搜尋關鍵字
-     * @param {boolean} [params.activeOnly] - 是否只顯示啟用的用戶
-     * @param {number} [params.page] - 頁碼 (默認 1)
-     * @param {number} [params.limit] - 每頁數量 (默認 20)
-     * @returns {Promise} - API 回應
-     */
-    getAllUsers({ brandId, ...queryParams }) {
-      return apiClient.get(`/user/brands/${brandId}/users`, { params: queryParams });
-    },
-
-    /**
-     * 獲取單個用戶詳情 (管理員功能)
-     * @param {Object} params - 查詢參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {string} params.id - 用戶ID
-     * @returns {Promise} - API 回應
-     */
-    getUserById({ brandId, id }) {
-      return apiClient.get(`/user/brands/${brandId}/users/${id}`);
-    },
-
-    /**
-     * 切換用戶啟用狀態 (管理員功能)
-     * @param {Object} params - 參數
-     * @param {string} params.brandId - 品牌ID
-     * @param {string} params.id - 用戶ID
-     * @param {boolean} params.isActive - 是否啟用
-     * @returns {Promise} - API 回應
-     */
-    toggleUserStatus({ brandId, id, isActive }) {
-      return apiClient.patch(`/user/brands/${brandId}/users/${id}/status`, { isActive });
-    }
   };
 }
