@@ -234,7 +234,6 @@ onUnmounted(() => {
   bottom: 0;
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
   margin: 0;
   padding: 0;
   z-index: 1;
