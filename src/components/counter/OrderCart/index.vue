@@ -185,9 +185,8 @@ const handlePaymentSelected = async (paymentData) => {
 // 完成付款
 const completePayment = async (paymentMethod = 'cash', paymentType = 'On-site') => {
   try {
-    // 使用模態框中儲存的 orderId，而不是當前選中的訂單
-    const orderId = counterStore.modals.checkout.orderId;
 
+    const orderId = counterStore.selectedOrder._id;
     // 使用新的updateOrder API更新訂單狀態為已付款，並記錄付款方式
     const response = await api.orderAdmin.updateOrder({
       brandId: counterStore.currentBrand,
