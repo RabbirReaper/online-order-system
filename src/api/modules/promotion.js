@@ -92,9 +92,9 @@ export default function (apiClient) {
      * @param {string} brandId - 品牌ID（必填）
      * @returns {Promise} - API 回應
      */
-    // getUserCoupons(brandId) {
-    //   return apiClient.get(`/promotion/brands/${brandId}/coupons`);
-    // },
+    getUserCoupons(brandId) {
+      return apiClient.get(`/promotion/brands/${brandId}/coupons`);
+    },
 
     /**
      * 兌換優惠券
@@ -104,9 +104,9 @@ export default function (apiClient) {
      * @param {string} params.data.code - 兌換碼
      * @returns {Promise} - API 回應
      */
-    // redeemCoupon({ brandId, data }) {
-    //   return apiClient.post(`/promotion/brands/${brandId}/coupons/redeem`, data);
-    // },
+    redeemCoupon({ brandId, data }) {
+      return apiClient.post(`/promotion/brands/${brandId}/coupons/redeem`, data);
+    },
 
     // 點數規則相關
     /**
@@ -169,9 +169,9 @@ export default function (apiClient) {
      * @param {string} brandId - 品牌ID（必填）
      * @returns {Promise} - API 回應
      */
-    // getUserPoints(brandId) {
-    //   return apiClient.get(`/promotion/brands/${brandId}/points`);
-    // },
+    getUserPoints(brandId) {
+      return apiClient.get(`/promotion/brands/${brandId}/points`);
+    },
 
     /**
      * 獲取用戶點數歷史
@@ -181,9 +181,9 @@ export default function (apiClient) {
      * @param {number} [params.limit] - 每頁數量
      * @returns {Promise} - API 回應
      */
-    // getUserPointHistory({ brandId, ...queryParams }) {
-    //   return apiClient.get(`/promotion/brands/${brandId}/points/history`, { params: queryParams });
-    // },
+    getUserPointHistory({ brandId, ...queryParams }) {
+      return apiClient.get(`/promotion/brands/${brandId}/points/history`, { params: queryParams });
+    },
 
     // 點數管理（後台）
     /**
@@ -196,8 +196,8 @@ export default function (apiClient) {
      * @param {string} params.data.reason - 原因
      * @returns {Promise} - API 回應
      */
-    // addPointsToUser({ brandId, data }) {
-    //   return apiClient.post(`/promotion/brands/${brandId}/points/add`, data);
-    // }
+    addPointsToUser({ brandId, data }) {
+      return apiClient.post(`/promotion/brands/${brandId}/points/add`, data);
+    }
   };
 }
