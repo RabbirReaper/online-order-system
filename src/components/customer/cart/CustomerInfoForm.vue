@@ -238,8 +238,20 @@ const updatePhone = (event) => {
 // 當訂單類型變為內用時，清空顧客資訊
 watch(() => props.orderType, (newType) => {
   if (newType === 'dineIn') {
-    localCustomerInfo.value = { name: '', phone: '' };
-    emit('update:customerInfo', { ...localCustomerInfo.value });
+    // 如果用戶已登入，保留登入用戶的資訊
+    if (isLoggedIn.value && userProfile.value) {
+      autoFillUserInfo();
+    } else {
+      // 只有在未登入時才清空顧客資訊
+      localCustomerInfo.value = { name: '', phone: '' };
+      emit('update:customerInfo', { ...localCustomerInfo.value });
+    }
+  } else {
+    // 切換到外帶或外送時，如果用戶已登入且表單為空，自動填入用戶資訊
+    if (isLoggedIn.value && userProfile.value &&
+      !localCustomerInfo.value.name && !localCustomerInfo.value.phone) {
+      autoFillUserInfo();
+    }
   }
 });
 
