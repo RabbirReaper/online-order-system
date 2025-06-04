@@ -639,7 +639,7 @@ const openOrderDetail = async (orderId) => {
       storeId: storeId.value,
       orderId: orderId
     });
-    // console.log('獲取訂單詳情:', response);
+    console.log('獲取訂單詳情:', response);
 
     if (response.success) {
       selectedOrder.value = response.order;

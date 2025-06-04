@@ -28,7 +28,7 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  console.log('OrderTypesPieChart mounted with props:', props);
+  // console.log('OrderTypesPieChart mounted with props:', props);
 });
 
 const chartData = computed(() => {

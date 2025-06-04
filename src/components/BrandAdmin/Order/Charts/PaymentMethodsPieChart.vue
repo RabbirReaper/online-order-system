@@ -28,7 +28,7 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  console.log('PaymentMethodsPieChart mounted with props:', props);
+  // console.log('PaymentMethodsPieChart mounted with props:', props);
 });
 
 const chartData = computed(() => {

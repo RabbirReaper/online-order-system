@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import api from '@/api';
+import { useAuthStore } from '@/stores/customerAuth';
 
 export const useCartStore = defineStore('cart', () => {
   // 狀態
@@ -343,6 +344,7 @@ export const useCartStore = defineStore('cart', () => {
     return Object.keys(errors).length === 0;
   }
 
+  // 修改 submitOrder 函數，添加用戶認證檢查和用戶ID
   async function submitOrder() {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' };
@@ -363,6 +365,11 @@ export const useCartStore = defineStore('cart', () => {
 
     try {
       isSubmitting.value = true;
+
+      // 檢查用戶登入狀態
+      const authStore = useAuthStore();
+      const isLoggedIn = authStore.isLoggedIn;
+      const currentUser = authStore.user;
 
       // 準備訂單資料，符合後端 API 期望的格式
       const orderData = {
@@ -400,6 +407,17 @@ export const useCartStore = defineStore('cart', () => {
           amount: coupon.amount
         }))
       };
+      console.log(currentUser)
+      // 如果用戶已登入，添加用戶ID到訂單資料
+      if (isLoggedIn && currentUser && currentUser.profile._id) {
+        orderData.user = currentUser.profile._id;
+
+        console.log('用戶已登入，添加用戶ID到訂單:', {
+          user: currentUser.profile._id,
+        });
+      } else {
+        console.log('用戶未登入，建立匿名訂單');
+      }
 
       // 根據訂單類型添加特定資訊
       if (orderType.value === 'delivery') {
@@ -410,11 +428,12 @@ export const useCartStore = defineStore('cart', () => {
         orderData.estimatedPickupTime = estimatedPickupTime.value;
       }
 
-      // console.log('=== Pinia 提交訂單資料 ===');
-      // console.log('品牌ID:', currentBrand.value);
-      // console.log('店鋪ID:', currentStore.value);
-      // console.log('訂單資料:', JSON.stringify(orderData, null, 2));
-      // console.log('========================');
+      console.log('=== Pinia 提交訂單資料 ===');
+      console.log('品牌ID:', currentBrand.value);
+      console.log('店鋪ID:', currentStore.value);
+      console.log('用戶登入狀態:', isLoggedIn);
+      console.log('訂單資料:', JSON.stringify(orderData, null, 2));
+      console.log('========================');
 
       // 提交訂單
       const response = await api.orderCustomer.createOrder({
@@ -423,9 +442,9 @@ export const useCartStore = defineStore('cart', () => {
         orderData
       });
 
-      // console.log('=== API 回應 ===');
-      // console.log('Response:', response);
-      // console.log('===============');
+      console.log('=== API 回應 ===');
+      console.log('Response:', response);
+      console.log('===============');
 
       if (response && response.success) {
         // 將訂單 ID 和資料存儲到 sessionStorage
@@ -438,7 +457,8 @@ export const useCartStore = defineStore('cart', () => {
         return {
           success: true,
           order: response.order,
-          orderId: response.order._id
+          orderId: response.order._id,
+          pointsAwarded: response.pointsAwarded || null // 新增：返回點數獎勵資訊
         };
       } else {
         console.error('API 回應失敗:', response);

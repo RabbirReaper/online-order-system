@@ -47,7 +47,7 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  console.log('DishLifecycleChart mounted with props:', props);
+  // console.log('DishLifecycleChart mounted with props:', props);
 });
 
 const chartData = computed(() => {

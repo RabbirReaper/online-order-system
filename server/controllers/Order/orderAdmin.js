@@ -35,18 +35,19 @@ export const getOrderById = asyncHandler(async (req, res) => {
   });
 });
 
-// 更新訂單（統一接口）
+// 更新訂單（統一接口）- 修改版本
 export const updateOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const updateData = req.body;
   const adminId = req.auth.id;
 
-  const updatedOrder = await orderService.updateOrder(orderId, updateData, adminId);
+  const result = await orderService.updateOrder(orderId, updateData, adminId);
 
   res.json({
     success: true,
     message: '訂單更新成功',
-    order: updatedOrder
+    order: result,
+    pointsAwarded: result.pointsAwarded || 0 // 返回點數獎勵資訊
   });
 });
 

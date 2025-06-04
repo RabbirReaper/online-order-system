@@ -10,9 +10,7 @@ import * as inventoryService from '../inventory/stockManagement.js';
 import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils/date.js';
 
 /**
- * 創建訂單
- * @param {Object} orderData - 訂單數據
- * @returns {Promise<Object>} 創建的訂單
+ * 創建訂單 - 修改版本
  */
 export const createOrder = async (orderData) => {
   try {
@@ -59,11 +57,145 @@ export const createOrder = async (orderData) => {
     // 扣除庫存（只有啟用庫存管理的項目才會被扣除）
     await inventoryService.reduceInventoryForOrder(order);
 
-    return order;
+    // 處理點數給予（如果是即時付款）
+    let pointsReward = { pointsAwarded: 0 };
+    if (order.status === 'paid' && order.user) {
+      pointsReward = await processOrderPointsReward(order);
+    }
+
+    // 返回訂單和點數獎勵資訊
+    return {
+      ...order.toObject(),
+      pointsAwarded: pointsReward.pointsAwarded
+    };
+
   } catch (error) {
     console.error('創建訂單錯誤:', error);
     throw error;
   }
+};
+
+/**
+ * 處理訂單點數獎勵
+ * @param {Object} order - 訂單對象
+ * @returns {Promise<Object>} 點數獎勵結果
+ */
+const processOrderPointsReward = async (order) => {
+  try {
+    // 1. 檢查用戶是否登入
+    if (!order.user) {
+      return {
+        success: true,
+        message: '無登入用戶，跳過點數給予',
+        pointsAwarded: 0
+      };
+    }
+
+    // 2. 檢查是否已經給予過點數（防重複）
+    const { point: pointService } = await import('../promotion/index.js');
+    const existingPoints = await pointService.getUserPoints(order.user, order.brand);
+    const alreadyRewarded = existingPoints.some(point =>
+      point.sourceModel === 'Order' &&
+      point.sourceId && point.sourceId.toString() === order._id.toString()
+    );
+
+    if (alreadyRewarded) {
+      return {
+        success: true,
+        message: '已經給予過點數，跳過重複給予',
+        pointsAwarded: 0
+      };
+    }
+
+    // 3. 計算要給予的點數
+    const { pointRule: pointRuleService } = await import('../promotion/index.js');
+    const pointsToGive = await pointRuleService.calculateOrderPoints(order.brand, order.total);
+
+    if (pointsToGive <= 0) {
+      return {
+        success: true,
+        message: '根據點數規則計算得出 0 點數',
+        pointsAwarded: 0
+      };
+    }
+
+    // 4. 給予點數給用戶
+    const pointInstance = await pointService.addPointsToUser(
+      order.user,
+      order.brand,
+      pointsToGive,
+      '滿額贈送',
+      { model: 'Order', id: order._id },
+      365 // 有效期一年
+    );
+
+    console.log('成功給予點數:', {
+      orderId: order._id,
+      userId: order.user,
+      pointsAwarded: pointsToGive,
+      orderTotal: order.total
+    });
+
+    return {
+      success: true,
+      message: `成功給予 ${pointsToGive} 點數`,
+      pointsAwarded: pointsToGive,
+      pointInstance
+    };
+
+  } catch (error) {
+    console.error('處理點數獎勵時發生錯誤:', {
+      orderId: order._id,
+      userId: order.user,
+      error: error.message,
+      stack: error.stack
+    });
+
+    // 不拋出異常，避免影響主流程
+    return {
+      success: false,
+      message: `點數給予失敗: ${error.message}`,
+      pointsAwarded: 0,
+      error: error.message
+    };
+  }
+};
+
+export { processOrderPointsReward };
+
+/**
+ * 支付回調處理 - 修改版本
+ */
+export const handlePaymentCallback = async (orderId, callbackData) => {
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    throw new AppError('訂單不存在', 404);
+  }
+
+  const previousStatus = order.status;
+
+  // 根據支付結果更新訂單狀態
+  if (callbackData.success) {
+    order.status = 'paid';
+  } else {
+    order.status = 'unpaid';
+  }
+
+  await order.save();
+
+  // 處理點數給予（狀態從非paid變為paid時）
+  let pointsReward = { pointsAwarded: 0 };
+  if (callbackData.success && previousStatus !== 'paid' && order.user) {
+    pointsReward = await processOrderPointsReward(order);
+  }
+
+  return {
+    orderId: order._id,
+    status: order.status,
+    processed: true,
+    pointsAwarded: pointsReward.pointsAwarded
+  };
 };
 
 /**
@@ -175,35 +307,6 @@ export const processPayment = async (orderId, paymentData) => {
     status: order.status,
     paymentMethod: order.paymentMethod,
     total: order.total
-  };
-};
-
-/**
- * 支付回調處理
- * @param {String} orderId - 訂單ID
- * @param {Object} callbackData - 回調資料
- * @returns {Promise<Object>} 處理結果
- */
-export const handlePaymentCallback = async (orderId, callbackData) => {
-  const order = await Order.findById(orderId);
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404);
-  }
-
-  // 根據支付結果更新訂單狀態
-  if (callbackData.success) {
-    order.status = 'paid';
-  } else {
-    order.status = 'unpaid';
-  }
-
-  await order.save();
-
-  return {
-    orderId: order._id,
-    status: order.status,
-    processed: true
   };
 };
 

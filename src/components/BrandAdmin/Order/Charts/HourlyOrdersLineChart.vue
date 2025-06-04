@@ -47,7 +47,7 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  console.log('HourlyOrdersLineChart mounted with props:', props);
+  // console.log('HourlyOrdersLineChart mounted with props:', props);
 });
 
 // 過濾並處理數據以顯示有意義的時間段

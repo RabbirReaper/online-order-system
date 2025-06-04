@@ -129,11 +129,7 @@ export const getOrderById = async (orderId, storeId) => {
 };
 
 /**
- * 更新訂單（統一接口）
- * @param {String} orderId - 訂單ID
- * @param {Object} updateData - 更新資料
- * @param {String} adminId - 管理員ID
- * @returns {Promise<Object>} 更新後的訂單
+ * 更新訂單（統一接口）- 修改版本，支援點數給予
  */
 export const updateOrder = async (orderId, updateData, adminId) => {
   const order = await Order.findById(orderId);
@@ -141,6 +137,8 @@ export const updateOrder = async (orderId, updateData, adminId) => {
   if (!order) {
     throw new AppError('訂單不存在', 404);
   }
+
+  const previousStatus = order.status;
 
   // 可更新的欄位
   const allowedFields = [
@@ -179,7 +177,31 @@ export const updateOrder = async (orderId, updateData, adminId) => {
 
   await order.save();
 
-  return order;
+  // 處理點數給予（狀態從非paid變為paid時）
+  let pointsReward = { pointsAwarded: 0 };
+  if (previousStatus !== 'paid' && order.status === 'paid' && order.user) {
+    try {
+      // 導入點數處理函數
+      const { processOrderPointsReward } = await import('./orderCustomer.js');
+      pointsReward = await processOrderPointsReward(order);
+
+      console.log('管理員更新訂單狀態，處理點數給予:', {
+        orderId: order._id,
+        adminId,
+        previousStatus,
+        newStatus: order.status,
+        pointsAwarded: pointsReward.pointsAwarded
+      });
+    } catch (error) {
+      console.error('管理員更新訂單時處理點數獎勵失敗:', error);
+      // 不影響主要的訂單更新流程
+    }
+  }
+
+  return {
+    ...order.toObject(),
+    pointsAwarded: pointsReward.pointsAwarded
+  };
 };
 
 /**

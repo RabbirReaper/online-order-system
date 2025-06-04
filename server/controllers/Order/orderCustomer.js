@@ -1,7 +1,7 @@
 import * as orderService from '../../services/order/index.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
-// 創建訂單
+// 創建訂單 - 修改版本
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params;
 
@@ -17,12 +17,13 @@ export const createOrder = asyncHandler(async (req, res) => {
   orderData.sequence = orderNumber.sequence;
 
   // 創建訂單
-  const order = await orderService.createOrder(orderData);
+  const result = await orderService.createOrder(orderData);
 
   res.status(201).json({
     success: true,
     message: '訂單創建成功',
-    order
+    order: result,
+    pointsAwarded: result.pointsAwarded || 0 // 返回點數獎勵資訊
   });
 });
 
@@ -74,7 +75,7 @@ export const processPayment = asyncHandler(async (req, res) => {
   });
 });
 
-// 支付回調
+// 支付回調 - 修改版本
 export const paymentCallback = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const callbackData = req.body;
@@ -84,6 +85,9 @@ export const paymentCallback = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '支付回調處理成功',
-    result
+    result: {
+      ...result,
+      pointsAwarded: result.pointsAwarded || 0 // 返回點數獎勵資訊
+    }
   });
 });

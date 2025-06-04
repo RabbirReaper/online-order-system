@@ -89,10 +89,6 @@ router.put('/brands/:brandId/:id/service-settings',
 // 庫存路由
 // 獲取店鋪庫存
 router.get('/brands/:brandId/:storeId/inventory',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin', 'employee'),
-  requireBrandAccess,
-  requireStoreAccess,
   inventoryController.getStoreInventory
 );
 

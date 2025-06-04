@@ -36,7 +36,7 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  console.log('DishSalesBarChart mounted with props:', props);
+  // console.log('DishSalesBarChart mounted with props:', props);
 });
 
 // 限制名稱長度的輔助函數
