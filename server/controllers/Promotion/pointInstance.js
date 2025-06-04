@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/error.js';
 // 獲取用戶點數餘額
 export const getUserPoints = asyncHandler(async (req, res) => {
   const userId = req.userId;
-  const { brandId } = req.query;
+  const { brandId } = req.params;
 
   if (!brandId) {
     return res.status(400).json({
@@ -27,7 +27,7 @@ export const getUserPoints = asyncHandler(async (req, res) => {
 // 獲取用戶點數歷史
 export const getUserPointHistory = asyncHandler(async (req, res) => {
   const userId = req.userId;
-  const { brandId } = req.query;
+  const { brandId } = req.params;
 
   const options = {
     page: parseInt(req.query.page, 10) || 1,
