@@ -143,11 +143,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/customerAuth';
 
 // 路由
 const router = useRouter();
+const authStore = useAuthStore();
 
 // 狀態管理
 const isLoading = ref(true);
@@ -232,6 +234,11 @@ const expiringPoints = computed(() => {
 const expiringPointsTotal = computed(() => {
   return expiringPoints.value.reduce((total, point) => total + point.amount, 0);
 });
+
+// 監聽用戶狀態變化
+watch(() => authStore.user, (newUser) => {
+  console.log('用戶狀態變化:', newUser);
+}, { immediate: true });
 
 // 返回上一頁
 const goBack = () => {
@@ -398,7 +405,31 @@ const loadPointsData = async () => {
 };
 
 // 組件掛載後載入資料
-onMounted(() => {
+onMounted(async () => {
+  console.log('=== PointsView 調試開始 ===');
+
+  // 確保品牌ID存在
+  if (brandId.value) {
+    authStore.setBrandId(brandId.value);
+    console.log('設置品牌ID:', brandId.value);
+  }
+
+  // 等待下一個tick，確保組件完全掛載
+  await nextTick();
+
+  // 先檢查登入狀態
+  console.log('檢查登入狀態前 - isLoggedIn:', authStore.isLoggedIn);
+  console.log('檢查登入狀態前 - user:', authStore.user);
+
+  await authStore.checkAuthStatus();
+
+  // 再獲取用戶資訊
+  const currentUser = authStore.user;
+  const isLoggedIn = authStore.isLoggedIn;
+  const userId = authStore.userId;
+  console.log('用戶ID:', userId);
+
+  // 然後載入點數資料
   loadPointsData();
 });
 </script>

@@ -344,7 +344,7 @@ export const useCartStore = defineStore('cart', () => {
     return Object.keys(errors).length === 0;
   }
 
-  // 修改 submitOrder 函數，添加用戶認證檢查和用戶ID
+  // 修改 submitOrder 函數，使用統一的用戶資料獲取方式
   async function submitOrder() {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' };
@@ -369,7 +369,11 @@ export const useCartStore = defineStore('cart', () => {
       // 檢查用戶登入狀態
       const authStore = useAuthStore();
       const isLoggedIn = authStore.isLoggedIn;
-      const currentUser = authStore.user;
+      const userId = authStore.userId;
+
+      console.log('用戶登入狀態:', isLoggedIn);
+      console.log('用戶ID:', userId);
+      console.log('用戶完整資料:', authStore.user);
 
       // 準備訂單資料，符合後端 API 期望的格式
       const orderData = {
@@ -407,13 +411,13 @@ export const useCartStore = defineStore('cart', () => {
           amount: coupon.amount
         }))
       };
-      console.log(currentUser)
-      // 如果用戶已登入，添加用戶ID到訂單資料
-      if (isLoggedIn && currentUser && currentUser.profile._id) {
-        orderData.user = currentUser.profile._id;
+
+      // 如果用戶已登入，使用統一的 userId
+      if (isLoggedIn && userId) {
+        orderData.user = userId;
 
         console.log('用戶已登入，添加用戶ID到訂單:', {
-          user: currentUser.profile._id,
+          user: userId,
         });
       } else {
         console.log('用戶未登入，建立匿名訂單');

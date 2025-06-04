@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 計算屬性 (computed)
   const userName = computed(() => {
-    return user.value?.name || '訪客';
+    return user.value?.profile?.name || '訪客';
   });
 
   const userIsLoggedIn = computed(() => {
@@ -21,6 +21,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const currentBrandId = computed(() => {
     return brandId.value;
+  });
+
+  const userId = computed(() => {
+    return user.value?.profile?._id || null;
   });
 
   // 方法 (actions)
@@ -73,7 +77,12 @@ export const useAuthStore = defineStore('auth', () => {
         credentials
       });
 
-      user.value = response;
+      // 確保數據結構一致
+      user.value = {
+        profile: response.profile || response,
+        token: response.token,
+        ...response
+      };
       isLoggedIn.value = true;
 
       return response;
@@ -123,7 +132,11 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.loggedIn) {
         // 如果已登入，獲取用戶資料
         const userProfile = await api.user.getUserProfile(brandId.value);
-        user.value = userProfile;
+        // 保持與登入時相同的數據結構
+        user.value = {
+          profile: userProfile.profile || userProfile,
+          ...response
+        };
       } else {
         user.value = null;
       }
@@ -198,6 +211,7 @@ export const useAuthStore = defineStore('auth', () => {
     userName,
     userIsLoggedIn,
     currentBrandId,
+    userId,
 
     // 方法
     setBrandId,
