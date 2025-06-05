@@ -3,13 +3,20 @@ import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取用戶點數餘額
 export const getUserPoints = asyncHandler(async (req, res) => {
-  const userId = req.userId;
+  const userId = req.auth.userId;
   const { brandId } = req.params;
-
+  // console.log('getUserPoints', userId, brandId);
   if (!brandId) {
     return res.status(400).json({
       success: false,
       message: 'brandId 為必須參數'
+    });
+  }
+
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: '用戶ID為必須參數'
     });
   }
 

@@ -100,7 +100,7 @@ export const authenticate = (userType = 'admin') => async (req, res, next) => {
 
       // 設置認證資訊到 req 物件
       req.auth = {
-        id: user._id,
+        userId: user._id,
         type: 'user',
         brand: user.brand
       };
