@@ -127,7 +127,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
  */
 export const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  const userId = req.auth.id; // 從認證中間件獲取
+  const userId = req.auth.userId;
 
   const result = await userAuthService.changePassword(userId, currentPassword, newPassword);
 

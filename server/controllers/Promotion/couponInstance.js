@@ -33,7 +33,7 @@ export const getAllCouponInstances = asyncHandler(async (req, res) => {
 
 // 獲取用戶優惠券
 export const getUserCoupons = asyncHandler(async (req, res) => {
-  const userId = req.userId;
+  const userId = req.auth.userId;
 
   const options = {
     includeUsed: req.query.includeUsed === 'true',
@@ -50,7 +50,7 @@ export const getUserCoupons = asyncHandler(async (req, res) => {
 
 // 兌換優惠券
 export const redeemCoupon = asyncHandler(async (req, res) => {
-  const userId = req.userId;
+  const userId = req.auth.userId;
   const { templateId } = req.body;
 
   if (!templateId) {

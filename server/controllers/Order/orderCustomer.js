@@ -30,7 +30,7 @@ export const createOrder = asyncHandler(async (req, res) => {
 // 獲取用戶訂單列表
 export const getUserOrders = asyncHandler(async (req, res) => {
   const { brandId } = req.params;
-  const userId = req.auth.id;
+  const userId = req.auth.userId;
 
   const options = {
     brandId,

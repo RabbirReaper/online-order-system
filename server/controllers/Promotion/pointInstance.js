@@ -33,7 +33,7 @@ export const getUserPoints = asyncHandler(async (req, res) => {
 
 // 獲取用戶點數歷史
 export const getUserPointHistory = asyncHandler(async (req, res) => {
-  const userId = req.userId;
+  const userId = req.auth.userId;
   const { brandId } = req.params;
 
   const options = {

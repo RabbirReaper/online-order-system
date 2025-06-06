@@ -5,7 +5,7 @@ import { asyncHandler } from '../../middlewares/error.js';
  * 獲取用戶資料
  */
 export const getUserProfile = asyncHandler(async (req, res) => {
-  const userId = req.auth.id; // 從中間件獲取
+  const userId = req.auth.userId;
 
   const profile = await userService.profile.getUserProfile(userId);
 
@@ -19,7 +19,7 @@ export const getUserProfile = asyncHandler(async (req, res) => {
  * 更新用戶資料
  */
 export const updateUserProfile = asyncHandler(async (req, res) => {
-  const userId = req.auth.id; // 從中間件獲取
+  const userId = req.auth.userId; // 從中間件獲取
   const updateData = req.body;
 
   const updatedProfile = await userService.profile.updateUserProfile(userId, updateData);
@@ -35,7 +35,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
  * 添加地址
  */
 export const addAddress = asyncHandler(async (req, res) => {
-  const userId = req.auth.id; // 從中間件獲取
+  const userId = req.auth.userId;
   const addressData = req.body;
 
   const user = await userService.profile.addUserAddress(userId, addressData);
@@ -51,7 +51,7 @@ export const addAddress = asyncHandler(async (req, res) => {
  * 更新地址
  */
 export const updateAddress = asyncHandler(async (req, res) => {
-  const userId = req.auth.id; // 從中間件獲取
+  const userId = req.auth.userId;
   const { addressId } = req.params;
   const updateData = req.body;
 
@@ -68,7 +68,7 @@ export const updateAddress = asyncHandler(async (req, res) => {
  * 刪除地址
  */
 export const deleteAddress = asyncHandler(async (req, res) => {
-  const userId = req.auth.id; // 從中間件獲取
+  const userId = req.auth.userId;
   const { addressId } = req.params;
 
   const user = await userService.profile.deleteUserAddress(userId, addressId);
