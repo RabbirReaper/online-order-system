@@ -275,8 +275,8 @@ onMounted(async () => {
   try {
     const status = await authStore.checkAuthStatus();
     isLoggedIn.value = status.loggedIn;
-    if (status.loggedIn && authStore.user) {
-      customerName.value = authStore.user.name || '';
+    if (status.loggedIn && authStore.user.profile.name) {
+      customerName.value = authStore.user.profile.name || '';
     }
   } catch (error) {
     console.error('檢查登入狀態失敗:', error);
