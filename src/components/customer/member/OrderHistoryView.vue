@@ -89,12 +89,9 @@
                 </div>
 
                 <div class="order-items">
-                  <div v-for="(item, index) in order.items.slice(0, 2)" :key="index" class="order-item">
+                  <div v-for="(item, index) in order.items" :key="index" class="order-item">
                     <span class="item-name">{{ item.dishInstance?.name || '餐點' }}</span>
                     <span class="item-quantity">x{{ item.quantity }}</span>
-                  </div>
-                  <div v-if="order.items.length > 2" class="more-items">
-                    還有 {{ order.items.length - 2 }} 項商品...
                   </div>
                 </div>
 
@@ -187,7 +184,7 @@
               </div>
               <div class="item-pricing">
                 <div class="item-quantity">x{{ item.quantity }}</div>
-                <div class="item-price">${{ item.subtotal }}</div>
+                <div class="item-price">${{ item.subtotal.toLocaleString() }}</div>
               </div>
             </div>
           </div>
@@ -232,7 +229,7 @@
           <div class="payment-detail">
             <div class="payment-row">
               <span>小計</span>
-              <span>${{ selectedOrder.subtotal || 0 }}</span>
+              <span>${{ selectedOrder.subtotal.toLocaleString() || 0 }}</span>
             </div>
             <div v-if="selectedOrder.serviceCharge > 0" class="payment-row">
               <span>服務費</span>
@@ -252,12 +249,11 @@
             </div>
             <div class="payment-row total">
               <span>總計</span>
-              <span>${{ selectedOrder.total }}</span>
+              <span>${{ selectedOrder.total.toLocaleString() }}</span>
             </div>
             <div class="payment-method">
               <strong>付款方式：</strong>
               {{ formatPaymentMethod(selectedOrder.paymentMethod) }}
-              ({{ formatPaymentType(selectedOrder.paymentType) }})
             </div>
           </div>
         </div>
@@ -348,9 +344,6 @@ const goBack = () => {
 
 // 生成訂單編號
 const generateOrderNumber = (order) => {
-  if (!order.orderDateCode || !order.sequence) {
-    return order._id ? order._id.slice(-8) : 'N/A';
-  }
   return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`;
 };
 
@@ -396,15 +389,6 @@ const formatPaymentMethod = (method) => {
   return methodMap[method] || method || '未設定';
 };
 
-// 格式化付款類型
-const formatPaymentType = (type) => {
-  const typeMap = {
-    'On-site': '現場付款',
-    'Online': '線上付款'
-  };
-  return typeMap[type] || type || '未設定';
-};
-
 // 格式化訂單類型
 const formatOrderType = (type) => {
   const typeMap = {
@@ -432,28 +416,10 @@ const canReorder = (order) => {
 
 // 顯示訂單詳情
 const showOrderDetail = async (order) => {
-  try {
-    // 如果需要獲取完整的訂單詳情，可以調用 API
-    const currentBrandId = brandId.value;
-    if (currentBrandId) {
-      const detailResponse = await api.orderCustomer.getUserOrderById({
-        brandId: currentBrandId,
-        orderId: order._id
-      });
-      selectedOrder.value = detailResponse;
-    } else {
-      selectedOrder.value = order;
-    }
-
-    if (orderDetailModal.value) {
-      orderDetailModal.value.show();
-    }
-  } catch (error) {
-    console.error('獲取訂單詳情失敗:', error);
-    selectedOrder.value = order; // 使用現有資料
-    if (orderDetailModal.value) {
-      orderDetailModal.value.show();
-    }
+  console.log('顯示訂單詳情:', order);
+  selectedOrder.value = order;
+  if (orderDetailModal.value) {
+    orderDetailModal.value.show();
   }
 };
 
