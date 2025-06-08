@@ -18,7 +18,8 @@ const pointInstanceSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true,
-    min: 1
+    enum: [1], // 只允許值為 1
+    default: 1
   },
   // 點數來源
   source: {
