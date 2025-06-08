@@ -181,5 +181,8 @@ export const calculateOrderPoints = async (brandId, orderAmount) => {
   // 計算點數（向下取整）
   const points = Math.floor(orderAmount / rule.conversionRate);
 
-  return points;
+  return {
+    points,
+    rule: rule
+  };
 };

@@ -28,6 +28,12 @@ const pointRuleSchema = new mongoose.Schema({
     type: Number,
     default: 0
   }, // 最低消費金額
+  validityDays: {
+    type: Number,
+    required: true,
+    default: 60,
+    min: 1
+  }, // 點數有效期限（天數）
   isActive: {
     type: Boolean,
     default: false

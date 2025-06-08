@@ -185,12 +185,25 @@ export const refundPointsForOrder = async (orderId) => {
  * @param {Number} amount - 點數數量
  * @param {String} source - 點數來源
  * @param {Object} sourceInfo - 來源資訊 (可選) {model: '來源模型', id: '來源ID'}
- * @param {Number} validityDays - 有效期天數 (默認 365 天)
+ * @param {Object|Number} ruleOrValidityDays - 點數規則物件或有效期天數 (向後兼容)
  * @returns {Promise<Array>} 新增的點數實例陣列
  */
-export const addPointsToUser = async (userId, brandId, amount, source, sourceInfo = null, validityDays = 365) => {
-  if (!userId || !brandId || !amount || amount <= 0 || !source) {
+export const addPointsToUser = async (userId, brandId, amount, source, sourceInfo = null, ruleOrValidityDays) => {
+  if (!userId || !brandId || !amount || amount <= 0 || !source || !ruleOrValidityDays) {
     throw new AppError('缺少必要參數', 400);
+  }
+  console.log('ruleOrValidityDays:', ruleOrValidityDays);
+  // 決定有效期天數
+  let validityDays;
+  if (typeof ruleOrValidityDays === 'object' && ruleOrValidityDays !== null) {
+    // 如果傳入的是規則物件，使用規則中的 validityDays
+    validityDays = ruleOrValidityDays.validityDays || 365;
+  } else if (typeof ruleOrValidityDays === 'number') {
+    // 向後兼容：如果傳入的是數字，直接使用
+    validityDays = ruleOrValidityDays;
+  } else {
+    // 預設值
+    validityDays = 365;
   }
 
   // 計算過期日期

@@ -107,11 +107,11 @@ const processOrderPointsReward = async (order) => {
       };
     }
 
-    // 3. 計算要給予的點數
+    // 3. 計算要給予的點數和獲取規則資訊
     const { pointRule: pointRuleService } = await import('../promotion/index.js');
-    const pointsToGive = await pointRuleService.calculateOrderPoints(order.brand, order.total);
+    const pointResult = await pointRuleService.calculateOrderPoints(order.brand, order.total);
 
-    if (pointsToGive <= 0) {
+    if (pointResult.points <= 0) {
       return {
         success: true,
         message: '根據點數規則計算得出 0 點數',
@@ -119,29 +119,22 @@ const processOrderPointsReward = async (order) => {
       };
     }
 
-    // 4. 給予點數給用戶（現在會創建多個實例）
+    // 4. 給予點數給用戶，使用規則中的有效期
     const pointInstances = await pointService.addPointsToUser(
       order.user,
       order.brand,
-      pointsToGive,
+      pointResult.points,
       '滿額贈送',
       { model: 'Order', id: order._id },
-      365 // 有效期一年
+      pointResult.rule.validityDays // 傳遞規則物件，函數內部會使用 rule.validityDays
     );
-
-    // console.log('成功給予點數:', {
-    //   orderId: order._id,
-    //   userId: order.user,
-    //   pointsAwarded: pointsToGive,
-    //   instancesCreated: pointInstances.length,
-    //   orderTotal: order.total
-    // });
 
     return {
       success: true,
-      message: `成功給予 ${pointsToGive} 點數`,
-      pointsAwarded: pointsToGive,
-      pointInstances: pointInstances
+      message: `成功給予 ${pointResult.points} 點數`,
+      pointsAwarded: pointResult.points,
+      pointInstances: pointInstances,
+      validityDays: pointResult.rule.validityDays
     };
 
   } catch (error) {
@@ -162,7 +155,7 @@ const processOrderPointsReward = async (order) => {
   }
 };
 
-export { processOrderPointsReward };
+export { processOrderPointsReward }; //為了在`orderAdmin.js`中使用
 
 /**
  * 支付回調處理 - 修改版本

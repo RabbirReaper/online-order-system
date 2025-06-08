@@ -84,6 +84,18 @@
             <div class="form-text">設定累積點數的最低消費門檻（選填）</div>
           </div>
 
+          <!-- 點數有效期限 -->
+          <div class="mb-3">
+            <label for="validityDays" class="form-label required">點數有效期限</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="validityDays" v-model="formData.validityDays" min="1"
+                :class="{ 'is-invalid': errors.validityDays }" required />
+              <span class="input-group-text">天</span>
+            </div>
+            <div class="invalid-feedback" v-if="errors.validityDays">{{ errors.validityDays }}</div>
+            <div class="form-text">設定用戶獲得點數後多少天內有效（最少1天）</div>
+          </div>
+
           <!-- 啟用狀態 -->
           <div class="mb-3">
             <div class="form-check">
@@ -159,6 +171,7 @@ const formData = reactive({
   type: '',
   conversionRate: 100,
   minimumAmount: 0,
+  validityDays: 365, // 新增：預設365天
   isActive: false
 });
 
@@ -195,6 +208,7 @@ const resetForm = () => {
     formData.type = '';
     formData.conversionRate = 100;
     formData.minimumAmount = 0;
+    formData.validityDays = 365; // 新增：重置有效期限
     formData.isActive = false;
   }
 
@@ -240,6 +254,13 @@ const validateForm = () => {
   if (formData.type === 'purchase_amount' && formData.minimumAmount < 0) {
     errors.minimumAmount = '最低消費金額不能小於 0';
     formErrors.value.push('最低消費金額不能小於 0');
+    isValid = false;
+  }
+
+  // 驗證點數有效期限
+  if (!formData.validityDays || formData.validityDays < 1) {
+    errors.validityDays = '點數有效期限必須至少為 1 天';
+    formErrors.value.push('點數有效期限必須至少為 1 天');
     isValid = false;
   }
 
