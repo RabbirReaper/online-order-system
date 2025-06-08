@@ -192,23 +192,10 @@ export const addPointsToUser = async (userId, brandId, amount, source, sourceInf
   if (!userId || !brandId || !amount || amount <= 0 || !source || !ruleOrValidityDays) {
     throw new AppError('缺少必要參數', 400);
   }
-  console.log('ruleOrValidityDays:', ruleOrValidityDays);
-  // 決定有效期天數
-  let validityDays;
-  if (typeof ruleOrValidityDays === 'object' && ruleOrValidityDays !== null) {
-    // 如果傳入的是規則物件，使用規則中的 validityDays
-    validityDays = ruleOrValidityDays.validityDays || 365;
-  } else if (typeof ruleOrValidityDays === 'number') {
-    // 向後兼容：如果傳入的是數字，直接使用
-    validityDays = ruleOrValidityDays;
-  } else {
-    // 預設值
-    validityDays = 365;
-  }
 
   // 計算過期日期
   const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + validityDays);
+  expiryDate.setDate(expiryDate.getDate() + ruleOrValidityDays);
 
   // 建立多個點數實例（每個實例代表1點）
   const pointInstances = [];
