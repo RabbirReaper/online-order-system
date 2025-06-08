@@ -110,7 +110,7 @@
                     </span>
                   </div>
                   <div class="order-total">
-                    總計：${{ order.total }}
+                    總計：${{ order.total.toLocaleString() }}
                   </div>
                 </div>
               </div>

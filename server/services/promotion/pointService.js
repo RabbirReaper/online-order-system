@@ -28,24 +28,14 @@ export const getUserPointsBalance = async (userId, brandId) => {
     }
   );
 
-  // 然後查詢總點數
-  const result = await PointInstance.aggregate([
-    {
-      $match: {
-        user: new mongoose.Types.ObjectId(userId),
-        brand: new mongoose.Types.ObjectId(brandId),
-        status: 'active'
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        totalPoints: { $sum: '$amount' }
-      }
-    }
-  ]);
+  // 計算可用點數數量（每個實例代表1點）
+  const count = await PointInstance.countDocuments({
+    user: new mongoose.Types.ObjectId(userId),
+    brand: new mongoose.Types.ObjectId(brandId),
+    status: 'active'
+  });
 
-  return result.length > 0 ? result[0].totalPoints : 0;
+  return count;
 };
 
 /**
@@ -103,45 +93,17 @@ export const usePoints = async (userId, brandId, pointsToUse, orderInfo) => {
   for (const point of activePoints) {
     if (remainingToUse <= 0) break;
 
-    if (point.amount <= remainingToUse) {
-      // 完全使用這筆點數
-      point.status = 'used';
-      point.usedAt = now;
-      point.usedIn = orderInfo;
+    // 每個實例只有1點，直接標記為已使用
+    point.status = 'used';
+    point.usedAt = now;
+    point.usedIn = orderInfo;
 
-      remainingToUse -= point.amount;
-      usedPoints.push(point);
-    } else {
-      // 需要拆分點數
-      // 創建一個新點數實例來記錄使用的部分
-      const usedPortion = new PointInstance({
-        user: userId,
-        brand: brandId,
-        amount: remainingToUse,
-        source: point.source,
-        sourceModel: point.sourceModel,
-        sourceId: point.sourceId,
-        status: 'used',
-        expiryDate: point.expiryDate,
-        usedAt: now,
-        usedIn: orderInfo,
-        createdAt: point.createdAt
-      });
-
-      // 更新原始點數金額
-      point.amount -= remainingToUse;
-
-      usedPoints.push(usedPortion);
-      remainingToUse = 0;
-    }
+    remainingToUse -= 1;
+    usedPoints.push(point);
   }
 
   // 4. 保存變更
-  const savePromises = [
-    ...usedPoints.map(p => p.save()),
-    ...activePoints.filter(p => p.status === 'active' && p._id).map(p => p.save())
-  ];
-
+  const savePromises = usedPoints.map(p => p.save());
   await Promise.all(savePromises);
 
   return {
@@ -195,13 +157,13 @@ export const refundPointsForOrder = async (orderId) => {
     if (point.expiryDate < now) {
       // 已過期的點數
       point.status = 'expired';
-      refundResults.push({ point: point._id, status: 'expired', amount: point.amount });
+      refundResults.push({ point: point._id, status: 'expired', amount: 1 });
     } else {
       // 重新啟用點數
       point.status = 'active';
       point.usedAt = null;
       point.usedIn = null;
-      refundResults.push({ point: point._id, status: 'active', amount: point.amount });
+      refundResults.push({ point: point._id, status: 'active', amount: 1 });
     }
   }
 
@@ -224,7 +186,7 @@ export const refundPointsForOrder = async (orderId) => {
  * @param {String} source - 點數來源
  * @param {Object} sourceInfo - 來源資訊 (可選) {model: '來源模型', id: '來源ID'}
  * @param {Number} validityDays - 有效期天數 (默認 365 天)
- * @returns {Promise<Object>} 新增的點數實例
+ * @returns {Promise<Array>} 新增的點數實例陣列
  */
 export const addPointsToUser = async (userId, brandId, amount, source, sourceInfo = null, validityDays = 365) => {
   if (!userId || !brandId || !amount || amount <= 0 || !source) {
@@ -235,30 +197,36 @@ export const addPointsToUser = async (userId, brandId, amount, source, sourceInf
   const expiryDate = new Date();
   expiryDate.setDate(expiryDate.getDate() + validityDays);
 
-  // 建立點數實例
-  const pointInstance = new PointInstance({
-    user: userId,
-    brand: brandId,
-    amount,
-    source,
-    status: 'active',
-    expiryDate
-  });
+  // 建立多個點數實例（每個實例代表1點）
+  const pointInstances = [];
 
-  // 如果有來源資訊，添加到點數實例
-  if (sourceInfo && sourceInfo.model && sourceInfo.id) {
-    pointInstance.sourceModel = sourceInfo.model;
-    pointInstance.sourceId = sourceInfo.id;
+  for (let i = 0; i < amount; i++) {
+    const pointInstance = new PointInstance({
+      user: userId,
+      brand: brandId,
+      amount: 1, // 固定為1
+      source,
+      status: 'active',
+      expiryDate
+    });
+
+    // 如果有來源資訊，添加到點數實例
+    if (sourceInfo && sourceInfo.model && sourceInfo.id) {
+      pointInstance.sourceModel = sourceInfo.model;
+      pointInstance.sourceId = sourceInfo.id;
+    }
+
+    pointInstances.push(pointInstance);
   }
 
-  // 保存點數實例
-  await pointInstance.save();
+  // 批量保存點數實例
+  const savedInstances = await PointInstance.insertMany(pointInstances);
 
-  return pointInstance;
+  return savedInstances;
 };
 
 /**
- * 獲取用戶點數歷史
+ * 獲取用戶點數歷史（群組化顯示）
  * @param {String} userId - 用戶ID
  * @param {String} brandId - 品牌ID (可選)
  * @param {Object} options - 查詢選項
@@ -272,21 +240,88 @@ export const getUserPointHistory = async (userId, brandId = null, options = {}) 
   const skip = (page - 1) * limit;
 
   // 構建查詢條件
-  const query = { user: userId };
+  const matchQuery = { user: new mongoose.Types.ObjectId(userId) };
   if (brandId) {
-    query.brand = brandId;
+    matchQuery.brand = new mongoose.Types.ObjectId(brandId);
   }
 
-  // 查詢總數
-  const total = await PointInstance.countDocuments(query);
+  // 使用聚合來群組化相同來源的點數
+  const pipeline = [
+    { $match: matchQuery },
+    {
+      $group: {
+        _id: {
+          source: "$source",
+          sourceModel: "$sourceModel",
+          sourceId: "$sourceId",
+          status: "$status",
+          usedIn: "$usedIn",
+          // 按日期分組（到天）
+          date: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          }
+        },
+        amount: { $sum: 1 }, // 計算點數數量
+        firstCreatedAt: { $min: "$createdAt" },
+        brand: { $first: "$brand" },
+        expiryDate: { $first: "$expiryDate" },
+        usedAt: { $first: "$usedAt" }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        source: "$_id.source",
+        sourceModel: "$_id.sourceModel",
+        sourceId: "$_id.sourceId",
+        status: "$_id.status",
+        usedIn: "$_id.usedIn",
+        amount: 1,
+        createdAt: "$firstCreatedAt",
+        brand: 1,
+        expiryDate: 1,
+        usedAt: 1
+      }
+    },
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit }
+  ];
 
-  // 查詢點數記錄
-  const pointRecords = await PointInstance.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate('brand', 'name')
-    .lean();
+  // 執行聚合查詢
+  const records = await PointInstance.aggregate(pipeline);
+
+  // 填充 brand 資訊
+  await PointInstance.populate(records, { path: 'brand', select: 'name' });
+
+  // 計算總數（用於分頁）
+  const totalPipeline = [
+    { $match: matchQuery },
+    {
+      $group: {
+        _id: {
+          source: "$source",
+          sourceModel: "$sourceModel",
+          sourceId: "$sourceId",
+          status: "$status",
+          usedIn: "$usedIn",
+          date: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          }
+        }
+      }
+    },
+    { $count: "total" }
+  ];
+
+  const totalResult = await PointInstance.aggregate(totalPipeline);
+  const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
   // 處理分頁資訊
   const totalPages = Math.ceil(total / limit);
@@ -294,7 +329,7 @@ export const getUserPointHistory = async (userId, brandId = null, options = {}) 
   const hasPrevPage = page > 1;
 
   return {
-    records: pointRecords,
+    records,
     pagination: {
       total,
       totalPages,

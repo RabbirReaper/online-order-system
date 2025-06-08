@@ -119,8 +119,8 @@ const processOrderPointsReward = async (order) => {
       };
     }
 
-    // 4. 給予點數給用戶
-    const pointInstance = await pointService.addPointsToUser(
+    // 4. 給予點數給用戶（現在會創建多個實例）
+    const pointInstances = await pointService.addPointsToUser(
       order.user,
       order.brand,
       pointsToGive,
@@ -129,18 +129,19 @@ const processOrderPointsReward = async (order) => {
       365 // 有效期一年
     );
 
-    console.log('成功給予點數:', {
-      orderId: order._id,
-      userId: order.user,
-      pointsAwarded: pointsToGive,
-      orderTotal: order.total
-    });
+    // console.log('成功給予點數:', {
+    //   orderId: order._id,
+    //   userId: order.user,
+    //   pointsAwarded: pointsToGive,
+    //   instancesCreated: pointInstances.length,
+    //   orderTotal: order.total
+    // });
 
     return {
       success: true,
       message: `成功給予 ${pointsToGive} 點數`,
       pointsAwarded: pointsToGive,
-      pointInstance
+      pointInstances: pointInstances
     };
 
   } catch (error) {

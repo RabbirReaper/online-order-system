@@ -51,7 +51,7 @@
         </div>
 
         <!-- 點數即將過期提醒 -->
-        <div v-if="expiringPoints.length > 0" class="expiring-alert">
+        <div v-if="expiringPointsGroups.length > 0" class="expiring-alert">
           <div class="alert alert-warning">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <strong>提醒：</strong> 您有 {{ expiringPointsTotal }} 點數將在近期過期，請儘早使用。
@@ -64,21 +64,21 @@
             <h5 class="mb-0">點數明細</h5>
           </div>
           <div class="card-body">
-            <div v-if="pointsDetail.length > 0" class="points-list">
-              <div v-for="(point, index) in pointsDetail" :key="point._id || index" class="point-item">
+            <div v-if="groupedPointsDetail.length > 0" class="points-list">
+              <div v-for="(pointGroup, index) in groupedPointsDetail" :key="index" class="point-item">
                 <div class="point-info">
                   <div class="point-amount">
-                    <span class="amount">{{ point.amount }}</span>
+                    <span class="amount">{{ pointGroup.totalAmount }}</span>
                     <span class="unit">點</span>
                   </div>
                   <div class="point-details">
-                    <p class="point-source">{{ formatPointSource(point.source) }}</p>
-                    <p class="point-date">獲得時間：{{ formatDate(point.createdAt) }}</p>
+                    <p class="point-source">{{ formatPointSource(pointGroup.source) }}</p>
+                    <p class="point-date">獲得時間：{{ formatDate(pointGroup.createdAt) }}</p>
                   </div>
                 </div>
                 <div class="point-status">
-                  <span :class="getStatusClass(point.status)">{{ formatStatus(point.status) }}</span>
-                  <p class="expiry-date">到期日：{{ formatDate(point.expiryDate) }}</p>
+                  <span :class="getStatusClass(pointGroup.status)">{{ formatStatus(pointGroup.status) }}</span>
+                  <p class="expiry-date">到期日：{{ formatDate(pointGroup.expiryDate) }}</p>
                 </div>
               </div>
             </div>
@@ -102,13 +102,12 @@
           </div>
           <div class="card-body">
             <div v-if="pointsHistory.length > 0" class="history-list">
-              <div v-for="(record, index) in pointsHistory" :key="record._id || index" class="history-item">
+              <div v-for="(record, index) in pointsHistory" :key="index" class="history-item">
                 <div class="history-icon">
                   <i :class="getHistoryIcon(record)"></i>
                 </div>
                 <div class="history-info">
                   <p class="history-title">{{ formatHistoryTitle(record) }}</p>
-                  <p class="history-desc">{{ formatHistoryDescription(record) }}</p>
                   <p class="history-date">{{ formatDateTime(record.createdAt) }}</p>
                 </div>
                 <div class="history-amount">
@@ -179,19 +178,49 @@ const brandId = computed(() => {
   return sessionStorage.getItem('currentBrandId');
 });
 
-// 即將過期的點數 (30天內)
-const expiringPoints = computed(() => {
+// 群組化點數明細
+const groupedPointsDetail = computed(() => {
+  const groups = {};
+
+  pointsDetail.value.forEach(point => {
+    // 創建群組key：來源 + 來源ID + 狀態 + 日期（到天）
+    const dateKey = new Date(point.createdAt).toISOString().split('T')[0];
+    const groupKey = `${point.source}_${point.sourceId || 'no_source'}_${point.status}_${dateKey}`;
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = {
+        source: point.source,
+        sourceModel: point.sourceModel,
+        sourceId: point.sourceId,
+        status: point.status,
+        totalAmount: 0,
+        createdAt: point.createdAt,
+        expiryDate: point.expiryDate,
+        points: []
+      };
+    }
+
+    groups[groupKey].totalAmount += 1;
+    groups[groupKey].points.push(point);
+  });
+
+  // 轉換為陣列並按創建時間排序
+  return Object.values(groups).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+});
+
+// 即將過期的點數群組 (30天內)
+const expiringPointsGroups = computed(() => {
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-  return pointsDetail.value.filter(point => {
-    const expiryDate = new Date(point.expiryDate);
-    return point.status === 'active' && expiryDate <= thirtyDaysFromNow;
+  return groupedPointsDetail.value.filter(group => {
+    const expiryDate = new Date(group.expiryDate);
+    return group.status === 'active' && expiryDate <= thirtyDaysFromNow;
   });
 });
 
 const expiringPointsTotal = computed(() => {
-  return expiringPoints.value.reduce((total, point) => total + point.amount, 0);
+  return expiringPointsGroups.value.reduce((total, group) => total + group.totalAmount, 0);
 });
 
 // 監聽用戶狀態變化
@@ -264,16 +293,6 @@ const formatHistoryTitle = (record) => {
     'expired': '點數過期'
   };
   return statusMap[record.status] || '點數異動';
-};
-
-// 格式化歷史記錄描述
-const formatHistoryDescription = (record) => {
-  if (record.status === 'used' && record.usedIn) {
-    return `訂單使用 - ${record.usedIn.id}`;
-  } else if (record.source) {
-    return formatPointSource(record.source);
-  }
-  return '點數異動';
 };
 
 // 獲取歷史記錄圖標
@@ -400,8 +419,6 @@ const loadPointsData = async () => {
     if (error.response) {
       if (error.response.status === 401) {
         errorMessage.value = '請先登入以查看點數資料';
-        // 可以考慮跳轉到登入頁面
-        // router.push('/auth/login');
       } else if (error.response.data && error.response.data.message) {
         errorMessage.value = error.response.data.message;
       } else {
@@ -419,20 +436,13 @@ const loadPointsData = async () => {
 
 // 組件掛載後載入資料
 onMounted(async () => {
-  console.log('=== PointsView 調試開始 ===');
-
   // 確保品牌ID存在
   if (brandId.value) {
     authStore.setBrandId(brandId.value);
-    console.log('設置品牌ID:', brandId.value);
   }
 
   // 等待下一個tick，確保組件完全掛載
   await nextTick();
-
-  // 先檢查登入狀態
-  console.log('檢查登入狀態前 - isLoggedIn:', authStore.isLoggedIn);
-  console.log('檢查登入狀態前 - user:', authStore.user);
 
   if (!authStore.isLoggedIn) {
     await authStore.checkAuthStatus();
@@ -442,11 +452,6 @@ onMounted(async () => {
   const currentUser = authStore.user;
   const isLoggedIn = authStore.isLoggedIn;
   const userId = authStore.userId;
-
-  console.log('當前登入狀態:', isLoggedIn);
-  console.log('當前用戶:', currentUser);
-  console.log('用戶ID:', userId);
-  console.log('=== PointsView 調試結束 ===');
 
   // 然後載入點數資料
   await loadPointsData();
@@ -661,6 +666,12 @@ onMounted(async () => {
   font-size: 0.85rem;
   color: #6c757d;
   margin: 0;
+}
+
+.point-order {
+  font-size: 0.8rem;
+  color: #999;
+  margin: 0.25rem 0 0 0;
 }
 
 .point-status {
