@@ -690,17 +690,17 @@ flowchart TD
     CreatePoints --> SetExpiry[設定過期日期]
     SetExpiry --> NotifyUser[通知用戶獲得點數]
     
-    UsePoints([用戶使用點數]) --> SelectPoints[選擇要使用的點數]
-    SelectPoints --> CheckBalance{餘額足夠?}
+    UserViewPoints([用戶查看點數]) --> AutoCheckExpired[自動檢查過期點數]
+    AutoCheckExpired --> MarkExpired[標記過期點數]
+    MarkExpired --> DisplayBalance[顯示當前餘額]
+    
+    UsePoints([用戶使用點數]) --> CheckBalance{餘額足夠?}
     CheckBalance -->|否| InsufficientBalance[餘額不足]
     CheckBalance -->|是| DeductFIFO[按到期日扣除點數]
     
     DeductFIFO --> MarkUsed[標記點數為已使用]
-    MarkUsed --> ProcessReward[處理點數獎勵]
-    
-    SystemSchedule([系統排程]) --> CheckExpired[檢查過期點數]
-    CheckExpired --> MarkExpired[標記過期點數]
-    MarkExpired --> CleanupExpired[清理過期點數]
+    MarkUsed --> UpdateBalance[更新點數餘額]
+    UpdateBalance --> ProcessComplete[點數使用完成]
 ```
 
 ## 管理員權限控制流程
