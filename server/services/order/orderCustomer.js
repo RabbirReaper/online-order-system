@@ -15,7 +15,7 @@ import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils
 export const createOrder = async (orderData) => {
   try {
     // 設置預設手動調整金額
-    orderData.manualAdjustment = orderData.manualAdjustment;
+    orderData.manualAdjustment = orderData.manualAdjustment || 0;
 
     // 創建訂單的餐點實例
     const items = [];
