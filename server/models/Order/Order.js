@@ -35,7 +35,7 @@ const orderSchema = new mongoose.Schema({
   }, // 關聯用戶 (如果是登入用戶)
   orderType: {
     type: String,
-    enum: ['dine_in', 'takeout', 'delivery'],
+    enum: ['dine_in', 'takeout', 'delivery'], // 新增混合購買類型
     required: true
   }, // 訂單類型
   status: {
@@ -43,12 +43,31 @@ const orderSchema = new mongoose.Schema({
     enum: ['unpaid', 'paid', 'cancelled'],
     default: 'unpaid'
   }, // 訂單狀態
+
+  // 修改後的 items 結構 - 支援混合購買
   items: [{
+    itemType: {
+      type: String,
+      enum: ['dish', 'coupon_bundle'],
+      required: true,
+      default: 'dish' // 向後兼容，預設為餐點
+    }, // 項目類型
+
+    // 餐點相關（當 itemType = 'dish' 時使用）
     dishInstance: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'DishInstance',
-      required: true
+      required: function () { return this.itemType === 'dish'; }
     }, // 關聯餐點實例
+
+    // 兌換券套餐相關（當 itemType = 'coupon_bundle' 時使用）
+    promotionMenu: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PromotionMenu',
+      required: function () { return this.itemType === 'coupon_bundle'; }
+    }, // 關聯促銷套餐
+
+    // 共用欄位
     quantity: {
       type: Number,
       required: true,
@@ -57,15 +76,37 @@ const orderSchema = new mongoose.Schema({
     subtotal: {
       type: Number,
       required: true
-    }, // 小計金額
+    }, // 小計金額 (unitPrice * quantity)
+
+    // 額外資訊
+    itemName: {
+      type: String,
+      required: true
+    }, // 項目名稱（冗餘存儲，方便顯示）
     note: {
       type: String
-    }
-  }], // 訂單餐點
+    }, // 備註
+
+    // 兌換券生成記錄（當 itemType = 'coupon_bundle' 時使用）
+    generatedCoupons: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CouponInstance'
+    }] // 購買後生成的兌換券實例
+  }], // 訂單項目
+
+  // 金額相關
+  dishSubtotal: {
+    type: Number,
+    default: 0
+  }, // 餐點小計
+  couponSubtotal: {
+    type: Number,
+    default: 0
+  }, // 兌換券小計
   subtotal: {
     type: Number,
     required: true
-  }, // 餐點小計
+  }, // 總小計 (dishSubtotal + couponSubtotal)
   serviceCharge: {
     type: Number,
     default: 0
@@ -92,6 +133,12 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   }, // 訂單總額
+
+  // 新增：點數獎勵資訊
+  pointsEarned: {
+    type: Number,
+    default: 0
+  }, // 此訂單獲得的點數
   paymentType: {
     type: String,
     enum: ['On-site', 'Online'],
@@ -139,8 +186,8 @@ const orderSchema = new mongoose.Schema({
   }, // 取消時間
 }, { timestamps: true });
 
+// 索引
 orderSchema.index({ brand: 1, store: 1 });
 orderSchema.index({ brand: 1, user: 1 });
-
 
 export default mongoose.model('Order', orderSchema);
