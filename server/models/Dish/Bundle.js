@@ -60,7 +60,6 @@ const bundleSchema = new mongoose.Schema({
   // 定價策略
   originalPrice: {
     type: Number,
-    required: true
   },
   // 優惠價格（實際售價）
   sellingPrice: {
@@ -68,7 +67,6 @@ const bundleSchema = new mongoose.Schema({
   },
   originalPoint: {
     type: Number,
-    required: true
   },
   // 優惠價格（實際售價）
   sellingPoint: {
@@ -79,20 +77,6 @@ const bundleSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  },
-  totalSold: {
-    type: Number,
-    default: 0
-  }, // 已售出數量
-
-  // 排序和分類
-  category: {
-    type: String,
-    default: 'general'
-  }, // 分類，例如：limited_time, regular, special
-  displayOrder: {
-    type: Number,
-    default: 0
   }
 }, { timestamps: true });
 
