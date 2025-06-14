@@ -14,7 +14,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getStoreMenu({ brandId, storeId, includeUnpublished = true }) {
-      return apiClient.get(`/store/brands/${brandId}/${storeId}/menu`, {
+      return apiClient.get(`/menu/brands/${brandId}/${storeId}/menu`, {
         params: { includeUnpublished }
       });
     },
@@ -28,7 +28,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createMenu({ brandId, storeId, data }) {
-      return apiClient.post(`/store/brands/${brandId}/${storeId}/menu`, data);
+      return apiClient.post(`/menu/brands/${brandId}/${storeId}/menu`, data);
     },
 
     /**
@@ -41,7 +41,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateMenu({ brandId, storeId, menuId, data }) {
-      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}`, data);
+      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`, data);
     },
 
     /**
@@ -53,7 +53,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteMenu({ brandId, storeId, menuId }) {
-      return apiClient.delete(`/store/brands/${brandId}/${storeId}/menu/${menuId}`);
+      return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`);
     },
 
     /**
@@ -66,7 +66,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleMenuActive({ brandId, storeId, menuId, active }) {
-      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/toggle`, { active });
+      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/toggle`, { active });
     },
 
     /**
@@ -81,7 +81,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleMenuItem({ brandId, storeId, menuId, categoryIndex, itemIndex, isShowing }) {
-      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/toggle-item`, {
+      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/toggle-item`, {
         categoryIndex: parseInt(categoryIndex, 10),
         itemIndex: parseInt(itemIndex, 10),
         isShowing
@@ -98,7 +98,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateCategoryOrder({ brandId, storeId, menuId, categoryOrders }) {
-      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/category-order`, {
+      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/category-order`, {
         categoryOrders: categoryOrders.map(item => ({
           ...item,
           categoryIndex: parseInt(item.categoryIndex, 10),
@@ -118,7 +118,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateItemOrder({ brandId, storeId, menuId, categoryIndex, itemOrders }) {
-      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/item-order`, {
+      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/item-order`, {
         categoryIndex: parseInt(categoryIndex, 10),
         itemOrders: itemOrders.map(item => ({
           ...item,
@@ -139,7 +139,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     addItemToMenu({ brandId, storeId, menuId, categoryIndex, itemData }) {
-      return apiClient.post(`/store/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
+      return apiClient.post(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
         categoryIndex: parseInt(categoryIndex, 10),
         itemData
       });
@@ -156,7 +156,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     removeItemFromMenu({ brandId, storeId, menuId, categoryIndex, itemIndex }) {
-      return apiClient.delete(`/store/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
+      return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
         data: {
           categoryIndex: parseInt(categoryIndex, 10),
           itemIndex: parseInt(itemIndex, 10)
