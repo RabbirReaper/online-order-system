@@ -287,31 +287,31 @@ router.put('/brands/:brandId/:storeId/menu/:menuId/category-order',
   menuController.updateCategoryOrder
 );
 
-// 更新餐點順序
-router.put('/brands/:brandId/:storeId/menu/:menuId/dish-order',
+// 更新商品順序
+router.put('/brands/:brandId/:storeId/menu/:menuId/item-order',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  menuController.updateDishOrder
+  menuController.updateItemOrder
 );
 
-// 添加餐點到菜單
-router.post('/brands/:brandId/:storeId/menu/:menuId/dish',
+// 添加商品到菜單
+router.post('/brands/:brandId/:storeId/menu/:menuId/item',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  menuController.addDishToMenu
+  menuController.addItemToMenu
 );
 
-// 從菜單移除餐點
-router.delete('/brands/:brandId/:storeId/menu/:menuId/dish',
+// 從菜單移除商品
+router.delete('/brands/:brandId/:storeId/menu/:menuId/item',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  menuController.removeDishFromMenu
+  menuController.removeItemFromMenu
 );
 
 export default router;

@@ -18,6 +18,9 @@
                     <i class="bi bi-grip-vertical"></i>
                   </span>
                   <h6 class="mb-0">{{ category.name || `分類 #${index + 1}` }}</h6>
+                  <span class="badge bg-info ms-2" v-if="category.items && category.items.length > 0">
+                    {{ category.items.length }} 項商品
+                  </span>
                 </div>
                 <div>
                   <button type="button" class="btn btn-sm btn-outline-primary me-1" @click="editCategory(index)">
@@ -49,6 +52,23 @@
                   <input type="number" class="form-control" :id="`category-order-${index}`"
                     v-model.number="category.order" min="0" />
                   <div class="form-text">數字越小，顯示越前面</div>
+                </div>
+
+                <!-- 商品預覽 -->
+                <div class="mb-3" v-if="category.items && category.items.length > 0">
+                  <label class="form-label">商品預覽</label>
+                  <div class="border rounded p-2 bg-light">
+                    <div class="row g-2">
+                      <div v-for="(item, itemIndex) in category.items.slice(0, 3)" :key="itemIndex" class="col-auto">
+                        <span class="badge" :class="getItemTypeBadgeClass(item.itemType)">
+                          {{ getItemTypeText(item.itemType) }}
+                        </span>
+                      </div>
+                      <div v-if="category.items.length > 3" class="col-auto">
+                        <span class="text-muted">+{{ category.items.length - 3 }} 項...</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="d-flex justify-content-end">
@@ -149,6 +169,24 @@ watch(() => props.modelValue, (newValue) => {
   categories.value = JSON.parse(JSON.stringify(newValue)); // 深複製
 }, { deep: true, immediate: true });
 
+// 獲取商品類型文字
+const getItemTypeText = (type) => {
+  const typeMap = {
+    'dish': '餐點',
+    'coupon_bundle': '套餐'
+  };
+  return typeMap[type] || type;
+};
+
+// 獲取商品類型標記樣式
+const getItemTypeBadgeClass = (type) => {
+  const classMap = {
+    'dish': 'bg-primary',
+    'coupon_bundle': 'bg-success'
+  };
+  return classMap[type] || 'bg-secondary';
+};
+
 // 獲取分類欄位錯誤
 const getCategoryError = (categoryIndex, field) => {
   if (!props.errors || !props.errors[categoryIndex]) {
@@ -200,7 +238,15 @@ const cancelEdit = (index) => {
 
 // 移除分類
 const removeCategory = (index) => {
-  if (confirm(`確定要刪除分類「${categories.value[index].name || `分類 #${index + 1}`}」嗎？`)) {
+  const category = categories.value[index];
+  const categoryName = category.name || `分類 #${index + 1}`;
+
+  let confirmMessage = `確定要刪除分類「${categoryName}」嗎？`;
+  if (category.items && category.items.length > 0) {
+    confirmMessage += `\n\n此分類包含 ${category.items.length} 個商品，刪除後將一併移除。`;
+  }
+
+  if (confirm(confirmMessage)) {
     // 移除分類
     const newCategories = [...categories.value];
     newCategories.splice(index, 1);
@@ -251,7 +297,7 @@ const saveCategory = () => {
       name: modalForm.name,
       description: modalForm.description,
       order: modalForm.order,
-      dishes: [] // 新分類預設無餐點
+      items: [] // 新分類預設無商品
     });
   }
 

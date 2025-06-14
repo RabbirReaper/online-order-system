@@ -20,17 +20,35 @@
     </div>
 
     <form v-else @submit.prevent="submitForm" class="menu-form">
-      <!-- 菜單名稱 -->
+      <!-- 菜單基本資訊 -->
       <div class="card mb-4">
         <div class="card-header bg-light">
           <h5 class="mb-0">基本資訊</h5>
         </div>
         <div class="card-body">
-          <div class="mb-3">
-            <label for="menuName" class="form-label required">菜單名稱</label>
-            <input v-model="formData.name" type="text" class="form-control" id="menuName"
-              :class="{ 'is-invalid': errors.name }" placeholder="輸入菜單名稱" @blur="validateMenuName" />
-            <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="menuName" class="form-label required">菜單名稱</label>
+                <input v-model="formData.name" type="text" class="form-control" id="menuName"
+                  :class="{ 'is-invalid': errors.name }" placeholder="輸入菜單名稱" @blur="validateMenuName" />
+                <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="menuType" class="form-label required">菜單類型</label>
+                <select v-model="formData.menuType" class="form-select" id="menuType"
+                  :class="{ 'is-invalid': errors.menuType }">
+                  <option value="food">現金購買餐點</option>
+                  <option value="cash_coupon">現金購買預購券</option>
+                  <option value="point_exchange">點數兌換</option>
+                </select>
+                <div class="invalid-feedback" v-if="errors.menuType">{{ errors.menuType }}</div>
+                <div class="form-text">選擇菜單的主要用途類型</div>
+              </div>
+            </div>
           </div>
 
           <div class="mb-0">
@@ -89,75 +107,110 @@
                     rows="2" placeholder="可選的分類描述"></textarea>
                 </div>
 
-                <!-- 餐點列表 -->
-                <h6 class="mb-2">餐點項目</h6>
+                <!-- 商品列表 -->
+                <h6 class="mb-2">商品項目</h6>
                 <div class="table-responsive mb-3">
                   <table class="table table-bordered table-hover">
                     <thead class="table-light">
                       <tr>
-                        <th style="width: 45%">餐點</th>
-                        <th style="width: 20%">價格</th>
-                        <th style="width: 15%">狀態</th>
-                        <th style="width: 20%">操作</th>
+                        <th style="width: 15%">類型</th>
+                        <th style="width: 30%">商品</th>
+                        <th style="width: 15%">價格覆蓋</th>
+                        <th style="width: 15%">點數覆蓋</th>
+                        <th style="width: 10%">狀態</th>
+                        <th style="width: 15%">操作</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="(dish, dishIndex) in category.dishes" :key="dishIndex">
+                      <tr v-for="(item, itemIndex) in category.items" :key="itemIndex">
                         <td>
-                          <select v-model="dish.dishTemplate._id" class="form-select"
-                            :class="{ 'is-invalid': getDishError(categoryIndex, dishIndex, 'dishTemplate') }">
+                          <select v-model="item.itemType" class="form-select form-select-sm"
+                            :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'itemType') }"
+                            @change="onItemTypeChange(categoryIndex, itemIndex)">
+                            <option value="">選擇類型</option>
+                            <option value="dish">餐點</option>
+                            <option value="coupon_bundle">套餐</option>
+                          </select>
+                          <div class="invalid-feedback" v-if="getItemError(categoryIndex, itemIndex, 'itemType')">
+                            {{ getItemError(categoryIndex, itemIndex, 'itemType') }}
+                          </div>
+                        </td>
+                        <td>
+                          <!-- 餐點選擇 -->
+                          <select v-if="item.itemType === 'dish'" v-model="item.dishTemplate"
+                            class="form-select form-select-sm"
+                            :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'dishTemplate') }">
                             <option value="">選擇餐點</option>
                             <option v-for="template in dishTemplates" :key="template._id" :value="template._id">
                               {{ template.name }} - ${{ template.basePrice }}
                             </option>
                           </select>
-                          <div class="invalid-feedback" v-if="getDishError(categoryIndex, dishIndex, 'dishTemplate')">
-                            {{ getDishError(categoryIndex, dishIndex, 'dishTemplate') }}
+
+                          <!-- 套餐選擇 -->
+                          <select v-else-if="item.itemType === 'coupon_bundle'" v-model="item.couponBundle"
+                            class="form-select form-select-sm"
+                            :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'couponBundle') }">
+                            <option value="">選擇套餐</option>
+                            <option v-for="bundle in bundles" :key="bundle._id" :value="bundle._id">
+                              {{ bundle.name }} - ${{ bundle.sellingPrice }}
+                            </option>
+                          </select>
+
+                          <div class="text-muted small" v-else>請先選擇商品類型</div>
+
+                          <div class="invalid-feedback"
+                            v-if="getItemError(categoryIndex, itemIndex, 'dishTemplate') || getItemError(categoryIndex, itemIndex, 'couponBundle')">
+                            {{ getItemError(categoryIndex, itemIndex, 'dishTemplate') || getItemError(categoryIndex,
+                              itemIndex, 'couponBundle') }}
                           </div>
                         </td>
                         <td>
-                          <div class="input-group">
+                          <div class="input-group input-group-sm">
                             <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" v-model.number="dish.price" min="0"
-                              placeholder="留空使用基本價格" />
+                            <input type="number" class="form-control" v-model.number="item.priceOverride" min="0"
+                              placeholder="原價" />
                           </div>
+                        </td>
+                        <td>
+                          <input type="number" class="form-control form-control-sm" v-model.number="item.pointOverride"
+                            min="0" placeholder="原點數" />
                         </td>
                         <td>
                           <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox"
-                              :id="`dish-status-${categoryIndex}-${dishIndex}`" v-model="dish.isPublished">
-                            <label class="form-check-label small" :for="`dish-status-${categoryIndex}-${dishIndex}`">
-                              {{ dish.isPublished ? '啟用' : '停用' }}
+                              :id="`item-status-${categoryIndex}-${itemIndex}`" v-model="item.isShowing">
+                            <label class="form-check-label small" :for="`item-status-${categoryIndex}-${itemIndex}`">
+                              {{ item.isShowing ? '顯示' : '隱藏' }}
                             </label>
                           </div>
                         </td>
                         <td>
                           <div class="btn-group btn-group-sm">
                             <button type="button" class="btn btn-outline-secondary"
-                              @click="moveDish(categoryIndex, dishIndex, -1)" :disabled="dishIndex === 0">
+                              @click="moveItem(categoryIndex, itemIndex, -1)" :disabled="itemIndex === 0">
                               <i class="bi bi-arrow-up"></i>
                             </button>
                             <button type="button" class="btn btn-outline-secondary"
-                              @click="moveDish(categoryIndex, dishIndex, 1)"
-                              :disabled="dishIndex === category.dishes.length - 1">
+                              @click="moveItem(categoryIndex, itemIndex, 1)"
+                              :disabled="itemIndex === category.items.length - 1">
                               <i class="bi bi-arrow-down"></i>
                             </button>
                             <button type="button" class="btn btn-outline-danger"
-                              @click="removeDish(categoryIndex, dishIndex)">
+                              @click="removeItem(categoryIndex, itemIndex)">
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
                         </td>
                       </tr>
-                      <tr v-if="category.dishes.length === 0">
-                        <td colspan="4" class="text-center py-3 text-muted">此分類尚未添加餐點</td>
+                      <tr v-if="category.items.length === 0">
+                        <td colspan="6" class="text-center py-3 text-muted">此分類尚未添加商品</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
-                <button type="button" class="btn btn-outline-primary btn-sm" @click="addDish(category)">
-                  <i class="bi bi-plus-lg me-1"></i>添加餐點
+                <button type="button" class="btn btn-outline-primary btn-sm" @click="addItem(category)">
+                  <i class="bi bi-plus-lg me-1"></i>添加商品
                 </button>
               </div>
             </div>
@@ -224,10 +277,12 @@ const isSubmitting = ref(false);
 const successMessage = ref('');
 const formErrors = ref([]);
 const dishTemplates = ref([]);
+const bundles = ref([]);
 
 // 表單數據
 const formData = reactive({
   name: '',
+  menuType: 'food',
   store: '',
   brand: '',
   categories: [],
@@ -237,6 +292,7 @@ const formData = reactive({
 // 錯誤訊息
 const errors = reactive({
   name: '',
+  menuType: '',
   categories: []
 });
 
@@ -244,6 +300,9 @@ const errors = reactive({
 const isFormValid = computed(() => {
   // 檢查菜單名稱
   if (!formData.name.trim()) return false;
+
+  // 檢查菜單類型
+  if (!formData.menuType) return false;
 
   // 檢查是否有分類
   if (formData.categories.length === 0) return false;
@@ -253,12 +312,15 @@ const isFormValid = computed(() => {
     // 檢查分類名稱
     if (!category.name || !category.name.trim()) return false;
 
-    // 檢查是否有餐點
-    if (!category.dishes || category.dishes.length === 0) return false;
+    // 檢查是否有商品
+    if (!category.items || category.items.length === 0) return false;
 
-    // 檢查每個餐點
-    for (const dish of category.dishes) {
-      if (!dish.dishTemplate) return false;
+    // 檢查每個商品
+    for (const item of category.items) {
+      if (!item.itemType) return false;
+
+      if (item.itemType === 'dish' && !item.dishTemplate) return false;
+      if (item.itemType === 'coupon_bundle' && !item.couponBundle) return false;
     }
   }
 
@@ -299,6 +361,23 @@ const fetchDishTemplates = async () => {
   }
 };
 
+// 獲取套餐資料
+const fetchBundles = async () => {
+  // TODO: 實作套餐 API 後再補上
+  // if (!brandId.value) return;
+  // try {
+  //   const response = await api.bundle.getAllBundles({ brandId: brandId.value });
+  //   if (response && response.bundles) {
+  //     bundles.value = response.bundles;
+  //   }
+  // } catch (error) {
+  //   console.error('獲取套餐資料失敗:', error);
+  // }
+
+  // 暫時使用空陣列
+  bundles.value = [];
+};
+
 // 獲取菜單資料（編輯模式）
 const fetchMenuData = async () => {
   if (!isEditMode.value || !storeId.value || !menuId.value) return;
@@ -311,13 +390,15 @@ const fetchMenuData = async () => {
 
       // 更新表單數據
       formData.name = menu.name || '';
+      formData.menuType = menu.menuType || 'food';
       formData.isActive = menu.isActive !== undefined ? menu.isActive : true;
 
       // 處理分類資料
       if (menu.categories && menu.categories.length > 0) {
         // 深複製分類資料
-        formData.categories = JSON.parse(JSON.stringify(menu.categories));
+        formData.categories = menu.categories;
       }
+      console.log('菜單分類資料:', formData.categories);
     } else {
       formErrors.value.push('獲取菜單資料失敗');
     }
@@ -345,15 +426,27 @@ const getCategoryError = (categoryIndex, field) => {
   return errors.categories[categoryIndex][field] || '';
 };
 
-// 獲取餐點錯誤訊息
-const getDishError = (categoryIndex, dishIndex, field) => {
+// 獲取商品錯誤訊息
+const getItemError = (categoryIndex, itemIndex, field) => {
   if (!errors.categories ||
     !errors.categories[categoryIndex] ||
-    !errors.categories[categoryIndex].dishes ||
-    !errors.categories[categoryIndex].dishes[dishIndex]) {
+    !errors.categories[categoryIndex].items ||
+    !errors.categories[categoryIndex].items[itemIndex]) {
     return '';
   }
-  return errors.categories[categoryIndex].dishes[dishIndex][field] || '';
+  return errors.categories[categoryIndex].items[itemIndex][field] || '';
+};
+
+// 商品類型改變處理
+const onItemTypeChange = (categoryIndex, itemIndex) => {
+  const item = formData.categories[categoryIndex].items[itemIndex];
+
+  // 清除之前的選擇
+  if (item.itemType === 'dish') {
+    item.couponBundle = '';
+  } else if (item.itemType === 'coupon_bundle') {
+    item.dishTemplate = '';
+  }
 };
 
 // 添加分類
@@ -361,7 +454,7 @@ const addCategory = () => {
   formData.categories.push({
     name: '',
     description: '',
-    dishes: [],
+    items: [],
     order: formData.categories.length
   });
 };
@@ -393,45 +486,48 @@ const moveCategory = (categoryIndex, direction) => {
   formData.categories[newIndex].order = newIndex;
 };
 
-// 添加餐點
-const addDish = (category) => {
-  if (!category.dishes) {
-    category.dishes = [];
+// 添加商品
+const addItem = (category) => {
+  if (!category.items) {
+    category.items = [];
   }
 
-  category.dishes.push({
-    dishTemplate: { _id: '' },  // 改為對象，包含 _id 屬性
-    price: null,
-    isPublished: true,
-    order: category.dishes.length
+  category.items.push({
+    itemType: '',
+    dishTemplate: '',
+    couponBundle: '',
+    priceOverride: null,
+    pointOverride: null,
+    isShowing: true,
+    order: category.items.length
   });
 };
 
-// 移除餐點
-const removeDish = (categoryIndex, dishIndex) => {
-  formData.categories[categoryIndex].dishes.splice(dishIndex, 1);
+// 移除商品
+const removeItem = (categoryIndex, itemIndex) => {
+  formData.categories[categoryIndex].items.splice(itemIndex, 1);
 
   // 重新排序
-  formData.categories[categoryIndex].dishes.forEach((dish, idx) => {
-    dish.order = idx;
+  formData.categories[categoryIndex].items.forEach((item, idx) => {
+    item.order = idx;
   });
 };
 
-// 移動餐點順序
-const moveDish = (categoryIndex, dishIndex, direction) => {
-  const dishes = formData.categories[categoryIndex].dishes;
-  const newIndex = dishIndex + direction;
+// 移動商品順序
+const moveItem = (categoryIndex, itemIndex, direction) => {
+  const items = formData.categories[categoryIndex].items;
+  const newIndex = itemIndex + direction;
 
-  if (newIndex < 0 || newIndex >= dishes.length) return;
+  if (newIndex < 0 || newIndex >= items.length) return;
 
-  // 交換餐點位置
-  const temp = dishes[dishIndex];
-  dishes[dishIndex] = dishes[newIndex];
-  dishes[newIndex] = temp;
+  // 交換商品位置
+  const temp = items[itemIndex];
+  items[itemIndex] = items[newIndex];
+  items[newIndex] = temp;
 
   // 更新順序值
-  dishes[dishIndex].order = dishIndex;
-  dishes[newIndex].order = newIndex;
+  items[itemIndex].order = itemIndex;
+  items[newIndex].order = newIndex;
 };
 
 // 驗證整個表單
@@ -443,6 +539,15 @@ const validateForm = () => {
   if (!validateMenuName()) {
     formErrors.value.push('請輸入菜單名稱');
     isValid = false;
+  }
+
+  // 驗證菜單類型
+  if (!formData.menuType) {
+    errors.menuType = '請選擇菜單類型';
+    formErrors.value.push('請選擇菜單類型');
+    isValid = false;
+  } else {
+    errors.menuType = '';
   }
 
   // 驗證分類
@@ -467,23 +572,31 @@ const validateForm = () => {
       isValid = false;
     }
 
-    // 檢查是否有餐點
-    if (!category.dishes || category.dishes.length === 0) {
-      formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 至少需要一個餐點`);
+    // 檢查是否有商品
+    if (!category.items || category.items.length === 0) {
+      formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 至少需要一個商品`);
       isValid = false;
     } else {
-      // 初始化餐點錯誤對象
-      errors.categories[categoryIndex].dishes = [];
+      // 初始化商品錯誤對象
+      errors.categories[categoryIndex].items = [];
 
-      // 驗證每個餐點
-      category.dishes.forEach((dish, dishIndex) => {
-        if (!errors.categories[categoryIndex].dishes[dishIndex]) {
-          errors.categories[categoryIndex].dishes[dishIndex] = {};
+      // 驗證每個商品
+      category.items.forEach((item, itemIndex) => {
+        if (!errors.categories[categoryIndex].items[itemIndex]) {
+          errors.categories[categoryIndex].items[itemIndex] = {};
         }
 
-        if (!dish.dishTemplate) {
-          errors.categories[categoryIndex].dishes[dishIndex].dishTemplate = '請選擇餐點';
-          formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的餐點 #${dishIndex + 1}: 請選擇餐點`);
+        if (!item.itemType) {
+          errors.categories[categoryIndex].items[itemIndex].itemType = '請選擇商品類型';
+          formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇商品類型`);
+          isValid = false;
+        } else if (item.itemType === 'dish' && !item.dishTemplate) {
+          errors.categories[categoryIndex].items[itemIndex].dishTemplate = '請選擇餐點';
+          formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇餐點`);
+          isValid = false;
+        } else if (item.itemType === 'coupon_bundle' && !item.couponBundle) {
+          errors.categories[categoryIndex].items[itemIndex].couponBundle = '請選擇套餐';
+          formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇套餐`);
           isValid = false;
         }
       });
@@ -501,12 +614,14 @@ const resetForm = () => {
   } else {
     // 清空表單
     formData.name = '';
+    formData.menuType = 'food';
     formData.categories = [];
     formData.isActive = true;
   }
 
   // 清除錯誤
   errors.name = '';
+  errors.menuType = '';
   errors.categories = [];
   formErrors.value = [];
   successMessage.value = '';
@@ -528,6 +643,7 @@ const submitForm = async () => {
     // 準備提交資料
     const submitData = {
       name: formData.name,
+      menuType: formData.menuType,
       brand: formData.brand,
       store: formData.store,
       categories: formData.categories,
@@ -539,6 +655,7 @@ const submitForm = async () => {
     if (isEditMode.value) {
       // 更新菜單
       response = await api.menu.updateMenu({
+        brandId: brandId.value,
         storeId: storeId.value,
         menuId: menuId.value,
         data: submitData
@@ -547,6 +664,7 @@ const submitForm = async () => {
     } else {
       // 創建新菜單
       response = await api.menu.createMenu({
+        brandId: brandId.value,
         storeId: storeId.value,
         data: submitData
       });
@@ -587,6 +705,7 @@ watch([storeId, menuId, brandId], ([newStoreId, newMenuId, newBrandId]) => {
     Promise.all([
       fetchStoreData(),
       fetchDishTemplates(),
+      fetchBundles(),
       isEditMode.value ? fetchMenuData() : Promise.resolve()
     ]).finally(() => {
       isLoading.value = false;
@@ -602,6 +721,7 @@ onMounted(() => {
   Promise.all([
     fetchStoreData(),
     fetchDishTemplates(),
+    fetchBundles(),
     isEditMode.value ? fetchMenuData() : Promise.resolve()
   ]).finally(() => {
     isLoading.value = false;

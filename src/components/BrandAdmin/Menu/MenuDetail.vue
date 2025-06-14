@@ -46,6 +46,9 @@
               <span class="badge rounded-pill bg-light text-dark ms-2">
                 {{ menu.isActive ? '啟用中' : '已停用' }}
               </span>
+              <span class="badge rounded-pill bg-info text-white ms-2">
+                {{ getMenuTypeText(menu.menuType) }}
+              </span>
             </div>
           </div>
           <div class="card-body">
@@ -53,11 +56,12 @@
               <div class="col-md-6">
                 <p class="mb-2"><strong>菜單ID:</strong> {{ menu._id }}</p>
                 <p class="mb-2"><strong>所屬店鋪:</strong> {{ storeName }}</p>
+                <p class="mb-2"><strong>菜單類型:</strong> {{ getMenuTypeText(menu.menuType) }}</p>
                 <p class="mb-2"><strong>分類數量:</strong> {{ menu.categories ? menu.categories.length : 0 }}</p>
-                <p class="mb-2"><strong>餐點數量:</strong> {{ countTotalDishes() }}</p>
+                <p class="mb-2"><strong>商品數量:</strong> {{ countTotalItems() }}</p>
               </div>
               <div class="col-md-6">
-                <p class="mb-2"><strong>啟用餐點數量:</strong> {{ countActiveDishes() }}</p>
+                <p class="mb-2"><strong>顯示商品數量:</strong> {{ countActiveItems() }}</p>
                 <p class="mb-2"><strong>建立時間:</strong> {{ formatDate(menu.createdAt) }}</p>
                 <p class="mb-2"><strong>最後更新:</strong> {{ formatDate(menu.updatedAt) }}</p>
               </div>
@@ -82,30 +86,65 @@
                 <h5 class="category-title">{{ category.name }}</h5>
                 <p v-if="category.description" class="category-description text-muted">{{ category.description }}</p>
 
-                <!-- 分類餐點 -->
-                <div class="category-dishes">
-                  <div v-if="category.dishes && category.dishes.length > 0"
+                <!-- 分類商品 -->
+                <div class="category-items">
+                  <div v-if="category.items && category.items.length > 0"
                     class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
-                    <div v-for="dish in sortDishes(category.dishes)" :key="dish._id" class="col">
-                      <div class="card h-100 dish-card" :class="{ 'dish-disabled': !dish.isPublished }">
-                        <!-- 餐點圖片 -->
-                        <img :src="getDishImage(dish)" class="card-img-top dish-image" :alt="getDishName(dish)">
+                    <div v-for="item in sortItems(category.items)" :key="item._id" class="col">
+                      <div class="card h-100 item-card" :class="{ 'item-disabled': !item.isShowing }">
+                        <!-- 商品圖片 -->
+                        <img :src="getItemImage(item)" class="card-img-top item-image" :alt="getItemName(item)">
+
+                        <!-- 商品類型標記 -->
+                        <div class="item-type-badge">
+                          <span class="badge" :class="getItemTypeBadgeClass(item.itemType)">
+                            {{ getItemTypeText(item.itemType) }}
+                          </span>
+                        </div>
 
                         <!-- 停用標記 -->
-                        <div class="dish-status-badge" v-if="!dish.isPublished">
-                          <span class="badge bg-secondary">已停用</span>
+                        <div class="item-status-badge" v-if="!item.isShowing">
+                          <span class="badge bg-secondary">已隱藏</span>
                         </div>
 
                         <div class="card-body">
-                          <h6 class="dish-name">{{ getDishName(dish) }}</h6>
-                          <p class="dish-description text-muted small">{{ getDishDescription(dish) }}</p>
-                          <p class="dish-price">{{ formatPrice(dish.price || getDishPrice(dish)) }}</p>
+                          <h6 class="item-name">{{ getItemName(item) }}</h6>
+                          <p class="item-description text-muted small">{{ getItemDescription(item) }}</p>
+
+                          <!-- 價格顯示 -->
+                          <div class="item-pricing">
+                            <!-- 現金價格 -->
+                            <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
+                              <p class="item-price text-success mb-1">
+                                <strong>現金價: ${{ item.priceOverride }}</strong>
+                              </p>
+                              <p class="original-price text-muted small text-decoration-line-through">
+                                原價: ${{ getItemOriginalPrice(item) }}
+                              </p>
+                            </div>
+                            <div v-else>
+                              <p class="item-price mb-1">現金價: ${{ getItemOriginalPrice(item) }}</p>
+                            </div>
+
+                            <!-- 點數價格 -->
+                            <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
+                              <p class="item-points text-warning mb-0">
+                                <strong>點數價: {{ item.pointOverride }} 點</strong>
+                              </p>
+                              <p class="original-points text-muted small text-decoration-line-through">
+                                原點數: {{ getItemOriginalPoints(item) }} 點
+                              </p>
+                            </div>
+                            <div v-else-if="getItemOriginalPoints(item) > 0">
+                              <p class="item-points text-warning mb-0">點數價: {{ getItemOriginalPoints(item) }} 點</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div v-else class="text-center py-3 bg-light rounded">
-                    <p class="mb-0 text-muted">此分類尚未添加餐點</p>
+                    <p class="mb-0 text-muted">此分類尚未添加商品</p>
                   </div>
                 </div>
               </div>
@@ -124,8 +163,10 @@
                 <thead>
                   <tr>
                     <th>分類</th>
-                    <th>餐點</th>
-                    <th>價格</th>
+                    <th>商品類型</th>
+                    <th>商品名稱</th>
+                    <th>現金價格</th>
+                    <th>點數價格</th>
                     <th>狀態</th>
                     <th>排序</th>
                   </tr>
@@ -133,30 +174,59 @@
                 <tbody>
                   <template v-for="(category, categoryIndex) in sortedCategories" :key="categoryIndex">
                     <tr>
-                      <td :rowspan="category.dishes && category.dishes.length > 0 ? category.dishes.length + 1 : 2"
+                      <td :rowspan="category.items && category.items.length > 0 ? category.items.length + 1 : 2"
                         class="align-middle fw-bold border-end">
                         {{ category.name }}
                         <div class="small text-muted">順序: {{ category.order }}</div>
                       </td>
                     </tr>
-                    <template v-if="category.dishes && category.dishes.length > 0">
-                      <tr v-for="dish in sortDishes(category.dishes)" :key="dish._id">
-                        <td>{{ getDishName(dish) }}</td>
-                        <td>{{ formatPrice(dish.price || getDishPrice(dish)) }}</td>
+                    <template v-if="category.items && category.items.length > 0">
+                      <tr v-for="item in sortItems(category.items)" :key="item._id">
                         <td>
-                          <span class="badge" :class="dish.isPublished ? 'bg-success' : 'bg-secondary'">
-                            {{ dish.isPublished ? '啟用' : '停用' }}
+                          <span class="badge" :class="getItemTypeBadgeClass(item.itemType)">
+                            {{ getItemTypeText(item.itemType) }}
                           </span>
                         </td>
-                        <td>{{ dish.order }}</td>
+                        <td>{{ getItemName(item) }}</td>
+                        <td>
+                          <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
+                            <span class="text-success fw-bold">${{ item.priceOverride }}</span>
+                            <small class="text-muted text-decoration-line-through d-block">
+                              原價: ${{ getItemOriginalPrice(item) }}
+                            </small>
+                          </div>
+                          <div v-else>
+                            ${{ getItemOriginalPrice(item) }}
+                          </div>
+                        </td>
+                        <td>
+                          <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
+                            <span class="text-warning fw-bold">{{ item.pointOverride }} 點</span>
+                            <small class="text-muted text-decoration-line-through d-block">
+                              原點數: {{ getItemOriginalPoints(item) }} 點
+                            </small>
+                          </div>
+                          <div v-else-if="getItemOriginalPoints(item) > 0">
+                            {{ getItemOriginalPoints(item) }} 點
+                          </div>
+                          <div v-else>
+                            -
+                          </div>
+                        </td>
+                        <td>
+                          <span class="badge" :class="item.isShowing ? 'bg-success' : 'bg-secondary'">
+                            {{ item.isShowing ? '顯示' : '隱藏' }}
+                          </span>
+                        </td>
+                        <td>{{ item.order }}</td>
                       </tr>
                     </template>
                     <tr v-else>
-                      <td colspan="4" class="text-center text-muted">此分類尚未添加餐點</td>
+                      <td colspan="6" class="text-center text-muted">此分類尚未添加商品</td>
                     </tr>
                   </template>
                   <tr v-if="!menu.categories || menu.categories.length === 0">
-                    <td colspan="5" class="text-center text-muted py-3">此菜單尚未設置任何分類</td>
+                    <td colspan="7" class="text-center text-muted py-3">此菜單尚未設置任何分類</td>
                   </tr>
                 </tbody>
               </table>
@@ -183,6 +253,7 @@ const menuId = computed(() => route.params.menuId);
 const store = ref(null);
 const menu = ref(null);
 const dishTemplates = ref([]);
+const bundles = ref([]);
 const isLoading = ref(true);
 const error = ref('');
 const storeName = ref('載入中...');
@@ -192,6 +263,34 @@ const sortedCategories = computed(() => {
   if (!menu.value || !menu.value.categories) return [];
   return [...menu.value.categories].sort((a, b) => a.order - b.order);
 });
+
+// 獲取菜單類型文字
+const getMenuTypeText = (type) => {
+  const typeMap = {
+    'food': '現金購買餐點',
+    'cash_coupon': '現金購買預購券',
+    'point_exchange': '點數兌換'
+  };
+  return typeMap[type] || type;
+};
+
+// 獲取商品類型文字
+const getItemTypeText = (type) => {
+  const typeMap = {
+    'dish': '餐點',
+    'coupon_bundle': '套餐'
+  };
+  return typeMap[type] || type;
+};
+
+// 獲取商品類型標記樣式
+const getItemTypeBadgeClass = (type) => {
+  const classMap = {
+    'dish': 'bg-primary',
+    'coupon_bundle': 'bg-success'
+  };
+  return classMap[type] || 'bg-secondary';
+};
 
 // 格式化價格
 const formatPrice = (price) => {
@@ -212,85 +311,131 @@ const formatDate = (dateString) => {
   });
 };
 
-// 排序餐點
-const sortDishes = (dishes) => {
-  if (!dishes) return [];
-  return [...dishes].sort((a, b) => a.order - b.order);
+// 排序商品
+const sortItems = (items) => {
+  if (!items) return [];
+  return [...items].sort((a, b) => a.order - b.order);
 };
 
-// 獲取餐點名稱
-const getDishName = (dish) => {
-  if (!dish || !dish.dishTemplate) return '未知餐點';
+// 獲取商品名稱
+const getItemName = (item) => {
+  if (!item) return '未知商品';
 
-  // 如果後端已經填充了dishTemplate對象
-  if (typeof dish.dishTemplate === 'object' && dish.dishTemplate !== null) {
-    return dish.dishTemplate.name;
+  if (item.itemType === 'dish' && item.dishTemplate) {
+    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
+      return item.dishTemplate.name;
+    }
+    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
+    return template ? template.name : '未知餐點';
   }
 
-  // 從dishTemplates中尋找
-  const template = dishTemplates.value.find(t => t._id === dish.dishTemplate);
-  return template ? template.name : '未知餐點';
-};
-
-// 獲取餐點描述
-const getDishDescription = (dish) => {
-  if (!dish || !dish.dishTemplate) return '';
-
-  // 如果後端已經填充了dishTemplate對象
-  if (typeof dish.dishTemplate === 'object' && dish.dishTemplate !== null) {
-    return dish.dishTemplate.description || '';
+  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
+    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
+      return item.couponBundle.name;
+    }
+    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    return bundle ? bundle.name : '未知套餐';
   }
 
-  // 從dishTemplates中尋找
-  const template = dishTemplates.value.find(t => t._id === dish.dishTemplate);
-  return template ? template.description || '' : '';
+  return '未知商品';
 };
 
-// 獲取餐點圖片
-const getDishImage = (dish) => {
-  if (!dish || !dish.dishTemplate) return '/placeholder.jpg';
+// 獲取商品描述
+const getItemDescription = (item) => {
+  if (!item) return '';
 
-  // 如果後端已經填充了dishTemplate對象
-  if (typeof dish.dishTemplate === 'object' && dish.dishTemplate !== null) {
-    return dish.dishTemplate.image?.url || '/placeholder.jpg';
+  if (item.itemType === 'dish' && item.dishTemplate) {
+    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
+      return item.dishTemplate.description || '';
+    }
+    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
+    return template ? template.description || '' : '';
   }
 
-  // 從dishTemplates中尋找
-  const template = dishTemplates.value.find(t => t._id === dish.dishTemplate);
-  return template && template.image && template.image.url ? template.image.url : '/placeholder.jpg';
-};
-
-// 獲取餐點價格
-const getDishPrice = (dish) => {
-  if (!dish) return 0;
-
-  // 如果dish有自己的價格，優先使用
-  if (dish.price !== undefined && dish.price !== null) return dish.price;
-
-  // 從已填充的dishTemplate對象獲取
-  if (typeof dish.dishTemplate === 'object' && dish.dishTemplate !== null) {
-    return dish.dishTemplate.basePrice || 0;
+  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
+    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
+      return item.couponBundle.description || '';
+    }
+    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    return bundle ? bundle.description || '' : '';
   }
 
-  // 從dishTemplates中尋找
-  const template = dishTemplates.value.find(t => t._id === dish.dishTemplate);
-  return template ? template.basePrice || 0 : 0;
+  return '';
 };
 
-// 計算總餐點數量
-const countTotalDishes = () => {
+// 獲取商品圖片
+const getItemImage = (item) => {
+  if (!item) return '/placeholder.jpg';
+
+  if (item.itemType === 'dish' && item.dishTemplate) {
+    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
+      return item.dishTemplate.image?.url || '/placeholder.jpg';
+    }
+    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
+    return template && template.image && template.image.url ? template.image.url : '/placeholder.jpg';
+  }
+
+  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
+    // 套餐暫時使用預設圖片
+    return '/placeholder.jpg';
+  }
+
+  return '/placeholder.jpg';
+};
+
+// 獲取商品原始價格
+const getItemOriginalPrice = (item) => {
+  if (!item) return 0;
+
+  if (item.itemType === 'dish' && item.dishTemplate) {
+    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
+      return item.dishTemplate.basePrice || 0;
+    }
+    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
+    return template ? template.basePrice || 0 : 0;
+  }
+
+  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
+    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
+      return item.couponBundle.sellingPrice || 0;
+    }
+    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    return bundle ? bundle.sellingPrice || 0 : 0;
+  }
+
+  return 0;
+};
+
+// 獲取商品原始點數
+const getItemOriginalPoints = (item) => {
+  if (!item) return 0;
+
+  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
+    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
+      return item.couponBundle.sellingPoint || 0;
+    }
+    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    return bundle ? bundle.sellingPoint || 0 : 0;
+  }
+
+  // 餐點暫時沒有點數價格
+  return 0;
+};
+
+// 計算總商品數量
+const countTotalItems = () => {
   if (!menu.value || !menu.value.categories) return 0;
   return menu.value.categories.reduce((total, category) => {
-    return total + (category.dishes ? category.dishes.length : 0);
+    return total + (category.items ? category.items.length : 0);
   }, 0);
 };
 
-// 計算已啟用餐點數量
-const countActiveDishes = () => {
+// 計算已啟用商品數量
+const countActiveItems = () => {
   if (!menu.value || !menu.value.categories) return 0;
   return menu.value.categories.reduce((total, category) => {
-    if (!category.dishes) return total;
-    return total + category.dishes.filter(dish => dish.isPublished).length;
+    if (!category.items) return total;
+    return total + category.items.filter(item => item.isShowing).length;
   }, 0);
 };
 
@@ -306,6 +451,12 @@ const fetchDishTemplates = async () => {
   } catch (err) {
     console.error('獲取餐點模板失敗:', err);
   }
+};
+
+// 獲取套餐資料
+const fetchBundles = async () => {
+  // TODO: 實作套餐 API 後再補上
+  bundles.value = [];
 };
 
 // 獲取店鋪和菜單資料
@@ -328,7 +479,10 @@ const fetchData = async () => {
     // 2. 獲取餐點模板資料
     await fetchDishTemplates();
 
-    // 3. 獲取菜單資料
+    // 3. 獲取套餐資料
+    await fetchBundles();
+
+    // 4. 獲取菜單資料
     const menuResponse = await api.menu.getStoreMenu({ brandId: brandId.value, storeId: storeId.value });
     if (menuResponse && menuResponse.menu && menuResponse.menu._id === menuId.value) {
       menu.value = menuResponse.menu;
@@ -377,22 +531,22 @@ onMounted(() => {
   font-style: italic;
 }
 
-.dish-card {
+.item-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
   position: relative;
 }
 
-.dish-card:hover {
+.item-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.dish-disabled {
+.item-disabled {
   opacity: 0.6;
 }
 
-.dish-disabled::after {
+.item-disabled::after {
   content: '';
   position: absolute;
   top: 0;
@@ -403,34 +557,51 @@ onMounted(() => {
   z-index: 1;
 }
 
-.dish-image {
+.item-image {
   height: 160px;
   object-fit: cover;
 }
 
-.dish-status-badge {
+.item-type-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+}
+
+.item-status-badge {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 2;
 }
 
-.dish-name {
+.item-name {
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
 
-.dish-description {
+.item-description {
   height: 3em;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
 }
 
-.dish-price {
+.item-price {
   font-weight: bold;
   color: #dc3545;
   margin-bottom: 0;
+}
+
+.item-points {
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.original-price,
+.original-points {
+  font-size: 0.8em;
 }
 
 /* 表格樣式 */

@@ -6,6 +6,7 @@
 import Menu from '../../models/Menu/Menu.js';
 import Store from '../../models/Store/Store.js';
 import DishTemplate from '../../models/Dish/DishTemplate.js';
+import Bundle from '../../models/Dish/Bundle.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**
@@ -34,17 +35,26 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
     };
   }
 
-  // 處理菜單數據 - 深度填充餐點模板信息
-  const populatedMenu = await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 處理菜單數據 - 深度填充商品信息
+  const populateOptions = [
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ];
+
+  const populatedMenu = await Menu.findById(menu._id).populate(populateOptions);
 
   // 如果不包含未發布的項目，過濾掉它們
   if (!includeUnpublished) {
     populatedMenu.categories.forEach(category => {
-      category.dishes = category.dishes.filter(dish => dish.isPublished);
+      category.items = category.items.filter(item => item.isShowing);
     });
   }
 
@@ -84,23 +94,44 @@ export const createMenu = async (storeId, menuData) => {
   // 關聯店鋪
   menuData.store = storeId;
 
-  // 檢查並驗證分類和餐點
+  // 設置默認菜單類型
+  if (!menuData.menuType) {
+    menuData.menuType = 'food';
+  }
+
+  // 檢查並驗證分類和商品
   if (menuData.categories && menuData.categories.length > 0) {
     for (const category of menuData.categories) {
       if (!category.name) {
         throw new AppError('分類名稱為必填欄位', 400);
       }
 
-      // 如果有餐點，檢查每個餐點模板是否存在
-      if (category.dishes && category.dishes.length > 0) {
-        for (const dish of category.dishes) {
-          if (!dish.dishTemplate) {
-            throw new AppError('餐點模板ID為必填欄位', 400);
+      // 如果有商品，檢查每個商品
+      if (category.items && category.items.length > 0) {
+        for (const item of category.items) {
+          if (!item.itemType) {
+            throw new AppError('商品類型為必填欄位', 400);
           }
 
-          const template = await DishTemplate.findById(dish.dishTemplate);
-          if (!template) {
-            throw new AppError(`餐點模板 ${dish.dishTemplate} 不存在`, 404);
+          // 根據商品類型驗證相應字段
+          if (item.itemType === 'dish') {
+            if (!item.dishTemplate) {
+              throw new AppError('餐點模板ID為必填欄位', 400);
+            }
+
+            const template = await DishTemplate.findById(item.dishTemplate);
+            if (!template) {
+              throw new AppError(`餐點模板 ${item.dishTemplate} 不存在`, 404);
+            }
+          } else if (item.itemType === 'coupon_bundle') {
+            if (!item.couponBundle) {
+              throw new AppError('套餐ID為必填欄位', 400);
+            }
+
+            const bundle = await Bundle.findById(item.couponBundle);
+            if (!bundle) {
+              throw new AppError(`套餐 ${item.couponBundle} 不存在`, 404);
+            }
           }
         }
       }
@@ -115,12 +146,19 @@ export const createMenu = async (storeId, menuData) => {
   store.menuId = newMenu._id;
   await store.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(newMenu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(newMenu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };
 
 /**
@@ -151,21 +189,37 @@ export const updateMenu = async (storeId, menuId, updateData) => {
 
   // 如果更新分類
   if (updateData.categories) {
-    // 檢查每個分類和餐點
+    // 檢查每個分類和商品
     for (const category of updateData.categories) {
       if (!category.name) {
         throw new AppError('分類名稱為必填欄位', 400);
       }
 
-      if (category.dishes && category.dishes.length > 0) {
-        for (const dish of category.dishes) {
-          if (!dish.dishTemplate) {
-            throw new AppError('餐點模板ID為必填欄位', 400);
+      if (category.items && category.items.length > 0) {
+        for (const item of category.items) {
+          if (!item.itemType) {
+            throw new AppError('商品類型為必填欄位', 400);
           }
 
-          const template = await DishTemplate.findById(dish.dishTemplate);
-          if (!template) {
-            throw new AppError(`餐點模板 ${dish.dishTemplate} 不存在`, 404);
+          // 根據商品類型驗證相應字段
+          if (item.itemType === 'dish') {
+            if (!item.dishTemplate) {
+              throw new AppError('餐點模板ID為必填欄位', 400);
+            }
+
+            const template = await DishTemplate.findById(item.dishTemplate);
+            if (!template) {
+              throw new AppError(`餐點模板 ${item.dishTemplate} 不存在`, 404);
+            }
+          } else if (item.itemType === 'coupon_bundle') {
+            if (!item.couponBundle) {
+              throw new AppError('套餐ID為必填欄位', 400);
+            }
+
+            const bundle = await Bundle.findById(item.couponBundle);
+            if (!bundle) {
+              throw new AppError(`套餐 ${item.couponBundle} 不存在`, 404);
+            }
           }
         }
       }
@@ -179,18 +233,29 @@ export const updateMenu = async (storeId, menuId, updateData) => {
     menu.name = updateData.name;
   }
 
+  if (updateData.menuType !== undefined) {
+    menu.menuType = updateData.menuType;
+  }
+
   if (updateData.isActive !== undefined) {
     menu.isActive = updateData.isActive;
   }
 
   await menu.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };
 
 /**
@@ -231,11 +296,11 @@ export const deleteMenu = async (storeId, menuId) => {
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
  * @param {Number} categoryIndex - 分類索引
- * @param {Number} dishIndex - 餐點索引
- * @param {Boolean} isPublished - 是否啟用
+ * @param {Number} itemIndex - 商品索引
+ * @param {Boolean} isShowing - 是否啟用
  * @returns {Promise<Object>} 更新後的菜單
  */
-export const toggleMenuItem = async (storeId, menuId, categoryIndex, dishIndex, isPublished) => {
+export const toggleMenuItem = async (storeId, menuId, categoryIndex, itemIndex, isShowing) => {
   // 檢查店鋪是否存在
   const store = await Store.findById(storeId);
 
@@ -250,26 +315,33 @@ export const toggleMenuItem = async (storeId, menuId, categoryIndex, dishIndex, 
     throw new AppError('菜單不存在或不屬於指定店鋪', 404);
   }
 
-  // 檢查分類和餐點是否存在
+  // 檢查分類和商品是否存在
   if (!menu.categories[categoryIndex]) {
     throw new AppError('指定的分類不存在', 404);
   }
 
-  if (!menu.categories[categoryIndex].dishes[dishIndex]) {
-    throw new AppError('指定的餐點不存在', 404);
+  if (!menu.categories[categoryIndex].items[itemIndex]) {
+    throw new AppError('指定的商品不存在', 404);
   }
 
-  // 更新餐點狀態
-  menu.categories[categoryIndex].dishes[dishIndex].isPublished = isPublished;
+  // 更新商品狀態
+  menu.categories[categoryIndex].items[itemIndex].isShowing = isShowing;
 
   await menu.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };
 
 /**
@@ -308,23 +380,30 @@ export const updateCategoryOrder = async (storeId, menuId, categoryOrders) => {
 
   await menu.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };
 
 /**
- * 更新餐點順序
+ * 更新商品順序
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
  * @param {Number} categoryIndex - 分類索引
- * @param {Array} dishOrders - 餐點順序 [{ dishIndex, order }]
+ * @param {Array} itemOrders - 商品順序 [{ itemIndex, order }]
  * @returns {Promise<Object>} 更新後的菜單
  */
-export const updateDishOrder = async (storeId, menuId, categoryIndex, dishOrders) => {
+export const updateItemOrder = async (storeId, menuId, categoryIndex, itemOrders) => {
   // 檢查店鋪是否存在
   const store = await Store.findById(storeId);
 
@@ -344,37 +423,44 @@ export const updateDishOrder = async (storeId, menuId, categoryIndex, dishOrders
     throw new AppError('指定的分類不存在', 404);
   }
 
-  // 檢查餐點索引是否有效
-  for (const item of dishOrders) {
-    if (!menu.categories[categoryIndex].dishes[item.dishIndex]) {
-      throw new AppError(`指定的餐點索引 ${item.dishIndex} 不存在`, 404);
+  // 檢查商品索引是否有效
+  for (const item of itemOrders) {
+    if (!menu.categories[categoryIndex].items[item.itemIndex]) {
+      throw new AppError(`指定的商品索引 ${item.itemIndex} 不存在`, 404);
     }
   }
 
-  // 更新餐點順序
-  for (const item of dishOrders) {
-    menu.categories[categoryIndex].dishes[item.dishIndex].order = item.order;
+  // 更新商品順序
+  for (const item of itemOrders) {
+    menu.categories[categoryIndex].items[item.itemIndex].order = item.order;
   }
 
   await menu.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };
 
 /**
- * 添加餐點到菜單
+ * 添加商品到菜單
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
  * @param {Number} categoryIndex - 分類索引
- * @param {Object} dishData - 餐點數據
+ * @param {Object} itemData - 商品數據
  * @returns {Promise<Object>} 更新後的菜單
  */
-export const addDishToMenu = async (storeId, menuId, categoryIndex, dishData) => {
+export const addItemToMenu = async (storeId, menuId, categoryIndex, itemData) => {
   // 檢查店鋪是否存在
   const store = await Store.findById(storeId);
 
@@ -394,51 +480,73 @@ export const addDishToMenu = async (storeId, menuId, categoryIndex, dishData) =>
     throw new AppError('指定的分類不存在', 404);
   }
 
-  // 驗證餐點數據
-  if (!dishData.dishTemplate) {
-    throw new AppError('餐點模板ID為必填欄位', 400);
+  // 驗證商品數據
+  if (!itemData.itemType) {
+    throw new AppError('商品類型為必填欄位', 400);
   }
 
-  // 檢查餐點模板是否存在
-  const template = await DishTemplate.findById(dishData.dishTemplate);
-  if (!template) {
-    throw new AppError('餐點模板不存在', 404);
+  // 根據商品類型驗證相應字段
+  if (itemData.itemType === 'dish') {
+    if (!itemData.dishTemplate) {
+      throw new AppError('餐點模板ID為必填欄位', 400);
+    }
+
+    const template = await DishTemplate.findById(itemData.dishTemplate);
+    if (!template) {
+      throw new AppError('餐點模板不存在', 404);
+    }
+  } else if (itemData.itemType === 'coupon_bundle') {
+    if (!itemData.couponBundle) {
+      throw new AppError('套餐ID為必填欄位', 400);
+    }
+
+    const bundle = await Bundle.findById(itemData.couponBundle);
+    if (!bundle) {
+      throw new AppError('套餐不存在', 404);
+    }
   }
 
   // 添加默認值
-  if (dishData.isPublished === undefined) {
-    dishData.isPublished = true;
+  if (itemData.isShowing === undefined) {
+    itemData.isShowing = true;
   }
 
-  if (dishData.order === undefined) {
+  if (itemData.order === undefined) {
     // 自動設置順序為該分類中的最後一個
-    const lastDish = menu.categories[categoryIndex].dishes
+    const lastItem = menu.categories[categoryIndex].items
       .sort((a, b) => b.order - a.order)[0];
-    dishData.order = lastDish ? lastDish.order + 1 : 0;
+    itemData.order = lastItem ? lastItem.order + 1 : 0;
   }
 
-  // 添加餐點到分類
-  menu.categories[categoryIndex].dishes.push(dishData);
+  // 添加商品到分類
+  menu.categories[categoryIndex].items.push(itemData);
 
   await menu.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };
 
 /**
- * 從菜單中移除餐點
+ * 從菜單中移除商品
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
  * @param {Number} categoryIndex - 分類索引
- * @param {Number} dishIndex - 餐點索引
+ * @param {Number} itemIndex - 商品索引
  * @returns {Promise<Object>} 更新後的菜單
  */
-export const removeDishFromMenu = async (storeId, menuId, categoryIndex, dishIndex) => {
+export const removeItemFromMenu = async (storeId, menuId, categoryIndex, itemIndex) => {
   // 檢查店鋪是否存在
   const store = await Store.findById(storeId);
 
@@ -458,20 +566,27 @@ export const removeDishFromMenu = async (storeId, menuId, categoryIndex, dishInd
     throw new AppError('指定的分類不存在', 404);
   }
 
-  // 檢查餐點是否存在
-  if (!menu.categories[categoryIndex].dishes[dishIndex]) {
-    throw new AppError('指定的餐點不存在', 404);
+  // 檢查商品是否存在
+  if (!menu.categories[categoryIndex].items[itemIndex]) {
+    throw new AppError('指定的商品不存在', 404);
   }
 
-  // 移除餐點
-  menu.categories[categoryIndex].dishes.splice(dishIndex, 1);
+  // 移除商品
+  menu.categories[categoryIndex].items.splice(itemIndex, 1);
 
   await menu.save();
 
-  // 返回包含填充的模板資訊的菜單
-  return await Menu.findById(menu._id).populate({
-    path: 'categories.dishes.dishTemplate',
-    model: 'DishTemplate',
-    select: 'name description basePrice image tags optionCategories'
-  });
+  // 返回包含填充的商品資訊的菜單
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.couponBundle',
+      model: 'Bundle',
+      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
+    }
+  ]);
 };

@@ -27,7 +27,7 @@
     <div v-else-if="!hasMenu" class="text-center py-5 bg-light rounded">
       <i class="bi bi-menu-button-wide display-1 text-muted mb-3"></i>
       <h5>此店鋪尚未設置菜單</h5>
-      <p class="text-muted">創建菜單後，您可以添加餐點分類和餐點項目</p>
+      <p class="text-muted">創建菜單後，您可以添加餐點分類和商品項目</p>
       <router-link :to="`/admin/${brandId}/menus/create/${storeId}`" class="btn btn-primary mt-2">
         <i class="bi bi-plus-lg me-1"></i>新增菜單
       </router-link>
@@ -45,6 +45,9 @@
               <span class="badge rounded-pill bg-light text-dark ms-2">
                 {{ menu.isActive ? '啟用中' : '已停用' }}
               </span>
+              <span class="badge rounded-pill bg-info text-white ms-2">
+                {{ getMenuTypeText(menu.menuType) }}
+              </span>
             </div>
             <div class="btn-group">
               <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
@@ -59,9 +62,10 @@
           <div class="card-body">
             <div class="row">
               <div class="col-md-6">
+                <p class="mb-2"><strong>菜單類型:</strong> {{ getMenuTypeText(menu.menuType) }}</p>
                 <p class="mb-2"><strong>分類數量:</strong> {{ menu.categories ? menu.categories.length : 0 }}</p>
-                <p class="mb-2"><strong>餐點數量:</strong> {{ countTotalDishes() }}</p>
-                <p class="mb-2"><strong>已啟用餐點:</strong> {{ countActiveDishes() }}</p>
+                <p class="mb-2"><strong>商品數量:</strong> {{ countTotalItems() }}</p>
+                <p class="mb-2"><strong>已顯示商品:</strong> {{ countActiveItems() }}</p>
                 <p class="mb-0"><strong>菜單狀態:</strong>
                   <span class="badge" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
                     {{ menu.isActive ? '啟用中' : '已停用' }}
@@ -97,20 +101,24 @@
                 <thead>
                   <tr>
                     <th>分類名稱</th>
+                    <th>商品數量</th>
                     <th>餐點數量</th>
-                    <th>啟用數量</th>
+                    <th>套餐數量</th>
+                    <th>顯示數量</th>
                     <th>順序</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="category in sortedCategories" :key="category._id">
                     <td>{{ category.name }}</td>
-                    <td>{{ category.dishes ? category.dishes.length : 0 }}</td>
-                    <td>{{ countCategoryActiveDishes(category) }}</td>
+                    <td>{{ category.items ? category.items.length : 0 }}</td>
+                    <td>{{ countItemsByType(category, 'dish') }}</td>
+                    <td>{{ countItemsByType(category, 'coupon_bundle') }}</td>
+                    <td>{{ countCategoryActiveItems(category) }}</td>
                     <td>{{ category.order }}</td>
                   </tr>
                   <tr v-if="!menu.categories || menu.categories.length === 0">
-                    <td colspan="4" class="text-center py-3 text-muted">此菜單尚未設置任何分類</td>
+                    <td colspan="6" class="text-center py-3 text-muted">此菜單尚未設置任何分類</td>
                   </tr>
                 </tbody>
               </table>
@@ -126,7 +134,7 @@
       <p v-if="menu">確定要刪除菜單「{{ menu.name }}」嗎？</p>
       <div class="alert alert-danger">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        此操作無法撤銷，菜單內所有分類和餐點數據都將被永久刪除。
+        此操作無法撤銷，菜單內所有分類和商品數據都將被永久刪除。
       </div>
       <div v-if="isDeleting" class="text-center">
         <div class="spinner-border text-danger" role="status">
@@ -164,6 +172,16 @@ const sortedCategories = computed(() => {
   return [...menu.value.categories].sort((a, b) => a.order - b.order);
 });
 
+// 獲取菜單類型文字
+const getMenuTypeText = (type) => {
+  const typeMap = {
+    'food': '現金購買餐點',
+    'cash_coupon': '現金購買預購券',
+    'point_exchange': '點數兌換'
+  };
+  return typeMap[type] || type;
+};
+
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return '無資料';
@@ -177,27 +195,33 @@ const formatDate = (dateString) => {
   });
 };
 
-// 計算總餐點數量
-const countTotalDishes = () => {
+// 計算總商品數量
+const countTotalItems = () => {
   if (!menu.value || !menu.value.categories) return 0;
   return menu.value.categories.reduce((total, category) => {
-    return total + (category.dishes ? category.dishes.length : 0);
+    return total + (category.items ? category.items.length : 0);
   }, 0);
 };
 
-// 計算已啟用餐點數量
-const countActiveDishes = () => {
+// 計算已啟用商品數量
+const countActiveItems = () => {
   if (!menu.value || !menu.value.categories) return 0;
   return menu.value.categories.reduce((total, category) => {
-    if (!category.dishes) return total;
-    return total + category.dishes.filter(dish => dish.isPublished).length;
+    if (!category.items) return total;
+    return total + category.items.filter(item => item.isShowing).length;
   }, 0);
 };
 
-// 計算分類中已啟用的餐點數量
-const countCategoryActiveDishes = (category) => {
-  if (!category.dishes) return 0;
-  return category.dishes.filter(dish => dish.isPublished).length;
+// 計算分類中指定類型的商品數量
+const countItemsByType = (category, itemType) => {
+  if (!category.items) return 0;
+  return category.items.filter(item => item.itemType === itemType).length;
+};
+
+// 計算分類中已啟用的商品數量
+const countCategoryActiveItems = (category) => {
+  if (!category.items) return 0;
+  return category.items.filter(item => item.isShowing).length;
 };
 
 // 獲取店鋪和菜單資料
@@ -242,6 +266,7 @@ const toggleMenuActive = async () => {
 
     // 發送API請求切換狀態
     const response = await api.menu.toggleMenuActive({
+      brandId: brandId.value,
       storeId: storeId.value,
       menuId: menu.value._id,
       active: newStatus
@@ -270,6 +295,7 @@ const deleteMenu = async () => {
   try {
     // 發送API請求刪除菜單
     await api.menu.deleteMenu({
+      brandId: brandId.value,
       storeId: storeId.value,
       menuId: menu.value._id
     });

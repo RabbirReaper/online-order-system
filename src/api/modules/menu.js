@@ -76,15 +76,15 @@ export default function (apiClient) {
      * @param {string} params.storeId - 店鋪ID
      * @param {string} params.menuId - 菜單ID
      * @param {number} params.categoryIndex - 分類索引
-     * @param {number} params.dishIndex - 餐點索引
-     * @param {boolean} params.isPublished - 是否啟用
+     * @param {number} params.itemIndex - 商品索引
+     * @param {boolean} params.isShowing - 是否啟用
      * @returns {Promise} - API 回應
      */
-    toggleMenuItem({ brandId, storeId, menuId, categoryIndex, dishIndex, isPublished }) {
+    toggleMenuItem({ brandId, storeId, menuId, categoryIndex, itemIndex, isShowing }) {
       return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/toggle-item`, {
         categoryIndex: parseInt(categoryIndex, 10),
-        dishIndex: parseInt(dishIndex, 10),
-        isPublished
+        itemIndex: parseInt(itemIndex, 10),
+        isShowing
       });
     },
 
@@ -108,58 +108,58 @@ export default function (apiClient) {
     },
 
     /**
-     * 更新餐點順序
+     * 更新商品順序
      * @param {Object} params - 順序參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID
      * @param {string} params.menuId - 菜單ID
      * @param {number} params.categoryIndex - 分類索引
-     * @param {Array} params.dishOrders - 餐點順序 [{ dishIndex, order }]
+     * @param {Array} params.itemOrders - 商品順序 [{ itemIndex, order }]
      * @returns {Promise} - API 回應
      */
-    updateDishOrder({ brandId, storeId, menuId, categoryIndex, dishOrders }) {
-      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/dish-order`, {
+    updateItemOrder({ brandId, storeId, menuId, categoryIndex, itemOrders }) {
+      return apiClient.put(`/store/brands/${brandId}/${storeId}/menu/${menuId}/item-order`, {
         categoryIndex: parseInt(categoryIndex, 10),
-        dishOrders: dishOrders.map(item => ({
+        itemOrders: itemOrders.map(item => ({
           ...item,
-          dishIndex: parseInt(item.dishIndex, 10),
+          itemIndex: parseInt(item.itemIndex, 10),
           order: parseInt(item.order, 10)
         }))
       });
     },
 
     /**
-     * 添加餐點到菜單
+     * 添加商品到菜單
      * @param {Object} params - 添加參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID
      * @param {string} params.menuId - 菜單ID
      * @param {number} params.categoryIndex - 分類索引
-     * @param {Object} params.dishData - 餐點資料
+     * @param {Object} params.itemData - 商品資料
      * @returns {Promise} - API 回應
      */
-    addDishToMenu({ brandId, storeId, menuId, categoryIndex, dishData }) {
-      return apiClient.post(`/store/brands/${brandId}/${storeId}/menu/${menuId}/dish`, {
+    addItemToMenu({ brandId, storeId, menuId, categoryIndex, itemData }) {
+      return apiClient.post(`/store/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
         categoryIndex: parseInt(categoryIndex, 10),
-        dishData
+        itemData
       });
     },
 
     /**
-     * 從菜單中移除餐點
+     * 從菜單中移除商品
      * @param {Object} params - 移除參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID
      * @param {string} params.menuId - 菜單ID
      * @param {number} params.categoryIndex - 分類索引
-     * @param {number} params.dishIndex - 餐點索引
+     * @param {number} params.itemIndex - 商品索引
      * @returns {Promise} - API 回應
      */
-    removeDishFromMenu({ brandId, storeId, menuId, categoryIndex, dishIndex }) {
-      return apiClient.delete(`/store/brands/${brandId}/${storeId}/menu/${menuId}/dish`, {
+    removeItemFromMenu({ brandId, storeId, menuId, categoryIndex, itemIndex }) {
+      return apiClient.delete(`/store/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
         data: {
           categoryIndex: parseInt(categoryIndex, 10),
-          dishIndex: parseInt(dishIndex, 10)
+          itemIndex: parseInt(itemIndex, 10)
         }
       });
     }

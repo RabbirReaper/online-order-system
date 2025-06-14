@@ -90,32 +90,32 @@ export const deleteMenu = asyncHandler(async (req, res) => {
 export const toggleMenuItem = asyncHandler(async (req, res) => {
   try {
     const { storeId, menuId } = req.params;
-    const { categoryIndex, dishIndex, isPublished } = req.body;
+    const { categoryIndex, itemIndex, isShowing } = req.body;
 
     // 檢查必要參數
-    if (categoryIndex === undefined || dishIndex === undefined || isPublished === undefined) {
+    if (categoryIndex === undefined || itemIndex === undefined || isShowing === undefined) {
       return res.status(400).json({
         success: false,
-        message: '缺少必要參數（categoryIndex、dishIndex 或 isPublished）'
+        message: '缺少必要參數（categoryIndex、itemIndex 或 isShowing）'
       });
     }
 
     // 確保參數是數字類型
     const catIndex = parseInt(categoryIndex, 10);
-    const dishIdx = parseInt(dishIndex, 10);
+    const itmIndex = parseInt(itemIndex, 10);
 
-    if (isNaN(catIndex) || isNaN(dishIdx)) {
+    if (isNaN(catIndex) || isNaN(itmIndex)) {
       return res.status(400).json({
         success: false,
-        message: 'categoryIndex 和 dishIndex 必須是有效的數字'
+        message: 'categoryIndex 和 itemIndex 必須是有效的數字'
       });
     }
 
-    const menu = await menuService.toggleMenuItem(storeId, menuId, catIndex, dishIdx, isPublished);
+    const menu = await menuService.toggleMenuItem(storeId, menuId, catIndex, itmIndex, isShowing);
 
     res.json({
       success: true,
-      message: `菜單項目已${isPublished ? '啟用' : '停用'}`,
+      message: `菜單項目已${isShowing ? '啟用' : '停用'}`,
       menu
     });
   } catch (error) {
@@ -162,81 +162,81 @@ export const updateCategoryOrder = asyncHandler(async (req, res) => {
   }
 });
 
-// 更新餐點順序
-export const updateDishOrder = asyncHandler(async (req, res) => {
+// 更新商品順序
+export const updateItemOrder = asyncHandler(async (req, res) => {
   try {
     const { storeId, menuId } = req.params;
-    const { categoryIndex, dishOrders } = req.body;
+    const { categoryIndex, itemOrders } = req.body;
 
-    if (categoryIndex === undefined || !dishOrders || !Array.isArray(dishOrders)) {
+    if (categoryIndex === undefined || !itemOrders || !Array.isArray(itemOrders)) {
       return res.status(400).json({
         success: false,
-        message: '缺少有效的餐點順序資料'
+        message: '缺少有效的商品順序資料'
       });
     }
 
-    // 確保分類索引和所有餐點索引和順序都是數字
+    // 確保分類索引和所有商品索引和順序都是數字
     const catIndex = parseInt(categoryIndex, 10);
-    const validatedOrders = dishOrders.map(item => ({
-      dishIndex: parseInt(item.dishIndex, 10),
+    const validatedOrders = itemOrders.map(item => ({
+      itemIndex: parseInt(item.itemIndex, 10),
       order: parseInt(item.order, 10)
     }));
 
-    const menu = await menuService.updateDishOrder(storeId, menuId, catIndex, validatedOrders);
+    const menu = await menuService.updateItemOrder(storeId, menuId, catIndex, validatedOrders);
 
     res.json({
       success: true,
-      message: '餐點順序更新成功',
+      message: '商品順序更新成功',
       menu
     });
   } catch (error) {
-    console.error('Error updating dish order:', error);
+    console.error('Error updating item order:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || '更新餐點順序失敗'
+      message: error.message || '更新商品順序失敗'
     });
   }
 });
 
-// 添加餐點到菜單
-export const addDishToMenu = asyncHandler(async (req, res) => {
+// 添加商品到菜單
+export const addItemToMenu = asyncHandler(async (req, res) => {
   try {
     const { storeId, menuId } = req.params;
-    const { categoryIndex, dishData } = req.body;
+    const { categoryIndex, itemData } = req.body;
 
-    if (categoryIndex === undefined || !dishData || !dishData.dishTemplate) {
+    if (categoryIndex === undefined || !itemData || !itemData.itemType) {
       return res.status(400).json({
         success: false,
-        message: '缺少有效的餐點資料'
+        message: '缺少有效的商品資料'
       });
     }
 
     // 確保分類索引是數字
     const catIndex = parseInt(categoryIndex, 10);
 
-    const menu = await menuService.addDishToMenu(storeId, menuId, catIndex, dishData);
+    const menu = await menuService.addItemToMenu(storeId, menuId, catIndex, itemData);
 
     res.json({
       success: true,
-      message: '餐點添加成功',
+      message: '商品添加成功',
       menu
     });
   } catch (error) {
-    console.error('Error adding dish to menu:', error);
+    console.error('Error adding item to menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || '添加餐點失敗'
+      message: error.message || '添加商品失敗'
     });
   }
 });
 
-// 從菜單中移除餐點
-export const removeDishFromMenu = asyncHandler(async (req, res) => {
+// 從菜單中移除商品
+export const removeItemFromMenu = asyncHandler(async (req, res) => {
   try {
     const { storeId, menuId } = req.params;
-    const { categoryIndex, dishIndex } = req.body;
+    const { categoryIndex, itemIndex } = req.body;
 
-    if (categoryIndex === undefined || dishIndex === undefined) {
+    if (categoryIndex === undefined || itemIndex === undefined) {
       return res.status(400).json({
         success: false,
         message: '缺少必要參數'
@@ -245,20 +245,20 @@ export const removeDishFromMenu = asyncHandler(async (req, res) => {
 
     // 確保索引是數字
     const catIndex = parseInt(categoryIndex, 10);
-    const dishIdx = parseInt(dishIndex, 10);
+    const itmIndex = parseInt(itemIndex, 10);
 
-    const menu = await menuService.removeDishFromMenu(storeId, menuId, catIndex, dishIdx);
+    const menu = await menuService.removeItemFromMenu(storeId, menuId, catIndex, itmIndex);
 
     res.json({
       success: true,
-      message: '餐點移除成功',
+      message: '商品移除成功',
       menu
     });
   } catch (error) {
-    console.error('Error removing dish from menu:', error);
+    console.error('Error removing item from menu:', error);
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || '移除餐點失敗'
+      message: error.message || '移除商品失敗'
     });
   }
 });
