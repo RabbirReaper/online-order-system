@@ -27,7 +27,8 @@ app.use(session({
   rolling: true,
   cookie: {
     maxAge: 30 * 60 * 1000, // 30 分鐘後過期
-    sameSite: 'lax'
+    sameSite: 'strict',
+    httpOnly: true
   }
 }));
 
