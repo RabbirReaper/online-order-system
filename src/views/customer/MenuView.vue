@@ -248,6 +248,9 @@ const goToCart = () => {
 
 // 生命周期
 onMounted(async () => {
+  // 🔥 重要：設置購物車的品牌和店鋪ID
+  cartStore.setBrandAndStore(brandId.value, storeId.value);
+
   // 檢查登入狀態
   if (authStore.isLoggedIn) {
     isLoggedIn.value = true;
