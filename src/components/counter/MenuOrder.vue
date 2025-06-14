@@ -26,7 +26,7 @@
             :class="{ 'active': selectedCategoryId === category._id }" @click="selectCategory(category._id)">
             <div class="category-nav-content">
               <div class="category-name">{{ category.name }}</div>
-              <div class="category-count">{{ category.dishes.length }}</div>
+              <div class="category-count">{{ category.items?.length || 0 }}</div>
             </div>
           </div>
         </div>
@@ -38,40 +38,41 @@
           <!-- 菜單選擇區域 -->
           <div class="col-12" :class="menuSectionClass">
             <div class="p-2">
-              <!-- 顯示選中類別的餐點 -->
+              <!-- 顯示選中類別的項目 -->
               <div v-if="selectedCategory" class="mb-3">
                 <h5 class="category-title mb-3" :style="{ borderBottomColor: themeColor }">
                   {{ selectedCategory.name }}
                 </h5>
                 <div class="menu-items-grid">
-                  <div v-for="dish in selectedCategory.dishes" :key="dish._id" class="menu-item-card" :class="{
-                    'selected-dish': selectedDish && selectedDish._id === dish.dishTemplate._id,
-                    'sold-out': isDishSoldOut(dish.dishTemplate._id)
-                  }" @click="handleDishClick(dish.dishTemplate)">
+                  <div v-for="item in selectedCategory.items" :key="item._id" class="menu-item-card" :class="{
+                    'selected-dish': isItemSelected(item),
+                    'sold-out': isItemSoldOut(item)
+                  }" @click="handleItemClick(item)">
                     <div class="card h-100">
                       <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                          <h6 class="card-title mb-0">{{ dish.dishTemplate.name }}</h6>
-                          <!-- 庫存狀態顯示 -->
+                          <h6 class="card-title mb-0">{{ getItemName(item) }}</h6>
+                          <!-- 庫存狀態顯示 (只對餐點顯示) -->
                           <div
-                            v-if="getInventoryInfo(dish.dishTemplate._id) && (getInventoryInfo(dish.dishTemplate._id).enableAvailableStock || getInventoryInfo(dish.dishTemplate._id).isSoldOut)"
+                            v-if="item.itemType === 'dish' && getInventoryInfo(getItemId(item))
+                              && (getInventoryInfo(getItemId(item)).enableAvailableStock || getInventoryInfo(getItemId(item)).isSoldOut)"
                             class="inventory-badge">
-                            <span v-if="getInventoryInfo(dish.dishTemplate._id).isSoldOut"
-                              class="badge bg-danger text-white">
+                            <span v-if="getInventoryInfo(getItemId(item)).isSoldOut" class="badge bg-danger text-white">
                               暫停供應
                             </span>
-                            <span v-else-if="getInventoryInfo(dish.dishTemplate._id).enableAvailableStock" class="badge"
-                              :class="getStockBadgeClass(dish.dishTemplate._id)">
-                              {{ getInventoryInfo(dish.dishTemplate._id).availableStock }}
+                            <span v-else-if="getInventoryInfo(getItemId(item)).enableAvailableStock" class="badge"
+                              :class="getStockBadgeClass(getItemId(item))">
+                              {{ getInventoryInfo(getItemId(item)).availableStock }}
                             </span>
                           </div>
                         </div>
-                        <p class="card-text price">${{ dish.price || dish.dishTemplate.basePrice }}</p>
+                        <p class="card-text price">${{ getItemPrice(item) }}</p>
                         <!-- 售完遮罩 -->
-                        <div v-if="isDishSoldOut(dish.dishTemplate._id)" class="sold-out-overlay">
+                        <div v-if="isItemSoldOut(item)" class="sold-out-overlay">
                           <span class="sold-out-text"
-                            :class="{ 'suspended': getInventoryInfo(dish.dishTemplate._id)?.isSoldOut }">
-                            {{ getInventoryInfo(dish.dishTemplate._id)?.isSoldOut ? '暫停供應' : '售完' }}
+                            :class="{ 'suspended': item.itemType === 'dish' && getInventoryInfo(getItemId(item))?.isSoldOut }">
+                            {{ item.itemType === 'dish' && getInventoryInfo(getItemId(item))?.isSoldOut ? '暫停供應' : '售完'
+                            }}
                           </span>
                         </div>
                       </div>
@@ -86,7 +87,7 @@
             </div>
           </div>
 
-          <!-- 選項設定區域 - 只在編輯模式時顯示 -->
+          <!-- 選項設定區域 - 只在編輯模式且選擇餐點時顯示 -->
           <div v-if="counterStore.isEditMode && selectedDish" class="col-12 options-section p-2">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h5 class="mb-0 fs-6 fw-semibold">{{ selectedDish.name }} - 選項設定</h5>
@@ -106,35 +107,30 @@
                   <div class="card p-2 text-center option-card"
                     :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
                     @click="selectOption(optionCategory, option, 'single')">
-                    <div class="card-body p-1">
-                      <p class="fw-bold mb-0">{{ getOptionName(option) }}</p>
-                      <small v-if="getOptionPrice(option) > 0" class="text-muted">+${{ getOptionPrice(option) }}</small>
-                    </div>
+                    <div class="option-name">{{ getOptionName(option) }}</div>
+                    <div v-if="getOptionPrice(option) > 0" class="option-price">+${{ getOptionPrice(option) }}</div>
                   </div>
                 </div>
               </div>
 
-              <!-- 多選類型 -->
-              <div v-else class="row g-2">
+              <!-- 複選類型 -->
+              <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
                 <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div class="card p-2 text-center option-card h-100"
+                  <div class="card p-2 text-center option-card"
                     :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
                     @click="selectOption(optionCategory, option, 'multiple')">
-                    <div class="card-body p-1">
-                      <p class="fw-bold mb-0">{{ getOptionName(option) }}</p>
-                      <small v-if="getOptionPrice(option) > 0" class="text-muted">+${{ getOptionPrice(option) }}</small>
-                    </div>
+                    <div class="option-name">{{ getOptionName(option) }}</div>
+                    <div v-if="getOptionPrice(option) > 0" class="option-price">+${{ getOptionPrice(option) }}</div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- 備註輸入 -->
-            <div class="mb-2">
-              <label class="form-label fs-7 fw-medium text-muted">備註</label>
-              <textarea class="form-control form-control-sm" rows="2" v-model="itemNote" @input="updateItemRealtime"
-                placeholder="請輸入特殊需求或備註...">
-              </textarea>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">備註</label>
+              <textarea class="form-control" rows="2" placeholder="特殊要求..." v-model="itemNote"
+                @input="updateOptions"></textarea>
             </div>
           </div>
         </div>
@@ -159,8 +155,7 @@ const props = defineProps({
   },
   orderType: {
     type: String,
-    required: true,
-    validator: (value) => ['dine_in', 'takeout'].includes(value)
+    required: true
   },
   title: {
     type: String,
@@ -176,24 +171,27 @@ const props = defineProps({
   }
 });
 
-// 使用 Pinia store
 const counterStore = useCounterStore();
 
-// 本地狀態
+// 響應式資料
 const isLoading = ref(false);
-const errorMessage = ref('');
-const selectedDish = ref(null);
-const selectedOptions = ref({}); // { categoryId: [optionIds] }
-const itemNote = ref('');
-const selectedCategoryId = ref(null); // 新增：選中的類別ID
-const inventoryData = ref({}); // 庫存資料 { dishTemplateId: inventoryInfo }
 const isLoadingInventory = ref(false);
+const errorMessage = ref('');
+const selectedCategoryId = ref(null);
+const selectedDish = ref(null);
+const selectedOptions = ref({});
+const itemNote = ref('');
+const inventoryData = ref({});
 
-// 計算屬性 - 根據主題動態設定樣式
-const headerClass = computed(() => `bg-${props.themeClass}`);
-const spinnerClass = computed(() => `text-${props.themeClass}`);
+// 計算屬性
+const headerClass = computed(() => {
+  return `bg-${props.themeClass}`;
+});
 
-// 動態調整菜單區域高度
+const spinnerClass = computed(() => {
+  return `text-${props.themeClass}`;
+});
+
 const menuSectionClass = computed(() => {
   return counterStore.isEditMode ? 'menu-section-edit' : 'menu-section-full';
 });
@@ -202,7 +200,6 @@ const menuCategories = computed(() => {
   return counterStore.menuData?.categories || [];
 });
 
-// 新增：選中的類別
 const selectedCategory = computed(() => {
   if (!selectedCategoryId.value) return null;
   return menuCategories.value.find(cat => cat._id === selectedCategoryId.value);
@@ -246,6 +243,71 @@ const currentPrice = computed(() => {
 
   return price;
 });
+
+// 項目處理方法
+const getItemName = (item) => {
+  if (item.itemType === 'dish') {
+    return item.dishTemplate?.name || '未命名餐點';
+  } else if (item.itemType === 'bundle') {
+    return item.bundle?.name || '未命名套餐';
+  }
+  return '未知商品';
+};
+
+const getItemId = (item) => {
+  if (item.itemType === 'dish') {
+    return item.dishTemplate?._id;
+  } else if (item.itemType === 'bundle') {
+    return item.bundle?._id;
+  }
+  return null;
+};
+
+const getItemPrice = (item) => {
+  if (item.itemType === 'dish') {
+    return item.priceOverride || item.dishTemplate?.basePrice || 0;
+  } else if (item.itemType === 'bundle') {
+    return item.priceOverride || item.bundle?.sellingPrice || 0;
+  }
+  return 0;
+};
+
+const isItemSelected = (item) => {
+  if (item.itemType === 'dish') {
+    return selectedDish.value && selectedDish.value._id === item.dishTemplate?._id;
+  }
+  // 套餐目前不支援選項編輯，所以不會被選中
+  return false;
+};
+
+const isItemSoldOut = (item) => {
+  // 套餐不檢查庫存
+  if (item.itemType === 'bundle') {
+    return false;
+  }
+
+  // 餐點庫存檢查
+  if (item.itemType === 'dish') {
+    return isDishSoldOut(getItemId(item));
+  }
+
+  return false;
+};
+
+const handleItemClick = (item) => {
+  // 檢查項目是否售完
+  if (isItemSoldOut(item)) {
+    return;
+  }
+
+  if (item.itemType === 'dish') {
+    // 處理餐點選擇
+    handleDishClick(item.dishTemplate);
+  } else if (item.itemType === 'bundle') {
+    // 處理套餐選擇 - 直接加入購物車
+    quickSelectBundle(item.bundle);
+  }
+};
 
 // 統一的選項資料存取方法
 const getOptionId = (option) => {
@@ -364,7 +426,7 @@ const loadMenuData = async () => {
   }
 };
 
-// 新增：選擇類別
+// 選擇類別
 const selectCategory = (categoryId) => {
   selectedCategoryId.value = categoryId;
 };
@@ -393,64 +455,71 @@ const quickSelectDish = (dishTemplate) => {
   counterStore.selectCurrentItem(lastItem, lastIndex);
 };
 
+// 快速選擇套餐（直接加入購物車）
+const quickSelectBundle = (bundle) => {
+  // 套餐直接加入購物車，不進入編輯模式
+  counterStore.quickAddBundleToCart(bundle);
+};
+
 // 選擇選項
 const selectOption = (category, option, inputType) => {
   const categoryId = category._id;
   const optionId = getOptionId(option);
 
-  // 確保該類別的選項陣列存在
-  if (!selectedOptions.value[categoryId]) {
-    selectedOptions.value[categoryId] = [];
-  }
-
   if (inputType === 'single') {
-    // 單選：替換選中的選項
+    // 單選：替換當前選項
     selectedOptions.value[categoryId] = [optionId];
-  } else {
-    // 多選：切換選項
-    const currentOptions = [...selectedOptions.value[categoryId]];
+  } else if (inputType === 'multiple') {
+    // 複選：切換選項
+    if (!selectedOptions.value[categoryId]) {
+      selectedOptions.value[categoryId] = [];
+    }
+
+    const currentOptions = selectedOptions.value[categoryId];
     const index = currentOptions.indexOf(optionId);
 
     if (index > -1) {
+      // 移除選項
       currentOptions.splice(index, 1);
     } else {
+      // 添加選項
       currentOptions.push(optionId);
     }
-
-    selectedOptions.value[categoryId] = currentOptions;
   }
 
-  // 即時更新購物車
-  updateItemRealtime();
+  // 更新選項
+  updateOptions();
 };
 
+// 檢查選項是否被選中
 const isOptionSelected = (categoryId, optionId) => {
-  const categoryOptions = selectedOptions.value[categoryId];
-  return Array.isArray(categoryOptions) && categoryOptions.includes(optionId);
+  const selectedOptionsForCategory = selectedOptions.value[categoryId];
+  return selectedOptionsForCategory && selectedOptionsForCategory.includes(optionId);
 };
 
+// 根據ID查找選項
 const findOptionById = (optionId) => {
   for (const category of counterStore.optionCategories) {
-    if (category.options) {
-      const option = category.options.find(opt => getOptionId(opt) === optionId);
-      if (option) return option;
+    for (const option of category.options) {
+      if (getOptionId(option) === optionId) {
+        return option;
+      }
     }
   }
   return null;
 };
 
-// 即時更新購物車項目
-const updateItemRealtime = () => {
-  if (!counterStore.isEditMode) return;
-
-  // 構建選項資料
+// 更新選項
+const updateOptions = () => {
   const options = [];
+
+  // 遍歷所有選項類別
   Object.entries(selectedOptions.value).forEach(([categoryId, optionIds]) => {
-    if (optionIds.length > 0) {
+    if (optionIds && optionIds.length > 0) {
       const category = counterStore.optionCategories.find(cat => cat._id === categoryId);
       if (category) {
         const selections = optionIds.map(optionId => {
-          const option = category.options?.find(opt => getOptionId(opt) === optionId);
+          const option = findOptionById(optionId);
           return option ? {
             optionId: getOptionId(option),
             name: getOptionName(option),
@@ -573,7 +642,6 @@ watch(
 .main-content {
   display: flex;
   height: calc(100vh - 60px);
-  /* 減去header高度 */
 }
 
 /* 左側類別導航欄樣式 */
@@ -768,47 +836,61 @@ watch(
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  z-index: 2;
 }
 
 .sold-out-text {
   color: white;
-  font-weight: bold;
-  font-size: 1.1rem;
-  background-color: #dc3545;
-  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(220, 53, 69, 0.9);
   border-radius: 4px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* 暫停供應的樣式 */
 .sold-out-text.suspended {
-  background-color: #6c757d;
+  background-color: rgba(255, 193, 7, 0.9);
+  color: #000;
 }
 
+/* 選項相關樣式 */
 .option-category-title {
-  color: #6c757d;
-  border-left: 4px solid;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  border-left: 3px solid;
   padding-left: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .option-card {
   cursor: pointer;
-  transition: all 0.2s;
-  border-width: 2px;
+  transition: all 0.15s ease;
+  border: 1px solid #e5e7eb;
   min-width: 80px;
 }
 
 .option-card:hover {
-  background-color: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+  transform: translateY(-1px);
 }
 
 .option-card.selected {
-  background-color: var(--bs-blue-100, #e3f2fd);
-  border-color: var(--bs-blue-500, #2196f3);
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+  border-color: #f97316;
+  background-color: #fff7ed;
+  border-width: 2px;
+}
+
+.option-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.option-price {
+  font-size: 0.65rem;
+  color: #dc2626;
+  font-weight: 600;
+  margin-top: 0.25rem;
 }
 
 /* 響應式設計 */
@@ -818,67 +900,8 @@ watch(
     min-width: 150px;
   }
 
-  .category-name {
-    font-size: 0.8rem;
-  }
-
   .menu-items-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .menu-item-card .card-body {
-    padding: 0.5rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .main-content {
-    flex-direction: column;
-  }
-
-  .category-sidebar {
-    width: 100%;
-    height: 60px;
-    border-right: none;
-    border-bottom: 1px solid #f1f3f4;
-  }
-
-  .category-nav {
-    display: flex;
-    overflow-x: auto;
-    padding: 0.25rem 0.5rem;
-    gap: 0.25rem;
-  }
-
-  .category-nav-item {
-    white-space: nowrap;
-    min-width: 100px;
-    margin: 0;
-    border-radius: 20px;
-    padding: 0.375rem 0.75rem;
-  }
-
-  .category-nav-content {
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .category-name {
-    font-size: 0.75rem;
-  }
-
-  .category-count {
-    font-size: 0.7rem;
-    padding: 0.125rem 0.25rem;
-  }
-
-  .content-area {
-    height: calc(100vh - 120px);
-  }
-
-  .menu-items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }
 </style>
