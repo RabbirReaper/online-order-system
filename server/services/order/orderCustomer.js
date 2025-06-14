@@ -16,7 +16,7 @@ export const createOrder = async (orderData) => {
   try {
     // 設置預設手動調整金額
     orderData.manualAdjustment = orderData.manualAdjustment || 0;
-
+    console.log('創建訂單數據:', orderData);
     // 創建訂單的餐點實例
     const items = [];
     for (const item of orderData.items) {
@@ -35,6 +35,7 @@ export const createOrder = async (orderData) => {
 
       // 將餐點實例ID添加到訂單項目
       items.push({
+        itemName: item.name,
         dishInstance: dishInstance._id,
         quantity: item.quantity,
         subtotal: item.subtotal || (dishInstance.finalPrice * item.quantity),

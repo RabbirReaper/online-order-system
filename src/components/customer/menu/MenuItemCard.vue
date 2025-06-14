@@ -11,7 +11,7 @@
 
       <!-- 售完遮罩 -->
       <div v-if="isItemSoldOut" class="sold-out-overlay">
-        <span class="sold-out-text">{{ getSoldOutText() }}</span>
+        <span class="sold-out-text">{{ soldOutText }}</span>
       </div>
     </div>
 
@@ -20,8 +20,7 @@
         <h5 class="item-title">{{ itemName }}</h5>
 
         <!-- 庫存狀態顯示（僅餐點） -->
-        <div v-if="item.itemType === 'dish' && (inventoryInfo?.enableAvailableStock || inventoryInfo?.isSoldOut)"
-          class="inventory-badge">
+        <div v-if="showInventoryBadge" class="inventory-badge">
           <span v-if="inventoryInfo.isSoldOut" class="badge bg-danger text-white">
             售完
           </span>
@@ -31,32 +30,31 @@
         </div>
       </div>
 
-      <p class="item-desc" v-if="itemDescription">{{ truncateDescription(itemDescription, 30) }}</p>
+      <p class="item-desc" v-if="itemDescription">{{ truncatedDescription }}</p>
 
       <!-- 價格顯示 -->
       <div class="item-price-section">
         <!-- 餐點價格 -->
         <div v-if="item.itemType === 'dish'" class="item-price-tag">
-          <span>${{ displayPrice }}</span>
+          <span>${{ dishPrice }}</span>
         </div>
 
         <!-- 套餐價格 -->
         <div v-else-if="item.itemType === 'bundle'" class="bundle-price-section">
           <!-- 現金價格 -->
-          <div v-if="item.priceOverride || item.bundle?.sellingPrice" class="item-price-tag">
+          <div v-if="bundleCashPrice > 0" class="item-price-tag">
             <span class="price-label">現金價</span>
             <span>${{ bundleCashPrice }}</span>
-            <span v-if="bundleOriginalCashPrice > bundleCashPrice" class="original-price">
+            <span v-if="hasOriginalCashPrice" class="original-price">
               原價 ${{ bundleOriginalCashPrice }}
             </span>
           </div>
 
           <!-- 點數價格 -->
-          <div v-if="item.pointOverride !== undefined || item.bundle?.sellingPoint !== undefined"
-            class="item-price-tag point-price">
+          <div v-if="bundlePointPrice > 0" class="item-price-tag point-price">
             <span class="price-label">點數價</span>
             <span>{{ bundlePointPrice }} 點</span>
-            <span v-if="bundleOriginalPointPrice > bundlePointPrice" class="original-price">
+            <span v-if="hasOriginalPointPrice" class="original-price">
               原價 {{ bundleOriginalPointPrice }} 點
             </span>
           </div>
@@ -94,11 +92,17 @@ const itemName = computed(() => {
 
 const itemDescription = computed(() => {
   if (props.item.itemType === 'dish') {
-    return props.item.dishTemplate?.description;
+    return props.item.dishTemplate?.description || '';
   } else if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.description;
+    return props.item.bundle?.description || '';
   }
   return '';
+});
+
+const truncatedDescription = computed(() => {
+  const text = itemDescription.value;
+  const maxLength = 30;
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 });
 
 const itemImage = computed(() => {
@@ -107,22 +111,31 @@ const itemImage = computed(() => {
   if (props.item.itemType === 'dish') {
     imageUrl = props.item.dishTemplate?.image?.url;
   } else if (props.item.itemType === 'bundle') {
-    // 套餐可能沒有圖片，或者使用第一個商品的圖片
     imageUrl = props.item.bundle?.image?.url;
+
+    // 如果套餐沒有圖片，嘗試使用第一個餐點的圖片
+    if (!imageUrl && props.item.bundle?.bundleItems?.length > 0) {
+      const firstDishItem = props.item.bundle.bundleItems.find(bundleItem =>
+        bundleItem.itemType === 'dish' && bundleItem.dishTemplate?.image?.url
+      );
+      if (firstDishItem) {
+        imageUrl = firstDishItem.dishTemplate.image.url;
+      }
+    }
   }
 
   return imageUrl || '/placeholder.jpg';
 });
 
-// 計算屬性 - 價格相關
-const displayPrice = computed(() => {
+// 計算屬性 - 餐點價格
+const dishPrice = computed(() => {
   if (props.item.itemType === 'dish') {
-    // 如果有價格覆蓋，使用覆蓋價格，否則使用餐點基本價格
     return props.item.priceOverride || props.item.dishTemplate?.basePrice || 0;
   }
   return 0;
 });
 
+// 計算屬性 - 套餐價格
 const bundleCashPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
     return props.item.priceOverride || props.item.bundle?.sellingPrice || 0;
@@ -132,42 +145,57 @@ const bundleCashPrice = computed(() => {
 
 const bundleOriginalCashPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.originalPrice || bundleCashPrice.value;
+    return props.item.bundle?.originalPrice || 0;
   }
   return 0;
 });
 
+const hasOriginalCashPrice = computed(() => {
+  return bundleOriginalCashPrice.value > bundleCashPrice.value;
+});
+
 const bundlePointPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.pointOverride !== undefined ? props.item.pointOverride : (props.item.bundle?.sellingPoint || 0);
+    return props.item.pointOverride !== undefined
+      ? props.item.pointOverride
+      : (props.item.bundle?.sellingPoint || 0);
   }
   return 0;
 });
 
 const bundleOriginalPointPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.originalPoint || bundlePointPrice.value;
+    return props.item.bundle?.originalPoint || 0;
   }
   return 0;
 });
 
+const hasOriginalPointPrice = computed(() => {
+  return bundleOriginalPointPrice.value > bundlePointPrice.value;
+});
+
 // 計算屬性 - 庫存狀態
+const showInventoryBadge = computed(() => {
+  return props.item.itemType === 'dish' &&
+    props.inventoryInfo &&
+    (props.inventoryInfo.enableAvailableStock || props.inventoryInfo.isSoldOut);
+});
+
 const isItemSoldOut = computed(() => {
-  // 套餐目前不檢查庫存
+  // 套餐不檢查庫存
   if (props.item.itemType === 'bundle') {
     return false;
   }
 
   // 餐點庫存檢查
   if (props.item.itemType === 'dish' && props.inventoryInfo) {
-    // 最高優先級：手動設為售完
+    // 手動設為售完
     if (props.inventoryInfo.isSoldOut) {
       return true;
     }
-
-    // 次級：如果啟用庫存且庫存為0
-    if (props.inventoryInfo.enableAvailableStock) {
-      return props.inventoryInfo.availableStock <= 0;
+    // 啟用庫存且庫存為0
+    if (props.inventoryInfo.enableAvailableStock && props.inventoryInfo.availableStock <= 0) {
+      return true;
     }
   }
 
@@ -176,38 +204,32 @@ const isItemSoldOut = computed(() => {
 
 const stockBadgeClass = computed(() => {
   if (!props.inventoryInfo || props.inventoryInfo.isSoldOut) return '';
-
   if (!props.inventoryInfo.enableAvailableStock) return '';
 
-  if (props.inventoryInfo.availableStock <= 0) {
+  const stock = props.inventoryInfo.availableStock;
+  if (stock <= 0) {
     return 'bg-danger text-white';
-  } else if (props.inventoryInfo.availableStock <= 5) {
+  } else if (stock <= 5) {
     return 'bg-warning text-dark';
   } else {
     return 'bg-success text-white';
   }
 });
 
-// 方法
-const truncateDescription = (text, maxLength) => {
-  if (!text) return '';
-  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-};
-
-const getSoldOutText = () => {
+const soldOutText = computed(() => {
   if (props.inventoryInfo?.isSoldOut) {
     return '暫停供應';
   }
   return '售完';
-};
+});
 
+// 方法
 const handleClick = () => {
-  // 檢查商品是否售完
   if (isItemSoldOut.value) {
     return;
   }
 
-  // 發出選擇事件
+  console.log('MenuItemCard: 點擊項目', props.item);
   emit('select-item', props.item);
 };
 </script>
@@ -240,7 +262,7 @@ const handleClick = () => {
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
 }
 
-/* 售完狀態樣式 - 變灰 */
+/* 售完狀態樣式 */
 .menu-item-card.sold-out {
   cursor: not-allowed;
   opacity: 0.5;
@@ -357,7 +379,7 @@ const handleClick = () => {
 .item-price-tag {
   display: inline-block;
   background-color: var(--price-color);
-  color: rgb(185, 127, 68);
+  color: rgb(18, 127, 68);
   font-weight: 700;
   font-size: 1.1rem;
   padding: 0.3rem 0.8rem;

@@ -1,14 +1,14 @@
 <template>
   <div class="menu-view">
     <div class="container-wrapper">
-      <!-- 添加淡入動畫到 MenuHeader -->
+      <!-- 店鋪標題區 -->
       <Transition name="fade-slide" appear>
         <MenuHeader v-if="!isLoading || store.name" :store-name="store.name" :store-image="store.image"
           :announcements="store.announcements" :business-hours="store.businessHours" :is-logged-in="isLoggedIn"
           :customer-name="customerName" :store-address="store.address" @login="handleLogin" @logout="handleLogout" />
       </Transition>
 
-      <!-- 骨架載入動畫 for MenuHeader -->
+      <!-- 骨架載入動畫 -->
       <div v-if="isLoading && !store.name" class="header-skeleton">
         <div class="skeleton-banner"></div>
         <div class="skeleton-title"></div>
@@ -17,7 +17,7 @@
 
       <!-- 類別導航器 -->
       <Transition name="fade-slide" appear>
-        <CategoryNavigator v-if="menu.categories && menu.categories.length > 0" :categories="menuCategories" />
+        <CategoryNavigator v-if="hasMenuCategories" :categories="navigationCategories" />
       </Transition>
 
       <!-- 菜單列表骨架動畫 -->
@@ -37,26 +37,32 @@
         </div>
       </div>
 
-      <!-- 實際菜單列表 - 添加錯開動畫 -->
+      <!-- 菜單列表 -->
       <TransitionGroup name="stagger-fade" tag="div" appear>
-        <MenuCategoryList v-if="!isLoading && menu.categories && menu.categories.length > 0" key="menu-list"
-          :menu-categories="menu.categories" :brandId="brandId" :storeId="storeId" @select-item="selectItem"
-          class="menu-content" />
+        <MenuCategoryList v-if="!isLoading && hasMenuCategories" key="menu-list" :categories="menu.categories"
+          :brand-id="brandId" :store-id="storeId" @select-item="handleItemSelect" class="menu-content" />
       </TransitionGroup>
 
-      <!-- Shopping Cart Button -->
+      <!-- 空狀態 -->
+      <div v-if="!isLoading && !hasMenuCategories" class="text-center py-5">
+        <i class="bi bi-journal-x display-1 text-muted"></i>
+        <p class="text-muted mt-3">店鋪尚未設定菜單</p>
+      </div>
+
+      <!-- 購物車按鈕 -->
       <Transition name="slide-up" appear>
-        <div v-if="cart.length > 0" class="position-fixed bottom-0 start-50 translate-middle-x mb-4"
+        <div v-if="hasCartItems" class="position-fixed bottom-0 start-50 translate-middle-x mb-4"
           style="z-index: 1030; width: 100%; max-width: 540px;">
           <div class="container-fluid px-3">
             <button class="btn btn-primary rounded-pill shadow-lg px-4 py-2 w-100 cart-button" @click="goToCart">
               <i class="bi bi-cart-fill me-2"></i>
-              {{ getTotalItems() }} 項商品 - ${{ calculateTotal() }}
+              {{ cartItemCount }} 項商品 - ${{ cartTotal }}
             </button>
           </div>
         </div>
       </Transition>
 
+      <!-- 頁尾 -->
       <footer>
         <div class="text-center text-muted py-3">
           &copy; {{ new Date().getFullYear() }} Rabbir Company. All rights reserved.
@@ -81,15 +87,17 @@ const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 
-// 獲取路由參數
+// 路由參數
 const brandId = computed(() => route.params.brandId);
 const storeId = computed(() => route.params.storeId);
 
-// 響應式數據
+// 響應式資料
 const store = ref({
   name: '',
   image: null,
-  announcements: []
+  announcements: [],
+  businessHours: null,
+  address: ''
 });
 const menu = ref({
   categories: []
@@ -99,13 +107,12 @@ const isLoggedIn = ref(false);
 const customerName = ref('');
 
 // 計算屬性
-const cart = computed(() => {
-  return cartStore.items;
+const hasMenuCategories = computed(() => {
+  return menu.value.categories && menu.value.categories.length > 0;
 });
 
-// 處理菜單分類資料，轉換為導航器需要的格式
-const menuCategories = computed(() => {
-  if (!menu.value.categories) return [];
+const navigationCategories = computed(() => {
+  if (!hasMenuCategories.value) return [];
 
   return menu.value.categories.map(category => ({
     categoryName: category.name,
@@ -115,13 +122,27 @@ const menuCategories = computed(() => {
   })).sort((a, b) => a.order - b.order);
 });
 
+const hasCartItems = computed(() => {
+  return cartStore.itemCount > 0;
+});
+
+const cartItemCount = computed(() => {
+  return cartStore.itemCount;
+});
+
+const cartTotal = computed(() => {
+  return cartStore.total;
+});
+
 // 方法
 const loadStoreData = async () => {
   try {
-    const storeData = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+    const storeData = await api.store.getStoreById({
+      brandId: brandId.value,
+      id: storeId.value
+    });
 
     if (storeData && storeData.success) {
-      // 添加一點延遲讓動畫更明顯（可選）
       await new Promise(resolve => setTimeout(resolve, 100));
       store.value = storeData.store;
     } else {
@@ -148,7 +169,7 @@ const loadMenuData = async () => {
         return;
       }
 
-      // 直接使用後端回傳的完整菜單資料
+      // 使用後端回傳的完整菜單資料
       menu.value = menuData.menu;
 
       // 確保分類按順序排列
@@ -170,10 +191,37 @@ const loadMenuData = async () => {
   } catch (error) {
     console.error('無法載入菜單數據:', error);
   } finally {
-    // 添加小延遲讓動畫更平滑
     setTimeout(() => {
       isLoading.value = false;
     }, 200);
+  }
+};
+
+// 處理項目選擇
+const handleItemSelect = (item) => {
+  console.log('MenuView: 選擇項目', item);
+
+  // 根據商品類型導航到不同的詳情頁面
+  if (item.itemType === 'dish' && item.dishTemplate) {
+    router.push({
+      name: 'dish-detail',
+      params: {
+        brandId: brandId.value,
+        storeId: storeId.value,
+        dishId: item.dishTemplate._id
+      }
+    });
+  } else if (item.itemType === 'bundle' && item.bundle) {
+    router.push({
+      name: 'bundle-detail',
+      params: {
+        brandId: brandId.value,
+        storeId: storeId.value,
+        bundleId: item.bundle._id
+      }
+    });
+  } else {
+    console.error('無效的項目類型或缺少必要資料:', item);
   }
 };
 
@@ -194,74 +242,23 @@ const handleLogout = async () => {
 };
 
 // 購物車相關方法
-const selectItem = (item) => {
-  // 根據商品類型導航到不同的詳情頁面
-  if (item.itemType === 'dish') {
-    router.push({
-      name: 'dish-detail',
-      params: {
-        brandId: brandId.value,
-        storeId: storeId.value,
-        dishId: item.dishTemplate._id
-      }
-    });
-  } else if (item.itemType === 'bundle') {
-    // 如果是套餐，可以導航到套餐詳情頁面或直接加入購物車
-    // 這裡假設我們有套餐詳情頁面
-    router.push({
-      name: 'bundle-detail',
-      params: {
-        brandId: brandId.value,
-        storeId: storeId.value,
-        bundleId: item.bundle._id
-      }
-    });
-  }
-};
-
 const goToCart = () => {
   router.push({ name: 'cart' });
 };
 
-const getTotalItems = () => {
-  return cartStore.itemCount;
-};
-
-const calculateTotal = () => {
-  return cartStore.total;
-};
-
-// 生命週期鉤子
+// 生命周期
 onMounted(async () => {
-  if (brandId.value) {
-    authStore.setBrandId(brandId.value);
-    sessionStorage.setItem('currentBrandId', brandId.value);
+  // 檢查登入狀態
+  if (authStore.isLoggedIn) {
+    isLoggedIn.value = true;
+    customerName.value = authStore.user?.name || '';
   }
 
-  if (storeId.value) {
-    sessionStorage.setItem('currentStoreId', storeId.value);
-  }
-
-  try {
-    const status = await authStore.checkAuthStatus();
-    isLoggedIn.value = status.loggedIn;
-    if (status.loggedIn && authStore.user.profile.name) {
-      customerName.value = authStore.user.profile.name || '';
-    }
-  } catch (error) {
-    console.error('檢查登入狀態失敗:', error);
-  }
-
-  try {
-    await Promise.all([
-      loadStoreData(),
-      loadMenuData()
-    ]);
-
-    cartStore.setBrandAndStore(brandId.value, storeId.value);
-  } catch (error) {
-    console.error('載入數據失敗:', error);
-  }
+  // 並行載入數據
+  await Promise.all([
+    loadStoreData(),
+    loadMenuData()
+  ]);
 });
 </script>
 
