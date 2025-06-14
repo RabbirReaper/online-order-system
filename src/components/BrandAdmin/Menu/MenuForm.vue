@@ -129,7 +129,7 @@
                             @change="onItemTypeChange(categoryIndex, itemIndex)">
                             <option value="">選擇類型</option>
                             <option value="dish">餐點</option>
-                            <option value="coupon_bundle">套餐</option>
+                            <option value="bundle">套餐</option>
                           </select>
                           <div class="invalid-feedback" v-if="getItemError(categoryIndex, itemIndex, 'itemType')">
                             {{ getItemError(categoryIndex, itemIndex, 'itemType') }}
@@ -147,9 +147,9 @@
                           </select>
 
                           <!-- 套餐選擇 -->
-                          <select v-else-if="item.itemType === 'coupon_bundle'" v-model="item.couponBundle"
+                          <select v-else-if="item.itemType === 'bundle'" v-model="item.bundle"
                             class="form-select form-select-sm"
-                            :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'couponBundle') }">
+                            :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'bundle') }">
                             <option value="">選擇套餐</option>
                             <option v-for="bundle in bundles" :key="bundle._id" :value="bundle._id">
                               {{ bundle.name }} - ${{ bundle.sellingPrice }}
@@ -159,9 +159,9 @@
                           <div class="text-muted small" v-else>請先選擇商品類型</div>
 
                           <div class="invalid-feedback"
-                            v-if="getItemError(categoryIndex, itemIndex, 'dishTemplate') || getItemError(categoryIndex, itemIndex, 'couponBundle')">
+                            v-if="getItemError(categoryIndex, itemIndex, 'dishTemplate') || getItemError(categoryIndex, itemIndex, 'bundle')">
                             {{ getItemError(categoryIndex, itemIndex, 'dishTemplate') || getItemError(categoryIndex,
-                              itemIndex, 'couponBundle') }}
+                              itemIndex, 'bundle') }}
                           </div>
                         </td>
                         <td>
@@ -320,7 +320,7 @@ const isFormValid = computed(() => {
       if (!item.itemType) return false;
 
       if (item.itemType === 'dish' && !item.dishTemplate) return false;
-      if (item.itemType === 'coupon_bundle' && !item.couponBundle) return false;
+      if (item.itemType === 'bundle' && !item.bundle) return false;
     }
   }
 
@@ -441,12 +441,37 @@ const getItemError = (categoryIndex, itemIndex, field) => {
 const onItemTypeChange = (categoryIndex, itemIndex) => {
   const item = formData.categories[categoryIndex].items[itemIndex];
 
-  // 清除之前的選擇
+  // 清除之前的選擇，設為 undefined 而非空字串
   if (item.itemType === 'dish') {
-    item.couponBundle = '';
-  } else if (item.itemType === 'coupon_bundle') {
-    item.dishTemplate = '';
+    delete item.bundle;
+    item.bundle = undefined;
+    item.dishTemplate = "";
+  } else if (item.itemType === 'bundle') {
+    delete item.dishTemplate;
+    item.dishTemplate = undefined;
+    item.bundle = "";
   }
+};
+
+// 清理商品資料，移除空值欄位
+const cleanItemData = (item) => {
+  const cleanedItem = { ...item };
+
+  // 根據商品類型，只保留相關欄位
+  if (cleanedItem.itemType === 'dish') {
+    delete cleanedItem.bundle;
+  } else if (cleanedItem.itemType === 'bundle') {
+    delete cleanedItem.dishTemplate;
+  }
+
+  // 清理空值
+  Object.keys(cleanedItem).forEach(key => {
+    if (cleanedItem[key] === '' || cleanedItem[key] === null || cleanedItem[key] === undefined) {
+      delete cleanedItem[key];
+    }
+  });
+
+  return cleanedItem;
 };
 
 // 添加分類
@@ -494,8 +519,8 @@ const addItem = (category) => {
 
   category.items.push({
     itemType: '',
-    dishTemplate: '',
-    couponBundle: '',
+    dishTemplate: undefined,
+    bundle: undefined,
     priceOverride: null,
     pointOverride: null,
     isShowing: true,
@@ -594,8 +619,8 @@ const validateForm = () => {
           errors.categories[categoryIndex].items[itemIndex].dishTemplate = '請選擇餐點';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇餐點`);
           isValid = false;
-        } else if (item.itemType === 'coupon_bundle' && !item.couponBundle) {
-          errors.categories[categoryIndex].items[itemIndex].couponBundle = '請選擇套餐';
+        } else if (item.itemType === 'bundle' && !item.bundle) {
+          errors.categories[categoryIndex].items[itemIndex].bundle = '請選擇套餐';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇套餐`);
           isValid = false;
         }
@@ -640,13 +665,16 @@ const submitForm = async () => {
   formErrors.value = [];
 
   try {
-    // 準備提交資料
+    // 準備提交資料，清理空值
     const submitData = {
       name: formData.name,
       menuType: formData.menuType,
       brand: formData.brand,
       store: formData.store,
-      categories: formData.categories,
+      categories: formData.categories.map(category => ({
+        ...category,
+        items: category.items.map(item => cleanItemData(item))
+      })),
       isActive: formData.isActive
     };
 

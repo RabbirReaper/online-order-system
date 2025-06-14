@@ -173,7 +173,7 @@ watch(() => props.modelValue, (newValue) => {
 const getItemTypeText = (type) => {
   const typeMap = {
     'dish': '餐點',
-    'coupon_bundle': '套餐'
+    'bundle': '套餐'
   };
   return typeMap[type] || type;
 };
@@ -182,7 +182,7 @@ const getItemTypeText = (type) => {
 const getItemTypeBadgeClass = (type) => {
   const classMap = {
     'dish': 'bg-primary',
-    'coupon_bundle': 'bg-success'
+    'bundle': 'bg-success'
   };
   return classMap[type] || 'bg-secondary';
 };

@@ -278,7 +278,7 @@ const getMenuTypeText = (type) => {
 const getItemTypeText = (type) => {
   const typeMap = {
     'dish': '餐點',
-    'coupon_bundle': '套餐'
+    'bundle': '套餐'
   };
   return typeMap[type] || type;
 };
@@ -287,7 +287,7 @@ const getItemTypeText = (type) => {
 const getItemTypeBadgeClass = (type) => {
   const classMap = {
     'dish': 'bg-primary',
-    'coupon_bundle': 'bg-success'
+    'bundle': 'bg-success'
   };
   return classMap[type] || 'bg-secondary';
 };
@@ -329,11 +329,11 @@ const getItemName = (item) => {
     return template ? template.name : '未知餐點';
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
-      return item.couponBundle.name;
+  if (item.itemType === 'bundle' && item.bundle) {
+    if (typeof item.bundle === 'object' && item.bundle !== null) {
+      return item.bundle.name;
     }
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.name : '未知套餐';
   }
 
@@ -352,11 +352,11 @@ const getItemDescription = (item) => {
     return template ? template.description || '' : '';
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
-      return item.couponBundle.description || '';
+  if (item.itemType === 'bundle' && item.bundle) {
+    if (typeof item.bundle === 'object' && item.bundle !== null) {
+      return item.bundle.description || '';
     }
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.description || '' : '';
   }
 
@@ -375,7 +375,7 @@ const getItemImage = (item) => {
     return template && template.image && template.image.url ? template.image.url : '/placeholder.jpg';
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
+  if (item.itemType === 'bundle' && item.bundle) {
     // 套餐暫時使用預設圖片
     return '/placeholder.jpg';
   }
@@ -395,11 +395,11 @@ const getItemOriginalPrice = (item) => {
     return template ? template.basePrice || 0 : 0;
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
-      return item.couponBundle.sellingPrice || 0;
+  if (item.itemType === 'bundle' && item.bundle) {
+    if (typeof item.bundle === 'object' && item.bundle !== null) {
+      return item.bundle.sellingPrice || 0;
     }
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.sellingPrice || 0 : 0;
   }
 
@@ -410,11 +410,11 @@ const getItemOriginalPrice = (item) => {
 const getItemOriginalPoints = (item) => {
   if (!item) return 0;
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    if (typeof item.couponBundle === 'object' && item.couponBundle !== null) {
-      return item.couponBundle.sellingPoint || 0;
+  if (item.itemType === 'bundle' && item.bundle) {
+    if (typeof item.bundle === 'object' && item.bundle !== null) {
+      return item.bundle.sellingPoint || 0;
     }
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.sellingPoint || 0 : 0;
   }
 

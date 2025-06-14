@@ -113,7 +113,7 @@
                     <td>{{ category.name }}</td>
                     <td>{{ category.items ? category.items.length : 0 }}</td>
                     <td>{{ countItemsByType(category, 'dish') }}</td>
-                    <td>{{ countItemsByType(category, 'coupon_bundle') }}</td>
+                    <td>{{ countItemsByType(category, 'bundle') }}</td>
                     <td>{{ countCategoryActiveItems(category) }}</td>
                     <td>{{ category.order }}</td>
                   </tr>

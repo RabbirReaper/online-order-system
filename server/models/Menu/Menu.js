@@ -61,14 +61,14 @@ const menuSchema = new mongoose.Schema({
         }
       }, // 關聯的餐點模板
 
-      // === 兌換券套餐相關（當 itemType = 'bundle' 時使用） ===
-      couponBundle: {
+      // === 套餐相關（當 itemType = 'bundle' 時使用） ===
+      bundle: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Bundle',
         required: function () {
           return this.itemType === 'bundle';
         }
-      }, // 關聯的兌換券套餐
+      }, // 關聯的套餐
 
       priceOverride: {
         type: Number,

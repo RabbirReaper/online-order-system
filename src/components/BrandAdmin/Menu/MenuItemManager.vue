@@ -177,7 +177,7 @@
           <select v-model="selectedItemType" class="form-select" @change="onItemTypeChange">
             <option value="">選擇商品類型</option>
             <option value="dish">餐點</option>
-            <option value="coupon_bundle">套餐</option>
+            <option value="bundle">套餐</option>
           </select>
         </div>
 
@@ -226,7 +226,7 @@
         </div>
 
         <!-- 套餐列表 -->
-        <div v-else-if="selectedItemType === 'coupon_bundle' && filteredBundles.length > 0" class="table-responsive">
+        <div v-else-if="selectedItemType === 'bundle' && filteredBundles.length > 0" class="table-responsive">
           <table class="table table-hover">
             <thead>
               <tr>
@@ -245,7 +245,7 @@
                 <td>{{ formatPrice(bundle.sellingPrice) }}</td>
                 <td>{{ bundle.sellingPoint ? `${bundle.sellingPoint} 點` : '-' }}</td>
                 <td>
-                  <button class="btn btn-sm btn-primary" @click="selectItem('coupon_bundle', bundle)">
+                  <button class="btn btn-sm btn-primary" @click="selectItem('bundle', bundle)">
                     <i class="bi bi-plus-lg me-1"></i>選擇
                   </button>
                 </td>
@@ -256,8 +256,7 @@
 
         <!-- 無資料提示 -->
         <div v-else-if="selectedItemType && ((selectedItemType === 'dish' && filteredDishTemplates.length === 0) ||
-          (selectedItemType === 'coupon_bundle' && filteredBundles.length === 0))"
-          class="text-center py-3">
+          (selectedItemType === 'bundle' && filteredBundles.length === 0))" class="text-center py-3">
           <p class="mb-0 text-muted">找不到符合條件的{{ getItemTypeText(selectedItemType) }}</p>
         </div>
 
@@ -335,7 +334,7 @@ watch(() => props.modelValue, (newValue) => {
 const getItemTypeText = (type) => {
   const typeMap = {
     'dish': '餐點',
-    'coupon_bundle': '套餐'
+    'bundle': '套餐'
   };
   return typeMap[type] || type;
 };
@@ -344,7 +343,7 @@ const getItemTypeText = (type) => {
 const getItemTypeBadgeClass = (type) => {
   const classMap = {
     'dish': 'bg-primary',
-    'coupon_bundle': 'bg-success'
+    'bundle': 'bg-success'
   };
   return classMap[type] || 'bg-secondary';
 };
@@ -364,8 +363,8 @@ const getItemName = (item) => {
     return template ? template.name : '未知餐點';
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+  if (item.itemType === 'bundle' && item.bundle) {
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.name : '未知套餐';
   }
 
@@ -381,8 +380,8 @@ const getItemDescription = (item) => {
     return template ? template.description || '' : '';
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+  if (item.itemType === 'bundle' && item.bundle) {
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.description || '' : '';
   }
 
@@ -411,8 +410,8 @@ const getItemOriginalPrice = (item) => {
     return template ? template.basePrice || 0 : 0;
   }
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+  if (item.itemType === 'bundle' && item.bundle) {
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.sellingPrice || 0 : 0;
   }
 
@@ -423,8 +422,8 @@ const getItemOriginalPrice = (item) => {
 const getItemOriginalPoints = (item) => {
   if (!item) return 0;
 
-  if (item.itemType === 'coupon_bundle' && item.couponBundle) {
-    const bundle = bundles.value.find(b => b._id === item.couponBundle);
+  if (item.itemType === 'bundle' && item.bundle) {
+    const bundle = bundles.value.find(b => b._id === item.bundle);
     return bundle ? bundle.sellingPoint || 0 : 0;
   }
 
@@ -465,7 +464,7 @@ const filterItems = () => {
         (template.description && template.description.toLowerCase().includes(query))
       );
     }
-  } else if (selectedItemType.value === 'coupon_bundle') {
+  } else if (selectedItemType.value === 'bundle') {
     if (!query) {
       filteredBundles.value = [...bundles.value];
     } else {
@@ -484,8 +483,8 @@ const selectItem = (itemType, data) => {
 
   if (itemType === 'dish') {
     exists = items.value.some(item => item.itemType === 'dish' && item.dishTemplate === data._id);
-  } else if (itemType === 'coupon_bundle') {
-    exists = items.value.some(item => item.itemType === 'coupon_bundle' && item.couponBundle === data._id);
+  } else if (itemType === 'bundle') {
+    exists = items.value.some(item => item.itemType === 'bundle' && item.bundle === data._id);
   }
 
   if (exists) {
@@ -497,8 +496,8 @@ const selectItem = (itemType, data) => {
   // 添加商品
   const newItem = {
     itemType: itemType,
-    dishTemplate: itemType === 'dish' ? data._id : '',
-    couponBundle: itemType === 'coupon_bundle' ? data._id : '',
+    dishTemplate: itemType === 'dish' ? data._id : undefined,
+    bundle: itemType === 'bundle' ? data._id : undefined,
     priceOverride: null,
     pointOverride: null,
     isShowing: true,

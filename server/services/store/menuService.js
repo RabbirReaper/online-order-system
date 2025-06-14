@@ -43,7 +43,7 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -123,14 +123,14 @@ export const createMenu = async (storeId, menuData) => {
             if (!template) {
               throw new AppError(`餐點模板 ${item.dishTemplate} 不存在`, 404);
             }
-          } else if (item.itemType === 'coupon_bundle') {
-            if (!item.couponBundle) {
+          } else if (item.itemType === 'bundle') {
+            if (!item.bundle) {
               throw new AppError('套餐ID為必填欄位', 400);
             }
 
-            const bundle = await Bundle.findById(item.couponBundle);
+            const bundle = await Bundle.findById(item.bundle);
             if (!bundle) {
-              throw new AppError(`套餐 ${item.couponBundle} 不存在`, 404);
+              throw new AppError(`套餐 ${item.bundle} 不存在`, 404);
             }
           }
         }
@@ -154,7 +154,7 @@ export const createMenu = async (storeId, menuData) => {
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -211,14 +211,14 @@ export const updateMenu = async (storeId, menuId, updateData) => {
             if (!template) {
               throw new AppError(`餐點模板 ${item.dishTemplate} 不存在`, 404);
             }
-          } else if (item.itemType === 'coupon_bundle') {
-            if (!item.couponBundle) {
+          } else if (item.itemType === 'bundle') {
+            if (!item.bundle) {
               throw new AppError('套餐ID為必填欄位', 400);
             }
 
-            const bundle = await Bundle.findById(item.couponBundle);
+            const bundle = await Bundle.findById(item.bundle);
             if (!bundle) {
-              throw new AppError(`套餐 ${item.couponBundle} 不存在`, 404);
+              throw new AppError(`套餐 ${item.bundle} 不存在`, 404);
             }
           }
         }
@@ -251,7 +251,7 @@ export const updateMenu = async (storeId, menuId, updateData) => {
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -337,7 +337,7 @@ export const toggleMenuItem = async (storeId, menuId, categoryIndex, itemIndex, 
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -388,7 +388,7 @@ export const updateCategoryOrder = async (storeId, menuId, categoryOrders) => {
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -445,7 +445,7 @@ export const updateItemOrder = async (storeId, menuId, categoryIndex, itemOrders
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -495,12 +495,12 @@ export const addItemToMenu = async (storeId, menuId, categoryIndex, itemData) =>
     if (!template) {
       throw new AppError('餐點模板不存在', 404);
     }
-  } else if (itemData.itemType === 'coupon_bundle') {
-    if (!itemData.couponBundle) {
+  } else if (itemData.itemType === 'bundle') {
+    if (!itemData.bundle) {
       throw new AppError('套餐ID為必填欄位', 400);
     }
 
-    const bundle = await Bundle.findById(itemData.couponBundle);
+    const bundle = await Bundle.findById(itemData.bundle);
     if (!bundle) {
       throw new AppError('套餐不存在', 404);
     }
@@ -531,7 +531,7 @@ export const addItemToMenu = async (storeId, menuId, categoryIndex, itemData) =>
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
@@ -584,7 +584,7 @@ export const removeItemFromMenu = async (storeId, menuId, categoryIndex, itemInd
       select: 'name description basePrice image tags optionCategories'
     },
     {
-      path: 'categories.items.couponBundle',
+      path: 'categories.items.bundle',
       model: 'Bundle',
       select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems'
     }
