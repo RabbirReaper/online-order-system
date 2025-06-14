@@ -17,7 +17,7 @@
 
       <!-- 類別導航器 -->
       <Transition name="fade-slide" appear>
-        <CategoryNavigator v-if="menu.list && menu.list.length > 0" :categories="menu.list" />
+        <CategoryNavigator v-if="menu.categories && menu.categories.length > 0" :categories="menuCategories" />
       </Transition>
 
       <!-- 菜單列表骨架動畫 -->
@@ -39,8 +39,8 @@
 
       <!-- 實際菜單列表 - 添加錯開動畫 -->
       <TransitionGroup name="stagger-fade" tag="div" appear>
-        <MenuCategoryList v-if="!isLoading && menu.list && menu.list.length > 0" key="menu-list" :menu-list="menu.list"
-          :menu-items="menuItems" :brandId="brandId" :storeId="storeId" @select-item="selectItem"
+        <MenuCategoryList v-if="!isLoading && menu.categories && menu.categories.length > 0" key="menu-list"
+          :menu-categories="menu.categories" :brandId="brandId" :storeId="storeId" @select-item="selectItem"
           class="menu-content" />
       </TransitionGroup>
 
@@ -92,9 +92,8 @@ const store = ref({
   announcements: []
 });
 const menu = ref({
-  list: []
+  categories: []
 });
-const menuItems = ref([]);
 const isLoading = ref(true);
 const isLoggedIn = ref(false);
 const customerName = ref('');
@@ -102,6 +101,18 @@ const customerName = ref('');
 // 計算屬性
 const cart = computed(() => {
   return cartStore.items;
+});
+
+// 處理菜單分類資料，轉換為導航器需要的格式
+const menuCategories = computed(() => {
+  if (!menu.value.categories) return [];
+
+  return menu.value.categories.map(category => ({
+    categoryName: category.name,
+    categoryId: category._id,
+    description: category.description,
+    order: category.order || 0
+  })).sort((a, b) => a.order - b.order);
 });
 
 // 方法
@@ -130,25 +141,29 @@ const loadMenuData = async () => {
     });
 
     if (menuData.success && menuData.menu) {
-      menu.value.list = menuData.menu.categories.map(category => ({
-        categoryName: category.name,
-        categoryId: category._id,
-        description: category.description,
-        order: category.order,
-        items: category.dishes.map(dish => {
-          const dishId = typeof dish.dishTemplate === 'object' && dish.dishTemplate !== null
-            ? dish.dishTemplate._id
-            : dish.dishTemplate;
+      // 檢查菜單是否存在
+      if (menuData.menu.exists === false) {
+        console.warn('店鋪尚未設定菜單');
+        menu.value = { categories: [] };
+        return;
+      }
 
-          return {
-            itemId: dishId,
-            order: dish.order,
-            price: dish.price
-          };
-        }).filter(item => item.itemId)
-      })).sort((a, b) => a.order - b.order);
+      // 直接使用後端回傳的完整菜單資料
+      menu.value = menuData.menu;
 
-      await loadMenuItems();
+      // 確保分類按順序排列
+      if (menu.value.categories) {
+        menu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        // 確保每個分類的商品按順序排列
+        menu.value.categories.forEach(category => {
+          if (category.items) {
+            category.items.sort((a, b) => (a.order || 0) - (b.order || 0));
+          }
+        });
+      }
+
+      console.log('菜單載入成功:', menu.value);
     } else {
       console.error('Invalid menu data structure:', menuData);
     }
@@ -159,65 +174,6 @@ const loadMenuData = async () => {
     setTimeout(() => {
       isLoading.value = false;
     }, 200);
-  }
-};
-
-const loadMenuItems = async () => {
-  try {
-    const dishIds = menu.value.list.flatMap(category =>
-      category.items.map(item => item.itemId)
-    );
-
-    const uniqueDishIds = [...new Set(dishIds)].filter(id =>
-      typeof id === 'string' && id.trim() !== ''
-    );
-
-    if (uniqueDishIds.length === 0) {
-      console.warn('No dish IDs found in menu');
-      return;
-    }
-
-    const dishDetails = await Promise.all(
-      uniqueDishIds.map(id =>
-        api.dish.getDishTemplateById({
-          brandId: brandId.value,
-          id: id
-        })
-      )
-    );
-
-    menuItems.value = dishDetails
-      .filter(dish => dish && dish.success)
-      .map(dish => dish.template)
-      .filter(Boolean)
-      .map(dish => {
-        if (!dish.image || !dish.image.url) {
-          dish.image = {
-            url: '/placeholder.jpg',
-            alt: dish.name
-          };
-        }
-
-        for (const category of menu.value.list) {
-          const menuItem = category.items.find(item => item.itemId === dish._id);
-          if (menuItem) {
-            return {
-              ...dish,
-              price: menuItem.price || dish.basePrice,
-              _id: dish._id
-            };
-          }
-        }
-
-        return {
-          ...dish,
-          price: dish.basePrice,
-          _id: dish._id
-        };
-      });
-
-  } catch (error) {
-    console.error('無法載入餐點詳情:', error);
   }
 };
 
@@ -238,15 +194,29 @@ const handleLogout = async () => {
 };
 
 // 購物車相關方法
-const selectItem = (dishId) => {
-  router.push({
-    name: 'dish-detail',
-    params: {
-      brandId: brandId.value,
-      storeId: storeId.value,
-      dishId: dishId
-    }
-  });
+const selectItem = (item) => {
+  // 根據商品類型導航到不同的詳情頁面
+  if (item.itemType === 'dish') {
+    router.push({
+      name: 'dish-detail',
+      params: {
+        brandId: brandId.value,
+        storeId: storeId.value,
+        dishId: item.dishTemplate._id
+      }
+    });
+  } else if (item.itemType === 'bundle') {
+    // 如果是套餐，可以導航到套餐詳情頁面或直接加入購物車
+    // 這裡假設我們有套餐詳情頁面
+    router.push({
+      name: 'bundle-detail',
+      params: {
+        brandId: brandId.value,
+        storeId: storeId.value,
+        bundleId: item.bundle._id
+      }
+    });
+  }
 };
 
 const goToCart = () => {

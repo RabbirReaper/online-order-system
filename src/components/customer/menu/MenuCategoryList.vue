@@ -34,7 +34,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import DishCard from './DishCard.vue';
+import DishCard from './MenuItemCard.vue';
 import api from '@/api';
 
 const props = defineProps({
