@@ -458,7 +458,7 @@ const quickSelectDish = (dishTemplate) => {
 // 快速選擇套餐（直接加入購物車）
 const quickSelectBundle = (bundle) => {
   // 套餐直接加入購物車，不進入編輯模式
-  counterStore.quickAddBundleToCart(bundle);
+  counterStore.addBundleToCart(bundle);
 };
 
 // 選擇選項

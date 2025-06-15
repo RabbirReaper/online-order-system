@@ -514,19 +514,36 @@ export const useCounterStore = defineStore('counter', () => {
         mergedItems[key].quantity += item.quantity;
         mergedItems[key].subtotal += item.subtotal;
       } else {
-        mergedItems[key] = {
-          templateId: item.dishInstance.templateId,
-          name: item.dishInstance.name,
-          basePrice: item.dishInstance.basePrice,
-          finalPrice: item.dishInstance.finalPrice,
-          options: item.dishInstance.options,
-          quantity: item.quantity,
-          subtotal: item.subtotal,
-          note: item.note || ''
-        };
+        // 判斷是餐點還是套餐
+        if (item.dishInstance) {
+          // 餐點項目
+          mergedItems[key] = {
+            templateId: item.dishInstance.templateId,
+            name: item.dishInstance.name,
+            basePrice: item.dishInstance.basePrice,
+            finalPrice: item.dishInstance.finalPrice,
+            options: item.dishInstance.options,
+            quantity: item.quantity,
+            subtotal: item.subtotal,
+            note: item.note || ''
+          };
+        } else if (item.bundleInstance) {
+          // 套餐項目
+          mergedItems[key] = {
+            bundleId: item.bundleInstance.bundleId,
+            name: item.bundleInstance.name,
+            sellingPrice: item.bundleInstance.sellingPrice,
+            originalPrice: item.bundleInstance.originalPrice,
+            sellingPoint: item.bundleInstance.sellingPoint,
+            originalPoint: item.bundleInstance.originalPoint,
+            bundleItems: item.bundleInstance.bundleItems,
+            quantity: item.quantity,
+            subtotal: item.subtotal,
+            note: item.note || ''
+          };
+        }
       }
     });
-
     return Object.values(mergedItems);
   }
 
@@ -645,6 +662,38 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
+  // 添加套餐到購物車
+  function addBundleToCart(bundle, note = '') {
+    const finalPrice = bundle.sellingPrice || 0;
+    const uniqueId = generateUniqueItemId();
+    const itemKey = generateBundleKey(bundle._id, note);
+
+    const cartItem = {
+      id: uniqueId,
+      key: itemKey,
+      bundleInstance: {
+        bundleId: bundle._id,
+        name: bundle.name,
+        sellingPrice: bundle.sellingPrice || 0,
+        originalPrice: bundle.originalPrice || 0,
+        sellingPoint: bundle.sellingPoint || 0,
+        originalPoint: bundle.originalPoint || 0,
+        bundleItems: bundle.bundleItems || []
+      },
+      quantity: 1,
+      note: note || '',
+      subtotal: finalPrice
+    };
+
+    cart.value.push(cartItem);
+  }
+
+  // 生成套餐項目的唯一鍵值
+  function generateBundleKey(bundleId, note = '') {
+    const noteKey = note ? `:${note}` : '';
+    return `bundle:${bundleId}${noteKey}`;
+  }
+
   return {
     // 狀態
     activeComponent,
@@ -719,6 +768,8 @@ export const useCounterStore = defineStore('counter', () => {
     getPickupMethodClass,
     getStatusClass,
     formatStatus,
-    refreshData
+    refreshData,
+    addBundleToCart,
+    generateItemKey,
   };
 });
