@@ -552,25 +552,26 @@ erDiagram
 # 系統核心流程圖
 
 ## 用戶認證與註冊流程
+
 ```mermaid
 flowchart TD
     Start([用戶進入系統]) --> CheckLogin{已登入?}
     CheckLogin -->|是| Dashboard[進入主頁面]
     CheckLogin -->|否| LoginPage[登入頁面]
-    
+
     LoginPage --> LoginChoice{選擇操作}
     LoginChoice -->|登入| LoginForm[輸入帳號密碼]
     LoginChoice -->|註冊| RegisterForm[註冊表單]
     LoginChoice -->|忘記密碼| ForgotPwd[忘記密碼]
-    
+
     LoginForm --> Authenticate{驗證}
     Authenticate -->|成功| Dashboard
     Authenticate -->|失敗| LoginError[顯示錯誤訊息] --> LoginPage
-    
+
     RegisterForm --> VerifyPhone[電話驗證]
     VerifyPhone --> CreateAccount[創建帳號]
     CreateAccount --> Dashboard
-    
+
     ForgotPwd --> SendSMS[發送簡訊驗證碼]
     SendSMS --> VerifyCode[驗證碼驗證]
     VerifyCode --> ResetPassword[重設密碼]
@@ -578,36 +579,37 @@ flowchart TD
 ```
 
 ## 混合購買訂單流程 (新功能)
+
 ```mermaid
 flowchart TD
     Start([開始購物]) --> Cart[加入購物車]
     Cart --> ItemChoice{選擇商品類型}
-    
+
     ItemChoice -->|餐點| AddDish[添加餐點到購物車]
     ItemChoice -->|兌換券套餐| AddCoupon[添加券套餐到購物車]
-    
+
     AddDish --> Cart
     AddCoupon --> Cart
     Cart --> CheckOut[結帳]
-    
+
     CheckOut --> CalcPoints[計算點數獎勵<br/>基於總金額]
     CalcPoints --> PaymentChoice{選擇支付方式}
-    
+
     PaymentChoice -->|現金| CreateOrderCash[創建訂單<br/>status: unpaid]
     PaymentChoice -->|線上支付| CreateOrderOnline[創建訂單<br/>進入支付流程]
-    
+
     CreateOrderCash --> ProcessDish[處理餐點項目<br/>生成DishInstance<br/>扣減庫存]
     CreateOrderOnline --> PaymentGateway[支付閘道]
-    
+
     PaymentGateway --> PaymentResult{支付結果}
     PaymentResult -->|成功| OrderPaid[訂單狀態: paid]
     PaymentResult -->|失敗| PaymentFailed[支付失敗] --> PaymentChoice
-    
+
     OrderPaid --> ProcessDish
     ProcessDish --> ProcessCoupons[處理兌換券項目<br/>生成CouponInstance]
     ProcessCoupons --> AwardPoints[發放點數獎勵<br/>基於訂單總額]
     AwardPoints --> OrderComplete[訂單完成]
-    
+
     CreateOrderCash --> WaitPayment[等待現金支付確認]
     WaitPayment --> StaffConfirm{店員確認收款}
     StaffConfirm -->|確認| OrderPaid
@@ -615,118 +617,124 @@ flowchart TD
 ```
 
 ## 促銷系統流程
+
 ```mermaid
 flowchart TD
     UserLogin([用戶登入]) --> ViewPromo[查看促銷活動]
     ViewPromo --> PromoType{促銷類型}
-    
+
     PromoType -->|點數兌換券| PointExchange[點數兌換流程]
     PromoType -->|現金買券| CashPurchase[現金購買流程]
     PromoType -->|套餐優惠| BundlePurchase[套餐購買流程]
-    
+
     PointExchange --> CheckPoints[檢查點數餘額]
     CheckPoints --> EnoughPoints{點數足夠?}
     EnoughPoints -->|是| DeductPoints[扣除點數]
     EnoughPoints -->|否| InsufficientPoints[點數不足提示]
-    
+
     DeductPoints --> GenerateCoupon[生成兌換券實例]
     GenerateCoupon --> NotifyUser[通知用戶]
-    
+
     CashPurchase --> CreatePayment[創建支付訂單]
     CreatePayment --> PaymentProcess[支付流程]
     PaymentProcess --> PaymentSuccess{支付成功?}
     PaymentSuccess -->|是| GenerateCoupon
     PaymentSuccess -->|否| PaymentFail[支付失敗]
-    
+
     BundlePurchase --> SelectBundle[選擇套餐組合]
     SelectBundle --> CalcDiscount[計算套餐折扣]
     CalcDiscount --> PaymentProcess
-    
+
     NotifyUser --> UseCoupon[使用兌換券]
     UseCoupon --> OrderDiscount[訂單折扣/免費兌換]
 ```
+
 ## 庫存管理流程
+
 ```mermaid
 flowchart TD
     OrderComplete([訂單完成]) --> CheckInventory{檢查庫存設定}
     CheckInventory -->|啟用庫存追蹤| AutoDeduct[自動扣減庫存]
     CheckInventory -->|未啟用| SkipInventory[跳過庫存處理]
-    
+
     AutoDeduct --> UpdateStock[更新庫存數量]
     UpdateStock --> LogChange[記錄庫存變動日誌]
     LogChange --> CheckAlert{達到警告門檻?}
-    
+
     CheckAlert -->|是| SendAlert[發送補貨警告]
     CheckAlert -->|否| StockComplete[庫存處理完成]
-    
+
     SendAlert --> CheckSoldOut{庫存歸零?}
     CheckSoldOut -->|是| SetSoldOut[設定為售完]
     CheckSoldOut -->|否| StockComplete
-    
+
     SetSoldOut --> NotifyStaff[通知店員]
     NotifyStaff --> StockComplete
-    
+
     StaffRestock([店員補貨]) --> ManualAdd[手動增加庫存]
     ManualAdd --> UpdateStock
-    
+
     ManagerAdjust([管理員調整]) --> StockAdjust[庫存調整]
     StockAdjust --> UpdateStock
 ```
+
 ## 點數系統流程
+
 ```mermaid
 flowchart TD
     OrderPaid([訂單支付完成]) --> CheckUser{用戶已登入?}
     CheckUser -->|否| SkipPoints[跳過點數發放]
     CheckUser -->|是| GetRules[獲取品牌點數規則]
-    
+
     GetRules --> RuleActive{規則啟用?}
     RuleActive -->|否| SkipPoints
     RuleActive -->|是| CheckMinimum{達到最低消費?}
-    
+
     CheckMinimum -->|否| SkipPoints
     CheckMinimum -->|是| CalcPoints[計算點數<br/>總額/轉換率]
-    
+
     CalcPoints --> CreatePoints[創建點數實例]
     CreatePoints --> SetExpiry[設定過期日期]
     SetExpiry --> NotifyUser[通知用戶獲得點數]
-    
+
     UserViewPoints([用戶查看點數]) --> AutoCheckExpired[自動檢查過期點數]
     AutoCheckExpired --> MarkExpired[標記過期點數]
     MarkExpired --> DisplayBalance[顯示當前餘額]
-    
+
     UsePoints([用戶使用點數]) --> CheckBalance{餘額足夠?}
     CheckBalance -->|否| InsufficientBalance[餘額不足]
     CheckBalance -->|是| DeductFIFO[按到期日扣除點數]
-    
+
     DeductFIFO --> MarkUsed[標記點數為已使用]
     MarkUsed --> UpdateBalance[更新點數餘額]
     UpdateBalance --> ProcessComplete[點數使用完成]
 ```
 
 ## 管理員權限控制流程
+
 ```mermaid
 flowchart TD
     AdminLogin([管理員登入]) --> VerifyRole[驗證角色]
     VerifyRole --> RoleLevel{角色層級}
-    
+
     RoleLevel -->|系統級| SystemAccess[系統全權限<br/>管理所有品牌店鋪]
     RoleLevel -->|品牌級| BrandAccess[品牌權限<br/>管理品牌下店鋪]
     RoleLevel -->|店鋪級| StoreAccess[店鋪權限<br/>管理單一店鋪]
-    
+
     SystemAccess --> ManageAll[管理所有資源]
     BrandAccess --> CheckBrand{驗證品牌權限}
     StoreAccess --> CheckStore{驗證店鋪權限}
-    
+
     CheckBrand -->|通過| ManageBrand[管理品牌資源]
     CheckBrand -->|拒絕| AccessDenied[拒絕訪問]
-    
+
     CheckStore -->|通過| ManageStore[管理店鋪資源]
     CheckStore -->|拒絕| AccessDenied
-    
+
     ManageAll --> AdminAction[執行管理操作]
     ManageBrand --> AdminAction
     ManageStore --> AdminAction
-    
+
     AdminAction --> LogActivity[記錄操作日誌]
     LogActivity --> Result[返回操作結果]
 ```
