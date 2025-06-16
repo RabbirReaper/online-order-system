@@ -235,15 +235,6 @@ const handleClick = () => {
 </script>
 
 <style scoped>
-/* 顏色變數定義 */
-:root {
-  --primary-color: #d35400;
-  --accent-color: #e67e22;
-  --text-color: #2c3e50;
-  --bg-light: #f8f9fa;
-  --price-color: #dceeda;
-}
-
 .menu-item-card {
   background-color: white;
   border-radius: 12px;
@@ -350,14 +341,16 @@ const handleClick = () => {
 .item-title {
   font-weight: 700;
   font-size: 1rem;
-  color: var(--text-color);
+  color: #2c3e50;
+  /* 原本是 var(--text-color) */
   margin-bottom: 0.4rem;
   transition: color 0.2s;
   flex: 1;
 }
 
 .menu-item-card:not(.sold-out):hover .item-title {
-  color: var(--primary-color);
+  color: #d35400;
+  /* 原本是 var(--primary-color) */
 }
 
 .menu-item-card.sold-out .item-title {
@@ -374,12 +367,21 @@ const handleClick = () => {
 /* 價格相關樣式 */
 .item-price-section {
   margin-top: auto;
+  /* 新增以下屬性 */
+  display: flex;
+  justify-content: flex-end;
+  /* 靠右對齊 */
+  align-items: flex-end;
+  /* 靠下對齊 */
+  margin-left: auto;
+  /* 推到右側 */
 }
 
 .item-price-tag {
   display: inline-block;
-  background-color: var(--price-color);
-  color: rgb(18, 127, 68);
+  background-color: #dceeda;
+  /* 原本是 var(--price-color) */
+  color: rgb(230, 11, 11);
   font-weight: 700;
   font-size: 1.1rem;
   padding: 0.3rem 0.8rem;
