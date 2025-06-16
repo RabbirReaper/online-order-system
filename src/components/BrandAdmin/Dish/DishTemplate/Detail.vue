@@ -152,28 +152,6 @@
               </div>
             </div>
           </div>
-
-          <!-- 庫存狀態卡片 -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">庫存狀態</h5>
-              <p class="text-muted">此功能尚未開發完成</p>
-              <button class="btn btn-sm btn-outline-primary" disabled>
-                <i class="bi bi-box-seam me-1"></i>管理庫存
-              </button>
-            </div>
-          </div>
-
-          <!-- 關聯選項卡片 -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">關聯選項</h5>
-              <p class="text-muted">檢視哪些選項會引用此餐點</p>
-              <button class="btn btn-sm btn-outline-primary" disabled>
-                <i class="bi bi-link-45deg me-1"></i>查看關聯
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
