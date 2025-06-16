@@ -48,7 +48,7 @@ const orderSchema = new mongoose.Schema({
   items: [{
     itemType: {
       type: String,
-      enum: ['dish', 'coupon_bundle'],
+      enum: ['dish', 'bundle'],
       required: true,
       default: 'dish' // 向後兼容，預設為餐點
     }, // 項目類型
@@ -60,11 +60,11 @@ const orderSchema = new mongoose.Schema({
       required: function () { return this.itemType === 'dish'; }
     }, // 關聯餐點實例
 
-    // 兌換券套餐相關（當 itemType = 'coupon_bundle' 時使用）
+    // 兌換券套餐相關（當 itemType = 'bundle' 時使用）
     promotionMenu: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'PromotionMenu',
-      required: function () { return this.itemType === 'coupon_bundle'; }
+      required: function () { return this.itemType === 'bundle'; }
     }, // 關聯促銷套餐
 
     // 共用欄位
@@ -87,7 +87,7 @@ const orderSchema = new mongoose.Schema({
       type: String
     }, // 備註
 
-    // 兌換券生成記錄（當 itemType = 'coupon_bundle' 時使用）
+    // 兌換券生成記錄（當 itemType = 'bundle' 時使用）
     generatedCoupons: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'CouponInstance'
