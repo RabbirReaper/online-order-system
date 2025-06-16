@@ -137,7 +137,8 @@
                         </td>
                         <td>
                           <!-- 餐點選擇 -->
-                          <select v-if="item.itemType === 'dish'" v-model="item.dishTemplate"
+                          <select v-if="item.itemType === 'dish'" :value="getDishTemplateId(item)"
+                            @change="updateDishTemplate(categoryIndex, itemIndex, $event.target.value)"
                             class="form-select form-select-sm"
                             :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'dishTemplate') }">
                             <option value="">選擇餐點</option>
@@ -147,7 +148,8 @@
                           </select>
 
                           <!-- 套餐選擇 -->
-                          <select v-else-if="item.itemType === 'bundle'" v-model="item.bundle"
+                          <select v-else-if="item.itemType === 'bundle'" :value="getBundleId(item)"
+                            @change="updateBundle(categoryIndex, itemIndex, $event.target.value)"
                             class="form-select form-select-sm"
                             :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'bundle') }">
                             <option value="">選擇套餐</option>
@@ -168,12 +170,20 @@
                           <div class="input-group input-group-sm">
                             <span class="input-group-text">$</span>
                             <input type="number" class="form-control" v-model.number="item.priceOverride" min="0"
-                              placeholder="原價" />
+                              placeholder="原價" :disabled="formData.menuType === 'point_exchange'" />
+                          </div>
+                          <div v-if="formData.menuType === 'point_exchange'" class="form-text small text-muted">
+                            點數兌換菜單無需設定價格
                           </div>
                         </td>
                         <td>
                           <input type="number" class="form-control form-control-sm" v-model.number="item.pointOverride"
-                            min="0" placeholder="原點數" />
+                            min="0" placeholder="原點數"
+                            :disabled="formData.menuType === 'food' || formData.menuType === 'cash_coupon'" />
+                          <div v-if="formData.menuType === 'food' || formData.menuType === 'cash_coupon'"
+                            class="form-text small text-muted">
+                            現金購買菜單無需設定點數
+                          </div>
                         </td>
                         <td>
                           <div class="form-check form-switch">
@@ -319,13 +329,55 @@ const isFormValid = computed(() => {
     for (const item of category.items) {
       if (!item.itemType) return false;
 
-      if (item.itemType === 'dish' && !item.dishTemplate) return false;
-      if (item.itemType === 'bundle' && !item.bundle) return false;
+      if (item.itemType === 'dish' && !getDishTemplateId(item)) return false;
+      if (item.itemType === 'bundle' && !getBundleId(item)) return false;
     }
   }
 
   return true;
 });
+
+// 輔助函數：獲取餐點模板ID
+const getDishTemplateId = (item) => {
+  if (!item.dishTemplate) return '';
+
+  // 如果是物件，返回其 _id；如果是字串，直接返回
+  return typeof item.dishTemplate === 'object' ? item.dishTemplate._id : item.dishTemplate;
+};
+
+// 輔助函數：獲取套餐ID
+const getBundleId = (item) => {
+  if (!item.bundle) return '';
+
+  // 如果是物件，返回其 _id；如果是字串，直接返回
+  return typeof item.bundle === 'object' ? item.bundle._id : item.bundle;
+};
+
+// 更新餐點模板選擇
+const updateDishTemplate = (categoryIndex, itemIndex, value) => {
+  const item = formData.categories[categoryIndex].items[itemIndex];
+
+  // 如果選擇了新的模板，從模板列表中找到對應的物件
+  if (value) {
+    const template = dishTemplates.value.find(t => t._id === value);
+    item.dishTemplate = template ? template._id : value; // 儲存時只需要ID
+  } else {
+    item.dishTemplate = '';
+  }
+};
+
+// 更新套餐選擇
+const updateBundle = (categoryIndex, itemIndex, value) => {
+  const item = formData.categories[categoryIndex].items[itemIndex];
+
+  // 如果選擇了新的套餐，從套餐列表中找到對應的物件
+  if (value) {
+    const bundle = bundles.value.find(b => b._id === value);
+    item.bundle = bundle ? bundle._id : value; // 儲存時只需要ID
+  } else {
+    item.bundle = '';
+  }
+};
 
 // 獲取店鋪資料
 const fetchStoreData = async () => {
@@ -395,8 +447,16 @@ const fetchMenuData = async () => {
 
       // 處理分類資料
       if (menu.categories && menu.categories.length > 0) {
-        // 深複製分類資料
-        formData.categories = menu.categories;
+        // 深複製分類資料，確保 dishTemplate 和 bundle 資料正確處理
+        formData.categories = menu.categories.map(category => ({
+          ...category,
+          items: category.items.map(item => ({
+            ...item,
+            // 確保 dishTemplate 和 bundle 正確處理（如果是物件，保持物件形式供顯示用）
+            dishTemplate: item.dishTemplate || '',
+            bundle: item.bundle || ''
+          }))
+        }));
       }
       console.log('菜單分類資料:', formData.categories);
     } else {
@@ -441,15 +501,13 @@ const getItemError = (categoryIndex, itemIndex, field) => {
 const onItemTypeChange = (categoryIndex, itemIndex) => {
   const item = formData.categories[categoryIndex].items[itemIndex];
 
-  // 清除之前的選擇，設為 undefined 而非空字串
+  // 清除之前的選擇
   if (item.itemType === 'dish') {
-    delete item.bundle;
-    item.bundle = undefined;
-    item.dishTemplate = "";
+    item.bundle = '';
+    item.dishTemplate = '';
   } else if (item.itemType === 'bundle') {
-    delete item.dishTemplate;
-    item.dishTemplate = undefined;
-    item.bundle = "";
+    item.dishTemplate = '';
+    item.bundle = '';
   }
 };
 
@@ -457,11 +515,19 @@ const onItemTypeChange = (categoryIndex, itemIndex) => {
 const cleanItemData = (item) => {
   const cleanedItem = { ...item };
 
-  // 根據商品類型，只保留相關欄位
+  // 根據商品類型，只保留相關欄位，並確保使用 ID 而非物件
   if (cleanedItem.itemType === 'dish') {
     delete cleanedItem.bundle;
+    // 確保 dishTemplate 是 ID
+    if (typeof cleanedItem.dishTemplate === 'object' && cleanedItem.dishTemplate._id) {
+      cleanedItem.dishTemplate = cleanedItem.dishTemplate._id;
+    }
   } else if (cleanedItem.itemType === 'bundle') {
     delete cleanedItem.dishTemplate;
+    // 確保 bundle 是 ID
+    if (typeof cleanedItem.bundle === 'object' && cleanedItem.bundle._id) {
+      cleanedItem.bundle = cleanedItem.bundle._id;
+    }
   }
 
   // 清理空值
@@ -519,8 +585,8 @@ const addItem = (category) => {
 
   category.items.push({
     itemType: '',
-    dishTemplate: undefined,
-    bundle: undefined,
+    dishTemplate: '',
+    bundle: '',
     priceOverride: null,
     pointOverride: null,
     isShowing: true,
@@ -615,11 +681,11 @@ const validateForm = () => {
           errors.categories[categoryIndex].items[itemIndex].itemType = '請選擇商品類型';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇商品類型`);
           isValid = false;
-        } else if (item.itemType === 'dish' && !item.dishTemplate) {
+        } else if (item.itemType === 'dish' && !getDishTemplateId(item)) {
           errors.categories[categoryIndex].items[itemIndex].dishTemplate = '請選擇餐點';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇餐點`);
           isValid = false;
-        } else if (item.itemType === 'bundle' && !item.bundle) {
+        } else if (item.itemType === 'bundle' && !getBundleId(item)) {
           errors.categories[categoryIndex].items[itemIndex].bundle = '請選擇套餐';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇套餐`);
           isValid = false;
