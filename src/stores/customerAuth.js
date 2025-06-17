@@ -140,7 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
       } else {
         user.value = null;
       }
-
+      console.log('checkAuthStatus', user.value);
       return response;
     } catch (err) {
       console.error('檢查用戶狀態失敗:', err);

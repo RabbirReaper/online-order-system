@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '@/api';
 import MenuHeader from '@/components/customer/menu/MenuHeader.vue';
@@ -103,8 +103,10 @@ const menu = ref({
   categories: []
 });
 const isLoading = ref(true);
-const isLoggedIn = ref(false);
-const customerName = ref('');
+
+// 🔥 修正：使用計算屬性直接從 authStore 取得登入狀態，確保響應式更新
+const isLoggedIn = computed(() => authStore.userIsLoggedIn);
+const customerName = computed(() => authStore.userName);
 
 // 計算屬性
 const hasMenuCategories = computed(() => {
@@ -184,7 +186,7 @@ const loadMenuData = async () => {
         });
       }
 
-      console.log('菜單載入成功:', menu.value);
+      // console.log('菜單載入成功:', menu.value);
     } else {
       console.error('Invalid menu data structure:', menuData);
     }
@@ -199,7 +201,7 @@ const loadMenuData = async () => {
 
 // 處理項目選擇
 const handleItemSelect = (item) => {
-  console.log('MenuView: 選擇項目', item);
+  // console.log('MenuView: 選擇項目', item);
 
   // 根據商品類型導航到不同的詳情頁面
   if (item.itemType === 'dish' && item.dishTemplate) {
@@ -225,7 +227,7 @@ const handleItemSelect = (item) => {
   }
 };
 
-// 登入相關方法
+// 🔥 修正：登入相關方法
 const handleLogin = () => {
   router.push({ name: 'customer-login' });
 };
@@ -233,8 +235,6 @@ const handleLogin = () => {
 const handleLogout = async () => {
   try {
     await authStore.logout();
-    isLoggedIn.value = false;
-    customerName.value = '';
   } catch (error) {
     console.error('登出失敗:', error);
     alert('登出失敗: ' + error.message);
@@ -246,15 +246,40 @@ const goToCart = () => {
   router.push({ name: 'cart' });
 };
 
-// 生命周期
+// 🔥 新增：監聽 brandId 變化，確保 authStore 有正確的 brandId
+watch(() => brandId.value, (newBrandId) => {
+  if (newBrandId) {
+    authStore.setBrandId(newBrandId);
+  }
+}, { immediate: true });
+
+// 🔥 新增：監聽 authStore 登入狀態變化，方便除錯
+watch(() => authStore.userIsLoggedIn, (newStatus) => {
+  console.log('登入狀態變化:', newStatus, '用戶名稱:', authStore.userName);
+});
+
+// 🔥 修正：生命周期
 onMounted(async () => {
-  // 🔥 重要：設置購物車的品牌和店鋪ID
+
+  // 重要：設置購物車的品牌和店鋪ID
   cartStore.setBrandAndStore(brandId.value, storeId.value);
 
-  // 檢查登入狀態
-  if (authStore.isLoggedIn) {
-    isLoggedIn.value = true;
-    customerName.value = authStore.user?.name || '';
+  // 🔥 修正：設置 authStore 的 brandId 並檢查登入狀態
+  if (brandId.value) {
+    authStore.setBrandId(brandId.value);
+
+    // 檢查並更新登入狀態
+    try {
+      // console.log('正在檢查登入狀態...');
+      await authStore.checkAuthStatus();
+      // console.log('登入狀態檢查完成:', {
+      //   isLoggedIn: authStore.userIsLoggedIn,
+      //   userName: authStore.userName,
+      //   userId: authStore.userId
+      // });
+    } catch (error) {
+      console.error('檢查登入狀態失敗:', error);
+    }
   }
 
   // 並行載入數據
