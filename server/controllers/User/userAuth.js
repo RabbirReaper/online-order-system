@@ -68,12 +68,8 @@ export const sendVerificationCode = asyncHandler(async (req, res) => {
   const { phone, purpose = 'register' } = req.body;
 
   const result = await userAuthService.sendPhoneVerification(phone, brandId, purpose);
-
-  res.json({
-    success: true,
-    message: '驗證碼已發送',
-    expiresIn: result.expiresIn
-  });
+  console.log('發送驗證碼結果:', result);
+  res.json(result);
 });
 
 /**

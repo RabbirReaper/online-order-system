@@ -288,11 +288,10 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
   // TODO: 整合簡訊發送服務
   // 這裡應該調用簡訊服務API，例如：sendSMS(phone, `您的驗證碼是：${code}，5分鐘內有效`);
 
-  console.log(`向 ${phone} 發送驗證碼：${code}`); // 開發環境用
-
   return {
     success: true,
     message: '驗證碼已發送到您的手機',
+    code, //測試用
     expiresIn: 300 // 5分鐘，單位秒
   };
 };

@@ -450,7 +450,7 @@ const sendVerificationCode = async () => {
       phone: userData.phone.replace(/[\s\-\(\)]/g, ''),
       purpose: 'register'
     });
-
+    console.log('驗證碼發送成功:', response);
     // 顯示成功訊息並開始倒計時
     if (verificationCodeModal.value) {
       verificationCodeModal.value.show();
