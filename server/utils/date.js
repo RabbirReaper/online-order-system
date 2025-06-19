@@ -360,6 +360,26 @@ export const createDateRange = (period, baseDate = null) => {
         start: lastYearStart,
         end: getEndOfYear(lastYearStart)
       };
+    case 'last7Days':
+      const last7DaysStart = base.minus({ days: 7 }).startOf('day');
+      return {
+        start: last7DaysStart,
+        end: getEndOfDay(base.minus({ days: 1 })) // 不包含今天
+      };
+
+    case 'last30Days':
+      const last30DaysStart = base.minus({ days: 30 }).startOf('day');
+      return {
+        start: last30DaysStart,
+        end: getEndOfDay(base.minus({ days: 1 })) // 不包含今天
+      };
+
+    case 'last90Days':
+      const last90DaysStart = base.minus({ days: 90 }).startOf('day');
+      return {
+        start: last90DaysStart,
+        end: getEndOfDay(base.minus({ days: 1 })) // 不包含今天
+      };
     default:
       throw new Error(`不支援的期間類型: ${period}`);
   }
