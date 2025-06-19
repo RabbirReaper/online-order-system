@@ -69,34 +69,46 @@ export const useCartStore = defineStore('cart', () => {
     return Object.keys(validationErrors.value).length === 0;
   });
 
-  // 初始化所有欄位
-  function initializeCartFields() {
-    if (!deliveryInfo.value || typeof deliveryInfo.value !== 'object') {
-      deliveryInfo.value = {
-        address: '',
-        estimatedTime: null,
-        deliveryFee: 0
-      };
-    }
+  // 新增：計算屬性返回當前品牌和店鋪ID
+  const currentBrandId = computed(() => {
+    return currentBrand.value;
+  });
 
-    if (!dineInInfo.value || typeof dineInInfo.value !== 'object') {
-      dineInInfo.value = {
-        tableNumber: '',
-      };
-    }
+  const currentStoreId = computed(() => {
+    return currentStore.value;
+  });
 
-    if (estimatedPickupTime.value === undefined) {
-      estimatedPickupTime.value = null;
-    }
-  }
-
-  // 初始化 store
-  initializeCartFields();
-
-  // 方法
+  // 方法 - 完善品牌和店鋪ID管理
   function setBrandAndStore(brandId, storeId) {
     currentBrand.value = brandId;
     currentStore.value = storeId;
+
+    // 同步到 sessionStorage
+    if (brandId) {
+      sessionStorage.setItem('currentBrandId', brandId);
+    } else {
+      sessionStorage.removeItem('currentBrandId');
+    }
+
+    if (storeId) {
+      sessionStorage.setItem('currentStoreId', storeId);
+    } else {
+      sessionStorage.removeItem('currentStoreId');
+    }
+  }
+
+  // 新增：初始化方法，從sessionStorage恢復
+  function initializeBrandAndStore() {
+    const storedBrandId = sessionStorage.getItem('currentBrandId');
+    const storedStoreId = sessionStorage.getItem('currentStoreId');
+
+    if (storedBrandId && !currentBrand.value) {
+      currentBrand.value = storedBrandId;
+    }
+
+    if (storedStoreId && !currentStore.value) {
+      currentStore.value = storedStoreId;
+    }
   }
 
   // 修正後的 addItem 方法，使資料結構符合 DishInstance Model
@@ -355,11 +367,11 @@ export const useCartStore = defineStore('cart', () => {
       // 獲取認證store實例並檢查登入狀態
       const authStore = useAuthStore();
 
-      // console.log('用戶登入狀態:', {
-      //   isLoggedIn: authStore.isLoggedIn,
-      //   userId: authStore.userId,
-      //   userName: authStore.userName
-      // });
+      console.log('用戶登入狀態:', {
+        isLoggedIn: authStore.isLoggedIn,
+        userId: authStore.userId,
+        userName: authStore.userName
+      });
 
       // 準備訂單資料，符合後端 API 期望的格式
       const orderData = {
@@ -401,6 +413,9 @@ export const useCartStore = defineStore('cart', () => {
       // 如果用戶已登入，添加用戶ID
       if (authStore.isLoggedIn && authStore.userId) {
         orderData.user = authStore.userId;
+        console.log('用戶已登入，添加用戶ID到訂單:', authStore.userId);
+      } else {
+        console.log('用戶未登入，建立匿名訂單');
       }
 
       // 根據訂單類型添加特定資訊
@@ -420,12 +435,12 @@ export const useCartStore = defineStore('cart', () => {
         }));
       }
 
-      // console.log('=== Pinia 提交訂單資料 ===');
-      // console.log('品牌ID:', currentBrand.value);
-      // console.log('店鋪ID:', currentStore.value);
-      // console.log('用戶登入狀態:', authStore.isLoggedIn);
-      // console.log('訂單資料:', JSON.stringify(orderData, null, 2));
-      // console.log('========================');
+      console.log('=== Pinia 提交訂單資料 ===');
+      console.log('品牌ID:', currentBrand.value);
+      console.log('店鋪ID:', currentStore.value);
+      console.log('用戶登入狀態:', authStore.isLoggedIn);
+      console.log('訂單資料:', JSON.stringify(orderData, null, 2));
+      console.log('========================');
 
       // 提交訂單
       const response = await api.orderCustomer.createOrder({
@@ -434,9 +449,9 @@ export const useCartStore = defineStore('cart', () => {
         orderData
       });
 
-      // console.log('=== API 回應 ===');
-      // console.log('Response:', response);
-      // console.log('===============');
+      console.log('=== API 回應 ===');
+      console.log('Response:', response);
+      console.log('===============');
 
       if (response && response.success) {
         // 將訂單 ID 和資料存儲到 sessionStorage
@@ -508,9 +523,12 @@ export const useCartStore = defineStore('cart', () => {
     itemCount,
     isCartEmpty,
     isValid,
+    currentBrandId, // 新增
+    currentStoreId, // 新增
 
     // 方法
     setBrandAndStore,
+    initializeBrandAndStore, // 新增
     addItem,
     removeItem,
     updateItemQuantity,
