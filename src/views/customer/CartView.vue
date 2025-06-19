@@ -40,14 +40,14 @@
         <!-- Member Coupon -->
         <div class="member-coupon mb-4">
           <h6 class="mb-3 fw-bold">會員折價券</h6>
-          <div class="d-flex align-items-center">
+          <!-- <div class="d-flex align-items-center">
             <select class="form-select" v-model="selectedCoupon">
               <option value="">不使用優惠券</option>
               <option v-for="coupon in availableCoupons" :key="coupon.id" :value="coupon.id">
                 {{ coupon.name }} - 折抵 ${{ coupon.value }}
               </option>
             </select>
-          </div>
+          </div> -->
         </div>
 
         <div class="divider"></div>
