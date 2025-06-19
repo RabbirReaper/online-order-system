@@ -621,9 +621,21 @@ router.beforeEach(async (to, from, next) => {
 
   // 會員授權檢查 - 已在路由守衛中處理
   // 統一的 brandId 設置和狀態同步
-  if (to.params.brandId) {
+  if (to.params.brandId || to.params.storeId) {
     const authStore = useAuthStore();
-    authStore.setBrandId(to.params.brandId);
+
+    // 如果路由包含 brandId，設置到 authStore
+    if (to.params.brandId) {
+      authStore.setBrandId(to.params.brandId);
+    }
+
+    // 如果路由包含 brandId 和 storeId，設置到 cartStore
+    if (to.params.brandId && to.params.storeId) {
+      // 動態導入 cartStore 避免循環依賴
+      const { useCartStore } = await import('@/stores/cart');
+      const cartStore = useCartStore();
+      cartStore.setBrandAndStore(to.params.brandId, to.params.storeId);
+    }
   }
 
   next();
