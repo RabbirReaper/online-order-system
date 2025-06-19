@@ -254,8 +254,8 @@ const loadUserData = async () => {
     }
 
     // 載入用戶基本資料
-    const profileResponse = await api.user.getUserProfile(currentBrandId);
-    userProfile.value = profileResponse.profile;
+    const profileResponse = await authStore.getUserProfile();
+    userProfile.value = profileResponse;
 
     // TODO: 後續加入這些 API 調用
     // 載入點數餘額
