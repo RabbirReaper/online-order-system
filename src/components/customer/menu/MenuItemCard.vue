@@ -229,7 +229,7 @@ const handleClick = () => {
     return;
   }
 
-  console.log('MenuItemCard: 點擊項目', props.item);
+  // console.log('MenuItemCard: 點擊項目', props.item);
   emit('select-item', props.item);
 };
 </script>

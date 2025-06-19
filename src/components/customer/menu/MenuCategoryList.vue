@@ -87,7 +87,7 @@ const getInventoryInfo = (item) => {
 
 // 處理項目選擇
 const handleItemSelect = (item) => {
-  console.log('MenuCategoryList: 選擇項目', item);
+  // console.log('MenuCategoryList: 選擇項目', item);
   emit('select-item', item);
 };
 
