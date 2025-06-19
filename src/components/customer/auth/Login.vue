@@ -249,7 +249,7 @@ const handleLogin = async () => {
     await authStore.login(credentials);
 
     // 登入成功後的處理
-    console.log('登入成功!');
+    // console.log('登入成功!');
 
     // 顯示成功訊息
     successMessage.value = '您已成功登入系統';

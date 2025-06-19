@@ -126,7 +126,7 @@ const loadInventoryData = async () => {
       });
 
       inventoryData.value = inventoryMap;
-      console.log('庫存資料載入成功');
+      // console.log('庫存資料載入成功');
     } else {
       console.warn('庫存資料載入失敗:', response.message);
     }
