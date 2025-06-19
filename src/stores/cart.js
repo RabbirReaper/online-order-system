@@ -355,11 +355,11 @@ export const useCartStore = defineStore('cart', () => {
       // 獲取認證store實例並檢查登入狀態
       const authStore = useAuthStore();
 
-      console.log('用戶登入狀態:', {
-        isLoggedIn: authStore.isLoggedIn,
-        userId: authStore.userId,
-        userName: authStore.userName
-      });
+      // console.log('用戶登入狀態:', {
+      //   isLoggedIn: authStore.isLoggedIn,
+      //   userId: authStore.userId,
+      //   userName: authStore.userName
+      // });
 
       // 準備訂單資料，符合後端 API 期望的格式
       const orderData = {
@@ -401,9 +401,6 @@ export const useCartStore = defineStore('cart', () => {
       // 如果用戶已登入，添加用戶ID
       if (authStore.isLoggedIn && authStore.userId) {
         orderData.user = authStore.userId;
-        console.log('用戶已登入，添加用戶ID到訂單:', authStore.userId);
-      } else {
-        console.log('用戶未登入，建立匿名訂單');
       }
 
       // 根據訂單類型添加特定資訊
@@ -423,12 +420,12 @@ export const useCartStore = defineStore('cart', () => {
         }));
       }
 
-      console.log('=== Pinia 提交訂單資料 ===');
-      console.log('品牌ID:', currentBrand.value);
-      console.log('店鋪ID:', currentStore.value);
-      console.log('用戶登入狀態:', authStore.isLoggedIn);
-      console.log('訂單資料:', JSON.stringify(orderData, null, 2));
-      console.log('========================');
+      // console.log('=== Pinia 提交訂單資料 ===');
+      // console.log('品牌ID:', currentBrand.value);
+      // console.log('店鋪ID:', currentStore.value);
+      // console.log('用戶登入狀態:', authStore.isLoggedIn);
+      // console.log('訂單資料:', JSON.stringify(orderData, null, 2));
+      // console.log('========================');
 
       // 提交訂單
       const response = await api.orderCustomer.createOrder({
@@ -437,9 +434,9 @@ export const useCartStore = defineStore('cart', () => {
         orderData
       });
 
-      console.log('=== API 回應 ===');
-      console.log('Response:', response);
-      console.log('===============');
+      // console.log('=== API 回應 ===');
+      // console.log('Response:', response);
+      // console.log('===============');
 
       if (response && response.success) {
         // 將訂單 ID 和資料存儲到 sessionStorage
