@@ -185,13 +185,6 @@ export const updateOrder = async (orderId, updateData, adminId) => {
       const { processOrderPointsReward } = await import('./orderCustomer.js');
       pointsReward = await processOrderPointsReward(order);
 
-      console.log('管理員更新訂單狀態，處理點數給予:', {
-        orderId: order._id,
-        adminId,
-        previousStatus,
-        newStatus: order.status,
-        pointsAwarded: pointsReward.pointsAwarded
-      });
     } catch (error) {
       console.error('管理員更新訂單時處理點數獎勵失敗:', error);
       // 不影響主要的訂單更新流程
