@@ -135,7 +135,7 @@
                 <th>電話</th>
                 <th>電子郵件</th>
                 <th>註冊日期</th>
-                <th>最後登入</th>
+                <!-- <th>最後登入</th> -->
                 <th>狀態</th>
                 <th>操作</th>
               </tr>
@@ -146,12 +146,12 @@
                 <td>{{ user.phone }}</td>
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ formatDate(user.createdAt) }}</td>
-                <td>
+                <!-- <td>
                   <span v-if="user.lastLogin">
                     {{ formatDate(user.lastLogin) }}
                   </span>
                   <span v-else class="text-muted">從未登入</span>
-                </td>
+                </td> -->
                 <td>
                   <span class="badge" :class="user.isActive ? 'bg-success' : 'bg-secondary'">
                     {{ user.isActive ? '啟用' : '停用' }}
