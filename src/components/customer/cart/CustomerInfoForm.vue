@@ -5,7 +5,8 @@
       <h6 class="mb-3 fw-bold">顧客資訊</h6>
 
       <!-- 登入提示 - 如果未登入且表單為空時顯示 -->
-      <div v-if="!isLoggedIn && !localCustomerInfo.name && !localCustomerInfo.phone" class="alert alert-info mb-3">
+      <div v-if="!authStore.isLoggedIn && !localCustomerInfo.name && !localCustomerInfo.phone"
+        class="alert alert-info mb-3">
         <div class="d-flex align-items-center">
           <i class="bi bi-info-circle-fill me-2"></i>
           <div class="flex-grow-1">
@@ -18,7 +19,7 @@
       </div>
 
       <!-- 已登入用戶提示 -->
-      <div v-if="isLoggedIn && userProfile" class="alert alert-success mb-3">
+      <div v-if="authStore.isLoggedIn && userProfile" class="alert alert-success mb-3">
         <div class="d-flex align-items-center">
           <i class="bi bi-check-circle-fill me-2"></i>
           <small>您好，我們已自動填入您的登入資料</small>
@@ -113,10 +114,9 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/customerAuth';
-import api from '@/api';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -153,10 +153,6 @@ const localPaymentMethod = ref(props.paymentMethod);
 const userProfile = ref(null);
 const isLoadingProfile = ref(false);
 
-// 計算屬性
-const isLoggedIn = computed(() => authStore.isLoggedIn);
-const currentBrandId = computed(() => authStore.currentBrandId || sessionStorage.getItem('currentBrandId'));
-
 // 信用卡資訊
 const creditCardInfo = ref({
   number: '',
@@ -167,14 +163,15 @@ const creditCardInfo = ref({
 
 // 載入用戶資料
 const loadUserProfile = async () => {
-  if (!isLoggedIn.value || !currentBrandId.value) {
+  if (!authStore.isLoggedIn || !authStore.currentBrandId) {
     return;
   }
 
   try {
     isLoadingProfile.value = true;
-    const response = await api.user.getUserProfile(currentBrandId.value);
-    userProfile.value = response.profile;
+    // 使用統一的 getUserProfile 方法
+    const profile = await authStore.getUserProfile();
+    userProfile.value = profile;
 
     // 如果表單還沒有資料，自動填入用戶資料
     if (!localCustomerInfo.value.name && !localCustomerInfo.value.phone) {
@@ -198,21 +195,6 @@ const autoFillUserInfo = () => {
 
   // 通知父組件更新
   emit('update:customerInfo', { ...localCustomerInfo.value });
-};
-
-// 檢查認證狀態並載入用戶資料
-const checkAuthAndLoadProfile = async () => {
-  if (!currentBrandId.value) {
-    return;
-  }
-
-  // 檢查認證狀態
-  await authStore.checkAuthStatus();
-
-  // 如果已登入，載入用戶資料
-  if (authStore.isLoggedIn) {
-    await loadUserProfile();
-  }
 };
 
 // 跳轉到登入頁面
@@ -239,7 +221,7 @@ const updatePhone = (event) => {
 watch(() => props.orderType, (newType) => {
   if (newType === 'dineIn') {
     // 如果用戶已登入，保留登入用戶的資訊
-    if (isLoggedIn.value && userProfile.value) {
+    if (authStore.isLoggedIn && userProfile.value) {
       autoFillUserInfo();
     } else {
       // 只有在未登入時才清空顧客資訊
@@ -248,7 +230,7 @@ watch(() => props.orderType, (newType) => {
     }
   } else {
     // 切換到外帶或外送時，如果用戶已登入且表單為空，自動填入用戶資訊
-    if (isLoggedIn.value && userProfile.value &&
+    if (authStore.isLoggedIn && userProfile.value &&
       !localCustomerInfo.value.name && !localCustomerInfo.value.phone) {
       autoFillUserInfo();
     }
@@ -310,7 +292,10 @@ const formatExpiryDate = (e) => {
 
 // 組件掛載後檢查認證狀態
 onMounted(async () => {
-  await checkAuthAndLoadProfile();
+  // 如果已經登入，載入用戶資料
+  if (authStore.isLoggedIn) {
+    await loadUserProfile();
+  }
 });
 </script>
 

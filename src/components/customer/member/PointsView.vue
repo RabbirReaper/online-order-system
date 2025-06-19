@@ -148,7 +148,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/customerAuth';
 import api from '@/api';
@@ -172,11 +172,6 @@ const pointsHistory = ref([]);
 const currentHistoryPage = ref(1);
 const hasMoreHistory = ref(false);
 const historyLimit = ref(10);
-
-// 品牌ID計算屬性
-const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId');
-});
 
 // 群組化點數明細
 const groupedPointsDetail = computed(() => {
@@ -222,11 +217,6 @@ const expiringPointsGroups = computed(() => {
 const expiringPointsTotal = computed(() => {
   return expiringPointsGroups.value.reduce((total, group) => total + group.totalAmount, 0);
 });
-
-// 監聽用戶狀態變化
-watch(() => authStore.user, (newUser) => {
-  console.log('用戶狀態變化:', newUser);
-}, { immediate: true });
 
 // 返回上一頁
 const goBack = () => {
@@ -346,14 +336,13 @@ const loadMoreHistory = async () => {
   try {
     isLoadingHistory.value = true;
 
-    const currentBrandId = brandId.value;
-    if (!currentBrandId) {
+    if (!authStore.currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
     const nextPage = currentHistoryPage.value + 1;
     const response = await api.promotion.getUserPointHistory({
-      brandId: currentBrandId,
+      brandId: authStore.currentBrandId,
       page: nextPage,
       limit: historyLimit.value
     });
@@ -380,8 +369,7 @@ const loadPointsData = async () => {
     isLoading.value = true;
     errorMessage.value = '';
 
-    const currentBrandId = brandId.value;
-    if (!currentBrandId) {
+    if (!authStore.currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
@@ -392,9 +380,9 @@ const loadPointsData = async () => {
 
     // 並行獲取點數資料和歷史記錄
     const [pointsResponse, historyResponse] = await Promise.all([
-      api.promotion.getUserPoints(currentBrandId),
+      api.promotion.getUserPoints(authStore.currentBrandId),
       api.promotion.getUserPointHistory({
-        brandId: currentBrandId,
+        brandId: authStore.currentBrandId,
         page: 1,
         limit: historyLimit.value
       })
@@ -436,24 +424,15 @@ const loadPointsData = async () => {
 
 // 組件掛載後載入資料
 onMounted(async () => {
-  // 確保品牌ID存在
-  if (brandId.value) {
-    authStore.setBrandId(brandId.value);
+  // 確保認證狀態是最新的
+  if (!authStore.isLoggedIn) {
+    await authStore.checkAuthStatus();
   }
 
   // 等待下一個tick，確保組件完全掛載
   await nextTick();
 
-  if (!authStore.isLoggedIn) {
-    await authStore.checkAuthStatus();
-  }
-
-  // 再獲取用戶資訊
-  const currentUser = authStore.user;
-  const isLoggedIn = authStore.isLoggedIn;
-  const userId = authStore.userId;
-
-  // 然後載入點數資料
+  // 載入點數資料
   await loadPointsData();
 });
 </script>

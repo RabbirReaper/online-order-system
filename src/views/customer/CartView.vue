@@ -87,8 +87,8 @@
       </div>
 
       <!-- Error Message Display -->
-      <div v-if="errorMsg" class="error-message-container position-fixed w-100 p-3" 
-           style="bottom: 80px; max-width: 540px; left: 50%; transform: translateX(-50%); z-index: 1050;">
+      <div v-if="errorMsg" class="error-message-container position-fixed w-100 p-3"
+        style="bottom: 80px; max-width: 540px; left: 50%; transform: translateX(-50%); z-index: 1050;">
         <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
           <i class="bi bi-exclamation-triangle-fill me-2"></i>
           {{ errorMsg }}
@@ -137,12 +137,14 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '@/stores/cart';
+import { useAuthStore } from '@/stores/customerAuth';
 import CartItem from '@/components/customer/cart/CartItem.vue';
 import OrderTypeSelector from '@/components/customer/cart/OrderTypeSelector.vue';
 import CustomerInfoForm from '@/components/customer/cart/CustomerInfoForm.vue';
 
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 
 // 購物車內容
 const cartItems = computed(() => cartStore.items);
@@ -176,14 +178,14 @@ const availableCoupons = ref([
 // Modals (會在onMounted中初始化)
 let confirmModal = null;
 
-// 計算屬性 - 修正響應式依賴
+// 計算屬性 - 簡化表單驗證邏輯
 const isFormValid = computed(() => {
-  // 🔥 如果是內用，只檢查桌號（使用前端格式 'dineIn'）
+  // 如果是內用，只檢查桌號
   if (orderType.value === 'dineIn') {
     return tableNumber.value && tableNumber.value.trim() !== '';
   }
 
-  // 🔥 外帶和外送檢查姓名電話必填
+  // 外帶和外送檢查姓名電話必填
   const name = customerInfo.value?.name || '';
   const phone = customerInfo.value?.phone || '';
 
@@ -191,7 +193,7 @@ const isFormValid = computed(() => {
     return false;
   }
 
-  // 🔥 根據訂單類型檢查額外字段
+  // 根據訂單類型檢查額外字段
   if (orderType.value === 'delivery' && (!deliveryAddress.value || !deliveryAddress.value.trim())) {
     return false;
   }
@@ -238,7 +240,7 @@ const removeFromCart = (index) => {
   cartStore.removeItem(index);
 };
 
-// 修正後的 editItem 函數
+// 編輯商品
 const editItem = (index) => {
   const item = cartItems.value[index];
 
@@ -296,7 +298,7 @@ const checkout = () => {
   }
 };
 
-// 在 CartView.vue 中添加調試信息
+// 簡化訂單提交邏輯，統一使用 cartStore
 const submitOrder = async () => {
   try {
     // 清除之前的錯誤訊息
@@ -311,10 +313,9 @@ const submitOrder = async () => {
       }
     })();
 
-    // 先設置訂單類型（這很重要，因為驗證邏輯依賴於此）
+    // 設置購物車資料
     cartStore.setOrderType(mappedOrderType);
 
-    // 設置付款方式
     const mappedPaymentMethod = (() => {
       switch (paymentMethod.value) {
         case '現金': return 'cash';
@@ -325,25 +326,20 @@ const submitOrder = async () => {
     })();
 
     cartStore.setPaymentMethod(mappedPaymentMethod);
-
-    // 設置訂單備註
     cartStore.setNotes(orderRemarks.value);
 
-    // 🔥 根據訂單類型設置相應數據（使用前端格式判斷）
+    // 根據訂單類型設置相應數據
     if (orderType.value === 'dineIn') {
-      // 內用：只設置桌號，清空顧客資訊
       cartStore.setDineInInfo({
         tableNumber: tableNumber.value,
       });
       cartStore.setCustomerInfo({ name: '', phone: '' });
     } else if (orderType.value === 'selfPickup') {
-      // 外帶：設置顧客資訊
       cartStore.setCustomerInfo(customerInfo.value);
       if (pickupTime.value === 'scheduled') {
         cartStore.setPickupTime(new Date(scheduledTime.value));
       }
     } else if (orderType.value === 'delivery') {
-      // 外送：設置顧客資訊和配送資訊
       cartStore.setCustomerInfo(customerInfo.value);
       cartStore.setDeliveryInfo({
         address: deliveryAddress.value,
@@ -363,7 +359,7 @@ const submitOrder = async () => {
       }
     }
 
-    // 提交訂單
+    // 提交訂單 - 使用統一的 cartStore.submitOrder
     const result = await cartStore.submitOrder();
 
     if (result.success) {
@@ -500,6 +496,7 @@ onMounted(() => {
     transform: translateX(-50%) translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
@@ -517,7 +514,7 @@ input[type="datetime-local"] {
   .container-wrapper {
     max-width: 100%;
   }
-  
+
   .error-message-container {
     left: 0 !important;
     right: 0;

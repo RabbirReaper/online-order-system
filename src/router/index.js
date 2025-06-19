@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import api from '@/api'
 import Placeholder from '@/components/common/Placeholder.vue'
+import { useAuthStore } from '@/stores/customerAuth'
 
 // 檢查管理員登入狀態
 const checkAdminAuth = async () => {
@@ -14,17 +15,22 @@ const checkAdminAuth = async () => {
   }
 }
 
-// 檢查用戶登入狀態
-const checkUserAuth = async () => {
-  try {
-    // 直接從API獲取當前登入狀態
-    const currentBrandId = sessionStorage.getItem('currentBrandId'); // 可以從URL或session中獲取
-    if (!currentBrandId) {
-      return { loggedIn: false };
-    }
+// 統一的用戶認證檢查 - 使用 authStore
+const checkUserAuthStatus = async () => {
+  const authStore = useAuthStore();
 
-    const response = await api.userAuth.checkStatus(currentBrandId);
-    return response;
+  // 確保有brandId
+  if (!authStore.currentBrandId) {
+    authStore.initializeBrandId(); // 從sessionStorage恢復
+  }
+
+  if (!authStore.currentBrandId) {
+    return { loggedIn: false };
+  }
+
+  try {
+    const result = await authStore.checkAuthStatus();
+    return result;
   } catch (error) {
     console.error('檢查用戶登入狀態失敗', error);
     return { loggedIn: false };
@@ -33,7 +39,7 @@ const checkUserAuth = async () => {
 
 // 認證守衛 - 檢查用戶是否已登入
 const requireAuth = async (to, from, next) => {
-  const { loggedIn } = await checkUserAuth();
+  const { loggedIn } = await checkUserAuthStatus();
 
   if (loggedIn) {
     next(); // 允許訪問
@@ -48,7 +54,7 @@ const requireAuth = async (to, from, next) => {
 
 // 非認證守衛 - 檢查用戶是否未登入
 const requireNoAuth = async (to, from, next) => {
-  const { loggedIn } = await checkUserAuth();
+  const { loggedIn } = await checkUserAuthStatus();
 
   if (!loggedIn) {
     next(); // 允許訪問
@@ -613,21 +619,11 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // 會員授權檢查
-  if (to.matched.some(record => record.meta.requiresCustomerAuth)) {
-    const { loggedIn } = await checkUserAuth();
-
-    if (!loggedIn) {
-      return next({
-        path: '/auth/login',
-        query: { redirect: to.fullPath }
-      });
-    }
-  }
-
-  // 如果路由包含brandId參數，將其保存到sessionStorage中，供認證相關操作使用
+  // 會員授權檢查 - 已在路由守衛中處理
+  // 統一的 brandId 設置和狀態同步
   if (to.params.brandId) {
-    sessionStorage.setItem('currentBrandId', to.params.brandId);
+    const authStore = useAuthStore();
+    authStore.setBrandId(to.params.brandId);
   }
 
   next();

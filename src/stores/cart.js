@@ -10,17 +10,17 @@ export const useCartStore = defineStore('cart', () => {
   const customerInfo = ref({
     name: '',
     phone: '',
-  }); // 顧客基本資訊，可能包含 email 等
+  }); // 顧客基本資訊
   const deliveryInfo = ref({
     address: '',
     estimatedTime: null,
     deliveryFee: 0
-  }); // 外送資訊，可能包含郵遞區號等
+  }); // 外送資訊
   const dineInInfo = ref({
     tableNumber: '',
-  }); // 內用資訊，可能包含座位區域等
+  }); // 內用資訊
   const estimatedPickupTime = ref(null); // Date 對象，預計取餐時間
-  const notes = ref(''); // 訂單備註，如餐點特殊要求
+  const notes = ref(''); // 訂單備註
   const appliedCoupons = ref([]); // 已應用的優惠券列表
   const paymentType = ref('On-site'); // 'On-site', 'Online'
   const paymentMethod = ref('cash'); // 'cash', 'credit_card', 'line_pay', 'other'
@@ -69,9 +69,8 @@ export const useCartStore = defineStore('cart', () => {
     return Object.keys(validationErrors.value).length === 0;
   });
 
-  // 初始化所有欄位，不管當前訂單類型是什麼
+  // 初始化所有欄位
   function initializeCartFields() {
-    // 初始化所有訂單類型相關的資料結構（如果還未初始化）
     if (!deliveryInfo.value || typeof deliveryInfo.value !== 'object') {
       deliveryInfo.value = {
         address: '',
@@ -133,23 +132,18 @@ export const useCartStore = defineStore('cart', () => {
           basePrice: cartItem.dishInstance.basePrice,
           finalPrice: cartItem.dishInstance.finalPrice,
           options: cartItem.dishInstance.options
-          // 注意：移除了 note，因為它屬於訂單項目層級
         },
         quantity: cartItem.quantity,
-        note: cartItem.note || '', // note 在訂單項目層級
+        note: cartItem.note || '',
         subtotal: cartItem.subtotal
       };
 
       items.value.push(newItem);
     }
-
-    // console.log('添加到購物車:', { itemKey, totalItems: items.value.length });
   }
-
 
   // 生成基於餐點ID、選項和特殊要求的唯一鍵值
   function generateItemKey(templateId, options, note = '') {
-    // 將選項轉換為字符串以生成唯一鍵值
     let optionsKey = '';
     if (options && options.length > 0) {
       optionsKey = options.map(category => {
@@ -158,7 +152,6 @@ export const useCartStore = defineStore('cart', () => {
       }).sort().join('|');
     }
 
-    // 包含備註在鍵值中，確保不同備註的相同餐點被視為不同項目
     const noteKey = note ? `:${note}` : '';
     return `${templateId}:${optionsKey}${noteKey}`;
   }
@@ -210,13 +203,10 @@ export const useCartStore = defineStore('cart', () => {
     };
 
     estimatedPickupTime.value = null;
-
     validationErrors.value = {};
   }
 
-  // 可選的清空函數，只在用戶主動要求時使用
   function resetOrderTypeSpecificInfo() {
-    // 根據用戶確認後，才清空特定訂單類型的資訊
     if (orderType.value !== 'delivery') {
       deliveryInfo.value = {
         address: '',
@@ -306,25 +296,21 @@ export const useCartStore = defineStore('cart', () => {
     // 根據訂單類型進行不同的驗證
     switch (orderType.value) {
       case 'dine_in':
-        // 內用：只需要桌號
         if (!dineInInfo.value.tableNumber) {
           errors.tableNumber = '請填寫桌號';
         }
         break;
 
       case 'takeout':
-        // 外帶：需要顾客資訊
         if (!customerInfo.value.name) {
           errors.customerName = '請填寫姓名';
         }
         if (!customerInfo.value.phone) {
           errors.customerPhone = '請填寫電話號碼';
         }
-        // 注意：外帶不需要驗證 estimatedPickupTime，因為可以是 null（代表盡快取餐）
         break;
 
       case 'delivery':
-        // 外送：需要顾客資訊和配送地址
         if (!customerInfo.value.name) {
           errors.customerName = '請填寫姓名';
         }
@@ -344,7 +330,7 @@ export const useCartStore = defineStore('cart', () => {
     return Object.keys(errors).length === 0;
   }
 
-  // 修改 submitOrder 函數，使用統一的用戶資料獲取方式
+  // 簡化 submitOrder 函數，統一使用 authStore
   async function submitOrder() {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' };
@@ -366,14 +352,14 @@ export const useCartStore = defineStore('cart', () => {
     try {
       isSubmitting.value = true;
 
-      // 檢查用戶登入狀態
+      // 獲取認證store實例並檢查登入狀態
       const authStore = useAuthStore();
-      const isLoggedIn = authStore.isLoggedIn;
-      const userId = authStore.userId;
 
-      console.log('用戶登入狀態:', isLoggedIn);
-      console.log('用戶ID:', userId);
-      console.log('用戶完整資料:', authStore.user);
+      console.log('用戶登入狀態:', {
+        isLoggedIn: authStore.isLoggedIn,
+        userId: authStore.userId,
+        userName: authStore.userName
+      });
 
       // 準備訂單資料，符合後端 API 期望的格式
       const orderData = {
@@ -381,7 +367,7 @@ export const useCartStore = defineStore('cart', () => {
         items: items.value.map(item => ({
           templateId: item.dishInstance.templateId,
           name: item.dishInstance.name,
-          basePrice: item.dishInstance.basePrice, // 後端需要 basePrice
+          basePrice: item.dishInstance.basePrice,
           finalPrice: item.dishInstance.finalPrice || item.dishInstance.basePrice,
           options: item.dishInstance.options || [],
           quantity: item.quantity,
@@ -402,7 +388,7 @@ export const useCartStore = defineStore('cart', () => {
         // 訂單備註
         notes: notes.value,
 
-        // 手動調整金額（預設為0）
+        // 手動調整金額
         manualAdjustment: 0,
 
         // 折扣資訊
@@ -412,13 +398,10 @@ export const useCartStore = defineStore('cart', () => {
         }))
       };
 
-      // 如果用戶已登入，使用統一的 userId
-      if (isLoggedIn && userId) {
-        orderData.user = userId;
-
-        console.log('用戶已登入，添加用戶ID到訂單:', {
-          user: userId,
-        });
+      // 如果用戶已登入，添加用戶ID
+      if (authStore.isLoggedIn && authStore.userId) {
+        orderData.user = authStore.userId;
+        console.log('用戶已登入，添加用戶ID到訂單:', authStore.userId);
       } else {
         console.log('用戶未登入，建立匿名訂單');
       }
@@ -432,10 +415,18 @@ export const useCartStore = defineStore('cart', () => {
         orderData.estimatedPickupTime = estimatedPickupTime.value;
       }
 
+      // 處理優惠券
+      if (appliedCoupons.value.length > 0) {
+        orderData.discounts = appliedCoupons.value.map(coupon => ({
+          couponId: coupon.id,
+          amount: coupon.value
+        }));
+      }
+
       console.log('=== Pinia 提交訂單資料 ===');
       console.log('品牌ID:', currentBrand.value);
       console.log('店鋪ID:', currentStore.value);
-      console.log('用戶登入狀態:', isLoggedIn);
+      console.log('用戶登入狀態:', authStore.isLoggedIn);
       console.log('訂單資料:', JSON.stringify(orderData, null, 2));
       console.log('========================');
 
@@ -462,7 +453,7 @@ export const useCartStore = defineStore('cart', () => {
           success: true,
           order: response.order,
           orderId: response.order._id,
-          pointsAwarded: response.pointsAwarded || null // 新增：返回點數獎勵資訊
+          pointsAwarded: response.pointsAwarded || null
         };
       } else {
         console.error('API 回應失敗:', response);
@@ -480,10 +471,8 @@ export const useCartStore = defineStore('cart', () => {
       let errorMessage = '訂單提交失敗';
 
       if (error.response) {
-        // API 回應錯誤
         errorMessage = error.response.data?.message || `API 錯誤: ${error.response.status}`;
       } else if (error.message) {
-        // 其他錯誤
         errorMessage = error.message;
       }
 

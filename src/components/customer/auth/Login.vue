@@ -63,8 +63,8 @@
           </BAlert>
 
           <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary py-2" :disabled="isLoading">
-              <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
+            <button type="submit" class="btn btn-primary py-2" :disabled="authStore.loadingAuth">
+              <span v-if="authStore.loadingAuth" class="spinner-border spinner-border-sm me-2" role="status"
                 aria-hidden="true"></span>
               登入
             </button>
@@ -83,7 +83,7 @@
 import { ref, reactive, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/customerAuth';
-import { BAlert } from 'bootstrap-vue-next'; // 確保已安裝 bootstrap-vue-next
+import { BAlert } from 'bootstrap-vue-next';
 
 // 路由相關
 const router = useRouter();
@@ -97,14 +97,13 @@ const credentials = reactive({
 });
 
 // 狀態管理
-const isLoading = ref(false);
-const formErrors = ref([]); // 改為陣列來存放多個錯誤
+const formErrors = ref([]);
 const successMessage = ref('您已成功登入系統');
 const showPassword = ref(false);
 const rememberMe = ref(false);
-const wasValidated = ref(false); // Bootstrap 驗證狀態
-const fieldErrors = reactive({}); // 個別欄位錯誤
-const touchedFields = reactive({}); // 追蹤已觸摸的欄位
+const wasValidated = ref(false);
+const fieldErrors = reactive({});
+const touchedFields = reactive({});
 
 // 驗證規則
 const validationRules = {
@@ -193,11 +192,10 @@ onMounted(async () => {
     credentials.phone = route.query.phone;
   }
 
-  // 設置當前品牌ID (如果有的話)
-  const brandId = sessionStorage.getItem('currentBrandId');
-  if (brandId) {
-    authStore.setBrandId(brandId);
-  } else {
+  // 初始化 authStore 的 brandId
+  authStore.initializeBrandId();
+
+  if (!authStore.currentBrandId) {
     // 如果沒有品牌ID，則跳轉到首頁或錯誤頁面
     router.push('/');
     return;
@@ -230,7 +228,7 @@ const goToRegister = () => {
   router.push('/auth/register');
 };
 
-// 處理登入
+// 處理登入 - 使用統一的 authStore 方法
 const handleLogin = async () => {
   try {
     // 清除之前的錯誤
@@ -242,19 +240,12 @@ const handleLogin = async () => {
       return;
     }
 
-    isLoading.value = true;
-
-    // 從 URL 或 sessionStorage 獲取品牌 ID
-    const brandId = sessionStorage.getItem('currentBrandId');
-
-    if (!brandId) {
+    // 確保有品牌ID
+    if (!authStore.currentBrandId) {
       throw new Error('無法獲取品牌資訊');
     }
 
-    // 設置品牌ID到store
-    authStore.setBrandId(brandId);
-
-    // 使用store登入
+    // 使用統一的 authStore.login 方法
     await authStore.login(credentials);
 
     // 登入成功後的處理
@@ -269,27 +260,14 @@ const handleLogin = async () => {
   } catch (error) {
     console.error('登入失敗:', error);
 
-    // 處理不同類型的錯誤
-    if (error.response && error.response.data) {
-      const errorData = error.response.data;
-
-      if (errorData.errors && Array.isArray(errorData.errors)) {
-        // 如果伺服器回傳錯誤陣列
-        formErrors.value = errorData.errors;
-      } else if (errorData.message) {
-        // 如果伺服器回傳單一錯誤訊息
-        formErrors.value = [errorData.message];
-      } else {
-        formErrors.value = ['登入失敗，請檢查您的手機號碼和密碼'];
-      }
+    // 使用 authStore 的錯誤訊息，或者自定義錯誤處理
+    if (authStore.error) {
+      formErrors.value = [authStore.error];
     } else if (error.message) {
       formErrors.value = [error.message];
     } else {
       formErrors.value = ['登入失敗，請稍後再試'];
     }
-
-  } finally {
-    isLoading.value = false;
   }
 };
 </script>

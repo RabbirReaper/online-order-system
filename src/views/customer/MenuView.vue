@@ -4,8 +4,9 @@
       <!-- 店鋪標題區 -->
       <Transition name="fade-slide" appear>
         <MenuHeader v-if="!isLoading || store.name" :store-name="store.name" :store-image="store.image"
-          :announcements="store.announcements" :business-hours="store.businessHours" :is-logged-in="isLoggedIn"
-          :customer-name="customerName" :store-address="store.address" @login="handleLogin" @logout="handleLogout" />
+          :announcements="store.announcements" :business-hours="store.businessHours"
+          :is-logged-in="authStore.isLoggedIn" :customer-name="authStore.userName" :store-address="store.address"
+          @login="handleLogin" @logout="handleLogout" />
       </Transition>
 
       <!-- 骨架載入動畫 -->
@@ -104,10 +105,6 @@ const menu = ref({
 });
 const isLoading = ref(true);
 
-// 🔥 修正：使用計算屬性直接從 authStore 取得登入狀態，確保響應式更新
-const isLoggedIn = computed(() => authStore.userIsLoggedIn);
-const customerName = computed(() => authStore.userName);
-
 // 計算屬性
 const hasMenuCategories = computed(() => {
   return menu.value.categories && menu.value.categories.length > 0;
@@ -185,8 +182,6 @@ const loadMenuData = async () => {
           }
         });
       }
-
-      // console.log('菜單載入成功:', menu.value);
     } else {
       console.error('Invalid menu data structure:', menuData);
     }
@@ -201,8 +196,6 @@ const loadMenuData = async () => {
 
 // 處理項目選擇
 const handleItemSelect = (item) => {
-  // console.log('MenuView: 選擇項目', item);
-
   // 根據商品類型導航到不同的詳情頁面
   if (item.itemType === 'dish' && item.dishTemplate) {
     router.push({
@@ -227,7 +220,7 @@ const handleItemSelect = (item) => {
   }
 };
 
-// 🔥 修正：登入相關方法
+// 登入相關方法 - 直接使用 authStore 方法
 const handleLogin = () => {
   router.push({ name: 'customer-login' });
 };
@@ -246,37 +239,25 @@ const goToCart = () => {
   router.push({ name: 'cart' });
 };
 
-// 🔥 新增：監聽 brandId 變化，確保 authStore 有正確的 brandId
+// 監聽 brandId 變化，確保 authStore 有正確的 brandId
 watch(() => brandId.value, (newBrandId) => {
   if (newBrandId) {
     authStore.setBrandId(newBrandId);
   }
 }, { immediate: true });
 
-// 🔥 新增：監聽 authStore 登入狀態變化，方便除錯
-watch(() => authStore.userIsLoggedIn, (newStatus) => {
-  console.log('登入狀態變化:', newStatus, '用戶名稱:', authStore.userName);
-});
-
-// 🔥 修正：生命周期
+// 生命周期
 onMounted(async () => {
-
-  // 重要：設置購物車的品牌和店鋪ID
+  // 設置購物車的品牌和店鋪ID
   cartStore.setBrandAndStore(brandId.value, storeId.value);
 
-  // 🔥 修正：設置 authStore 的 brandId 並檢查登入狀態
+  // 設置 authStore 的 brandId 並檢查登入狀態
   if (brandId.value) {
     authStore.setBrandId(brandId.value);
 
     // 檢查並更新登入狀態
     try {
-      // console.log('正在檢查登入狀態...');
       await authStore.checkAuthStatus();
-      // console.log('登入狀態檢查完成:', {
-      //   isLoggedIn: authStore.userIsLoggedIn,
-      //   userName: authStore.userName,
-      //   userId: authStore.userId
-      // });
     } catch (error) {
       console.error('檢查登入狀態失敗:', error);
     }
