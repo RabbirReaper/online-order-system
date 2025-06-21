@@ -62,9 +62,14 @@
               <p class="text-muted">沒有符合條件的訂單</p>
             </td>
           </tr>
-          <tr v-for="order in filteredOrders" :key="order._id"
-            :class="{ 'table-active': counterStore.selectedOrder && counterStore.selectedOrder._id === order._id }"
-            @click="selectOrder(order)" class="order-row">
+          <tr v-for="order in filteredOrders" :key="order._id" :class="{
+            'table-active': counterStore.selectedOrder && counterStore.selectedOrder._id === order._id,
+            'table-loading': selectedOrderId === order._id && isSelectingOrder
+          }" @click="selectOrder(order)" class="order-row" :style="{
+            cursor: isSelectingOrder ? 'wait' : 'pointer',
+            pointerEvents: isSelectingOrder ? 'none' : 'auto'
+          }">
+
             <td>{{ counterStore.formatTime(order.createdAt) }}</td>
             <td class="fs-5">{{ order.sequence }}</td>
             <td>
@@ -74,6 +79,11 @@
               <span v-if="order.dineInInfo?.tableNumber" class="ms-1 badge bg-info">
                 桌號: {{ order.dineInInfo.tableNumber }}
               </span>
+              <!-- 載入 spinner -->
+              <div v-if="selectedOrderId === order._id && isSelectingOrder"
+                class="spinner-border spinner-border-sm ms-2 text-primary d-inline-block" role="status">
+                <span class="visually-hidden">載入中...</span>
+              </div>
             </td>
             <td class="fs-5">${{ calculateOrderTotal(order) }}</td>
             <td>
@@ -88,6 +98,8 @@
         </tbody>
       </table>
     </div>
+
+
 
     <!-- 訂單詳情模態框 -->
     <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel"
@@ -200,6 +212,10 @@ const isPrinting = ref(false);
 const errorMessage = ref('');
 const maxDate = ref('');
 
+// 🎯 新增：防重複點擊和視覺回饋狀態
+const isSelectingOrder = ref(false);  // 是否有訂單正在載入
+const selectedOrderId = ref(null);    // 哪個訂單正在載入
+
 // 計算屬性
 const filteredOrders = computed(() => {
   let filtered = [...counterStore.todayOrders];
@@ -245,7 +261,18 @@ const fetchOrdersByDate = async () => {
   }
 };
 
+// 🎯 改善的 selectOrder 函數
 const selectOrder = async (order) => {
+  // 防止重複點擊
+  if (isSelectingOrder.value) {
+    return;
+  }
+
+  // 立即提供視覺回饋
+  selectedOrderId.value = order._id;
+  isSelectingOrder.value = true;
+  errorMessage.value = '';
+
   try {
     // 獲取訂單詳情
     const response = await api.orderAdmin.getOrderById({
@@ -260,6 +287,9 @@ const selectOrder = async (order) => {
   } catch (error) {
     console.error('獲取訂單詳情失敗:', error);
     errorMessage.value = '獲取訂單詳情失敗';
+    selectedOrderId.value = null; // 錯誤時清除選中狀態
+  } finally {
+    isSelectingOrder.value = false;
   }
 };
 
@@ -432,11 +462,13 @@ table {
   font-size: 0.9rem;
 }
 
-tr {
-  cursor: pointer;
+.order-row {
+  height: 50px;
+  vertical-align: middle;
+  transition: all 0.3s ease;
 }
 
-tr:hover {
+.order-row:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
@@ -444,15 +476,39 @@ tr:hover {
   font-size: 0.95rem;
 }
 
-.order-row {
-  height: 50px;
-  vertical-align: middle;
-}
-
 .table-active {
   --bs-table-active-bg: rgba(83, 109, 254, 0.35) !important;
   --bs-table-active-color: #000 !important;
   --bs-table-hover-bg: var(--bs-table-active-bg) !important;
   --bs-table-hover-color: var(--bs-table-active-color) !important;
+}
+
+/* 🎯 新增：正在載入的訂單樣式 - 簡化版 */
+.table-loading {
+  --bs-table-bg: rgba(13, 202, 240, 0.1) !important;
+  background: linear-gradient(45deg,
+      rgba(13, 202, 240, 0.05) 0%,
+      rgba(13, 202, 240, 0.15) 50%,
+      rgba(13, 202, 240, 0.05) 100%);
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+
+/* 🎯 新增：溫和的脈動動畫 */
+@keyframes gentle-pulse {
+
+  0%,
+  100% {
+    background: linear-gradient(45deg,
+        rgba(13, 202, 240, 0.05) 0%,
+        rgba(13, 202, 240, 0.15) 50%,
+        rgba(13, 202, 240, 0.05) 100%);
+  }
+
+  50% {
+    background: linear-gradient(45deg,
+        rgba(13, 202, 240, 0.1) 0%,
+        rgba(13, 202, 240, 0.2) 50%,
+        rgba(13, 202, 240, 0.1) 100%);
+  }
 }
 </style>
