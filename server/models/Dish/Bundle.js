@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// 套餐模型 - 處理批量和混合購買（餐點+兌換券）
+// 綑綁模型
 const bundleSchema = new mongoose.Schema({
   brand: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,76 +11,116 @@ const bundleSchema = new mongoose.Schema({
     type: String,
     trim: true,
     required: true
-  }, // 套餐名稱，例如：豬排兌換券x10 + 牛排餐x2，早晨套餐
+  }, // 綑綁名稱，例如：豬排兌換券x10綑綁
   description: {
     type: String,
     required: true
-  }, // 套餐描述，例如：買10送1，混合優惠套餐
+  }, // 綑綁描述，例如：買10送2，超值優惠綑綁
 
-  // 套餐內容 - 包含的商品類型和數量
+  // 綑綁內容 - 只包含兌換券
   bundleItems: [{
-    // 商品類型
-    itemType: {
-      type: String,
-      enum: ['dish', 'coupon'],
-      required: true
-    },
-
-    // === 餐點相關（當 itemType = 'dish' 時使用） ===
-    dishTemplate: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'DishTemplate',
-      required: function () {
-        return this.itemType === 'dish';
-      }
-    }, // 關聯的餐點模板
-
-    // === 兌換券相關（當 itemType = 'coupon' 時使用） ===
     couponTemplate: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'CouponTemplate',
-      required: function () {
-        return this.itemType === 'coupon';
-      }
+      required: true
     }, // 關聯的兌換券模板
 
     quantity: {
       type: Number,
       required: true,
       min: 1
-    }, // 該類型商品的數量
+    }, // 該券的數量
 
     // 冗餘存儲，方便顯示
-    itemName: {
+    couponName: {
       type: String,
       required: true
-    } // 商品名稱（可以是餐點名或兌換券名）
+    } // 兌換券名稱
   }],
 
   // 定價策略
   originalPrice: {
     type: Number,
-  },
-  // 優惠價格（實際售價）
+    required: true,
+    min: 0
+  }, // 原價
   sellingPrice: {
     type: Number,
-  },
+    required: true,
+    min: 0
+  }, // 優惠價格（實際售價）
   originalPoint: {
     type: Number,
-  },
-  // 優惠價格（實際售價）
+    min: 0
+  }, // 原點數價格
   sellingPoint: {
     type: Number,
-  },
+    min: 0
+  }, // 優惠點數價格
 
-  // 狀態和統計
+  // 時限控制
+  validFrom: {
+    type: Date,
+    required: true
+  }, // 購買開始時間
+  validTo: {
+    type: Date,
+    required: true
+  }, // 購買結束時間
+  couponValidityDays: {
+    type: Number,
+    required: true,
+    min: 1,
+    default: 30
+  }, // 生成券的有效期天數
+
+  // 購買限制
+  purchaseLimitPerUser: {
+    type: Number,
+    min: 1,
+    default: null
+  }, // 每人限購數量，null = 不限制
+
+  // 狀態控制
   isActive: {
     type: Boolean,
     default: true
-  }
+  }, // 手動啟用/停用
+  autoStatusControl: {
+    type: Boolean,
+    default: true
+  }, // 是否自動根據時間啟用/停用
+
+  // 統計
+  totalSold: {
+    type: Number,
+    default: 0,
+    min: 0
+  }, // 總銷售數量
+
+  // 適用店鋪
+  stores: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Store'
+  }] // 適用店鋪，空陣列表示所有店鋪適用
+
 }, { timestamps: true });
 
 // 索引
 bundleSchema.index({ brand: 1 });
+bundleSchema.index({ brand: 1, isActive: 1, validFrom: 1, validTo: 1 });
+
+// 虛擬屬性 - 檢查是否在有效期內
+bundleSchema.virtual('isInValidPeriod').get(function () {
+  const now = new Date();
+  return now >= this.validFrom && now <= this.validTo;
+});
+
+// 虛擬屬性 - 檢查是否可購買
+bundleSchema.virtual('isPurchasable').get(function () {
+  if (!this.isActive) return false;
+  if (this.autoStatusControl && !this.isInValidPeriod) return false;
+  return true;
+});
 
 export default mongoose.model('Bundle', bundleSchema);

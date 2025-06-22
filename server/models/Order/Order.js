@@ -60,12 +60,12 @@ const orderSchema = new mongoose.Schema({
       required: function () { return this.itemType === 'dish'; }
     }, // 關聯餐點實例
 
-    // 兌換券套餐相關（當 itemType = 'bundle' 時使用）
-    promotionMenu: {
+    // 兌換券綑綁相關（當 itemType = 'bundle' 時使用）
+    bundle: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'PromotionMenu',
+      ref: 'Bundle',
       required: function () { return this.itemType === 'bundle'; }
-    }, // 關聯促銷套餐
+    }, // 關聯兌換券綑綁
 
     // 共用欄位
     quantity: {

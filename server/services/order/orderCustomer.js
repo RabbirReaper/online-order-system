@@ -1,50 +1,48 @@
 /**
  * 訂單客戶服務
- * 處理客戶相關的訂單操作
+ * 處理客戶相關的訂單操作（支援 Bundle 購買）
  */
 
 import Order from '../../models/Order/Order.js';
 import DishInstance from '../../models/Dish/DishInstance.js';
+import Bundle from '../../models/Dish/Bundle.js';
+import CouponInstance from '../../models/Promotion/CouponInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import * as inventoryService from '../inventory/stockManagement.js';
+import * as bundleService from '../bundle/bundleService.js';
 import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils/date.js';
 
 /**
- * 創建訂單 - 修改版本
+ * 創建訂單 - 支援 Bundle 購買
  */
 export const createOrder = async (orderData) => {
   try {
     // 設置預設手動調整金額
     orderData.manualAdjustment = orderData.manualAdjustment || 0;
-    // console.log('創建訂單數據:', orderData);
-    // 創建訂單的餐點實例
+
+    // 處理訂單項目
     const items = [];
+    let dishSubtotal = 0;
+    let couponSubtotal = 0;
+
     for (const item of orderData.items) {
-      // 建立餐點實例 - 修正參數名稱以符合模型定義
-      const dishInstance = new DishInstance({
-        brand: orderData.brand,
-        templateId: item.templateId, // 對應模型中的 templateId
-        name: item.name,
-        basePrice: item.basePrice, // 對應模型中的 basePrice
-        options: item.options || [],
-        finalPrice: item.finalPrice || item.subtotal || (item.basePrice * item.quantity) // 計算最終價格
-      });
-
-      // 保存餐點實例
-      await dishInstance.save();
-
-      // 將餐點實例ID添加到訂單項目
-      items.push({
-        itemName: item.name,
-        dishInstance: dishInstance._id,
-        quantity: item.quantity,
-        subtotal: item.subtotal || (dishInstance.finalPrice * item.quantity),
-        note: item.note || ''
-      });
+      if (item.itemType === 'dish') {
+        // 處理餐點項目
+        const dishItem = await createDishItem(item, orderData.brand);
+        items.push(dishItem);
+        dishSubtotal += dishItem.subtotal;
+      } else if (item.itemType === 'bundle') {
+        // 處理 Bundle 項目
+        const bundleItem = await createBundleItem(item, orderData.user, orderData.store);
+        items.push(bundleItem);
+        couponSubtotal += bundleItem.subtotal;
+      }
     }
 
     // 更新訂單數據
     orderData.items = items;
+    orderData.dishSubtotal = dishSubtotal;
+    orderData.couponSubtotal = couponSubtotal;
 
     // 創建並保存訂單
     const order = new Order(orderData);
@@ -55,20 +53,17 @@ export const createOrder = async (orderData) => {
     // 先保存訂單以獲得 _id
     await order.save();
 
-    // 扣除庫存（只有啟用庫存管理的項目才會被扣除）
+    // 扣除餐點庫存（只有啟用庫存管理的項目才會被扣除）
     await inventoryService.reduceInventoryForOrder(order);
 
-    // 處理點數給予（如果是即時付款）
-    let pointsReward = { pointsAwarded: 0 };
-    if (order.status === 'paid' && order.user) {
-      pointsReward = await processOrderPointsReward(order);
+    // 如果是即時付款，處理後續流程
+    let result = { ...order.toObject(), pointsAwarded: 0, generatedCoupons: [] };
+
+    if (order.status === 'paid') {
+      result = await processOrderPaymentComplete(order);
     }
 
-    // 返回訂單和點數獎勵資訊
-    return {
-      ...order.toObject(),
-      pointsAwarded: pointsReward.pointsAwarded
-    };
+    return result;
 
   } catch (error) {
     console.error('創建訂單錯誤:', error);
@@ -77,22 +72,172 @@ export const createOrder = async (orderData) => {
 };
 
 /**
+ * 創建餐點項目
+ */
+const createDishItem = async (item, brandId) => {
+  // 建立餐點實例
+  const dishInstance = new DishInstance({
+    brand: brandId,
+    templateId: item.templateId,
+    name: item.name,
+    basePrice: item.basePrice,
+    options: item.options || [],
+    finalPrice: item.finalPrice || item.subtotal || (item.basePrice * item.quantity)
+  });
+
+  await dishInstance.save();
+
+  return {
+    itemType: 'dish',
+    itemName: item.name,
+    dishInstance: dishInstance._id,
+    quantity: item.quantity,
+    subtotal: item.subtotal || (dishInstance.finalPrice * item.quantity),
+    note: item.note || ''
+  };
+};
+
+/**
+ * 創建 Bundle 項目
+ */
+const createBundleItem = async (item, userId, storeId) => {
+  // 驗證 Bundle 購買資格
+  await bundleService.validateBundlePurchase(
+    item.bundleId,
+    userId,
+    item.quantity,
+    storeId
+  );
+
+  // 獲取 Bundle 詳細資訊
+  const bundle = await Bundle.findById(item.bundleId)
+    .populate('bundleItems.couponTemplate');
+
+  if (!bundle) {
+    throw new AppError('Bundle 不存在', 404);
+  }
+
+  return {
+    itemType: 'bundle',
+    itemName: item.name || bundle.name,
+    bundle: bundle._id,
+    quantity: item.quantity,
+    subtotal: item.subtotal || (bundle.sellingPrice * item.quantity),
+    note: item.note || '',
+    generatedCoupons: [] // 將在付款完成後填入
+  };
+};
+
+/**
+ * 處理訂單付款完成後的流程
+ */
+export const processOrderPaymentComplete = async (order) => {
+  let pointsReward = { pointsAwarded: 0 };
+  let generatedCoupons = [];
+
+  // 1. 生成 Bundle 的兌換券
+  for (const item of order.items) {
+    if (item.itemType === 'bundle') {
+      const bundleCoupons = await generateCouponsForBundle(item, order);
+      generatedCoupons.push(...bundleCoupons);
+
+      // 更新訂單項目的 generatedCoupons
+      item.generatedCoupons = bundleCoupons.map(c => c._id);
+    }
+  }
+
+  // 2. 更新 Bundle 銷售統計
+  await updateBundleSalesStats(order);
+
+  // 3. 處理點數給予
+  if (order.user) {
+    pointsReward = await processOrderPointsReward(order);
+  }
+
+  // 4. 保存訂單更新
+  await order.save();
+
+  return {
+    ...order.toObject(),
+    pointsAwarded: pointsReward.pointsAwarded,
+    generatedCoupons
+  };
+};
+
+/**
+ * 為 Bundle 生成兌換券
+ */
+const generateCouponsForBundle = async (bundleItem, order) => {
+  const bundle = await Bundle.findById(bundleItem.bundle)
+    .populate('bundleItems.couponTemplate');
+
+  if (!bundle) {
+    throw new AppError('Bundle 不存在', 404);
+  }
+
+  const generatedCoupons = [];
+
+  // 為每個購買數量生成券
+  for (let i = 0; i < bundleItem.quantity; i++) {
+    // 為 Bundle 中的每個券模板生成對應數量的券
+    for (const bundleCouponItem of bundle.bundleItems) {
+      for (let j = 0; j < bundleCouponItem.quantity; j++) {
+        const couponInstance = new CouponInstance({
+          brand: order.brand,
+          template: bundleCouponItem.couponTemplate._id,
+          couponName: bundleCouponItem.couponTemplate.name,
+          couponType: bundleCouponItem.couponTemplate.couponType,
+          user: order.user,
+          acquiredAt: new Date(),
+          pointsUsed: 0, // Bundle 購買不消耗點數
+          order: order._id
+        });
+
+        // 根據券類型設置相關資訊
+        if (bundleCouponItem.couponTemplate.couponType === 'discount') {
+          couponInstance.discount = bundleCouponItem.couponTemplate.discountInfo.discountValue;
+        } else if (bundleCouponItem.couponTemplate.couponType === 'exchange') {
+          couponInstance.exchangeItems = bundleCouponItem.couponTemplate.exchangeInfo.items;
+        }
+
+        // 設置過期日期（購買時間 + Bundle 設定的有效期天數）
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + bundle.couponValidityDays);
+        couponInstance.expiryDate = expiryDate;
+
+        await couponInstance.save();
+        generatedCoupons.push(couponInstance);
+      }
+    }
+  }
+
+  return generatedCoupons;
+};
+
+/**
+ * 更新 Bundle 銷售統計
+ */
+const updateBundleSalesStats = async (order) => {
+  for (const item of order.items) {
+    if (item.itemType === 'bundle') {
+      await Bundle.findByIdAndUpdate(
+        item.bundle,
+        { $inc: { totalSold: item.quantity } }
+      );
+    }
+  }
+};
+
+/**
  * 處理訂單點數獎勵
- * @param {Object} order - 訂單對象
- * @returns {Promise<Object>} 點數獎勵結果
  */
 const processOrderPointsReward = async (order) => {
   try {
-    // 1. 檢查用戶是否登入
     if (!order.user) {
-      return {
-        success: true,
-        message: '無登入用戶，跳過點數給予',
-        pointsAwarded: 0
-      };
+      return { success: true, message: '無登入用戶，跳過點數給予', pointsAwarded: 0 };
     }
 
-    // 2. 檢查是否已經給予過點數（防重複）
+    // 檢查是否已經給予過點數
     const { point: pointService } = await import('../promotion/index.js');
     const existingPoints = await pointService.getUserPoints(order.user, order.brand);
     const alreadyRewarded = existingPoints.some(point =>
@@ -101,33 +246,25 @@ const processOrderPointsReward = async (order) => {
     );
 
     if (alreadyRewarded) {
-      return {
-        success: true,
-        message: '已經給予過點數，跳過重複給予',
-        pointsAwarded: 0
-      };
+      return { success: true, message: '已經給予過點數，跳過重複給予', pointsAwarded: 0 };
     }
 
-    // 3. 計算要給予的點數和獲取規則資訊
+    // 計算點數（基於總金額）
     const { pointRule: pointRuleService } = await import('../promotion/index.js');
     const pointResult = await pointRuleService.calculateOrderPoints(order.brand, order.total);
 
     if (pointResult.points <= 0) {
-      return {
-        success: true,
-        message: '根據點數規則計算得出 0 點數',
-        pointsAwarded: 0
-      };
+      return { success: true, message: '根據點數規則計算得出 0 點數', pointsAwarded: 0 };
     }
 
-    // 4. 給予點數給用戶，使用規則中的有效期
+    // 給予點數
     const pointInstances = await pointService.addPointsToUser(
       order.user,
       order.brand,
       pointResult.points,
       '滿額贈送',
       { model: 'Order', id: order._id },
-      pointResult.rule.validityDays // 傳遞規則物件，函數內部會使用 rule.validityDays
+      pointResult.rule.validityDays
     );
 
     return {
@@ -142,11 +279,9 @@ const processOrderPointsReward = async (order) => {
     console.error('處理點數獎勵時發生錯誤:', {
       orderId: order._id,
       userId: order.user,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
 
-    // 不拋出異常，避免影響主流程
     return {
       success: false,
       message: `點數給予失敗: ${error.message}`,
@@ -156,10 +291,10 @@ const processOrderPointsReward = async (order) => {
   }
 };
 
-export { processOrderPointsReward }; //為了在`orderAdmin.js`中使用
+export { processOrderPointsReward };
 
 /**
- * 支付回調處理 - 修改版本
+ * 支付回調處理 - 支援 Bundle
  */
 export const handlePaymentCallback = async (orderId, callbackData) => {
   const order = await Order.findById(orderId);
@@ -179,53 +314,42 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
 
   await order.save();
 
-  // 處理點數給予（狀態從非paid變為paid時）
-  let pointsReward = { pointsAwarded: 0 };
-  if (callbackData.success && previousStatus !== 'paid' && order.user) {
-    pointsReward = await processOrderPointsReward(order);
+  // 處理付款完成流程（包括生成券和點數）
+  let result = { orderId: order._id, status: order.status, processed: true };
+
+  if (callbackData.success && previousStatus !== 'paid') {
+    const paymentResult = await processOrderPaymentComplete(order);
+    result.pointsAwarded = paymentResult.pointsAwarded;
+    result.generatedCoupons = paymentResult.generatedCoupons;
   }
 
-  return {
-    orderId: order._id,
-    status: order.status,
-    processed: true,
-    pointsAwarded: pointsReward.pointsAwarded
-  };
+  return result;
 };
 
 /**
  * 獲取用戶訂單列表
- * @param {String} userId - 用戶ID
- * @param {Object} options - 查詢選項
- * @returns {Promise<Object>} 訂單列表和分頁信息
  */
 export const getUserOrders = async (userId, options = {}) => {
   const { brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
 
-  // 構建查詢條件
   const query = { user: userId };
   if (brandId) query.brand = brandId;
 
-  // 計算分頁
   const skip = (page - 1) * limit;
-
-  // 構建排序
   const sort = {};
   sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-  // 獲取總數
   const total = await Order.countDocuments(query);
 
-  // 查詢訂單
   const orders = await Order.find(query)
     .sort(sort)
     .skip(skip)
     .limit(limit)
     .populate('items.dishInstance', 'name basePrice options finalPrice')
+    .populate('items.bundle', 'name description sellingPrice')
     .populate('store', 'name')
     .lean();
 
-  // 構建分頁信息
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
@@ -245,13 +369,12 @@ export const getUserOrders = async (userId, options = {}) => {
 
 /**
  * 獲取用戶訂單詳情
- * @param {String} orderId - 訂單ID
- * @param {String} userId - 用戶ID
- * @returns {Promise<Object>} 訂單詳情
  */
 export const getUserOrderById = async (orderId) => {
   const order = await Order.findOne({ _id: orderId })
     .populate('items.dishInstance', 'name basePrice options finalPrice')
+    .populate('items.bundle', 'name description sellingPrice bundleItems')
+    .populate('items.generatedCoupons', 'couponName couponType expiryDate isUsed')
     .populate('store', 'name')
     .lean();
 
@@ -264,9 +387,6 @@ export const getUserOrderById = async (orderId) => {
 
 /**
  * 處理支付
- * @param {String} orderId - 訂單ID
- * @param {Object} paymentData - 支付資料
- * @returns {Promise<Object>} 支付結果
  */
 export const processPayment = async (orderId, paymentData) => {
   const order = await Order.findById(orderId);
@@ -290,9 +410,9 @@ export const processPayment = async (orderId, paymentData) => {
 
   // 根據支付方式更新訂單狀態
   if (paymentData.paymentMethod === 'cash') {
-    order.status = 'unpaid'; // 現金付款，等待確認
+    order.status = 'unpaid';
   } else {
-    order.status = 'unpaid'; // 線上支付也先設為pending，等待回調確認
+    order.status = 'unpaid';
   }
 
   await order.save();
@@ -306,15 +426,12 @@ export const processPayment = async (orderId, paymentData) => {
 };
 
 /**
- * 生成訂單編號 - 使用增強的日期工具
- * @returns {Promise<Object>} 訂單編號信息
+ * 生成訂單編號
  */
 export const generateOrderNumber = async () => {
   try {
-    // 使用統一的日期代碼生成函數
     const orderDateCode = generateDateCode();
 
-    // 獲取當天的最後一個序號
     const lastOrder = await Order.findOne({
       orderDateCode
     }).sort({ sequence: -1 });
@@ -333,13 +450,12 @@ export const generateOrderNumber = async () => {
 
 /**
  * 計算訂單所有金額
- * @param {Object} order - 訂單對象或訂單數據
- * @returns {Object} 包含所有計算結果的對象
  */
 export const calculateOrderAmounts = (order) => {
-  // 防止空訂單
   if (!order || !Array.isArray(order.items)) {
     return {
+      dishSubtotal: 0,
+      couponSubtotal: 0,
       subtotal: 0,
       serviceCharge: 0,
       deliveryFee: 0,
@@ -349,37 +465,32 @@ export const calculateOrderAmounts = (order) => {
     };
   }
 
-  // 計算訂單小計
-  const subtotal = order.items.reduce((total, item) => {
-    if (!item || typeof item.subtotal !== 'number' || typeof item.quantity !== 'number') {
-      return total;
+  // 分別計算餐點和券的小計
+  let dishSubtotal = 0;
+  let couponSubtotal = 0;
+
+  order.items.forEach(item => {
+    if (item.itemType === 'dish') {
+      dishSubtotal += item.subtotal || 0;
+    } else if (item.itemType === 'bundle') {
+      couponSubtotal += item.subtotal || 0;
     }
-    return total + item.subtotal;
-  }, 0);
+  });
 
-  // 計算服務費 (預設0%)
+  const subtotal = dishSubtotal + couponSubtotal;
   const serviceCharge = Math.round(subtotal * 0);
-
-  // 計算外送費
   const deliveryFee = order.orderType === 'delivery' && order.deliveryInfo ?
     (order.deliveryInfo.deliveryFee || 0) : 0;
 
-  // 計算折扣總額
   const totalDiscount = Array.isArray(order.discounts) ?
-    order.discounts.reduce((total, discount) => {
-      if (!discount || typeof discount.amount !== 'number') {
-        return total;
-      }
-      return total + discount.amount;
-    }, 0) : 0;
+    order.discounts.reduce((total, discount) => total + (discount.amount || 0), 0) : 0;
 
-  // 獲取手動調整金額
   const manualAdjustment = order.manualAdjustment || 0;
-
-  // 計算最終總額
   const total = Math.max(0, subtotal + serviceCharge + deliveryFee - totalDiscount + manualAdjustment);
 
   return {
+    dishSubtotal,
+    couponSubtotal,
     subtotal,
     serviceCharge,
     deliveryFee,
@@ -391,30 +502,26 @@ export const calculateOrderAmounts = (order) => {
 
 /**
  * 更新訂單金額
- * @param {Object} order - Order 模型實例
- * @returns {Boolean} 更新是否成功
  */
 export const updateOrderAmounts = (order) => {
-  // 確保是有效的訂單對象
   if (!order || !Array.isArray(order.items)) {
     return false;
   }
 
-  // 計算所有金額
-  const { subtotal, serviceCharge, deliveryFee, totalDiscount, manualAdjustment, total } = calculateOrderAmounts(order);
+  const amounts = calculateOrderAmounts(order);
 
-  // 更新訂單對象
-  order.subtotal = subtotal;
-  order.serviceCharge = serviceCharge;
+  order.dishSubtotal = amounts.dishSubtotal;
+  order.couponSubtotal = amounts.couponSubtotal;
+  order.subtotal = amounts.subtotal;
+  order.serviceCharge = amounts.serviceCharge;
 
-  // 如果是外送訂單，更新運費
   if (order.orderType === 'delivery' && order.deliveryInfo) {
-    order.deliveryInfo.deliveryFee = deliveryFee;
+    order.deliveryInfo.deliveryFee = amounts.deliveryFee;
   }
 
-  order.totalDiscount = totalDiscount;
-  order.manualAdjustment = manualAdjustment || 0;
-  order.total = total;
+  order.totalDiscount = amounts.totalDiscount;
+  order.manualAdjustment = amounts.manualAdjustment || 0;
+  order.total = amounts.total;
 
   return true;
 };

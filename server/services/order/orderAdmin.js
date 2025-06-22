@@ -1,6 +1,6 @@
 /**
  * 訂單管理員服務
- * 處理管理員相關的訂單操作
+ * 處理管理員相關的訂單操作（支援 Bundle 訂單）
  */
 
 import Order from '../../models/Order/Order.js';
@@ -9,14 +9,10 @@ import { parseDateString, getStartOfDay, getEndOfDay } from '../../utils/date.js
 
 /**
  * 獲取店鋪訂單列表
- * @param {String} storeId - 店鋪ID
- * @param {Object} options - 查詢選項
- * @returns {Promise<Object>} 訂單列表和分頁信息
  */
 export const getStoreOrders = async (storeId, options = {}) => {
   const { status, orderType, fromDate, toDate, page = 1, limit = 20 } = options;
 
-  // 構建查詢條件
   const query = { store: storeId };
 
   if (status) {
@@ -27,13 +23,12 @@ export const getStoreOrders = async (storeId, options = {}) => {
     query.orderType = orderType;
   }
 
-  // 使用新的 date utils 處理台灣時區的日期範圍
+  // 處理日期範圍
   if (fromDate || toDate) {
     query.createdAt = {};
 
     if (fromDate) {
       try {
-        // 使用 parseDateString 解析前端傳來的 YYYY-MM-DD 格式
         const startDateTime = getStartOfDay(parseDateString(fromDate));
         query.createdAt.$gte = startDateTime.toJSDate();
       } catch (error) {
@@ -44,7 +39,6 @@ export const getStoreOrders = async (storeId, options = {}) => {
 
     if (toDate) {
       try {
-        // 使用 parseDateString 解析前端傳來的 YYYY-MM-DD 格式
         const endDateTime = getEndOfDay(parseDateString(toDate));
         query.createdAt.$lte = endDateTime.toJSDate();
       } catch (error) {
@@ -54,41 +48,20 @@ export const getStoreOrders = async (storeId, options = {}) => {
     }
   }
 
-  // 計算分頁
   const skip = (page - 1) * limit;
-
-  // 獲取總數
   const total = await Order.countDocuments(query);
 
-  // 查詢訂單
+  // 查詢訂單，包含 Bundle 資訊
   const orders = await Order.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate('items.dishInstance', 'name price options')
+    .populate('items.dishInstance', 'name finalPrice options')
+    .populate('items.bundle', 'name description sellingPrice')
+    .populate('items.generatedCoupons', 'couponName couponType isUsed expiryDate')
     .populate('user', 'name email phone')
     .lean();
 
-  // 如果沒有訂單，記錄調試信息
-  if (orders.length === 0) {
-    // 檢查該店鋪是否有任何訂單
-    const anyOrders = await Order.countDocuments({ store: storeId });
-
-    // 檢查最近的訂單
-    const recentOrders = await Order.find({ store: storeId })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('createdAt orderType status')
-      .lean();
-
-    // console.log(`店鋪 ${storeId} 查詢結果:`, {
-    //   查詢條件: query,
-    //   總訂單數: anyOrders,
-    //   最近訂單: recentOrders
-    // });
-  }
-
-  // 構建分頁信息
   const totalPages = Math.ceil(total / limit);
   const hasNextPage = page < totalPages;
   const hasPrevPage = page > 1;
@@ -108,16 +81,22 @@ export const getStoreOrders = async (storeId, options = {}) => {
 
 /**
  * 獲取訂單詳情（管理員）
- * @param {String} orderId - 訂單ID
- * @param {String} storeId - 店鋪ID
- * @returns {Promise<Object>} 訂單詳情
  */
 export const getOrderById = async (orderId, storeId) => {
   const query = { _id: orderId };
   if (storeId) query.store = storeId;
 
   const order = await Order.findOne(query)
-    .populate('items.dishInstance', 'name price options')
+    .populate('items.dishInstance', 'name finalPrice options')
+    .populate('items.bundle', 'name description sellingPrice bundleItems')
+    .populate({
+      path: 'items.bundle',
+      populate: {
+        path: 'bundleItems.couponTemplate',
+        select: 'name description couponType'
+      }
+    })
+    .populate('items.generatedCoupons', 'couponName couponType isUsed expiryDate usedAt')
     .populate('user', 'name email phone')
     .lean();
 
@@ -129,7 +108,7 @@ export const getOrderById = async (orderId, storeId) => {
 };
 
 /**
- * 更新訂單（統一接口）- 修改版本，支援點數給予
+ * 更新訂單（統一接口）- 支援 Bundle 和點數給予
  */
 export const updateOrder = async (orderId, updateData, adminId) => {
   const order = await Order.findById(orderId);
@@ -157,7 +136,6 @@ export const updateOrder = async (orderId, updateData, adminId) => {
   allowedFields.forEach(field => {
     if (updateData[field] !== undefined) {
       if (field === 'deliveryInfo' || field === 'dineInInfo') {
-        // 對於嵌套物件，進行合併更新
         order[field] = { ...order[field], ...updateData[field] };
       } else {
         order[field] = updateData[field];
@@ -172,40 +150,45 @@ export const updateOrder = async (orderId, updateData, adminId) => {
     order.total = amounts.total;
   }
 
-  // 記錄更新時間和操作者
   order.updatedAt = new Date();
-
   await order.save();
 
-  // 處理點數給予（狀態從非paid變為paid時）
-  let pointsReward = { pointsAwarded: 0 };
-  if (previousStatus !== 'paid' && order.status === 'paid' && order.user) {
+  // 處理狀態變為 paid 的後續流程
+  let result = { ...order.toObject(), pointsAwarded: 0, generatedCoupons: [] };
+
+  if (previousStatus !== 'paid' && order.status === 'paid') {
     try {
-      // 導入點數處理函數
-      const { processOrderPointsReward } = await import('./orderCustomer.js');
-      pointsReward = await processOrderPointsReward(order);
+      // 導入付款完成處理函數
+      const { processOrderPaymentComplete } = await import('./orderCustomer.js');
+
+      // 檢查是否有 Bundle 項目需要生成券
+      const hasBundleItems = order.items.some(item => item.itemType === 'bundle');
+
+      if (hasBundleItems || order.user) {
+        // 處理 Bundle 券生成和點數給予
+        result = await processOrderPaymentComplete(order);
+      } else if (order.user) {
+        // 只處理點數給予
+        const { processOrderPointsReward } = await import('./orderCustomer.js');
+        const pointsReward = await processOrderPointsReward(order);
+        result.pointsAwarded = pointsReward.pointsAwarded;
+      }
 
     } catch (error) {
-      console.error('管理員更新訂單時處理點數獎勵失敗:', error);
+      console.error('管理員更新訂單時處理付款完成流程失敗:', error);
       // 不影響主要的訂單更新流程
     }
   }
 
-  return {
-    ...order.toObject(),
-    pointsAwarded: pointsReward.pointsAwarded
-  };
+  return result;
 };
 
 /**
- * 管理員取消訂單
- * @param {String} orderId - 訂單ID
- * @param {String} reason - 取消原因
- * @param {String} adminId - 管理員ID
- * @returns {Promise<Object>} 更新後的訂單
+ * 管理員取消訂單 - 支援 Bundle 訂單
  */
 export const cancelOrder = async (orderId, reason, adminId) => {
-  const order = await Order.findById(orderId);
+  const order = await Order.findById(orderId)
+    .populate('items.generatedCoupons');
 
   if (!order) {
     throw new AppError('訂單不存在', 404);
@@ -213,6 +196,44 @@ export const cancelOrder = async (orderId, reason, adminId) => {
 
   if (order.status === 'cancelled') {
     throw new AppError('訂單已被取消', 400);
+  }
+
+  // 如果訂單包含已生成的兌換券，需要處理券的狀態
+  for (const item of order.items) {
+    if (item.itemType === 'bundle' && item.generatedCoupons && item.generatedCoupons.length > 0) {
+      // 將未使用的兌換券標記為無效
+      const CouponInstance = (await import('../../models/Promotion/CouponInstance.js')).default;
+
+      for (const couponId of item.generatedCoupons) {
+        const coupon = await CouponInstance.findById(couponId);
+        if (coupon && !coupon.isUsed) {
+          // 標記券為已使用（實際上是取消）
+          coupon.isUsed = true;
+          coupon.usedAt = new Date();
+          await coupon.save();
+        }
+      }
+    }
+  }
+
+  // 還原庫存（如果有餐點項目）
+  try {
+    const { restoreInventoryForCancelledOrder } = await import('../inventory/stockManagement.js');
+    await restoreInventoryForCancelledOrder(order);
+  } catch (error) {
+    console.error('還原庫存失敗:', error);
+    // 繼續執行取消流程
+  }
+
+  // 退還點數（如果有使用點數）
+  if (order.user && order.pointsEarned > 0) {
+    try {
+      const { refundPointsForOrder } = await import('../promotion/pointService.js');
+      await refundPointsForOrder(orderId);
+    } catch (error) {
+      console.error('退還點數失敗:', error);
+      // 繼續執行取消流程
+    }
   }
 
   // 更新訂單狀態
