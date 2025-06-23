@@ -61,11 +61,11 @@ const orderSchema = new mongoose.Schema({
     }, // 關聯餐點實例
 
     // 兌換券綑綁相關（當 itemType = 'bundle' 時使用）
-    bundle: {
+    bundleInstance: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Bundle',
+      ref: 'BundleInstance',
       required: function () { return this.itemType === 'bundle'; }
-    }, // 關聯兌換券綑綁
+    }, // 關聯 Bundle 實例
 
     // 共用欄位
     quantity: {
