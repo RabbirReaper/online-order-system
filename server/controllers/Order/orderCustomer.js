@@ -60,20 +60,11 @@ export const getUserOrders = asyncHandler(async (req, res) => {
   });
 });
 
-// 獲取用戶訂單詳情
+// 獲取訂單詳情（支援匿名訪問）
 export const getUserOrderById = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
-  const userId = req.auth.userId;
 
   const order = await orderService.getUserOrderById(orderId);
-
-  // 檢查訂單是否屬於該用戶
-  if (order.user && order.user.toString() !== userId) {
-    return res.status(403).json({
-      success: false,
-      message: '無權訪問此訂單'
-    });
-  }
 
   res.json({
     success: true,
