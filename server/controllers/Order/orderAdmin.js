@@ -1,4 +1,9 @@
-import * as orderService from '../../services/order/index.js';
+/**
+ * 訂單管理員控制器
+ * server/controllers/Order/orderAdmin.js
+ */
+
+import * as orderService from '../../services/order/orderAdmin.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
 // 獲取店鋪訂單列表（後台）
@@ -35,7 +40,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
   });
 });
 
-// 更新訂單（統一接口）- 修改版本
+// 更新訂單（統一接口）- 支援混合購買
 export const updateOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const updateData = req.body;
@@ -47,7 +52,9 @@ export const updateOrder = asyncHandler(async (req, res) => {
     success: true,
     message: '訂單更新成功',
     order: result,
-    pointsAwarded: result.pointsAwarded || 0 // 返回點數獎勵資訊
+    // 混合購買相關資訊（當狀態變為 paid 時）
+    pointsAwarded: result.pointsAwarded || 0,
+    generatedCoupons: result.generatedCoupons || []
   });
 });
 

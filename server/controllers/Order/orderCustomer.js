@@ -1,28 +1,38 @@
-import * as orderService from '../../services/order/index.js';
+/**
+ * 訂單客戶控制器
+ * server/controllers/Order/orderCustomer.js
+ */
+
+import * as orderService from '../../services/order/orderCustomer.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
-// 創建訂單 - 支援 Bundle 購買
+// 創建訂單（支援混合購買）
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params;
+  const orderData = req.body;
 
-  const orderData = {
-    ...req.body,
-    brand: brandId,
-    store: storeId
-  };
+  // 設置訂單的基本資訊
+  orderData.brand = brandId;
+  orderData.store = storeId;
 
-  // 獲取訂單編號
+  // 如果是登入用戶，設置用戶ID
+  if (req.auth && req.auth.userId) {
+    orderData.user = req.auth.userId;
+  }
+
+  // 生成訂單編號
   const orderNumber = await orderService.generateOrderNumber();
   orderData.orderDateCode = orderNumber.orderDateCode;
   orderData.sequence = orderNumber.sequence;
 
-  // 創建訂單（支援混合購買：餐點 + Bundle）
   const result = await orderService.createOrder(orderData);
 
   res.status(201).json({
     success: true,
     message: '訂單創建成功',
     order: result,
+    orderNumber: `${orderNumber.orderDateCode}${orderNumber.sequence.toString().padStart(3, '0')}`,
+    // 混合購買相關資訊
     pointsAwarded: result.pointsAwarded || 0,
     generatedCoupons: result.generatedCoupons || []
   });
@@ -30,8 +40,8 @@ export const createOrder = asyncHandler(async (req, res) => {
 
 // 獲取用戶訂單列表
 export const getUserOrders = asyncHandler(async (req, res) => {
-  const { brandId } = req.params;
   const userId = req.auth.userId;
+  const { brandId } = req.params;
 
   const options = {
     brandId,
@@ -53,8 +63,17 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 // 獲取用戶訂單詳情
 export const getUserOrderById = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
+  const userId = req.auth.userId;
 
   const order = await orderService.getUserOrderById(orderId);
+
+  // 檢查訂單是否屬於該用戶
+  if (order.user && order.user.toString() !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: '無權訪問此訂單'
+    });
+  }
 
   res.json({
     success: true,
@@ -62,7 +81,7 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
   });
 });
 
-// 處理支付
+// 處理訂單支付
 export const processPayment = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const paymentData = req.body;
@@ -72,11 +91,11 @@ export const processPayment = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '支付處理成功',
-    paymentResult: result
+    result
   });
 });
 
-// 支付回調 - 支援 Bundle 購買
+// 支付回調處理
 export const paymentCallback = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
   const callbackData = req.body;
@@ -85,11 +104,10 @@ export const paymentCallback = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: '支付回調處理成功',
-    result: {
-      ...result,
-      pointsAwarded: result.pointsAwarded || 0,
-      generatedCoupons: result.generatedCoupons || []
-    }
+    message: '支付回調處理完成',
+    result,
+    // 混合購買相關資訊
+    pointsAwarded: result.pointsAwarded || 0,
+    generatedCoupons: result.generatedCoupons || []
   });
 });

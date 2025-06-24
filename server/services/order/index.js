@@ -1,5 +1,6 @@
 /**
  * 訂單服務入口文件
+ * server/services/order/index.js
  * 按照權限分離導出客戶和管理員服務
  */
 
@@ -21,7 +22,9 @@ export const {
   handlePaymentCallback,
   generateOrderNumber,
   calculateOrderAmounts,
-  updateOrderAmounts
+  updateOrderAmounts,
+  processOrderPaymentComplete,
+  processOrderPointsReward
 } = orderCustomer;
 
 export const {
