@@ -15,14 +15,20 @@ import * as bundleInstanceService from '../bundle/bundleInstance.js';
 import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils/date.js';
 
 /**
- * 創建訂單 - 支援 Bundle 購買
+ * 創建訂單 - 支援 Bundle 購買 + 預先庫存檢查
  */
 export const createOrder = async (orderData) => {
   try {
     // 設置預設手動調整金額
     orderData.manualAdjustment = orderData.manualAdjustment || 0;
 
-    // 處理訂單項目
+    // 🔍 Step 1: 預先檢查所有餐點庫存 (不實際扣除)
+    await validateInventoryBeforeOrder(orderData);
+
+    // 🔍 Step 2: 預先檢查 Bundle 購買資格
+    await validateBundlesBeforeOrder(orderData);
+
+    // Step 3: 處理訂單項目
     const items = [];
     let dishSubtotal = 0;
     let couponSubtotal = 0;
@@ -34,31 +40,34 @@ export const createOrder = async (orderData) => {
         items.push(dishItem);
         dishSubtotal += dishItem.subtotal;
       } else if (item.itemType === 'bundle') {
-        // 處理 Bundle 項目 - 現在創建 BundleInstance
+        // 處理 Bundle 項目
         const bundleItem = await createBundleItem(item, orderData.user, orderData.store, orderData.brand);
         items.push(bundleItem);
         couponSubtotal += bundleItem.subtotal;
       }
     }
 
-    // 更新訂單數據
+    // Step 4: 更新訂單數據
     orderData.items = items;
     orderData.dishSubtotal = dishSubtotal;
     orderData.couponSubtotal = couponSubtotal;
 
-    // 創建並保存訂單
+    // Step 5: 創建並保存訂單
     const order = new Order(orderData);
-
-    // 確保訂單金額計算正確
     updateOrderAmounts(order);
-
-    // 先保存訂單以獲得 _id
     await order.save();
 
-    // 扣除餐點庫存（只有啟用庫存管理的項目才會被扣除）
-    await inventoryService.reduceInventoryForOrder(order);
+    // Step 6: 實際扣除庫存 (這時應該不會失敗，因為已經預檢查過)
+    try {
+      await inventoryService.reduceInventoryForOrder(order);
+    } catch (inventoryError) {
+      console.error('預檢查通過但實際扣庫存失敗，可能是併發問題:', inventoryError);
+      // 這種情況很少見，但如果發生了，我們需要清理
+      await cleanupFailedOrder(order._id, items);
+      throw new AppError('庫存扣除失敗，請重新下單', 400);
+    }
 
-    // 如果是即時付款，處理後續流程
+    // Step 7: 如果是即時付款，處理後續流程
     let result = { ...order.toObject(), pointsAwarded: 0, generatedCoupons: [] };
 
     if (order.status === 'paid') {
@@ -72,6 +81,142 @@ export const createOrder = async (orderData) => {
     throw error;
   }
 };
+
+/**
+ * 🔍 預先檢查所有餐點庫存
+ */
+const validateInventoryBeforeOrder = async (orderData) => {
+  const dishItems = orderData.items.filter(item => item.itemType === 'dish');
+
+  if (dishItems.length === 0) {
+    return; // 沒有餐點項目，跳過檢查
+  }
+
+  // console.log(`開始預檢查 ${dishItems.length} 個餐點項目的庫存...`);
+
+  for (const item of dishItems) {
+    try {
+      // 根據餐點模板ID查找庫存
+      const inventoryItem = await inventoryService.getInventoryItemByDishTemplate(
+        orderData.store,
+        item.templateId
+      );
+
+      // 如果沒有庫存記錄，跳過檢查
+      if (!inventoryItem) {
+        // console.log(`餐點 ${item.name} 沒有庫存記錄，跳過檢查`);
+        continue;
+      }
+
+      // 如果沒有啟用庫存追蹤，跳過檢查
+      if (!inventoryItem.isInventoryTracked) {
+        // console.log(`餐點 ${item.name} 未啟用庫存追蹤，跳過檢查`);
+        continue;
+      }
+
+      // 檢查是否手動設為售完
+      if (inventoryItem.isSoldOut) {
+        throw new AppError(`很抱歉，${item.name} 目前已售完`, 400);
+      }
+
+      // 計算有效庫存
+      const effectiveStock = inventoryItem.enableAvailableStock
+        ? inventoryItem.availableStock
+        : inventoryItem.totalStock;
+
+      // 檢查庫存是否足夠
+      if (effectiveStock < item.quantity) {
+        throw new AppError(
+          `很抱歉，${item.name} 庫存不足。需要：${item.quantity}，剩餘：${effectiveStock}`,
+          400
+        );
+      }
+
+      // console.log(`✅ ${item.name} 庫存檢查通過 (需要: ${item.quantity}, 剩餘: ${effectiveStock})`);
+
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error; // 重新拋出業務邏輯錯誤
+      } else {
+        console.error(`檢查餐點 ${item.name} 庫存時發生錯誤:`, error);
+        throw new AppError(`檢查 ${item.name} 庫存時發生錯誤`, 500);
+      }
+    }
+  }
+
+  // console.log('✅ 所有餐點庫存預檢查通過');
+};
+
+/**
+ * 🔍 預先檢查 Bundle 購買資格
+ */
+const validateBundlesBeforeOrder = async (orderData) => {
+  const bundleItems = orderData.items.filter(item => item.itemType === 'bundle');
+
+  if (bundleItems.length === 0) {
+    return; // 沒有Bundle項目，跳過檢查
+  }
+
+  // console.log(`開始預檢查 ${bundleItems.length} 個Bundle項目的購買資格...`);
+
+  for (const item of bundleItems) {
+    try {
+      await bundleService.validateBundlePurchase(
+        item.bundleId || item.templateId,
+        orderData.user,
+        item.quantity,
+        orderData.store
+      );
+
+      // console.log(`Bundle ${item.name} 購買資格檢查通過`);
+    } catch (error) {
+      console.error(`Bundle ${item.name} 購買資格檢查失敗:`, error);
+      throw error; // 直接拋出，因為 bundleService 已經包裝了適當的錯誤訊息
+    }
+  }
+
+  // console.log('✅ 所有Bundle購買資格預檢查通過');
+};
+
+/**
+ * 🧹 清理失敗訂單 (當預檢查通過但後續步驟失敗時)
+ */
+const cleanupFailedOrder = async (orderId, items) => {
+  try {
+    // console.log('開始清理失敗訂單的相關資料...');
+
+    // 刪除已創建的實例
+    const dishInstanceIds = items
+      .filter(item => item.itemType === 'dish')
+      .map(item => item.dishInstance);
+
+    const bundleInstanceIds = items
+      .filter(item => item.itemType === 'bundle')
+      .map(item => item.bundleInstance);
+
+    if (dishInstanceIds.length > 0) {
+      await DishInstance.deleteMany({ _id: { $in: dishInstanceIds } });
+      // console.log(`清理了 ${dishInstanceIds.length} 個餐點實例`);
+    }
+
+    if (bundleInstanceIds.length > 0) {
+      await BundleInstance.deleteMany({ _id: { $in: bundleInstanceIds } });
+      // console.log(`清理了 ${bundleInstanceIds.length} 個Bundle實例`);
+    }
+
+    // 刪除訂單
+    if (orderId) {
+      await Order.findByIdAndDelete(orderId);
+      // console.log('清理了失敗的訂單');
+    }
+
+    // console.log('失敗訂單清理完成');
+  } catch (cleanupError) {
+    console.error('清理失敗訂單資料時發生錯誤:', cleanupError);
+    // 不拋出錯誤，避免影響主要的錯誤處理
+  }
+};
+
 
 /**
  * 創建餐點項目
@@ -100,16 +245,11 @@ const createDishItem = async (item, brandId) => {
 };
 
 /**
- * 創建 Bundle 項目 - 修改為創建 BundleInstance
+ * 創建 Bundle 項目 (移除重複驗證，因為已經預檢查過)
  */
 const createBundleItem = async (item, userId, storeId, brandId) => {
-  // 驗證 Bundle 購買資格
-  await bundleService.validateBundlePurchase(
-    item.bundleId || item.templateId, // 支援兩種命名方式
-    userId,
-    item.quantity,
-    storeId
-  );
+  // 註解掉重複驗證，因為已經在預檢查階段完成
+  // await bundleService.validateBundlePurchase(...)
 
   // 創建 Bundle 實例
   const bundleInstanceData = {
@@ -127,7 +267,7 @@ const createBundleItem = async (item, userId, storeId, brandId) => {
     quantity: item.quantity,
     subtotal: item.subtotal || (bundleInstance.finalPrice * item.quantity),
     note: item.note || '',
-    generatedCoupons: [] // 將在付款完成後填入
+    generatedCoupons: []
   };
 };
 

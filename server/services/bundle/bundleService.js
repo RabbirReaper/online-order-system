@@ -393,6 +393,6 @@ export const validateBundlePurchase = async (bundleId, userId = null, quantity =
   return {
     valid: true,
     bundle,
-    message: '可以購買'
+    message: 'success'
   };
 };
