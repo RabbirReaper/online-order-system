@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// 綑綁模型
+// 綑綁模型 - 統一管理所有兌換券（單個或組合）
 const bundleSchema = new mongoose.Schema({
   brand: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,13 +11,26 @@ const bundleSchema = new mongoose.Schema({
     type: String,
     trim: true,
     required: true
-  }, // 綑綁名稱，例如：豬排兌換券x10綑綁
+  }, // 綑綁名稱，例如：豬排兌換券、豬排兌換券x10綑綁
   description: {
     type: String,
     required: true
-  }, // 綑綁描述，例如：買10送2，超值優惠綑綁
+  }, // 綑綁描述，例如：單個兌換券、買10送2超值優惠綑綁
+  image: {
+    url: {
+      type: String,
+      required: true
+    }, // 圖片URL
+    key: {
+      type: String,
+      required: true
+    } // S3/雲端儲存的key，用於刪除圖片
+  }, // Bundle 的主要顯示圖片
+  sellingPoint: {
+    type: Number
+  }, // 賣點數值（可能是折扣百分比、節省金額、贈送數量等）
 
-  // 綑綁內容 - 只包含兌換券
+  // 綑綁內容 - 包含兌換券
   bundleItems: [{
     couponTemplate: {
       type: mongoose.Schema.Types.ObjectId,
@@ -38,25 +51,27 @@ const bundleSchema = new mongoose.Schema({
     } // 兌換券名稱
   }],
 
-  // 定價策略
-  originalPrice: {
-    type: Number,
-    required: true,
-    min: 0
-  }, // 原價
-  sellingPrice: {
-    type: Number,
-    required: true,
-    min: 0
-  }, // 優惠價格（實際售價）
-  originalPoint: {
-    type: Number,
-    min: 0
-  }, // 原點數價格
-  sellingPoint: {
-    type: Number,
-    min: 0
-  }, // 優惠點數價格
+  // 雙重定價策略
+  cashPrice: {
+    original: {
+      type: Number,
+      min: 0
+    }, // 現金原價
+    selling: {
+      type: Number,
+      min: 0
+    } // 現金售價
+  },
+  pointPrice: {
+    original: {
+      type: Number,
+      min: 0
+    }, // 點數原價
+    selling: {
+      type: Number,
+      min: 0
+    } // 點數售價
+  },
 
   // 時限控制
   validFrom: {
