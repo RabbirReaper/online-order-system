@@ -457,3 +457,123 @@ export const calculateBundlePrice = (bundle, paymentType = 'cash') => {
 
   return 0;
 };
+
+/**
+ * 檢查用戶購買限制
+ * @param {String} userId - 用戶ID
+ * @param {String} bundleId - Bundle ID
+ * @param {Number} quantity - 要購買的數量
+ * @returns {Promise<Object>} 購買限制檢查結果
+ */
+export const checkPurchaseLimit = async (userId, bundleId, quantity = 1) => {
+  const bundle = await Bundle.findById(bundleId);
+
+  if (!bundle) {
+    throw new AppError('Bundle 不存在', 404);
+  }
+
+  // 如果沒有設定購買限制，則可以購買
+  if (!bundle.purchaseLimitPerUser) {
+    return {
+      canPurchase: true,
+      remainingLimit: null,
+      message: '無購買數量限制'
+    };
+  }
+
+  // 計算用戶已購買的數量
+  const userPurchaseCount = await Order.aggregate([
+    {
+      $match: {
+        user: userId,
+        status: { $in: ['paid', 'completed'] },
+        'items.itemType': 'bundle'
+      }
+    },
+    {
+      $unwind: '$items'
+    },
+    {
+      $match: {
+        'items.itemType': 'bundle'
+      }
+    },
+    {
+      $lookup: {
+        from: 'bundleinstances',
+        localField: 'items.bundleInstance',
+        foreignField: '_id',
+        as: 'bundleInstance'
+      }
+    },
+    {
+      $unwind: '$bundleInstance'
+    },
+    {
+      $match: {
+        'bundleInstance.templateId': bundleId
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalQuantity: { $sum: '$items.quantity' }
+      }
+    }
+  ]);
+
+  const currentPurchaseCount = userPurchaseCount[0]?.totalQuantity || 0;
+  const remainingLimit = bundle.purchaseLimitPerUser - currentPurchaseCount;
+
+  const canPurchase = currentPurchaseCount + quantity <= bundle.purchaseLimitPerUser;
+
+  return {
+    canPurchase,
+    remainingLimit: Math.max(0, remainingLimit),
+    currentPurchaseCount,
+    purchaseLimit: bundle.purchaseLimitPerUser,
+    requestedQuantity: quantity,
+    message: canPurchase ? '可以購買' : `超過購買限制，您已購買 ${currentPurchaseCount} 個，限制為 ${bundle.purchaseLimitPerUser} 個`
+  };
+};
+
+/**
+ * 自動更新 Bundle 狀態（系統任務）
+ * @returns {Promise<Object>} 更新結果
+ */
+export const autoUpdateBundleStatus = async () => {
+  const now = new Date();
+
+  // 找到所有啟用自動狀態控制的 Bundle
+  const bundlesToUpdate = await Bundle.find({
+    autoStatusControl: true,
+    isActive: true
+  });
+
+  let activatedCount = 0;
+  let deactivatedCount = 0;
+
+  for (const bundle of bundlesToUpdate) {
+    const isInValidPeriod = now >= bundle.validFrom && now <= bundle.validTo;
+
+    // 如果 Bundle 應該啟用但目前未啟用
+    if (isInValidPeriod && !bundle.isActive) {
+      bundle.isActive = true;
+      await bundle.save();
+      activatedCount++;
+    }
+    // 如果 Bundle 應該停用但目前啟用
+    else if (!isInValidPeriod && bundle.isActive) {
+      bundle.isActive = false;
+      await bundle.save();
+      deactivatedCount++;
+    }
+  }
+
+  return {
+    totalChecked: bundlesToUpdate.length,
+    activatedCount,
+    deactivatedCount,
+    timestamp: now
+  };
+};

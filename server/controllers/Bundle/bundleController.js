@@ -116,6 +116,7 @@ export const deleteBundle = asyncHandler(async (req, res) => {
 // 獲取可購買的 Bundle（客戶端）
 export const getAvailableBundles = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params;
+  const { paymentType = 'all' } = req.query;
 
   if (!brandId) {
     return res.status(400).json({
@@ -124,7 +125,7 @@ export const getAvailableBundles = asyncHandler(async (req, res) => {
     });
   }
 
-  const bundles = await bundleService.getAvailableBundles(brandId, storeId);
+  const bundles = await bundleService.getAvailableBundles(brandId, storeId, paymentType);
 
   res.json({
     success: true,
@@ -157,21 +158,22 @@ export const checkPurchaseLimit = asyncHandler(async (req, res) => {
 
 // 驗證 Bundle 購買資格（客戶端）
 export const validateBundlePurchase = asyncHandler(async (req, res) => {
-  const { bundleId } = req.params;
-  const { storeId } = req.params;
+  const { bundleId, storeId } = req.params;
   const userId = req.auth?.userId; // 可能未登入
-  const { quantity = 1 } = req.query;
+  const { quantity = 1, paymentType = 'cash' } = req.query;
 
-  const result = await bundleService.validateBundlePurchase(
+  const bundle = await bundleService.validateBundlePurchase(
     bundleId,
     userId,
     parseInt(quantity, 10),
-    storeId
+    storeId,
+    paymentType
   );
 
   res.json({
     success: true,
-    ...result
+    bundle,
+    message: 'Bundle 購買資格驗證通過'
   });
 });
 

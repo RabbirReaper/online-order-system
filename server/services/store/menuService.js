@@ -43,7 +43,7 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
     {
       path: 'categories.items.bundle',
       model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems validFrom validTo isActive autoStatusControl',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems validFrom validTo isActive autoStatusControl',
       populate: {
         path: 'bundleItems.couponTemplate',
         select: 'name description couponType'
@@ -53,7 +53,7 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
 
   const populatedMenu = await Menu.findById(menu._id).populate(populateOptions);
 
-  // 處理 Bundle 項目的可購買狀態
+  // 處理項目的可購買狀態
   if (populatedMenu.categories) {
     populatedMenu.categories.forEach(category => {
       category.items = category.items.filter(item => {
@@ -181,7 +181,7 @@ export const createMenu = async (storeId, menuData) => {
     {
       path: 'categories.items.bundle',
       model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
       populate: {
         path: 'bundleItems.couponTemplate',
         select: 'name description couponType'
@@ -279,7 +279,7 @@ export const updateMenu = async (storeId, menuId, updateData) => {
     {
       path: 'categories.items.bundle',
       model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
       populate: {
         path: 'bundleItems.couponTemplate',
         select: 'name description couponType'
@@ -315,163 +315,6 @@ export const deleteMenu = async (storeId, menuId) => {
   }
 
   return { success: true, message: '菜單已刪除' };
-};
-
-/**
- * 切換菜單項目啟用狀態
- * @param {String} storeId - 店鋪ID
- * @param {String} menuId - 菜單ID
- * @param {Number} categoryIndex - 分類索引
- * @param {Number} itemIndex - 商品索引
- * @param {Boolean} isShowing - 是否啟用
- * @returns {Promise<Object>} 更新後的菜單
- */
-export const toggleMenuItem = async (storeId, menuId, categoryIndex, itemIndex, isShowing) => {
-  const store = await Store.findById(storeId);
-
-  if (!store) {
-    throw new AppError('店鋪不存在', 404);
-  }
-
-  const menu = await Menu.findOne({ _id: menuId, store: storeId });
-
-  if (!menu) {
-    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
-  }
-
-  if (!menu.categories[categoryIndex]) {
-    throw new AppError('指定的分類不存在', 404);
-  }
-
-  if (!menu.categories[categoryIndex].items[itemIndex]) {
-    throw new AppError('指定的商品不存在', 404);
-  }
-
-  menu.categories[categoryIndex].items[itemIndex].isShowing = isShowing;
-
-  await menu.save();
-
-  return await Menu.findById(menu._id).populate([
-    {
-      path: 'categories.items.dishTemplate',
-      model: 'DishTemplate',
-      select: 'name description basePrice image tags optionCategories'
-    },
-    {
-      path: 'categories.items.bundle',
-      model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
-      populate: {
-        path: 'bundleItems.couponTemplate',
-        select: 'name description couponType'
-      }
-    }
-  ]);
-};
-
-/**
- * 更新分類順序
- * @param {String} storeId - 店鋪ID
- * @param {String} menuId - 菜單ID
- * @param {Array} categoryOrders - 分類順序 [{ categoryIndex, order }]
- * @returns {Promise<Object>} 更新後的菜單
- */
-export const updateCategoryOrder = async (storeId, menuId, categoryOrders) => {
-  const store = await Store.findById(storeId);
-
-  if (!store) {
-    throw new AppError('店鋪不存在', 404);
-  }
-
-  const menu = await Menu.findOne({ _id: menuId, store: storeId });
-
-  if (!menu) {
-    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
-  }
-
-  for (const item of categoryOrders) {
-    if (!menu.categories[item.categoryIndex]) {
-      throw new AppError(`指定的分類索引 ${item.categoryIndex} 不存在`, 404);
-    }
-  }
-
-  for (const item of categoryOrders) {
-    menu.categories[item.categoryIndex].order = item.order;
-  }
-
-  await menu.save();
-
-  return await Menu.findById(menu._id).populate([
-    {
-      path: 'categories.items.dishTemplate',
-      model: 'DishTemplate',
-      select: 'name description basePrice image tags optionCategories'
-    },
-    {
-      path: 'categories.items.bundle',
-      model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
-      populate: {
-        path: 'bundleItems.couponTemplate',
-        select: 'name description couponType'
-      }
-    }
-  ]);
-};
-
-/**
- * 更新商品順序
- * @param {String} storeId - 店鋪ID
- * @param {String} menuId - 菜單ID
- * @param {Number} categoryIndex - 分類索引
- * @param {Array} itemOrders - 商品順序 [{ itemIndex, order }]
- * @returns {Promise<Object>} 更新後的菜單
- */
-export const updateItemOrder = async (storeId, menuId, categoryIndex, itemOrders) => {
-  const store = await Store.findById(storeId);
-
-  if (!store) {
-    throw new AppError('店鋪不存在', 404);
-  }
-
-  const menu = await Menu.findOne({ _id: menuId, store: storeId });
-
-  if (!menu) {
-    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
-  }
-
-  if (!menu.categories[categoryIndex]) {
-    throw new AppError('指定的分類不存在', 404);
-  }
-
-  for (const item of itemOrders) {
-    if (!menu.categories[categoryIndex].items[item.itemIndex]) {
-      throw new AppError(`指定的商品索引 ${item.itemIndex} 不存在`, 404);
-    }
-  }
-
-  for (const item of itemOrders) {
-    menu.categories[categoryIndex].items[item.itemIndex].order = item.order;
-  }
-
-  await menu.save();
-
-  return await Menu.findById(menu._id).populate([
-    {
-      path: 'categories.items.dishTemplate',
-      model: 'DishTemplate',
-      select: 'name description basePrice image tags optionCategories'
-    },
-    {
-      path: 'categories.items.bundle',
-      model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
-      populate: {
-        path: 'bundleItems.couponTemplate',
-        select: 'name description couponType'
-      }
-    }
-  ]);
 };
 
 /**
@@ -551,7 +394,7 @@ export const addItemToMenu = async (storeId, menuId, categoryIndex, itemData) =>
     {
       path: 'categories.items.bundle',
       model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
       populate: {
         path: 'bundleItems.couponTemplate',
         select: 'name description couponType'
@@ -604,7 +447,164 @@ export const removeItemFromMenu = async (storeId, menuId, categoryIndex, itemInd
     {
       path: 'categories.items.bundle',
       model: 'Bundle',
-      select: 'name description sellingPrice sellingPoint originalPrice originalPoint bundleItems',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
+      populate: {
+        path: 'bundleItems.couponTemplate',
+        select: 'name description couponType'
+      }
+    }
+  ]);
+};
+
+/**
+ * 切換菜單項目啟用狀態
+ * @param {String} storeId - 店鋪ID
+ * @param {String} menuId - 菜單ID
+ * @param {Number} categoryIndex - 分類索引
+ * @param {Number} itemIndex - 商品索引
+ * @param {Boolean} isShowing - 是否啟用
+ * @returns {Promise<Object>} 更新後的菜單
+ */
+export const toggleMenuItem = async (storeId, menuId, categoryIndex, itemIndex, isShowing) => {
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  const menu = await Menu.findOne({ _id: menuId, store: storeId });
+
+  if (!menu) {
+    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
+  }
+
+  if (!menu.categories[categoryIndex]) {
+    throw new AppError('指定的分類不存在', 404);
+  }
+
+  if (!menu.categories[categoryIndex].items[itemIndex]) {
+    throw new AppError('指定的商品不存在', 404);
+  }
+
+  menu.categories[categoryIndex].items[itemIndex].isShowing = isShowing;
+
+  await menu.save();
+
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.bundle',
+      model: 'Bundle',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
+      populate: {
+        path: 'bundleItems.couponTemplate',
+        select: 'name description couponType'
+      }
+    }
+  ]);
+};
+
+/**
+ * 更新分類順序
+ * @param {String} storeId - 店鋪ID
+ * @param {String} menuId - 菜單ID
+ * @param {Array} categoryOrders - 分類順序 [{ categoryIndex, order }]
+ * @returns {Promise<Object>} 更新後的菜單
+ */
+export const updateCategoryOrder = async (storeId, menuId, categoryOrders) => {
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  const menu = await Menu.findOne({ _id: menuId, store: storeId });
+
+  if (!menu) {
+    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
+  }
+
+  for (const item of categoryOrders) {
+    if (!menu.categories[item.categoryIndex]) {
+      throw new AppError(`指定的分類索引 ${item.categoryIndex} 不存在`, 404);
+    }
+  }
+
+  for (const item of categoryOrders) {
+    menu.categories[item.categoryIndex].order = item.order;
+  }
+
+  await menu.save();
+
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.bundle',
+      model: 'Bundle',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
+      populate: {
+        path: 'bundleItems.couponTemplate',
+        select: 'name description couponType'
+      }
+    }
+  ]);
+};
+
+/**
+ * 更新商品順序
+ * @param {String} storeId - 店鋪ID
+ * @param {String} menuId - 菜單ID
+ * @param {Number} categoryIndex - 分類索引
+ * @param {Array} itemOrders - 商品順序 [{ itemIndex, order }]
+ * @returns {Promise<Object>} 更新後的菜單
+ */
+export const updateItemOrder = async (storeId, menuId, categoryIndex, itemOrders) => {
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  const menu = await Menu.findOne({ _id: menuId, store: storeId });
+
+  if (!menu) {
+    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
+  }
+
+  if (!menu.categories[categoryIndex]) {
+    throw new AppError('指定的分類不存在', 404);
+  }
+
+  for (const item of itemOrders) {
+    if (!menu.categories[categoryIndex].items[item.itemIndex]) {
+      throw new AppError(`指定的商品索引 ${item.itemIndex} 不存在`, 404);
+    }
+  }
+
+  for (const item of itemOrders) {
+    menu.categories[categoryIndex].items[item.itemIndex].order = item.order;
+  }
+
+  await menu.save();
+
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.bundle',
+      model: 'Bundle',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
       populate: {
         path: 'bundleItems.couponTemplate',
         select: 'name description couponType'
