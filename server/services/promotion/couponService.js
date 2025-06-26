@@ -1,13 +1,12 @@
 /**
  * 優惠券服務
- * 處理優惠券相關的業務邏輯
+ * 處理優惠券模板相關的業務邏輯（純模板管理）
  */
 
 import mongoose from 'mongoose';
 import CouponTemplate from '../../models/Promotion/CouponTemplate.js';
 import CouponInstance from '../../models/Promotion/CouponInstance.js';
 import { AppError } from '../../middlewares/error.js';
-import * as pointService from './pointService.js';
 
 /**
  * 獲取所有優惠券模板
@@ -48,8 +47,8 @@ export const getCouponTemplateById = async (templateId, brandId) => {
  */
 export const createCouponTemplate = async (templateData) => {
   // 驗證必要欄位
-  if (!templateData.name || !templateData.couponType || !templateData.pointCost || !templateData.validityPeriod) {
-    throw new AppError('名稱、類型、點數成本和有效期為必填欄位', 400);
+  if (!templateData.name || !templateData.couponType || !templateData.validityPeriod) {
+    throw new AppError('名稱、類型和有效期為必填欄位', 400);
   }
 
   // 根據類型驗證特定欄位
@@ -125,47 +124,33 @@ export const deleteCouponTemplate = async (templateId, brandId) => {
     throw new AppError('還有未使用的優惠券實例，無法刪除模板', 400);
   }
 
+  // 檢查是否被 Bundle 使用
+  const Bundle = mongoose.model('Bundle');
+  const bundlesUsingTemplate = await Bundle.countDocuments({
+    'bundleItems.couponTemplate': templateId
+  });
+
+  if (bundlesUsingTemplate > 0) {
+    throw new AppError('此優惠券模板正被Bundle使用，無法刪除', 400);
+  }
+
   await template.deleteOne();
 
   return { success: true, message: '優惠券模板已刪除' };
 };
 
 /**
- * 獲取可用的優惠券模板
+ * 獲取可用的優惠券模板（用於創建Bundle時選擇）
  * @param {String} brandId - 品牌ID
- * @param {String} storeId - 店鋪ID (可選)
  * @returns {Promise<Array>} 可用的優惠券模板
  */
-export const getAvailableCouponTemplates = async (brandId, storeId = null) => {
-  const now = new Date();
-
-  // 基本查詢條件
-  const query = {
+export const getAvailableCouponTemplates = async (brandId) => {
+  const templates = await CouponTemplate.find({
     brand: brandId,
-    isActive: true,
-    startDate: { $lte: now },
-    $or: [
-      { endDate: { $gte: now } },
-      { endDate: { $exists: false } }
-    ]
-  };
+    isActive: true
+  })
+    .populate('exchangeInfo.items.dishTemplate', 'name')
+    .sort({ name: 1 });
 
-  // 如果有指定店鋪，添加店鋪條件
-  if (storeId) {
-    query.$or = [
-      { stores: { $in: [storeId] } },
-      { stores: { $size: 0 } } // 空陣列表示適用於所有店鋪
-    ];
-  }
-
-  // 如果有最大發行數量限制，檢查是否已達到限制
-  const templates = await CouponTemplate.find(query);
-
-  // 過濾掉已達到發行上限的模板
-  return templates.filter(template => {
-    if (template.maxIssuance && template.totalIssued >= template.maxIssuance) {
-      return false;
-    }
-    return true;
-  });
+  return templates;
 };
