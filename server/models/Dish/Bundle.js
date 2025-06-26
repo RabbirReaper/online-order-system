@@ -123,7 +123,6 @@ const bundleSchema = new mongoose.Schema({
 
 // 索引
 bundleSchema.index({ brand: 1 });
-bundleSchema.index({ brand: 1, isActive: 1, validFrom: 1, validTo: 1 });
 
 // 虛擬屬性 - 檢查是否在有效期內
 bundleSchema.virtual('isInValidPeriod').get(function () {
