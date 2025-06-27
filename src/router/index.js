@@ -338,27 +338,55 @@ const router = createRouter({
           path: 'coupons',
           name: 'brand-admin-coupons',
           component: () => import('@/components/BrandAdmin/Promotion/Coupon/List.vue'),
-          meta: { requiresAuth: true, title: '優惠券管理' }
+          meta: { requiresAuth: true, title: '折價券管理' }
         },
         {
           path: 'coupons/create',
           name: 'brand-admin-coupon-create',
           component: () => import('@/components/BrandAdmin/Promotion/Coupon/Form.vue'),
-          meta: { requiresAuth: true, title: '新增優惠券' }
+          meta: { requiresAuth: true, title: '新增折價券' }
         },
         {
           path: 'coupons/edit/:id',
           name: 'brand-admin-coupon-edit',
           component: () => import('@/components/BrandAdmin/Promotion/Coupon/Form.vue'),
           props: true,
-          meta: { requiresAuth: true, title: '編輯優惠券' }
+          meta: { requiresAuth: true, title: '編輯折價券' }
         },
         {
           path: 'coupons/detail/:id',
           name: 'brand-admin-coupon-detail',
           component: () => import('@/components/BrandAdmin/Promotion/Coupon/Detail.vue'),
           props: true,
-          meta: { requiresAuth: true, title: '優惠券詳情' }
+          meta: { requiresAuth: true, title: '折價券詳情' }
+        },
+
+        // 促銷管理 - 兌換券 (新增的 Voucher)
+        {
+          path: 'vouchers',
+          name: 'brand-admin-vouchers',
+          component: () => import('@/components/BrandAdmin/Promotion/Voucher/List.vue'),
+          meta: { requiresAuth: true, title: '兌換券管理' }
+        },
+        {
+          path: 'vouchers/create',
+          name: 'brand-admin-voucher-create',
+          component: () => import('@/components/BrandAdmin/Promotion/Voucher/Form.vue'),
+          meta: { requiresAuth: true, title: '新增兌換券' }
+        },
+        {
+          path: 'vouchers/edit/:id',
+          name: 'brand-admin-voucher-edit',
+          component: () => import('@/components/BrandAdmin/Promotion/Voucher/Form.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '編輯兌換券' }
+        },
+        {
+          path: 'vouchers/detail/:id',
+          name: 'brand-admin-voucher-detail',
+          component: () => import('@/components/BrandAdmin/Promotion/Voucher/Detail.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '兌換券詳情' }
         },
         // 點數規則
         {

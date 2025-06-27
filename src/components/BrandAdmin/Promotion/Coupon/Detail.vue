@@ -19,7 +19,7 @@
         <h4 class="mb-0">{{ coupon.name }}</h4>
         <div class="d-flex">
           <router-link :to="`/admin/${brandId}/coupons/edit/${coupon._id}`" class="btn btn-primary me-2">
-            <i class="bi bi-pencil me-1"></i>編輯優惠券
+            <i class="bi bi-pencil me-1"></i>編輯折價券
           </router-link>
           <router-link :to="`/admin/${brandId}/coupons`" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i>返回列表
@@ -27,7 +27,7 @@
         </div>
       </div>
 
-      <!-- 優惠券詳情卡片 -->
+      <!-- 折價券詳情卡片 -->
       <div class="row">
         <!-- 左側基本資訊 -->
         <div class="col-md-6 mb-4">
@@ -36,22 +36,13 @@
               <h5 class="card-title mb-3">基本資訊</h5>
 
               <div class="mb-3">
-                <h6 class="text-muted mb-1">優惠券名稱</h6>
+                <h6 class="text-muted mb-1">折價券名稱</h6>
                 <p>{{ coupon.name }}</p>
               </div>
 
               <div class="mb-3">
-                <h6 class="text-muted mb-1">優惠券描述</h6>
+                <h6 class="text-muted mb-1">折價券描述</h6>
                 <p>{{ coupon.description || '無描述' }}</p>
-              </div>
-
-              <div class="mb-3">
-                <h6 class="text-muted mb-1">優惠券類型</h6>
-                <p>
-                  <span class="badge" :class="coupon.couponType === 'discount' ? 'bg-primary' : 'bg-success'">
-                    {{ coupon.couponType === 'discount' ? '折扣券' : '兌換券' }}
-                  </span>
-                </p>
               </div>
 
               <div class="mb-3">
@@ -68,208 +59,191 @@
                 <h6 class="text-muted mb-1">狀態</h6>
                 <p>
                   <span class="badge" :class="coupon.isActive ? 'bg-success' : 'bg-secondary'">
-                    {{ coupon.isActive ? '啟用中' : '已停用' }}
+                    {{ coupon.isActive ? '啟用' : '停用' }}
                   </span>
                 </p>
               </div>
 
               <div class="mb-3">
                 <h6 class="text-muted mb-1">已發行數量</h6>
-                <p class="fs-4">{{ coupon.totalIssued || 0 }}</p>
-              </div>
-
-              <div class="mb-3">
-                <h6 class="text-muted mb-1">創建時間</h6>
-                <p>{{ formatDate(coupon.createdAt) }}</p>
-              </div>
-
-              <div class="mb-0">
-                <h6 class="text-muted mb-1">最後更新</h6>
-                <p>{{ formatDate(coupon.updatedAt) }}</p>
-              </div>
-            </div>
-
-            <div class="card-footer bg-transparent">
-              <div class="d-flex justify-content-between">
-                <!-- 切換狀態按鈕 -->
-                <button type="button" class="btn"
-                  :class="coupon.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
-                  @click="showToggleStatusModal" :disabled="isToggling">
-                  <span v-if="isToggling" class="spinner-border spinner-border-sm me-1" role="status"
-                    aria-hidden="true"></span>
-                  <i v-else class="bi bi-power me-1"></i>
-                  {{ coupon.isActive ? '停用優惠券' : '啟用優惠券' }}
-                </button>
-
-                <!-- 刪除按鈕 -->
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                  data-bs-target="#deleteCouponModal">
-                  <i class="bi bi-trash me-1"></i>刪除優惠券
-                </button>
+                <p>{{ coupon.totalIssued || 0 }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 右側優惠內容 -->
-        <div class="col-md-6">
-          <!-- 折扣資訊卡片 -->
-          <div class="card mb-4" v-if="coupon.couponType === 'discount' && coupon.discountInfo">
+        <!-- 右側折扣資訊 -->
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
             <div class="card-body">
-              <h5 class="card-title mb-3">折扣資訊</h5>
+              <h5 class="card-title mb-3">折扣設定</h5>
 
               <div class="mb-3">
                 <h6 class="text-muted mb-1">折扣類型</h6>
-                <p>{{ coupon.discountInfo.discountType === 'percentage' ? '百分比折扣' : '固定金額折扣' }}</p>
+                <p>
+                  <span class="badge bg-info">
+                    {{ coupon.discountInfo?.discountType === 'percentage' ? '百分比折扣' : '固定金額折抵' }}
+                  </span>
+                </p>
               </div>
 
               <div class="mb-3">
                 <h6 class="text-muted mb-1">折扣值</h6>
                 <p class="fs-4 text-success">
-                  <template v-if="coupon.discountInfo.discountType === 'percentage'">
-                    {{ coupon.discountInfo.discountValue }}%
+                  <template v-if="coupon.discountInfo?.discountType === 'percentage'">
+                    {{ coupon.discountInfo.discountValue }}% 折扣
                   </template>
                   <template v-else>
-                    ${{ formatPrice(coupon.discountInfo.discountValue) }}
+                    折抵 ${{ formatPrice(coupon.discountInfo?.discountValue || 0) }}
                   </template>
                 </p>
               </div>
 
-              <div class="mb-3" v-if="coupon.discountInfo.maxDiscountAmount">
-                <h6 class="text-muted mb-1">最大折扣金額</h6>
+              <div class="mb-3"
+                v-if="coupon.discountInfo?.discountType === 'percentage' && coupon.discountInfo?.maxDiscountAmount">
+                <h6 class="text-muted mb-1">最高折扣金額</h6>
                 <p>${{ formatPrice(coupon.discountInfo.maxDiscountAmount) }}</p>
               </div>
 
-              <div class="mb-0">
+              <div class="mb-3">
                 <h6 class="text-muted mb-1">最低消費金額</h6>
-                <p>${{ formatPrice(coupon.discountInfo.minPurchaseAmount || 0) }}</p>
+                <p>
+                  {{ coupon.discountInfo?.minPurchaseAmount > 0 ?
+                    `$${formatPrice(coupon.discountInfo.minPurchaseAmount)}` : '無限制' }}
+                </p>
               </div>
-            </div>
-          </div>
 
-          <!-- 兌換資訊卡片 -->
-          <div class="card mb-4" v-if="coupon.couponType === 'exchange' && coupon.exchangeInfo">
-            <div class="card-body">
-              <h5 class="card-title mb-3">兌換品項</h5>
-
-              <div v-if="coupon.exchangeInfo.items && coupon.exchangeInfo.items.length > 0">
-                <div v-for="(item, index) in coupon.exchangeInfo.items" :key="index"
-                  class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
-                  <div>
-                    <h6 class="mb-1">{{ item.dishTemplate?.name || '未知餐點' }}</h6>
-                    <p class="mb-0 text-muted">數量：{{ item.quantity }}</p>
-                  </div>
-                  <div>
-                    <span class="badge bg-info">
-                      ${{ formatPrice(item.dishTemplate?.basePrice || 0) }}
-                    </span>
-                  </div>
+              <!-- 使用規則說明 -->
+              <div class="mt-4">
+                <h6 class="text-muted mb-2">使用規則</h6>
+                <div class="border rounded p-3 bg-light">
+                  <ul class="mb-0 small">
+                    <li>此折價券自發放日起 {{ coupon.validityPeriod }} 天內有效</li>
+                    <li v-if="coupon.discountInfo?.minPurchaseAmount > 0">
+                      需滿足最低消費金額 ${{ formatPrice(coupon.discountInfo.minPurchaseAmount) }}
+                    </li>
+                    <li
+                      v-if="coupon.discountInfo?.discountType === 'percentage' && coupon.discountInfo?.maxDiscountAmount">
+                      百分比折扣最高不超過 ${{ formatPrice(coupon.discountInfo.maxDiscountAmount) }}
+                    </li>
+                    <li>每張折價券限使用一次</li>
+                    <li>不可與其他優惠同時使用</li>
+                  </ul>
                 </div>
               </div>
-              <div v-else class="text-muted text-center py-3">
-                尚未設定兌換品項
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 統計資訊 -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">使用統計</h5>
+              <div class="row text-center">
+                <div class="col-md-3">
+                  <div class="border-end">
+                    <h3 class="text-primary mb-1">{{ coupon.totalIssued || 0 }}</h3>
+                    <p class="text-muted mb-0">已發行</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="border-end">
+                    <h3 class="text-success mb-1">{{ coupon.totalUsed || 0 }}</h3>
+                    <p class="text-muted mb-0">已使用</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="border-end">
+                    <h3 class="text-warning mb-1">{{ (coupon.totalIssued || 0) - (coupon.totalUsed || 0) }}</h3>
+                    <p class="text-muted mb-0">未使用</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <h3 class="text-info mb-1">{{ usageRate }}%</h3>
+                  <p class="text-muted mb-0">使用率</p>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- 適用店鋪卡片 -->
-          <div class="card mb-4">
+      <!-- 操作按鈕 -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
             <div class="card-body">
-              <h5 class="card-title mb-3">適用店鋪</h5>
-              <p class="text-muted">
-                {{ coupon.stores && coupon.stores.length > 0 ? '指定店鋪' : '所有店鋪' }}
-              </p>
-              <button class="btn btn-sm btn-outline-primary" disabled>
-                <i class="bi bi-shop me-1"></i>管理適用店鋪
-              </button>
+              <h5 class="card-title mb-3">操作</h5>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" @click="showToggleStatusModal">
+                  <i class="bi bi-power me-1"></i>{{ coupon.isActive ? '停用' : '啟用' }}折價券
+                </button>
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCouponModal">
+                  <i class="bi bi-trash me-1"></i>刪除折價券
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- 使用統計卡片 -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title mb-3">使用統計</h5>
-              <p class="text-muted">此功能尚未開發完成</p>
-              <button class="btn btn-sm btn-outline-primary" disabled>
-                <i class="bi bi-bar-chart me-1"></i>查看統計
-              </button>
+    <!-- 狀態切換確認對話框 -->
+    <div class="modal fade" id="statusToggleModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">確認操作</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p v-if="coupon">
+              您確定要{{ coupon.isActive ? '停用' : '啟用' }}「{{ coupon.name }}」嗎？
+            </p>
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle-fill me-2"></i>
+              {{ coupon?.isActive ? '停用後顧客將無法兌換此折價券' : '啟用後顧客可以重新兌換此折價券' }}
             </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary" @click="confirmToggleStatus" :disabled="isToggling">
+              <span v-if="isToggling" class="spinner-border spinner-border-sm me-1"></span>
+              確認{{ coupon?.isActive ? '停用' : '啟用' }}
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 刪除確認對話框 -->
-    <div class="modal fade" id="deleteCouponModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-
-          <div class="modal-body" v-if="coupon">
-            <p>您確定要刪除優惠券 <strong>{{ coupon.name }}</strong> 嗎？</p>
-            <div class="alert alert-danger">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              此操作無法撤銷，優惠券相關的所有資料都將被永久刪除。
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ isDeleting ? '處理中...' : '確認刪除' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- 狀態切換確認對話框 -->
-    <div class="modal fade" id="statusToggleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="deleteCouponModal" tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">確認變更狀態</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <h5 class="modal-title">確認刪除</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body" v-if="coupon">
-            <p>
-              確定要將「<strong>{{ coupon.name }}</strong>」
-              {{ coupon.isActive ? '停用' : '啟用' }}嗎？
+          <div class="modal-body">
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <strong>警告：</strong>此操作無法復原
+            </div>
+            <p v-if="coupon">
+              您確定要刪除折價券「{{ coupon.name }}」嗎？
             </p>
-
-            <div v-if="coupon.isActive" class="alert alert-warning">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              <strong>停用注意事項：</strong>
-              <ul class="mb-0 mt-2">
-                <li>優惠券仍會顯示在兌換頁面，但無法兌換</li>
-                <li>如要完全移除請到兌換券菜單修改</li>
-                <li>客人將無法購買此優惠券</li>
-                <li>客人將無法使用此優惠券</li>
-              </ul>
-              <p class="mb-0 mt-2 fw-bold">請謹慎使用此功能</p>
-            </div>
-
-            <div v-else class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              <strong>啟用注意事項：</strong>
-              <ul class="mb-0 mt-2">
-                <li>客人將可以開始購買此優惠券</li>
-                <li>客人將可以使用此優惠券</li>
-                <li>請確認優惠券設定正確</li>
-              </ul>
-            </div>
+            <p class="text-muted small">
+              刪除後，所有相關的統計資料也會一併移除。
+            </p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn" :class="coupon && coupon.isActive ? 'btn-warning' : 'btn-success'"
-              @click="confirmToggleStatus" :disabled="isToggling">
-              <span v-if="isToggling" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
-              {{ coupon ? (coupon.isActive ? '停用' : '啟用') : '' }}
+            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
+              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1"></span>
+              {{ isDeleting ? '刪除中...' : '確認刪除' }}
             </button>
           </div>
         </div>
@@ -280,48 +254,46 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Modal } from 'bootstrap';
 import api from '@/api';
 
 // 路由
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
 
-// 從路由中獲取品牌ID和優惠券ID
+// 從路由中獲取品牌ID和折價券ID
 const brandId = computed(() => route.params.brandId);
 const couponId = computed(() => route.params.id);
 
 // 狀態
-const coupon = ref(null);
-const isLoading = ref(true);
-const error = ref('');
-const isDeleting = ref(false);
+const isLoading = ref(false);
 const isToggling = ref(false);
+const isDeleting = ref(false);
+const error = ref('');
+
+// 折價券資料
+const coupon = ref(null);
+
+// 對話框
 const statusModal = ref(null);
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
-
-  const date = new Date(dateString);
-  return date.toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price.toLocaleString('zh-TW');
+  return price?.toLocaleString('zh-TW') || '0';
 };
 
-// 獲取優惠券資料
+// 計算使用率
+const usageRate = computed(() => {
+  if (!coupon.value || !coupon.value.totalIssued || coupon.value.totalIssued === 0) {
+    return 0;
+  }
+  return Math.round(((coupon.value.totalUsed || 0) / coupon.value.totalIssued) * 100);
+});
+
+// 獲取折價券資料
 const fetchCouponData = async () => {
-  if (!couponId.value) return;
+  if (!couponId.value || !brandId.value) return;
 
   isLoading.value = true;
   error.value = '';
@@ -333,13 +305,21 @@ const fetchCouponData = async () => {
     });
 
     if (response && response.template) {
-      coupon.value = response.template;
+      const template = response.template;
+
+      // 確保只處理折價券
+      if (template.couponType !== 'discount') {
+        error.value = '此項目不是折價券';
+        return;
+      }
+
+      coupon.value = template;
     } else {
-      error.value = '獲取優惠券資料失敗';
+      error.value = '獲取折價券資料失敗';
     }
   } catch (err) {
-    console.error('獲取優惠券資料時發生錯誤:', err);
-    error.value = '獲取優惠券資料時發生錯誤，請稍後再試';
+    console.error('獲取折價券資料時發生錯誤:', err);
+    error.value = '獲取折價券資料時發生錯誤，請稍後再試';
   } finally {
     isLoading.value = false;
   }
@@ -407,19 +387,19 @@ const handleDelete = async () => {
         document.body.classList.remove('modal-open');
       }
 
-      // 返回優惠券列表
+      // 返回折價券列表
       router.push(`/admin/${brandId.value}/coupons`);
 
       // 觸發刷新列表事件
       window.dispatchEvent(new CustomEvent('refresh-coupon-list'));
     }, 300);
   } catch (err) {
-    console.error('刪除優惠券失敗:', err);
+    console.error('刪除折價券失敗:', err);
 
     if (err.response && err.response.data && err.response.data.message) {
       alert(`刪除失敗: ${err.response.data.message}`);
     } else {
-      alert('刪除優惠券時發生錯誤');
+      alert('刪除折價券時發生錯誤');
     }
   } finally {
     isDeleting.value = false;
@@ -434,7 +414,7 @@ onMounted(() => {
     statusModal.value = new Modal(statusModalElement);
   }
 
-  // 獲取優惠券資料
+  // 獲取折價券資料
   fetchCouponData();
 });
 </script>
@@ -455,5 +435,13 @@ onMounted(() => {
 
 .bg-light {
   background-color: #f8f9fa !important;
+}
+
+.border-end {
+  border-right: 1px solid #dee2e6 !important;
+}
+
+.border-end:last-child {
+  border-right: none !important;
 }
 </style>
