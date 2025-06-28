@@ -1,22 +1,136 @@
 import express from 'express';
 import * as bundleController from '../controllers/Bundle/bundleController.js';
+import * as bundleInstanceController from '../controllers/Bundle/bundleInstance.js';
+import {
+  authenticate,
+  requireRole,
+  requireBrandAccess
+} from '../middlewares/auth/index.js';
 
 const router = express.Router();
 
-// 管理員路由
-router.get('/admin/brands/:brandId/bundles', bundleController.getAllBundles);
-router.get('/admin/brands/:brandId/bundles/:id', bundleController.getBundleById);
-router.post('/admin/brands/:brandId/bundles', bundleController.createBundle);
-router.put('/admin/brands/:brandId/bundles/:id', bundleController.updateBundle);
-router.delete('/admin/brands/:brandId/bundles/:id', bundleController.deleteBundle);
+// =============================================================================
+// Bundle 模板路由（後台）
+// =============================================================================
 
-// 客戶端路由
-router.get('/customer/brands/:brandId/bundles', bundleController.getAvailableBundles);
-router.get('/customer/brands/:brandId/stores/:storeId/bundles', bundleController.getAvailableBundles);
-router.get('/customer/bundles/:bundleId/purchase-limit', bundleController.checkPurchaseLimit);
-router.get('/customer/stores/:storeId/bundles/:bundleId/validate', bundleController.validateBundlePurchase);
+// 獲取所有 Bundle
+router.get('/brands/:brandId/bundles',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  bundleController.getAllBundles
+);
 
-// 系統任務路由
-router.post('/system/bundles/auto-update-status', bundleController.autoUpdateBundleStatus);
+// 獲取單個 Bundle
+router.get('/brands/:brandId/bundles/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  bundleController.getBundleById
+);
+
+// 創建 Bundle
+router.post('/brands/:brandId/bundles',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleController.createBundle
+);
+
+// 更新 Bundle
+router.put('/brands/:brandId/bundles/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleController.updateBundle
+);
+
+// 刪除 Bundle
+router.delete('/brands/:brandId/bundles/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleController.deleteBundle
+);
+
+// =============================================================================
+// Bundle 模板路由（客戶端）
+// =============================================================================
+
+// 獲取可購買的 Bundle
+router.get('/brands/:brandId/stores/:storeId/bundles/available',
+  bundleController.getAvailableBundles
+);
+
+// 檢查購買限制
+router.get('/brands/:brandId/bundles/:bundleId/purchase-limit',
+  authenticate('user'),
+  bundleController.checkPurchaseLimit
+);
+
+// 驗證 Bundle 購買資格
+router.get('/brands/:brandId/stores/:storeId/bundles/:bundleId/validate',
+  authenticate('user'),
+  bundleController.validateBundlePurchase
+);
+
+// 自動更新 Bundle 狀態（系統任務）
+router.post('/bundles/auto-update-status',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin'),
+  bundleController.autoUpdateBundleStatus
+);
+
+// =============================================================================
+// Bundle 實例路由（後台）
+// =============================================================================
+
+// 獲取所有 Bundle 實例
+router.get('/brands/:brandId/bundles/instances',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  bundleInstanceController.getAllBundleInstances
+);
+
+// 獲取單個 Bundle 實例
+router.get('/brands/:brandId/bundles/instances/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  bundleInstanceController.getBundleInstanceById
+);
+
+// 根據模板ID獲取實例
+router.get('/brands/:brandId/bundles/:templateId/instances',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  bundleInstanceController.getBundleInstancesByTemplate
+);
+
+// 創建 Bundle 實例（通常由訂單系統調用）
+router.post('/brands/:brandId/bundles/instances',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleInstanceController.createBundleInstance
+);
+
+// 更新 Bundle 實例
+router.put('/brands/:brandId/bundles/instances/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleInstanceController.updateBundleInstance
+);
+
+// 刪除 Bundle 實例
+router.delete('/brands/:brandId/bundles/instances/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleInstanceController.deleteBundleInstance
+);
 
 export default router;
