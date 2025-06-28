@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const couponInstanceSchema = new mongoose.Schema({
+const voucherInstanceSchema = new mongoose.Schema({
   brand: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Brand',
@@ -8,30 +8,17 @@ const couponInstanceSchema = new mongoose.Schema({
   },
   template: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'CouponTemplate',
+    ref: 'VoucherTemplate',
     required: true
   },
-  couponName: {
+  voucherName: {
     type: String,
     required: true
   },
-  discountInfo: {
-    discountType: {
-      type: String,
-      enum: ['percentage', 'fixed'],
-      required: true
-    },
-    discountValue: {
-      type: Number,
-      required: true
-    },
-    maxDiscountAmount: {
-      type: Number
-    },
-    minPurchaseAmount: {
-      type: Number,
-      default: 0
-    }
+  exchangeDishTemplate: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DishTemplate',
+    required: true
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -56,9 +43,9 @@ const couponInstanceSchema = new mongoose.Schema({
   expiryDate: {
     type: Date,
     required: true
-  }
+  },
 }, { timestamps: true });
 
-couponInstanceSchema.index({ brand: 1, user: 1 });
+voucherInstanceSchema.index({ brand: 1, user: 1 });
 
-export default mongoose.model('CouponInstance', couponInstanceSchema);
+export default mongoose.model('VoucherInstance', voucherInstanceSchema);
