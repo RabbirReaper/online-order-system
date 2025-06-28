@@ -4,7 +4,7 @@
  */
 
 import Order from '../../models/Order/Order.js';
-import CouponInstance from '../../models/Promotion/CouponInstance.js';
+import VoucherInstance from '../../models/Promotion/VoucherInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import { parseDateString, getStartOfDay, getEndOfDay } from '../../utils/date.js';
 // 直接導入而非動態導入
@@ -65,7 +65,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
     .limit(limit)
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice')
-    .populate('items.generatedCoupons', 'couponName couponType isUsed expiryDate')
+    .populate('items.generatedVouchers', 'voucherCode voucherType isUsed expiryDate')
     .populate('user', 'name email phone')
     .lean();
 
@@ -96,7 +96,7 @@ export const getOrderById = async (orderId, storeId) => {
   const order = await Order.findOne(query)
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice bundleItems')
-    .populate('items.generatedCoupons', 'couponName couponType isUsed expiryDate usedAt')
+    .populate('items.generatedVouchers', 'voucherCode voucherType isUsed expiryDate usedAt')
     .populate('user', 'name email phone')
     .lean();
 
@@ -153,12 +153,14 @@ export const updateOrder = async (orderId, updateData, adminId) => {
   await order.save();
 
   // 處理狀態變為 paid 的後續流程
-  let result = { ...order.toObject(), pointsAwarded: 0, generatedCoupons: [] };
+  let result = { ...order.toObject(), pointsAwarded: 0, generatedVouchers: [] };
 
   if (previousStatus !== 'paid' && order.status === 'paid') {
     try {
       // 檢查是否有 Bundle 項目需要生成券
-      const hasBundleItems = order.items.some(item => item.itemType === 'bundle');
+      const hasBundleItems = order.items.some(item =>
+        item.itemType === 'bundle' && item.bundleInstance
+      );
 
       if (hasBundleItems || order.user) {
         // 處理 Bundle 券生成和點數給予
@@ -183,7 +185,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
  */
 export const cancelOrder = async (orderId, reason, adminId) => {
   const order = await Order.findById(orderId)
-    .populate('items.generatedCoupons');
+    .populate('items.generatedVouchers');
 
   if (!order) {
     throw new AppError('訂單不存在', 404);
@@ -195,15 +197,16 @@ export const cancelOrder = async (orderId, reason, adminId) => {
 
   // 如果訂單包含已生成的兌換券，需要處理券的狀態
   for (const item of order.items) {
-    if (item.itemType === 'bundle' && item.generatedCoupons && item.generatedCoupons.length > 0) {
+    if (item.itemType === 'bundle' && item.generatedVouchers && item.generatedVouchers.length > 0) {
       // 將未使用的兌換券標記為無效
-      for (const couponId of item.generatedCoupons) {
-        const coupon = await CouponInstance.findById(couponId);
-        if (coupon && !coupon.isUsed) {
+      for (const voucherId of item.generatedVouchers) {
+        const voucher = await VoucherInstance.findById(voucherId);
+        if (voucher && !voucher.isUsed) {
           // 標記券為已使用（實際上是取消）
-          coupon.isUsed = true;
-          coupon.usedAt = new Date();
-          await coupon.save();
+          voucher.isUsed = true;
+          voucher.usedAt = new Date();
+          voucher.invalidReason = 'ORDER_CANCELLED';
+          await voucher.save();
         }
       }
     }
