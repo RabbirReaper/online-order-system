@@ -5,8 +5,8 @@
 
 import Order from '../../models/Order/Order.js';
 import DishInstance from '../../models/Dish/DishInstance.js';
-import BundleInstance from '../../models/Dish/BundleInstance.js';
-import Bundle from '../../models/Dish/Bundle.js';
+import BundleInstance from '../../models/Promotion/BundleInstance.js';
+import Bundle from '../../models/Promotion/Bundle.js';
 import CouponInstance from '../../models/Promotion/CouponInstance.js';
 import { AppError } from '../../middlewares/error.js';
 import * as inventoryService from '../inventory/stockManagement.js';

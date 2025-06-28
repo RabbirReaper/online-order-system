@@ -6,7 +6,7 @@
 import Menu from '../../models/Menu/Menu.js';
 import Store from '../../models/Store/Store.js';
 import DishTemplate from '../../models/Dish/DishTemplate.js';
-import Bundle from '../../models/Dish/Bundle.js';
+import Bundle from '../../models/Promotion/Bundle.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**

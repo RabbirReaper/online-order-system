@@ -11,6 +11,7 @@ const BundleInstanceSchema = new mongoose.Schema({
     ref: 'Bundle',
     required: true
   },
+
   // 冗餘儲存一些模板資訊
   name: {
     type: String,
@@ -19,41 +20,50 @@ const BundleInstanceSchema = new mongoose.Schema({
   description: {
     type: String
   },
-  originalPrice: {
-    type: Number,
-    required: true
+
+  // 統一的價格結構
+  cashPrice: {
+    original: {
+      type: Number,
+      min: 0
+    }, // 現金原價
+    selling: {
+      type: Number,
+      min: 0
+    } // 現金售價
   },
-  sellingPrice: {
-    type: Number,
-    required: true
-  },
-  originalPoint: {
-    type: Number,
-    default: 0
+  pointPrice: {
+    original: {
+      type: Number,
+      min: 0
+    }, // 點數原價
+    selling: {
+      type: Number,
+      min: 0
+    } // 點數售價
   },
   sellingPoint: {
-    type: Number,
-    default: 0
-  },
+    type: Number
+  }, // 賣點數值
 
   // Bundle 內容 - 冗餘存儲
   bundleItems: [{
-    couponTemplate: {
+    voucherTemplate: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CouponTemplate'
+      ref: 'VoucherTemplate'
     },
     quantity: {
       type: Number,
       required: true,
       min: 1
     },
-    couponName: {
+    voucherName: {
       type: String,
       required: true
     }
   }],
 
-  // Bundle 不需要客製化選項，價格就是 sellingPrice
+  // Bundle 不需要客製化選項，價格根據付款方式決定
   finalPrice: {
     type: Number,
     required: true
@@ -64,7 +74,7 @@ const BundleInstanceSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  couponValidityDays: {
+  voucherValidityDays: {
     type: Number,
     required: true,
     min: 1,

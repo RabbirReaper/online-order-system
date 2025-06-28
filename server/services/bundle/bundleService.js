@@ -3,7 +3,7 @@
  * 處理兌換券綑綁相關的業務邏輯（統一管理單個和組合兌換券）
  */
 
-import Bundle from '../../models/Dish/Bundle.js';
+import Bundle from '../../models/Promotion/Bundle.js';
 import CouponTemplate from '../../models/Promotion/CouponTemplate.js';
 import Order from '../../models/Order/Order.js';
 import { AppError } from '../../middlewares/error.js';

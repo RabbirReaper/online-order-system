@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// 綑綁模型 - 統一管理所有兌換券（單個或組合）
+// 綑綁模型 - 統一管理所有兌換券包裝（用於販賣）
 const bundleSchema = new mongoose.Schema({
   brand: {
     type: mongoose.Schema.Types.ObjectId,
@@ -30,11 +30,11 @@ const bundleSchema = new mongoose.Schema({
     type: Number
   }, // 賣點數值（可能是折扣百分比、節省金額、贈送數量等）
 
-  // 綑綁內容 - 包含兌換券
+  // 綑綁內容 - 包含兌換券模板
   bundleItems: [{
-    couponTemplate: {
+    voucherTemplate: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CouponTemplate',
+      ref: 'VoucherTemplate',
       required: true
     }, // 關聯的兌換券模板
 
@@ -45,7 +45,7 @@ const bundleSchema = new mongoose.Schema({
     }, // 該券的數量
 
     // 冗餘存儲，方便顯示
-    couponName: {
+    voucherName: {
       type: String,
       required: true
     } // 兌換券名稱
@@ -82,12 +82,12 @@ const bundleSchema = new mongoose.Schema({
     type: Date,
     required: true
   }, // 購買結束時間
-  couponValidityDays: {
+  voucherValidityDays: {
     type: Number,
     required: true,
     min: 1,
     default: 30
-  }, // 生成券的有效期天數
+  }, // 生成兌換券的有效期天數
 
   // 購買限制
   purchaseLimitPerUser: {

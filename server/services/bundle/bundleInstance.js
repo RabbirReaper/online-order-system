@@ -3,8 +3,8 @@
  * 處理 Bundle 實例相關業務邏輯
  */
 
-import BundleInstance from '../../models/Dish/BundleInstance.js';
-import Bundle from '../../models/Dish/Bundle.js';
+import BundleInstance from '../../models/Promotion/BundleInstance.js';
+import Bundle from '../../models/Promotion/Bundle.js';
 import CouponTemplate from '../../models/Promotion/CouponTemplate.js';
 import { AppError } from '../../middlewares/error.js';
 
