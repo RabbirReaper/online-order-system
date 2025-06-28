@@ -7,6 +7,7 @@
 import mongoose from 'mongoose';
 import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js';
 import VoucherInstance from '../../models/Promotion/VoucherInstance.js';
+import Bundle from '../../models/Promotion/Bundle.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**
@@ -121,14 +122,13 @@ export const deleteVoucherTemplate = async (templateId, brandId) => {
     throw new AppError('還有未使用的兌換券實例，無法刪除模板', 400);
   }
 
-  // 檢查是否被 Bundle 使用
-  const Bundle = mongoose.model('Bundle');
-  const bundlesUsingTemplate = await Bundle.countDocuments({
+  // 檢查是否有 Bundle 使用此兌換券模板
+  const relatedBundles = await Bundle.countDocuments({
     'bundleItems.voucherTemplate': templateId
   });
 
-  if (bundlesUsingTemplate > 0) {
-    throw new AppError('此兌換券模板正被Bundle使用，無法刪除', 400);
+  if (relatedBundles > 0) {
+    throw new AppError('此兌換券模板已被 Bundle 使用，無法刪除', 400);
   }
 
   await template.deleteOne();
@@ -137,19 +137,86 @@ export const deleteVoucherTemplate = async (templateId, brandId) => {
 };
 
 /**
- * 獲取可用的兌換券模板（用於創建Bundle時選擇）
+ * 獲取可用的兌換券模板（供 Bundle 創建時選擇）
  * @param {String} brandId - 品牌ID
- * @returns {Promise<Array>} 可用的兌換券模板
+ * @returns {Promise<Array>} 可用的兌換券模板列表
  */
 export const getAvailableVoucherTemplates = async (brandId) => {
   const templates = await VoucherTemplate.find({
     brand: brandId,
     isActive: true
   })
-    .populate('exchangeInfo.items.dishTemplate', 'name')
-    .sort({ name: 1 });
+    .select('name description voucherType validityPeriod')
+    .sort({ createdAt: -1 });
 
   return templates;
+};
+
+/**
+ * 獲取所有兌換券實例（後台）
+ * @param {String} brandId - 品牌ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 兌換券實例列表與分頁資訊
+ */
+export const getAllVoucherInstances = async (brandId, options = {}) => {
+  const {
+    userId,
+    templateId,
+    isUsed,
+    includeExpired = false,
+    page = 1,
+    limit = 20
+  } = options;
+
+  // 構建查詢條件
+  const query = { brand: brandId };
+
+  if (userId) {
+    query.user = userId;
+  }
+
+  if (templateId) {
+    query.template = templateId;
+  }
+
+  if (typeof isUsed === 'boolean') {
+    query.isUsed = isUsed;
+  }
+
+  if (!includeExpired) {
+    query.expiryDate = { $gt: new Date() };
+  }
+
+  // 計算分頁
+  const skip = (page - 1) * limit;
+
+  // 查詢總數
+  const total = await VoucherInstance.countDocuments(query);
+
+  // 查詢兌換券實例
+  const vouchers = await VoucherInstance.find(query)
+    .populate('template', 'name description voucherType')
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  // 處理分頁信息
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+
+  return {
+    vouchers,
+    pagination: {
+      total,
+      totalPages,
+      currentPage: page,
+      limit,
+      hasNextPage,
+      hasPrevPage
+    }
+  };
 };
 
 /**
@@ -173,6 +240,7 @@ export const getUserVouchers = async (userId, options = {}) => {
 
   const vouchers = await VoucherInstance.find(query)
     .populate('template', 'name description voucherType exchangeInfo')
+    .populate('sourceBundle', 'name') // populate 來源 Bundle
     .sort({ createdAt: -1 });
 
   return vouchers;
@@ -181,14 +249,18 @@ export const getUserVouchers = async (userId, options = {}) => {
 /**
  * 使用兌換券
  * @param {String} voucherId - 兌換券ID
+ * @param {String} userId - 用戶ID
  * @param {String} orderId - 訂單ID（可選）
  * @returns {Promise<Object>} 使用結果
  */
-export const useVoucher = async (voucherId, orderId = null) => {
-  const voucher = await VoucherInstance.findById(voucherId);
+export const useVoucher = async (voucherId, userId, orderId = null) => {
+  const voucher = await VoucherInstance.findOne({
+    _id: voucherId,
+    user: userId
+  });
 
   if (!voucher) {
-    throw new AppError('兌換券不存在', 404);
+    throw new AppError('兌換券不存在或無權使用', 404);
   }
 
   if (voucher.isUsed) {
@@ -216,33 +288,44 @@ export const useVoucher = async (voucherId, orderId = null) => {
 };
 
 /**
- * 驗證兌換券可用性
+ * 驗證兌換券
  * @param {String} voucherId - 兌換券ID
  * @param {String} userId - 用戶ID
  * @returns {Promise<Object>} 驗證結果
  */
 export const validateVoucher = async (voucherId, userId) => {
-  const voucher = await VoucherInstance.findById(voucherId)
-    .populate('template', 'name description voucherType exchangeInfo');
+  const voucher = await VoucherInstance.findOne({
+    _id: voucherId,
+    user: userId
+  }).populate('template');
 
   if (!voucher) {
-    throw new AppError('兌換券不存在', 404);
-  }
-
-  if (voucher.user.toString() !== userId) {
-    throw new AppError('兌換券不屬於此用戶', 403);
+    return {
+      isValid: false,
+      message: '兌換券不存在或無權使用',
+      voucher: null
+    };
   }
 
   if (voucher.isUsed) {
-    throw new AppError('兌換券已使用', 400);
+    return {
+      isValid: false,
+      message: '兌換券已使用',
+      voucher
+    };
   }
 
   if (voucher.expiryDate < new Date()) {
-    throw new AppError('兌換券已過期', 400);
+    return {
+      isValid: false,
+      message: '兌換券已過期',
+      voucher
+    };
   }
 
   return {
     isValid: true,
+    message: '兌換券有效',
     voucher
   };
 };
