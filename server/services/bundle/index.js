@@ -5,11 +5,15 @@
 
 // 導入 Bundle 相關服務
 import * as bundleService from './bundleService.js';
+import * as bundleInstanceService from './bundleInstance.js';
 
 // 導出所有 Bundle 服務
 export const bundle = bundleService;
+export const bundleInstance = bundleInstanceService;
 
-// 簡單導出，方便直接調用
+// =============================================================================
+// Bundle 模板服務導出
+// =============================================================================
 export const {
   getAllBundles,
   getBundleById,
@@ -17,7 +21,16 @@ export const {
   updateBundle,
   deleteBundle,
   getAvailableBundles,
-  checkPurchaseLimit,
-  autoUpdateBundleStatus,
-  validateBundlePurchase
 } = bundleService;
+
+// =============================================================================
+// Bundle 實例服務導出
+// =============================================================================
+export const {
+  getAllInstances,
+  getInstanceById,
+  createInstance,
+  updateInstance,
+  deleteInstance,
+  getInstancesByTemplate
+} = bundleInstanceService;
