@@ -5,7 +5,7 @@
 
 import BundleInstance from '../../models/Promotion/BundleInstance.js';
 import Bundle from '../../models/Promotion/Bundle.js';
-import CouponTemplate from '../../models/Promotion/CouponTemplate.js';
+import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**
@@ -30,7 +30,7 @@ export const getAllInstances = async (options = {}) => {
     .skip(skip)
     .limit(limit)
     .populate('templateId')
-    .populate('bundleItems.couponTemplate', 'name description couponType');
+    .populate('bundleItems.voucherTemplate', 'name description voucherType');
 
   // 處理分頁信息
   const totalPages = Math.ceil(total / limit);
@@ -58,7 +58,7 @@ export const getAllInstances = async (options = {}) => {
 export const getInstanceById = async (instanceId) => {
   const instance = await BundleInstance.findById(instanceId)
     .populate('templateId')
-    .populate('bundleItems.couponTemplate', 'name description couponType');
+    .populate('bundleItems.voucherTemplate', 'name description voucherType');
 
   if (!instance) {
     throw new AppError('Bundle 實例不存在', 404);
@@ -80,7 +80,7 @@ export const createInstance = async (instanceData) => {
 
   // 查找對應的 Bundle 模板
   const template = await Bundle.findById(instanceData.templateId)
-    .populate('bundleItems.couponTemplate');
+    .populate('bundleItems.voucherTemplate');
 
   if (!template) {
     throw new AppError('Bundle 模板不存在', 404);
@@ -89,21 +89,29 @@ export const createInstance = async (instanceData) => {
   // 添加冗餘模板信息
   instanceData.name = template.name;
   instanceData.description = template.description;
-  instanceData.originalPrice = template.originalPrice;
-  instanceData.sellingPrice = template.sellingPrice;
-  instanceData.originalPoint = template.originalPoint || 0;
-  instanceData.sellingPoint = template.sellingPoint || 0;
-  instanceData.couponValidityDays = template.couponValidityDays;
+
+  // 使用新的價格結構
+  instanceData.cashPrice = template.cashPrice;
+  instanceData.pointPrice = template.pointPrice;
+  instanceData.sellingPoint = template.sellingPoint;
+  instanceData.voucherValidityDays = template.voucherValidityDays;
 
   // 複製 Bundle 項目資訊
   instanceData.bundleItems = template.bundleItems.map(item => ({
-    couponTemplate: item.couponTemplate._id,
+    voucherTemplate: item.voucherTemplate._id,
     quantity: item.quantity,
-    couponName: item.couponName
+    voucherName: item.voucherName
   }));
 
-  // Bundle 的最終價格就是 sellingPrice，無需客製化計算
-  instanceData.finalPrice = instanceData.sellingPrice;
+  // Bundle 的最終價格根據付款方式決定
+  // 預設使用現金價格的 selling 或 original
+  if (template.cashPrice) {
+    instanceData.finalPrice = template.cashPrice.selling || template.cashPrice.original || 0;
+  } else if (template.pointPrice) {
+    instanceData.finalPrice = template.pointPrice.selling || template.pointPrice.original || 0;
+  } else {
+    instanceData.finalPrice = 0;
+  }
 
   // 創建 Bundle 實例
   const newInstance = new BundleInstance(instanceData);
@@ -116,22 +124,24 @@ export const createInstance = async (instanceData) => {
  * 更新 Bundle 實例
  * @param {String} instanceId - 實例ID
  * @param {Object} updateData - 更新數據
- * @returns {Promise<Object>} 更新後的 Bundle 實例
+ * @returns {Promise<Object>} 更新後的實例
  */
 export const updateInstance = async (instanceId, updateData) => {
-  // 檢查實例是否存在
   const instance = await BundleInstance.findById(instanceId);
 
   if (!instance) {
     throw new AppError('Bundle 實例不存在', 404);
   }
 
-  // Bundle 實例一旦創建就不需要更新，因為沒有客製化選項
-  // 如果真的需要更新，主要是價格相關的調整
-  if (updateData.sellingPrice !== undefined) {
-    instance.sellingPrice = updateData.sellingPrice;
-    instance.finalPrice = updateData.sellingPrice;
-  }
+  // 防止更改某些關鍵字段
+  delete updateData.templateId;
+  delete updateData.brand;
+  delete updateData.bundleItems;
+
+  // 更新實例
+  Object.keys(updateData).forEach(key => {
+    instance[key] = updateData[key];
+  });
 
   await instance.save();
 
@@ -144,14 +154,11 @@ export const updateInstance = async (instanceId, updateData) => {
  * @returns {Promise<Object>} 刪除結果
  */
 export const deleteInstance = async (instanceId) => {
-  // 檢查實例是否存在
   const instance = await BundleInstance.findById(instanceId);
 
   if (!instance) {
     throw new AppError('Bundle 實例不存在', 404);
   }
-
-  // TODO: 檢查是否有關聯的訂單，如果有則拒絕刪除
 
   await instance.deleteOne();
 
@@ -159,11 +166,42 @@ export const deleteInstance = async (instanceId) => {
 };
 
 /**
- * 計算 Bundle 最終價格
- * @param {Object} instance - Bundle 實例對象
- * @returns {Number} 最終價格
+ * 根據模板ID獲取實例
+ * @param {String} templateId - 模板ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 實例列表與分頁資訊
  */
-export const calculateFinalPrice = (instance) => {
-  // Bundle 沒有客製化選項，最終價格就是 sellingPrice
-  return instance.sellingPrice || instance.originalPrice;
+export const getInstancesByTemplate = async (templateId, options = {}) => {
+  const { page = 1, limit = 20 } = options;
+
+  // 計算分頁
+  const skip = (page - 1) * limit;
+
+  // 查詢總數
+  const total = await BundleInstance.countDocuments({ templateId });
+
+  // 查詢實例
+  const instances = await BundleInstance.find({ templateId })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate('templateId')
+    .populate('bundleItems.voucherTemplate', 'name description voucherType');
+
+  // 處理分頁信息
+  const totalPages = Math.ceil(total / limit);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+
+  return {
+    instances,
+    pagination: {
+      total,
+      totalPages,
+      currentPage: page,
+      limit,
+      hasNextPage,
+      hasPrevPage
+    }
+  };
 };
