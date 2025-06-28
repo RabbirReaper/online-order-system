@@ -1,6 +1,8 @@
 import express from 'express';
 import * as couponTemplateController from '../controllers/Promotion/couponTemplate.js';
 import * as couponInstanceController from '../controllers/Promotion/couponInstance.js';
+import * as voucherTemplateController from '../controllers/Promotion/voucherTemplate.js';
+import * as voucherInstanceController from '../controllers/Promotion/voucherInstance.js';
 import * as pointRuleController from '../controllers/Promotion/pointRule.js';
 import * as pointInstanceController from '../controllers/Promotion/pointInstance.js';
 import {
@@ -11,7 +13,10 @@ import {
 
 const router = express.Router();
 
-// 優惠券模板路由（後台）
+// =============================================================================
+// 優惠券模板路由（後台）- Coupon 系統（活動獎勵用，只送不賣）
+// =============================================================================
+
 // 獲取所有優惠券模板
 router.get('/brands/:brandId/coupons/templates',
   authenticate('admin'),
@@ -52,7 +57,10 @@ router.delete('/brands/:brandId/coupons/templates/:id',
   couponTemplateController.deleteCouponTemplate
 );
 
-// 優惠券實例路由（後台）
+// =============================================================================
+// 優惠券實例路由（後台）- Coupon 系統
+// =============================================================================
+
 // 獲取所有優惠券實例
 router.get('/brands/:brandId/coupons/instances/admin',
   authenticate('admin'),
@@ -69,7 +77,10 @@ router.post('/brands/:brandId/coupons/instances/issue',
   couponInstanceController.issueCouponToUser
 );
 
-// 優惠券路由（用戶）
+// =============================================================================
+// 優惠券路由（用戶）- Coupon 系統
+// =============================================================================
+
 // 獲取用戶優惠券
 router.get('/brands/:brandId/coupons',
   authenticate('user'),
@@ -82,7 +93,96 @@ router.post('/brands/:brandId/coupons/redeem',
   couponInstanceController.redeemCoupon
 );
 
+// =============================================================================
+// 兌換券模板路由（後台）- Voucher 系統（透過 Bundle 販賣）
+// =============================================================================
+
+// 獲取所有兌換券模板
+router.get('/brands/:brandId/vouchers/templates',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.getAllVoucherTemplates
+);
+
+// 獲取單個兌換券模板
+router.get('/brands/:brandId/vouchers/templates/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.getVoucherTemplateById
+);
+
+// 創建兌換券模板
+router.post('/brands/:brandId/vouchers/templates',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.createVoucherTemplate
+);
+
+// 更新兌換券模板
+router.put('/brands/:brandId/vouchers/templates/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.updateVoucherTemplate
+);
+
+// 刪除兌換券模板
+router.delete('/brands/:brandId/vouchers/templates/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.deleteVoucherTemplate
+);
+
+// 獲取可用的兌換券模板（供 Bundle 創建時使用）
+router.get('/brands/:brandId/vouchers/templates/available',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.getAvailableVoucherTemplates
+);
+
+// =============================================================================
+// 兌換券實例路由（後台）- Voucher 系統
+// =============================================================================
+
+// 獲取所有兌換券實例
+router.get('/brands/:brandId/vouchers/instances/admin',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  voucherInstanceController.getAllVoucherInstances
+);
+
+// =============================================================================
+// 兌換券路由（用戶）- Voucher 系統
+// =============================================================================
+
+// 獲取用戶兌換券
+router.get('/brands/:brandId/vouchers',
+  authenticate('user'),
+  voucherInstanceController.getUserVouchers
+);
+
+// 使用兌換券
+router.post('/brands/:brandId/vouchers/use',
+  authenticate('user'),
+  voucherInstanceController.useVoucher
+);
+
+// 驗證兌換券
+router.get('/brands/:brandId/vouchers/:voucherId/validate',
+  authenticate('user'),
+  voucherInstanceController.validateVoucher
+);
+
+// =============================================================================
 // 點數規則路由（後台）
+// =============================================================================
+
 // 獲取所有點數規則
 router.get('/brands/:brandId/points/rules',
   authenticate('admin'),
@@ -123,8 +223,11 @@ router.delete('/brands/:brandId/points/rules/:id',
   pointRuleController.deletePointRule
 );
 
-// 點數路由（用戶）
-// 獲取用戶點數
+// =============================================================================
+// 點數實例路由
+// =============================================================================
+
+// 獲取用戶點數 (包含餘額和列表)
 router.get('/brands/:brandId/points',
   authenticate('user'),
   pointInstanceController.getUserPoints
@@ -136,13 +239,19 @@ router.get('/brands/:brandId/points/history',
   pointInstanceController.getUserPointHistory
 );
 
-// 點數管理（後台）
-// 給用戶添加點數
+// 給用戶添加點數（後台）
 router.post('/brands/:brandId/points/add',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
   requireBrandAccess,
   pointInstanceController.addPointsToUser
+);
+
+// 標記過期點數（系統操作）
+router.post('/brands/:brandId/points/expire',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin'),
+  pointInstanceController.markExpiredPoints
 );
 
 export default router;
