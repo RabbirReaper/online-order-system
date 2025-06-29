@@ -1,35 +1,6 @@
 import * as voucherService from '../../services/promotion/index.js';
 import { asyncHandler } from '../../middlewares/error.js';
 
-// 獲取所有兌換券實例（後台）
-export const getAllVoucherInstances = asyncHandler(async (req, res) => {
-  const brandId = req.adminRole === 'boss' ? req.query.brandId : req.adminBrand;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: 'brandId 為必須參數'
-    });
-  }
-
-  const options = {
-    userId: req.query.userId,
-    templateId: req.query.templateId,
-    isUsed: req.query.isUsed === 'true',
-    includeExpired: req.query.includeExpired === 'true',
-    page: parseInt(req.query.page, 10) || 1,
-    limit: parseInt(req.query.limit, 10) || 20
-  };
-
-  const result = await voucherService.voucher.getAllVoucherInstances(brandId, options);
-
-  res.json({
-    success: true,
-    vouchers: result.vouchers,
-    pagination: result.pagination
-  });
-});
-
 // 獲取用戶兌換券
 export const getUserVouchers = asyncHandler(async (req, res) => {
   const userId = req.auth.userId;

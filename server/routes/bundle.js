@@ -57,11 +57,6 @@ router.delete('/brands/:brandId/bundles/:id',
 // Bundle 模板路由（客戶端）
 // =============================================================================
 
-// 獲取可購買的 Bundle
-router.get('/brands/:brandId/stores/:storeId/bundles/available',
-  bundleController.getAvailableBundles
-);
-
 // 檢查購買限制
 router.get('/brands/:brandId/bundles/:bundleId/purchase-limit',
   authenticate('user'),
@@ -85,14 +80,6 @@ router.post('/bundles/auto-update-status',
 // Bundle 實例路由（後台）
 // =============================================================================
 
-// 獲取所有 Bundle 實例
-router.get('/brands/:brandId/bundles/instances',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  bundleInstanceController.getAllBundleInstances
-);
-
 // 獲取單個 Bundle 實例
 router.get('/brands/:brandId/bundles/instances/:id',
   authenticate('admin'),
@@ -101,36 +88,12 @@ router.get('/brands/:brandId/bundles/instances/:id',
   bundleInstanceController.getBundleInstanceById
 );
 
-// 根據模板ID獲取實例
-router.get('/brands/:brandId/bundles/:templateId/instances',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  bundleInstanceController.getBundleInstancesByTemplate
-);
-
 // 創建 Bundle 實例（通常由訂單系統調用）
 router.post('/brands/:brandId/bundles/instances',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   bundleInstanceController.createBundleInstance
-);
-
-// 更新 Bundle 實例
-router.put('/brands/:brandId/bundles/instances/:id',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  bundleInstanceController.updateBundleInstance
-);
-
-// 刪除 Bundle 實例
-router.delete('/brands/:brandId/bundles/instances/:id',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  bundleInstanceController.deleteBundleInstance
 );
 
 export default router;

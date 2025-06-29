@@ -146,18 +146,6 @@ router.get('/brands/:brandId/vouchers/templates/available',
 );
 
 // =============================================================================
-// 兌換券實例路由（後台）- Voucher 系統
-// =============================================================================
-
-// 獲取所有兌換券實例
-router.get('/brands/:brandId/vouchers/instances/admin',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  voucherInstanceController.getAllVoucherInstances
-);
-
-// =============================================================================
 // 兌換券路由（用戶）- Voucher 系統
 // =============================================================================
 
@@ -186,7 +174,7 @@ router.get('/brands/:brandId/vouchers/:voucherId/validate',
 // 獲取所有點數規則
 router.get('/brands/:brandId/points/rules',
   authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   pointRuleController.getAllPointRules
 );
@@ -194,7 +182,7 @@ router.get('/brands/:brandId/points/rules',
 // 獲取單個點數規則
 router.get('/brands/:brandId/points/rules/:id',
   authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   pointRuleController.getPointRuleById
 );
@@ -224,34 +212,39 @@ router.delete('/brands/:brandId/points/rules/:id',
 );
 
 // =============================================================================
-// 點數實例路由
+// 點數實例路由（後台）
 // =============================================================================
 
-// 獲取用戶點數 (包含餘額和列表)
-router.get('/brands/:brandId/points',
+// 獲取所有點數實例
+router.get('/brands/:brandId/points/instances/admin',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireBrandAccess,
+  pointInstanceController.getAllPointInstances
+);
+
+// 手動調整點數
+router.post('/brands/:brandId/points/instances/adjust',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  pointInstanceController.adjustUserPoints
+);
+
+// =============================================================================
+// 點數路由（用戶）
+// =============================================================================
+
+// 獲取用戶點數餘額
+router.get('/brands/:brandId/points/balance',
   authenticate('user'),
-  pointInstanceController.getUserPoints
+  pointInstanceController.getUserPointsBalance
 );
 
 // 獲取用戶點數歷史
 router.get('/brands/:brandId/points/history',
   authenticate('user'),
-  pointInstanceController.getUserPointHistory
-);
-
-// 給用戶添加點數（後台）
-router.post('/brands/:brandId/points/add',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  pointInstanceController.addPointsToUser
-);
-
-// 標記過期點數（系統操作）
-router.post('/brands/:brandId/points/expire',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin'),
-  pointInstanceController.markExpiredPoints
+  pointInstanceController.getUserPointsHistory
 );
 
 export default router;

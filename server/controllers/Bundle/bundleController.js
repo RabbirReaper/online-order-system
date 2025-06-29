@@ -113,42 +113,12 @@ export const deleteBundle = asyncHandler(async (req, res) => {
   });
 });
 
-// 獲取可購買的 Bundle（客戶端）
-export const getAvailableBundles = asyncHandler(async (req, res) => {
-  const { brandId, storeId } = req.params;
-  const { paymentType = 'all' } = req.query;
-
-  if (!brandId) {
-    return res.status(400).json({
-      success: false,
-      message: 'brandId 為必須參數'
-    });
-  }
-
-  const bundles = await bundleService.getAvailableBundles(brandId, storeId, paymentType);
-
-  res.json({
-    success: true,
-    bundles
-  });
-});
-
-// 檢查用戶購買限制（客戶端）
+// 檢查購買限制
 export const checkPurchaseLimit = asyncHandler(async (req, res) => {
-  const { bundleId } = req.params;
-  const userId = req.auth?.userId; // 可能未登入
-  const { quantity = 1 } = req.query;
+  const { brandId, bundleId } = req.params;
+  const userId = req.auth.userId;
 
-  if (!userId) {
-    return res.json({
-      success: true,
-      canPurchase: true,
-      remainingLimit: null,
-      message: '未登入用戶無購買限制'
-    });
-  }
-
-  const result = await bundleService.checkPurchaseLimit(userId, bundleId, parseInt(quantity, 10));
+  const result = await bundleService.checkPurchaseLimit(brandId, bundleId, userId);
 
   res.json({
     success: true,
@@ -156,35 +126,26 @@ export const checkPurchaseLimit = asyncHandler(async (req, res) => {
   });
 });
 
-// 驗證 Bundle 購買資格（客戶端）
+// 驗證 Bundle 購買資格
 export const validateBundlePurchase = asyncHandler(async (req, res) => {
-  const { bundleId, storeId } = req.params;
-  const userId = req.auth?.userId; // 可能未登入
-  const { quantity = 1, paymentType = 'cash' } = req.query;
+  const { brandId, storeId, bundleId } = req.params;
+  const userId = req.auth.userId;
 
-  const bundle = await bundleService.validateBundlePurchase(
-    bundleId,
-    userId,
-    parseInt(quantity, 10),
-    storeId,
-    paymentType
-  );
+  const result = await bundleService.validateBundlePurchase(brandId, storeId, bundleId, userId);
 
   res.json({
     success: true,
-    bundle,
-    message: 'Bundle 購買資格驗證通過'
+    ...result
   });
 });
 
-// 自動更新 Bundle 狀態（系統任務）
+// 自動更新 Bundle 狀態
 export const autoUpdateBundleStatus = asyncHandler(async (req, res) => {
-  // 通常這個操作需要系統管理員權限
   const result = await bundleService.autoUpdateBundleStatus();
 
   res.json({
     success: true,
-    message: 'Bundle 狀態自動更新完成',
-    result
+    message: 'Bundle 狀態更新完成',
+    ...result
   });
 });
