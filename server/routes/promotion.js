@@ -216,35 +216,35 @@ router.delete('/brands/:brandId/points/rules/:id',
 // =============================================================================
 
 // 獲取所有點數實例
-router.get('/brands/:brandId/points/instances/admin',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  pointInstanceController.getAllPointInstances
-);
+// router.get('/brands/:brandId/points/instances/admin',
+//   authenticate('admin'),
+//   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+//   requireBrandAccess,
+//   pointInstanceController.getAllPointInstances
+// );
 
 // 手動調整點數
-router.post('/brands/:brandId/points/instances/adjust',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  pointInstanceController.adjustUserPoints
-);
+// router.post('/brands/:brandId/points/instances/adjust',
+//   authenticate('admin'),
+//   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+//   requireBrandAccess,
+//   pointInstanceController.adjustUserPoints
+// );
 
 // =============================================================================
 // 點數路由（用戶）
 // =============================================================================
 
 // 獲取用戶點數餘額
-router.get('/brands/:brandId/points/balance',
-  authenticate('user'),
-  pointInstanceController.getUserPointsBalance
-);
+// router.get('/brands/:brandId/points/balance',
+//   authenticate('user'),
+//   pointInstanceController.getUserPointsBalance
+// );
 
 // 獲取用戶點數歷史
 router.get('/brands/:brandId/points/history',
   authenticate('user'),
-  pointInstanceController.getUserPointsHistory
+  pointInstanceController.getUserPointHistory
 );
 
 export default router;
