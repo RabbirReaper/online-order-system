@@ -236,10 +236,10 @@ router.delete('/brands/:brandId/points/rules/:id',
 // =============================================================================
 
 // 獲取用戶點數餘額
-// router.get('/brands/:brandId/points/balance',
-//   authenticate('user'),
-//   pointInstanceController.getUserPointsBalance
-// );
+router.get('/brands/:brandId/points/balance',
+  authenticate('user'),
+  pointInstanceController.getUserPoints
+);
 
 // 獲取用戶點數歷史
 router.get('/brands/:brandId/points/history',
