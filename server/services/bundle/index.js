@@ -20,17 +20,15 @@ export const {
   createBundle,
   updateBundle,
   deleteBundle,
-  getAvailableBundles,
+  checkPurchaseLimit,
+  validateBundlePurchase,
+  autoUpdateBundleStatus
 } = bundleService;
 
 // =============================================================================
 // Bundle 實例服務導出
 // =============================================================================
 export const {
-  getAllInstances,
   getInstanceById,
-  createInstance,
-  updateInstance,
-  deleteInstance,
-  getInstancesByTemplate
+  createInstance
 } = bundleInstanceService;
