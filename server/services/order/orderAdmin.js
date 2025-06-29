@@ -65,7 +65,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
     .limit(limit)
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice')
-    .populate('items.generatedVouchers', 'voucherCode voucherType isUsed expiryDate')
+    // .populate('items.generatedVouchers', 'voucherName voucherType isUsed expiryDate') // 修改這行
     .populate('user', 'name email phone')
     .lean();
 
@@ -96,7 +96,7 @@ export const getOrderById = async (orderId, storeId) => {
   const order = await Order.findOne(query)
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice bundleItems')
-    .populate('items.generatedVouchers', 'voucherCode voucherType isUsed expiryDate usedAt')
+    // .populate('items.generatedVouchers', 'voucherName voucherType isUsed expiryDate usedAt') // 修改這行
     .populate('user', 'name email phone')
     .lean();
 
@@ -185,7 +185,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
  */
 export const cancelOrder = async (orderId, reason, adminId) => {
   const order = await Order.findById(orderId)
-    .populate('items.generatedVouchers');
+  // .populate('items.generatedVouchers');
 
   if (!order) {
     throw new AppError('訂單不存在', 404);

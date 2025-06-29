@@ -88,9 +88,9 @@ const orderSchema = new mongoose.Schema({
     }, // 備註
 
     // 兌換券生成記錄（當 itemType = 'bundle' 時使用）
-    generatedCoupons: [{
+    generatedVouchers: [{
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'CouponInstance'
+      ref: 'VoucherInstance'
     }] // 購買後生成的兌換券實例
   }], // 訂單項目
 
