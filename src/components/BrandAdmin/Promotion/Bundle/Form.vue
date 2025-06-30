@@ -1,339 +1,360 @@
 <template>
-  <div>
-    <!-- 頁面頂部工具列 -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="mb-0">{{ isEditMode ? '編輯包裝商品' : '新增包裝商品' }}</h4>
-      <router-link :to="`/admin/${brandId}/bundles`" class="btn btn-secondary">
-        <i class="bi bi-arrow-left me-1"></i>返回列表
-      </router-link>
-    </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <!-- 頁面標題 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="mb-0">
+            <i class="bi bi-box-seam me-2"></i>
+            {{ isEditMode ? '編輯包裝商品' : '建立包裝商品' }}
+          </h4>
+          <router-link :to="`/admin/${brandId}/bundles`" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>返回列表
+          </router-link>
+        </div>
 
-    <!-- 成功訊息 -->
-    <div class="alert alert-success" v-if="successMessage">
-      <i class="bi bi-check-circle-fill me-2"></i>
-      {{ successMessage }}
-    </div>
+        <!-- 錯誤訊息 -->
+        <div v-if="formErrors.length > 0" class="alert alert-danger">
+          <h6 class="alert-heading">
+            <i class="bi bi-exclamation-triangle me-2"></i>請修正以下錯誤：
+          </h6>
+          <ul class="mb-0">
+            <li v-for="error in formErrors" :key="error">{{ error }}</li>
+          </ul>
+        </div>
 
-    <!-- 錯誤訊息 -->
-    <div class="alert alert-danger" v-if="formErrors.length > 0">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <strong>請修正以下錯誤：</strong>
-      <ul class="mb-0 mt-2">
-        <li v-for="error in formErrors" :key="error">{{ error }}</li>
-      </ul>
-    </div>
+        <!-- 成功訊息 -->
+        <div v-if="successMessage" class="alert alert-success">
+          <i class="bi bi-check-circle me-2"></i>{{ successMessage }}
+        </div>
 
-    <!-- 表單 -->
-    <div class="card">
-      <div class="card-body">
-        <form @submit.prevent="submitForm">
+        <!-- 表單 -->
+        <form @submit.prevent="submitForm" class="row">
           <!-- 基本資訊 -->
-          <div class="mb-4">
-            <h6 class="border-bottom pb-2 mb-3">基本資訊</h6>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="name" class="form-label required">商品名稱</label>
-                <input type="text" class="form-control" id="name" v-model="formData.name"
-                  :class="{ 'is-invalid': errors.name }" maxlength="100" placeholder="請輸入商品名稱">
-                <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
-                <div class="form-text">最多100個字元</div>
+          <div class="col-lg-8 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">基本資訊</h6>
               </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="name" class="form-label required">商品名稱</label>
+                    <input type="text" class="form-control" id="name" v-model="formData.name"
+                      :class="{ 'is-invalid': errors.name }" maxlength="100" />
+                    <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="sellingPoint" class="form-label">賣點</label>
+                    <input type="text" class="form-control" id="sellingPoint" v-model="formData.sellingPoint"
+                      placeholder="例：限時優惠、超值組合" />
+                    <div class="form-text">簡短的銷售亮點，將顯示在商品卡片上</div>
+                  </div>
+                </div>
 
-              <div class="col-md-6 mb-3">
-                <label for="sellingPoint" class="form-label">賣點數值</label>
-                <input type="number" class="form-control" id="sellingPoint" v-model="formData.sellingPoint" min="0"
-                  placeholder="例如：節省金額、折扣百分比等">
-                <div class="form-text">用於顯示的數值賣點，如折扣百分比或節省金額</div>
+                <div class="mb-3">
+                  <label for="description" class="form-label required">商品描述</label>
+                  <textarea class="form-control" id="description" v-model="formData.description" rows="3"
+                    :class="{ 'is-invalid': errors.description }" placeholder="詳細描述此包裝商品的內容和特色"></textarea>
+                  <div class="invalid-feedback" v-if="errors.description">{{ errors.description }}</div>
+                </div>
+
+                <!-- 圖片上傳 -->
+                <div class="mb-3">
+                  <label for="imageUpload" class="form-label">商品圖片</label>
+                  <input type="file" class="form-control" id="imageUpload" @change="handleImageUpload"
+                    accept="image/*" />
+                  <div class="form-text">建議尺寸 800x600 像素，檔案大小不超過 5MB</div>
+
+                  <!-- 圖片預覽 -->
+                  <div v-if="imagePreview || formData.image" class="mt-3">
+                    <div class="position-relative d-inline-block">
+                      <img :src="imagePreview || formData.image?.url" class="img-thumbnail"
+                        style="max-width: 200px; max-height: 150px; object-fit: cover;" />
+                      <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 translate-middle"
+                        @click="removeImage">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="description" class="form-label required">商品描述</label>
-              <textarea class="form-control" id="description" v-model="formData.description" rows="3"
-                :class="{ 'is-invalid': errors.description }" placeholder="請輸入商品描述"></textarea>
-              <div class="invalid-feedback" v-if="errors.description">{{ errors.description }}</div>
-              <div class="form-text">向顧客說明此包裝商品的內容和特色</div>
+            <!-- 價格設定 -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <h6 class="card-title mb-0">價格設定</h6>
+              </div>
+              <div class="card-body">
+                <!-- 價格類型選擇 -->
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="hasCashPrice" v-model="hasCashPrice">
+                      <label class="form-check-label" for="hasCashPrice">
+                        設定現金價格
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="hasPointPrice" v-model="hasPointPrice">
+                      <label class="form-check-label" for="hasPointPrice">
+                        設定點數價格
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 現金價格 -->
+                <div v-if="hasCashPrice" class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label required">現金原價</label>
+                    <div class="input-group">
+                      <span class="input-group-text">$</span>
+                      <input type="number" class="form-control" v-model="formData.cashPrice.original" min="0" step="1"
+                        :class="{ 'is-invalid': errors['cashPrice.original'] }" />
+                    </div>
+                    <div class="invalid-feedback" v-if="errors['cashPrice.original']">{{ errors['cashPrice.original'] }}
+                    </div>
+
+                    <!-- 價格計算輔助 -->
+                    <div v-if="formData.bundleItems.length > 0" class="mt-2">
+                      <div class="small text-muted mb-2">
+                        <strong>包裝內容總價值：</strong>${{ formatPrice(calculatedPrice.totalValue) }}
+                      </div>
+                      <div v-if="calculatedPrice.suggestedPrice > 0" class="small text-muted mb-2">
+                        <strong>建議售價（85折）：</strong>${{ formatPrice(calculatedPrice.suggestedPrice) }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">現金特價（選填）</label>
+                    <div class="input-group">
+                      <span class="input-group-text">$</span>
+                      <input type="number" class="form-control" v-model="formData.cashPrice.selling" min="0" step="1" />
+                    </div>
+                    <div class="form-text">留空則以原價販售</div>
+                  </div>
+                </div>
+
+                <!-- 點數價格 -->
+                <div v-if="hasPointPrice" class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label required">點數原價</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" v-model="formData.pointPrice.original" min="0" step="1"
+                        :class="{ 'is-invalid': errors['pointPrice.original'] }" />
+                      <span class="input-group-text">點</span>
+                    </div>
+                    <div class="invalid-feedback" v-if="errors['pointPrice.original']">{{ errors['pointPrice.original']
+                      }}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">點數特價（選填）</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" v-model="formData.pointPrice.selling" min="0"
+                        step="1" />
+                      <span class="input-group-text">點</span>
+                    </div>
+                    <div class="form-text">留空則以原價販售</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">狀態</label>
+            <!-- 包裝內容 -->
+            <div class="card mt-4">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0">包裝內容</h6>
+                <button type="button" class="btn btn-sm btn-outline-primary" @click="addBundleItem"
+                  :disabled="dishTemplates.length === 0">
+                  <i class="bi bi-plus-circle me-1"></i>新增項目
+                </button>
+              </div>
+              <div class="card-body">
+                <!-- 餐點模板載入提示 -->
+                <div v-if="isLoadingTemplates" class="text-center py-3">
+                  <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                  載入餐點模板中...
+                </div>
+
+                <!-- 沒有可用模板提示 -->
+                <div v-else-if="dishTemplates.length === 0" class="alert alert-warning">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>沒有可用的餐點模板</strong>
+                  <p class="mb-0 mt-2">請先到餐點管理頁面建立餐點模板，才能建立包裝商品。</p>
+                  <router-link :to="`/admin/${brandId}/dishes`" class="btn btn-sm btn-outline-primary mt-2">
+                    前往餐點管理
+                  </router-link>
+                </div>
+
+                <!-- 包裝項目列表 -->
+                <div v-else-if="formData.bundleItems.length > 0">
+                  <div v-for="(item, index) in formData.bundleItems" :key="index" class="card mb-3">
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-8 mb-3">
+                          <label class="form-label required">餐點模板</label>
+                          <select v-model="item.dishTemplate" class="form-select"
+                            :class="{ 'is-invalid': getItemError(index, 'dishTemplate') }"
+                            @change="updateDishName(index)">
+                            <option value="">選擇餐點模板</option>
+                            <option v-for="dish in dishTemplates" :key="dish._id" :value="dish._id">
+                              {{ dish.name }} - ${{ formatPrice(dish.basePrice) }}
+                            </option>
+                          </select>
+                          <div class="invalid-feedback" v-if="getItemError(index, 'dishTemplate')">
+                            {{ getItemError(index, 'dishTemplate') }}
+                          </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                          <label class="form-label required">數量</label>
+                          <input type="number" class="form-control" v-model="item.quantity" min="1"
+                            :class="{ 'is-invalid': getItemError(index, 'quantity') }" />
+                          <div class="invalid-feedback" v-if="getItemError(index, 'quantity')">
+                            {{ getItemError(index, 'quantity') }}
+                          </div>
+                        </div>
+                        <div class="col-md-1 mb-3">
+                          <label class="form-label">&nbsp;</label>
+                          <button type="button" class="btn btn-outline-danger w-100" @click="removeBundleItem(index)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- 選定餐點的詳細資訊 -->
+                      <div v-if="getSelectedDish(item.dishTemplate)" class="alert alert-info mb-0">
+                        <div class="row">
+                          <div class="col-md-8">
+                            <h6 class="mb-1">{{ getSelectedDish(item.dishTemplate).name }}</h6>
+                            <div>
+                              <strong>餐點價格：</strong>${{ formatPrice(getSelectedDish(item.dishTemplate).basePrice) }}<br>
+                              <strong>描述：</strong>{{ getSelectedDish(item.dishTemplate).description || '無描述' }}
+                              <div
+                                v-if="getSelectedDish(item.dishTemplate).tags && getSelectedDish(item.dishTemplate).tags.length > 0"
+                                class="mt-2">
+                                <span v-for="tag in getSelectedDish(item.dishTemplate).tags" :key="tag"
+                                  class="badge bg-secondary me-1 small">
+                                  {{ tag }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-4" v-if="getSelectedDish(item.dishTemplate).image">
+                            <img :src="getSelectedDish(item.dishTemplate).image.url" class="img-thumbnail"
+                              style="max-width: 80px; max-height: 60px;">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 空狀態 -->
+                <div v-else class="text-center text-muted py-4">
+                  <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                  <p>尚未添加任何包裝項目</p>
+                  <button type="button" class="btn btn-outline-primary" @click="addBundleItem"
+                    :disabled="dishTemplates.length === 0">
+                    <i class="bi bi-plus-circle me-1"></i>新增第一個項目
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 設定選項 -->
+          <div class="col-lg-4">
+            <!-- 販售時間 -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h6 class="card-title mb-0">販售設定</h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="autoStatusControl"
+                      v-model="formData.autoStatusControl">
+                    <label class="form-check-label" for="autoStatusControl">
+                      自動控制狀態
+                    </label>
+                  </div>
+                  <div class="form-text">根據販售時間自動啟用/停用商品</div>
+                </div>
+
+                <div v-if="formData.autoStatusControl">
+                  <div class="mb-3">
+                    <label for="validFrom" class="form-label required">販售開始時間</label>
+                    <input type="datetime-local" class="form-control" id="validFrom" v-model="formData.validFrom"
+                      :class="{ 'is-invalid': errors.validFrom }" />
+                    <div class="invalid-feedback" v-if="errors.validFrom">{{ errors.validFrom }}</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="validTo" class="form-label required">販售結束時間</label>
+                    <input type="datetime-local" class="form-control" id="validTo" v-model="formData.validTo"
+                      :class="{ 'is-invalid': errors.validTo }" />
+                    <div class="invalid-feedback" v-if="errors.validTo">{{ errors.validTo }}</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
+                    <input type="number" class="form-control" id="voucherValidityDays"
+                      v-model="formData.voucherValidityDays" min="1" max="365"
+                      :class="{ 'is-invalid': errors.voucherValidityDays }" />
+                    <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
+                    </div>
+                    <div class="form-text">生成的兌換券有效天數</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 購買限制 -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h6 class="card-title mb-0">購買限制</h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label for="purchaseLimitPerUser" class="form-label">每人購買限制</label>
+                  <input type="number" class="form-control" id="purchaseLimitPerUser"
+                    v-model="formData.purchaseLimitPerUser" min="0" placeholder="0 表示無限制">
+                  <div class="form-text">設為0表示每人無購買數量限制</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 狀態設定 -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h6 class="card-title mb-0">狀態設定</h6>
+              </div>
+              <div class="card-body">
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" id="isActive" v-model="formData.isActive">
                   <label class="form-check-label" for="isActive">
                     {{ formData.isActive ? '啟用' : '停用' }}
                   </label>
                 </div>
-                <div class="form-text">停用後顧客無法購買此商品</div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label class="form-label">自動狀態控制</label>
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="autoStatusControl"
-                    v-model="formData.autoStatusControl">
-                  <label class="form-check-label" for="autoStatusControl">
-                    {{ formData.autoStatusControl ? '啟用' : '停用' }}
-                  </label>
-                </div>
-                <div class="form-text">根據販售期間自動啟用/停用商品</div>
+                <div class="form-text">停用後此商品將不會在前台顯示</div>
               </div>
             </div>
-          </div>
 
-          <!-- 圖片上傳 -->
-          <div class="mb-4">
-            <h6 class="border-bottom pb-2 mb-3">商品圖片</h6>
-            <div class="row">
-              <div class="col-md-6">
-                <label for="imageUpload" class="form-label">上傳圖片</label>
-                <input type="file" class="form-control" id="imageUpload" accept="image/*" @change="handleImageUpload">
-                <div class="form-text">支援 JPG, PNG 格式，建議尺寸 400x300 像素</div>
-              </div>
-              <div class="col-md-6">
-                <div v-if="imagePreview" class="text-center">
-                  <img :src="imagePreview" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
-                  <div class="mt-2">
-                    <button type="button" class="btn btn-sm btn-outline-danger" @click="removeImage">
-                      <i class="bi bi-trash me-1"></i>移除圖片
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 價格設定 -->
-          <div class="mb-4">
-            <h6 class="border-bottom pb-2 mb-3">價格設定</h6>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">現金價格</label>
-                <div class="form-check form-switch mb-2">
-                  <input class="form-check-input" type="checkbox" id="hasCashPrice" v-model="hasCashPrice">
-                  <label class="form-check-label" for="hasCashPrice">
-                    提供現金購買
-                  </label>
-                </div>
-                <div v-if="hasCashPrice">
-                  <div class="row">
-                    <div class="col-6">
-                      <label class="form-label required">原價</label>
-                      <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="number" class="form-control" v-model="formData.cashPrice.original" min="0"
-                          step="0.01" placeholder="0.00" :class="{ 'is-invalid': errors['cashPrice.original'] }">
-                      </div>
-                      <div class="invalid-feedback" v-if="errors['cashPrice.original']">{{ errors['cashPrice.original']
-                        }}</div>
-                    </div>
-                    <div class="col-6">
-                      <label class="form-label">特價</label>
-                      <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="number" class="form-control" v-model="formData.cashPrice.selling" min="0"
-                          step="0.01" placeholder="留空使用原價">
-                      </div>
-                      <div class="form-text small">特價須低於原價</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label class="form-label">點數價格</label>
-                <div class="form-check form-switch mb-2">
-                  <input class="form-check-input" type="checkbox" id="hasPointPrice" v-model="hasPointPrice">
-                  <label class="form-check-label" for="hasPointPrice">
-                    提供點數兌換
-                  </label>
-                </div>
-                <div v-if="hasPointPrice">
-                  <div class="row">
-                    <div class="col-6">
-                      <label class="form-label required">原價</label>
-                      <div class="input-group">
-                        <input type="number" class="form-control" v-model="formData.pointPrice.original" min="0"
-                          placeholder="0" :class="{ 'is-invalid': errors['pointPrice.original'] }">
-                        <span class="input-group-text">點</span>
-                      </div>
-                      <div class="invalid-feedback" v-if="errors['pointPrice.original']">{{
-                        errors['pointPrice.original'] }}</div>
-                    </div>
-                    <div class="col-6">
-                      <label class="form-label">特價</label>
-                      <div class="input-group">
-                        <input type="number" class="form-control" v-model="formData.pointPrice.selling" min="0"
-                          placeholder="留空使用原價">
-                        <span class="input-group-text">點</span>
-                      </div>
-                      <div class="form-text small">特價須低於原價</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 時間設定 -->
-          <div class="mb-4" v-if="formData.autoStatusControl">
-            <h6 class="border-bottom pb-2 mb-3">時間設定</h6>
-
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label for="validFrom" class="form-label required">販售開始時間</label>
-                <input type="datetime-local" class="form-control" id="validFrom" v-model="formData.validFrom"
-                  :class="{ 'is-invalid': errors.validFrom }">
-                <div class="invalid-feedback" v-if="errors.validFrom">{{ errors.validFrom }}</div>
-                <div class="form-text">商品開始販售的時間</div>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label for="validTo" class="form-label required">販售結束時間</label>
-                <input type="datetime-local" class="form-control" id="validTo" v-model="formData.validTo"
-                  :class="{ 'is-invalid': errors.validTo }">
-                <div class="invalid-feedback" v-if="errors.validTo">{{ errors.validTo }}</div>
-                <div class="form-text">商品停止販售的時間</div>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label for="voucherValidityDays" class="form-label required">兌換券有效期</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" id="voucherValidityDays"
-                    v-model="formData.voucherValidityDays" min="1"
-                    :class="{ 'is-invalid': errors.voucherValidityDays }">
-                  <span class="input-group-text">天</span>
-                </div>
-                <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}</div>
-                <div class="form-text">生成的兌換券有效天數</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 購買限制 -->
-          <div class="mb-4">
-            <h6 class="border-bottom pb-2 mb-3">購買限制</h6>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="purchaseLimitPerUser" class="form-label">每人購買限制</label>
-                <input type="number" class="form-control" id="purchaseLimitPerUser"
-                  v-model="formData.purchaseLimitPerUser" min="0" placeholder="0 表示無限制">
-                <div class="form-text">設為0表示每人無購買數量限制</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 包裝內容 -->
-          <div class="mb-4">
-            <h6 class="border-bottom pb-2 mb-3 d-flex justify-content-between">
-              <span>包裝內容</span>
-              <button type="button" class="btn btn-sm btn-outline-primary" @click="addBundleItem"
-                :disabled="voucherTemplates.length === 0">
-                <i class="bi bi-plus-circle me-1"></i>新增項目
+            <!-- 提交按鈕 -->
+            <div class="d-grid gap-2">
+              <button type="button" class="btn btn-outline-secondary" @click="resetForm">
+                <i class="bi bi-arrow-clockwise me-1"></i>重置
               </button>
-            </h6>
-
-            <!-- 兌換券模板載入提示 -->
-            <div v-if="isLoadingTemplates" class="text-center py-3">
-              <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-              載入兌換券模板中...
-            </div>
-
-            <!-- 沒有可用模板提示 -->
-            <div v-else-if="voucherTemplates.length === 0" class="alert alert-warning">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              <strong>沒有可用的兌換券模板</strong>
-              <p class="mb-0 mt-2">請先到兌換券管理頁面建立兌換券模板，才能建立包裝商品。</p>
-              <router-link :to="`/admin/${brandId}/vouchers`" class="btn btn-sm btn-outline-primary mt-2">
-                前往兌換券管理
-              </router-link>
-            </div>
-
-            <!-- 包裝項目列表 -->
-            <div v-else-if="formData.bundleItems.length > 0">
-              <div v-for="(item, index) in formData.bundleItems" :key="index" class="card mb-3">
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-8 mb-3">
-                      <label class="form-label required">兌換券模板</label>
-                      <select v-model="item.voucherTemplate" class="form-select"
-                        :class="{ 'is-invalid': getItemError(index, 'voucherTemplate') }"
-                        @change="updateVoucherName(index)">
-                        <option value="">選擇兌換券模板</option>
-                        <option v-for="template in voucherTemplates" :key="template._id" :value="template._id">
-                          {{ template.name }}
-                          <span v-if="template.exchangeDishTemplate">
-                            - {{ template.exchangeDishTemplate.name }}
-                          </span>
-                        </option>
-                      </select>
-                      <div class="invalid-feedback" v-if="getItemError(index, 'voucherTemplate')">
-                        {{ getItemError(index, 'voucherTemplate') }}
-                      </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                      <label class="form-label required">數量</label>
-                      <input type="number" class="form-control" v-model="item.quantity" min="1"
-                        :class="{ 'is-invalid': getItemError(index, 'quantity') }" />
-                      <div class="invalid-feedback" v-if="getItemError(index, 'quantity')">
-                        {{ getItemError(index, 'quantity') }}
-                      </div>
-                    </div>
-                    <div class="col-md-1 mb-3">
-                      <label class="form-label">&nbsp;</label>
-                      <button type="button" class="btn btn-outline-danger w-100" @click="removeBundleItem(index)">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- 選定模板的詳細資訊 -->
-                  <div v-if="getSelectedTemplate(item.voucherTemplate)" class="alert alert-info mb-0">
-                    <div class="row">
-                      <div class="col-md-8">
-                        <h6 class="mb-1">{{ getSelectedTemplate(item.voucherTemplate).name }}</h6>
-                        <div v-if="getSelectedTemplate(item.voucherTemplate).exchangeDishTemplate">
-                          <strong>可兌換：</strong>{{ getSelectedTemplate(item.voucherTemplate).exchangeDishTemplate.name
-                          }}<br>
-                          <strong>餐點價格：</strong>${{
-                            formatPrice(getSelectedTemplate(item.voucherTemplate).exchangeDishTemplate.basePrice) }}<br>
-                          <strong>有效期限：</strong>{{ getSelectedTemplate(item.voucherTemplate).validityPeriod }} 天
-                        </div>
-                      </div>
-                      <div class="col-md-4"
-                        v-if="getSelectedTemplate(item.voucherTemplate).exchangeDishTemplate?.image">
-                        <img :src="getSelectedTemplate(item.voucherTemplate).exchangeDishTemplate.image.url"
-                          class="img-thumbnail" style="max-width: 80px; max-height: 60px;">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 空狀態 -->
-            <div v-else class="text-center text-muted py-4">
-              <i class="bi bi-inbox display-6 d-block mb-2"></i>
-              <p>尚未添加任何包裝項目</p>
-              <button type="button" class="btn btn-outline-primary" @click="addBundleItem"
-                :disabled="voucherTemplates.length === 0">
-                <i class="bi bi-plus-circle me-1"></i>新增第一個項目
+              <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
+                {{ isSubmitting ? '處理中...' : (isEditMode ? '更新商品' : '建立商品') }}
               </button>
             </div>
-          </div>
-
-          <!-- 提交按鈕 -->
-          <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-outline-secondary me-2" @click="resetForm">
-              <i class="bi bi-arrow-clockwise me-1"></i>重置
-            </button>
-            <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-              <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isSubmitting ? '處理中...' : (isEditMode ? '更新商品' : '建立商品') }}
-            </button>
           </div>
         </form>
       </div>
@@ -396,7 +417,13 @@ const isSubmitting = ref(false);
 const isLoadingTemplates = ref(false);
 const successMessage = ref('');
 const formErrors = ref([]);
-const voucherTemplates = ref([]);
+const dishTemplates = ref([]); // 改為餐點模板
+
+// 價格計算相關
+const calculatedPrice = ref({
+  totalValue: 0,
+  suggestedPrice: 0
+});
 
 // 監聽價格類型變化
 watch(hasCashPrice, (newVal) => {
@@ -411,6 +438,27 @@ watch(hasPointPrice, (newVal) => {
   }
 });
 
+// 監聽包裝內容變化，自動計算價格
+watch(() => formData.bundleItems, () => {
+  calculateBundlePrice();
+}, { deep: true });
+
+// 計算包裝總價值
+const calculateBundlePrice = () => {
+  let totalValue = 0;
+
+  formData.bundleItems.forEach(item => {
+    const dish = getSelectedDish(item.dishTemplate);
+    if (dish && dish.basePrice && item.quantity) {
+      totalValue += dish.basePrice * item.quantity;
+    }
+  });
+
+  calculatedPrice.value.totalValue = totalValue;
+  // 建議價格可以是總價值的 85%（給予 15% 折扣）
+  calculatedPrice.value.suggestedPrice = Math.round(totalValue * 0.85);
+};
+
 // 格式化價格
 const formatPrice = (price) => {
   return price?.toLocaleString('zh-TW') || '0';
@@ -421,17 +469,19 @@ const getItemError = (index, field) => {
   return errors[`bundleItems.${index}.${field}`];
 };
 
-// 獲取選定的模板
-const getSelectedTemplate = (templateId) => {
-  return voucherTemplates.value.find(template => template._id === templateId);
+// 獲取選定的餐點模板
+const getSelectedDish = (dishId) => {
+  return dishTemplates.value.find(dish => dish._id === dishId);
 };
 
-// 更新兌換券名稱
-const updateVoucherName = (index) => {
-  const template = getSelectedTemplate(formData.bundleItems[index].voucherTemplate);
-  if (template) {
-    formData.bundleItems[index].voucherName = template.name;
+// 更新餐點名稱
+const updateDishName = (index) => {
+  const dish = getSelectedDish(formData.bundleItems[index].dishTemplate);
+  if (dish) {
+    formData.bundleItems[index].dishName = dish.name;
   }
+  // 更新價格計算
+  calculateBundlePrice();
 };
 
 // 處理圖片上傳
@@ -477,9 +527,9 @@ const removeImage = () => {
 // 新增包裝項目
 const addBundleItem = () => {
   formData.bundleItems.push({
-    voucherTemplate: '',
+    dishTemplate: '',
     quantity: 1,
-    voucherName: ''
+    dishName: ''
   });
 };
 
@@ -584,9 +634,9 @@ const validateForm = () => {
     isValid = false;
   } else {
     formData.bundleItems.forEach((item, index) => {
-      if (!item.voucherTemplate) {
-        errors[`bundleItems.${index}.voucherTemplate`] = '請選擇兌換券模板';
-        formErrors.value.push(`第 ${index + 1} 個項目未選擇兌換券模板`);
+      if (!item.dishTemplate) {
+        errors[`bundleItems.${index}.dishTemplate`] = '請選擇餐點模板';
+        formErrors.value.push(`第 ${index + 1} 個項目未選擇餐點模板`);
         isValid = false;
       }
       if (!item.quantity || item.quantity < 1) {
@@ -624,20 +674,20 @@ const validateForm = () => {
   return isValid;
 };
 
-// 獲取兌換券模板
-const fetchVoucherTemplates = async () => {
+// 獲取餐點模板 (改用 dish API)
+const fetchDishTemplates = async () => {
   if (!brandId.value) return;
 
   isLoadingTemplates.value = true;
 
   try {
-    const response = await api.promotion.getAvailableVoucherTemplates(brandId.value);
+    const response = await api.dish.getAllDishTemplates({ brandId: brandId.value });
     if (response && response.templates) {
-      voucherTemplates.value = response.templates;
+      dishTemplates.value = response.templates;
     }
   } catch (error) {
-    console.error('獲取兌換券模板失敗:', error);
-    formErrors.value.push('無法獲取兌換券模板資料，請稍後再試');
+    console.error('獲取餐點模板失敗:', error);
+    formErrors.value.push('無法獲取餐點模板資料，請稍後再試');
   } finally {
     isLoadingTemplates.value = false;
   }
@@ -679,7 +729,7 @@ const fetchBundleData = async () => {
       hasPointPrice.value = !!(bundle.pointPrice && bundle.pointPrice.original);
 
       // 設定圖片預覽
-      if (bundle.image && bundle.image.url) {
+      if (bundle.image) {
         imagePreview.value = bundle.image.url;
       }
     } else {
@@ -697,16 +747,6 @@ const fetchBundleData = async () => {
   }
 };
 
-// 上傳圖片並轉換為 Base64
-const convertImageToBase64 = async (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
-
 // 提交表單
 const submitForm = async () => {
   // 清除上一次的成功訊息
@@ -722,21 +762,41 @@ const submitForm = async () => {
 
   try {
     // 準備提交資料
-    const submitData = { ...formData };
+    const submitData = {
+      brand: brandId.value,
+      ...formData
+    };
 
-    // 處理價格資料
+    // 處理價格
     if (!hasCashPrice.value) {
-      submitData.cashPrice = null;
+      delete submitData.cashPrice;
     }
     if (!hasPointPrice.value) {
-      submitData.pointPrice = null;
+      delete submitData.pointPrice;
     }
 
-    // 處理圖片上傳
+    // 處理圖片
     if (imageFile.value) {
-      submitData.imageData = await convertImageToBase64(imageFile.value);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        submitData.imageData = reader.result;
+        await performSubmit(submitData);
+      };
+      reader.readAsDataURL(imageFile.value);
+    } else {
+      await performSubmit(submitData);
     }
+  } catch (error) {
+    console.error('提交時發生錯誤:', error);
+    formErrors.value = ['提交時發生錯誤，請稍後再試'];
+    isSubmitting.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
 
+// 執行實際提交
+const performSubmit = async (submitData) => {
+  try {
     let response;
 
     if (isEditMode.value) {
@@ -746,83 +806,76 @@ const submitForm = async () => {
         bundleId: route.params.id,
         data: submitData
       });
-      successMessage.value = '包裝商品更新成功！';
     } else {
-      // 創建新包裝商品
+      // 創建包裝商品
       response = await api.bundle.createBundle({
         brandId: brandId.value,
         data: submitData
       });
-      successMessage.value = '包裝商品創建成功！';
     }
 
-    // 延遲導航，讓用戶看到成功訊息
-    setTimeout(() => {
-      router.push(`/admin/${brandId.value}/bundles`);
-    }, 1000);
-  } catch (error) {
-    console.error('儲存包裝商品時發生錯誤:', error);
+    if (response && response.bundle) {
+      successMessage.value = isEditMode.value ? '包裝商品已成功更新！' : '包裝商品已成功建立！';
 
-    // 處理 API 錯誤
-    if (error.response && error.response.data) {
-      const { message, errors: apiErrors } = error.response.data;
+      // 滾動到頁面頂部顯示成功訊息
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      if (apiErrors) {
-        // 處理特定欄位錯誤
-        Object.keys(apiErrors).forEach(key => {
-          errors[key] = apiErrors[key];
-          formErrors.value.push(apiErrors[key]);
-        });
-      } else if (message) {
-        // 顯示一般錯誤訊息
-        formErrors.value = [`錯誤: ${message}`];
-      }
+      // 2秒後跳轉到列表頁面
+      setTimeout(() => {
+        router.push(`/admin/${brandId.value}/bundles`);
+      }, 2000);
     } else {
-      formErrors.value = ['儲存包裝商品時發生未知錯誤，請稍後再試'];
+      formErrors.value = [isEditMode.value ? '更新包裝商品失敗' : '建立包裝商品失敗'];
     }
-
-    // 滾動到頁面頂部顯示錯誤
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (error) {
+    console.error('API 請求失敗:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+      formErrors.value = [error.response.data.message];
+    } else {
+      formErrors.value = [isEditMode.value ? '更新包裝商品時發生錯誤' : '建立包裝商品時發生錯誤'];
+    }
   } finally {
     isSubmitting.value = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 };
 
-// 生命週期鉤子
-onMounted(() => {
-  // 獲取兌換券模板
-  fetchVoucherTemplates();
+// 組件掛載時執行
+onMounted(async () => {
+  await fetchDishTemplates(); // 改為獲取餐點模板
 
-  // 如果是編輯模式，獲取包裝商品資料
   if (isEditMode.value) {
-    fetchBundleData();
+    await fetchBundleData();
   }
 });
 </script>
 
 <style scoped>
-/* 必填欄位標記 */
 .required::after {
-  content: " *";
+  content: ' *';
   color: #dc3545;
 }
 
-/* 表單樣式增強 */
-.form-control:focus,
-.form-select:focus {
-  border-color: #86b7fe;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+.card-title {
+  font-weight: 600;
 }
 
-.form-text {
-  font-size: 0.875rem;
-}
-
-.card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+.alert-info {
+  background-color: #e7f3ff;
+  border-color: #b8daff;
 }
 
 .img-thumbnail {
-  border: 1px solid #dee2e6;
+  border: 2px solid #dee2e6;
+}
+
+.position-relative .btn {
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
