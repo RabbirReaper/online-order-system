@@ -145,6 +145,14 @@ router.get('/brands/:brandId/vouchers/templates/available',
   voucherTemplateController.getAvailableVoucherTemplates
 );
 
+// 🆕 自動為餐點創建兌換券模板
+router.post('/brands/:brandId/vouchers/templates/auto-create',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.autoCreateVoucherTemplatesForDishes
+);
+
 // =============================================================================
 // 兌換券路由（用戶）- Voucher 系統
 // =============================================================================

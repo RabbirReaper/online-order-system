@@ -124,3 +124,25 @@ export const getAvailableVoucherTemplates = asyncHandler(async (req, res) => {
     templates
   });
 });
+
+// 自動檢查並創建餐點兌換券模板
+export const autoCreateVoucherTemplatesForDishes = asyncHandler(async (req, res) => {
+  const brandId = req.brandId || req.params.brandId;
+
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID為必須參數'
+    });
+  }
+
+  const result = await voucherService.voucher.autoCreateVoucherTemplatesForDishes(brandId);
+
+  res.json({
+    success: true,
+    message: `自動創建兌換券模板完成`,
+    statistics: result.statistics,
+    createdTemplates: result.createdTemplates
+  });
+});
+

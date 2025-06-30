@@ -221,44 +221,75 @@ export const useVoucher = async (voucherId, userId, orderId = null) => {
 };
 
 /**
- * 驗證兌換券
- * @param {String} voucherId - 兌換券ID
- * @param {String} userId - 用戶ID
- * @returns {Promise<Object>} 驗證結果
+ * 自動為沒有兌換券模板的餐點創建兌換券模板
+ * @param { String } brandId - 品牌ID
+ * @returns { Promise < Object >} 創建結果統計
  */
-export const validateVoucher = async (voucherId, userId) => {
-  const voucher = await VoucherInstance.findOne({
-    _id: voucherId,
-    user: userId
-  }).populate('template');
+export const autoCreateVoucherTemplatesForDishes = async (brandId) => {
+  try {
+    // 1. 獲取所有該品牌的餐點模板
+    const allDishes = await DishTemplate.find({ brand: brandId });
 
-  if (!voucher) {
-    return {
-      isValid: false,
-      message: '兌換券不存在或無權使用',
-      voucher: null
+    // 2. 獲取已經有兌換券模板的餐點ID列表
+    const existingVoucherTemplates = await VoucherTemplate.find({
+      brand: brandId,
+      exchangeDishTemplate: { $exists: true }
+    }).select('exchangeDishTemplate');
+
+    const existingDishIds = new Set(
+      existingVoucherTemplates.map(template => template.exchangeDishTemplate.toString())
+    );
+
+    // 3. 找出沒有兌換券模板的餐點
+    const dishesWithoutVouchers = allDishes.filter(
+      dish => !existingDishIds.has(dish._id.toString())
+    );
+
+    // 4. 為沒有兌換券的餐點創建兌換券模板
+    const newVoucherTemplates = [];
+
+    for (const dish of dishesWithoutVouchers) {
+      const voucherTemplateData = {
+        brand: brandId,
+        name: `${dish.name} 兌換券`,
+        description: `可兌換 ${dish.name} 一份`,
+        exchangeDishTemplate: dish._id,
+        validityPeriod: 30, // 預設30天有效期
+        isActive: true
+      };
+
+      const newTemplate = new VoucherTemplate(voucherTemplateData);
+      await newTemplate.save();
+      newVoucherTemplates.push(newTemplate);
+    }
+
+    // 5. 準備回傳的統計資訊
+    const statistics = {
+      totalDishes: allDishes.length,           // 總餐點數量
+      existingCount: existingVoucherTemplates.length,  // 已有兌換券的數量
+      createdCount: dishesWithoutVouchers.length,      // 新建立的數量
+      finalTotal: existingVoucherTemplates.length + dishesWithoutVouchers.length  // 處理後的總數量
     };
-  }
 
-  if (voucher.isUsed) {
+    const createdTemplatesInfo = newVoucherTemplates.map(template => {
+      const dish = dishesWithoutVouchers.find(d => d._id.toString() === template.exchangeDishTemplate.toString());
+      return {
+        id: template._id,
+        name: template.name,
+        dishName: dish?.name,           // 顯示餐點名稱
+        dishPrice: dish?.basePrice,     // 顯示餐點價格
+        voucherDescription: template.description
+      };
+    });
+
     return {
-      isValid: false,
-      message: '兌換券已使用',
-      voucher
+      success: true,
+      statistics,
+      createdTemplates: createdTemplatesInfo
     };
-  }
 
-  if (voucher.expiryDate < new Date()) {
-    return {
-      isValid: false,
-      message: '兌換券已過期',
-      voucher
-    };
+  } catch (error) {
+    console.error('自動創建兌換券模板時發生錯誤:', error);
+    throw new AppError(`自動創建兌換券模板失敗: ${error.message}`, 500);
   }
-
-  return {
-    isValid: true,
-    message: '兌換券有效',
-    voucher
-  };
 };

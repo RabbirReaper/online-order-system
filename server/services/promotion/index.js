@@ -38,7 +38,7 @@ export const {
   getAvailableVoucherTemplates, // 用於 Bundle 創建時選擇
   getUserVouchers,
   useVoucher,
-  validateVoucher
+  autoCreateVoucherTemplatesForDishes
 } = voucherService;
 
 // Point 服務導出

@@ -14,11 +14,6 @@ const voucherTemplateSchema = new mongoose.Schema({
   description: {
     type: String
   },
-  pointCost: {
-    type: Number,
-    required: true,
-    min: 1
-  },
   exchangeDishTemplate: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DishTemplate',
