@@ -65,7 +65,7 @@
               <tr>
                 <th>模板名稱</th>
                 <!-- <th>兌換餐點</th> -->
-                <th>餐點價格</th>
+                <!-- <th>餐點價格</th> -->
                 <th>有效期限</th>
                 <th>已發行數量</th>
                 <th>狀態</th>
@@ -80,12 +80,12 @@
                     {{ template.description }}
                   </div>
                 </td>
-                <td>
+                <!-- <td>
                   <span v-if="template.exchangeDishTemplate">
                     ${{ formatPrice(template.exchangeDishTemplate.basePrice) }}
                   </span>
                   <span v-else class="text-muted">-</span>
-                </td>
+                </td> -->
                 <td>{{ template.validityPeriod }} 天</td>
                 <td>{{ template.totalIssued || 0 }}</td>
                 <td>

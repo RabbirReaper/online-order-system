@@ -13,13 +13,13 @@
       {{ error }}
     </div>
 
-    <div v-if="template && !isLoading">
+    <div v-if="voucher && !isLoading">
       <!-- 頁面頂部工具列 -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">{{ template.name }}</h4>
+        <h4 class="mb-0">{{ voucher.name }}</h4>
         <div class="d-flex">
-          <router-link :to="`/admin/${brandId}/vouchers/edit/${template._id}`" class="btn btn-primary me-2">
-            <i class="bi bi-pencil me-1"></i>編輯模板
+          <router-link :to="`/admin/${brandId}/vouchers/edit/${voucher._id}`" class="btn btn-primary me-2">
+            <i class="bi bi-pencil me-1"></i>編輯兌換券
           </router-link>
           <router-link :to="`/admin/${brandId}/vouchers`" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-1"></i>返回列表
@@ -27,7 +27,7 @@
         </div>
       </div>
 
-      <!-- 兌換券模板詳情卡片 -->
+      <!-- 兌換券詳情卡片 -->
       <div class="row">
         <!-- 左側基本資訊 -->
         <div class="col-md-6 mb-4">
@@ -36,179 +36,196 @@
               <h5 class="card-title mb-3">基本資訊</h5>
 
               <div class="mb-3">
-                <h6 class="text-muted mb-1">模板名稱</h6>
-                <p>{{ template.name }}</p>
+                <h6 class="text-muted mb-1">兌換券名稱</h6>
+                <p>{{ voucher.name }}</p>
               </div>
 
-              <div class="mb-3" v-if="template.description">
-                <h6 class="text-muted mb-1">描述</h6>
-                <p>{{ template.description }}</p>
+              <div class="mb-3" v-if="voucher.sellingPoint">
+                <h6 class="text-muted mb-1">賣點</h6>
+                <p class="text-primary">{{ voucher.sellingPoint }}</p>
               </div>
 
-              <div class="mb-3">
-                <h6 class="text-muted mb-1">有效期限</h6>
-                <p>{{ template.validityPeriod }} 天</p>
+              <div class="mb-3" v-if="voucher.description">
+                <h6 class="text-muted mb-1">詳細描述</h6>
+                <p>{{ voucher.description }}</p>
               </div>
 
               <div class="mb-3">
                 <h6 class="text-muted mb-1">狀態</h6>
                 <p>
-                  <span class="badge" :class="template.isActive ? 'bg-success' : 'bg-secondary'">
-                    {{ template.isActive ? '啟用' : '停用' }}
+                  <span class="badge" :class="getStatusBadgeClass(voucher)">
+                    {{ getStatusText(voucher) }}
+                  </span>
+                  <span v-if="voucher.autoStatusControl" class="badge bg-info ms-2">
+                    自動控制
                   </span>
                 </p>
               </div>
 
-              <div class="mb-3">
-                <h6 class="text-muted mb-1">已發行數量</h6>
-                <p class="fs-4 text-primary">{{ template.totalIssued || 0 }}</p>
-              </div>
-
-              <div class="mb-3">
-                <h6 class="text-muted mb-1">建立時間</h6>
-                <p>{{ formatDateTime(template.createdAt) }}</p>
-              </div>
-
-              <div class="mb-3">
-                <h6 class="text-muted mb-1">最後更新</h6>
-                <p>{{ formatDateTime(template.updatedAt) }}</p>
+              <div class="mb-3" v-if="voucher.image">
+                <h6 class="text-muted mb-1">兌換券圖片</h6>
+                <img :src="voucher.image.url" class="img-fluid rounded" style="max-width: 300px;">
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 右側兌換內容 -->
+        <!-- 右側價格和期限資訊 -->
         <div class="col-md-6 mb-4">
           <div class="card h-100">
             <div class="card-body">
-              <h5 class="card-title mb-3">兌換內容</h5>
+              <h5 class="card-title mb-3">價格設定</h5>
 
-              <div v-if="template.exchangeDishTemplate">
-                <div class="border rounded p-3 bg-light">
-                  <div class="row">
-                    <div class="col-md-8">
-                      <h6 class="mb-2">{{ template.exchangeDishTemplate.name }}</h6>
-                      <p class="fs-5 text-success mb-2">
-                        <strong>${{ formatPrice(template.exchangeDishTemplate.basePrice) }}</strong>
-                      </p>
-                      <p class="text-muted small mb-0">
-                        {{ template.exchangeDishTemplate.description || '無描述' }}
-                      </p>
-                    </div>
-                    <div class="col-md-4" v-if="template.exchangeDishTemplate.image">
-                      <img :src="template.exchangeDishTemplate.image.url" class="img-fluid rounded"
-                        style="max-height: 120px; object-fit: cover;">
-                    </div>
-                  </div>
-
-                  <!-- 餐點選項 -->
-                  <div
-                    v-if="template.exchangeDishTemplate.optionCategories && template.exchangeDishTemplate.optionCategories.length > 0"
-                    class="mt-3">
-                    <h6 class="mb-2">可選選項</h6>
-                    <div class="row">
-                      <div v-for="category in template.exchangeDishTemplate.optionCategories"
-                        :key="category._id || category" class="col-md-6 mb-2">
-                        <div class="border rounded p-2 bg-white">
-                          <div class="fw-bold small">{{ category.name || category }}</div>
-                          <div class="text-muted small">
-                            {{ category.inputType === 'single' ? '單選' : '多選' }}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 餐點標籤 -->
-                  <div v-if="template.exchangeDishTemplate.tags && template.exchangeDishTemplate.tags.length > 0"
-                    class="mt-3">
-                    <h6 class="mb-2">標籤</h6>
-                    <div>
-                      <span v-for="tag in template.exchangeDishTemplate.tags" :key="tag"
-                        class="badge bg-secondary me-1">{{ tag }}</span>
-                    </div>
-                  </div>
+              <div class="row mb-3" v-if="voucher.cashPrice">
+                <div class="col-6">
+                  <h6 class="text-muted mb-1">現金價格</h6>
+                  <p class="fs-4 text-success mb-0">
+                    ${{ formatPrice(voucher.cashPrice.selling || voucher.cashPrice.original) }}
+                  </p>
+                  <small v-if="voucher.cashPrice.selling && voucher.cashPrice.selling < voucher.cashPrice.original"
+                    class="text-muted text-decoration-line-through">
+                    原價 ${{ formatPrice(voucher.cashPrice.original) }}
+                  </small>
                 </div>
               </div>
 
-              <div v-else class="text-center text-muted py-4">
-                <i class="bi bi-exclamation-circle display-6 d-block mb-2"></i>
-                <p>未設定兌換餐點</p>
+              <div class="row mb-3" v-if="voucher.pointPrice">
+                <div class="col-6">
+                  <h6 class="text-muted mb-1">點數價格</h6>
+                  <p class="fs-4 text-primary mb-0">
+                    {{ voucher.pointPrice.selling || voucher.pointPrice.original }} 點
+                  </p>
+                  <small v-if="voucher.pointPrice.selling && voucher.pointPrice.selling < voucher.pointPrice.original"
+                    class="text-muted text-decoration-line-through">
+                    原價 {{ voucher.pointPrice.original }} 點
+                  </small>
+                </div>
+              </div>
+
+              <div class="mb-3" v-if="voucher.validFrom && voucher.validTo">
+                <h6 class="text-muted mb-1">販售期間</h6>
+                <p>
+                  {{ formatDateTime(voucher.validFrom) }}<br>
+                  <span class="text-muted">至</span><br>
+                  {{ formatDateTime(voucher.validTo) }}
+                </p>
+              </div>
+
+              <div class="mb-3">
+                <h6 class="text-muted mb-1">購買限制</h6>
+                <p>
+                  {{ voucher.purchaseLimitPerUser ?
+                    `每人限購 ${voucher.purchaseLimitPerUser} 個` : '無限制' }}
+                </p>
+              </div>
+
+              <!-- 計算節省金額 -->
+              <div class="mb-3" v-if="bundleValue > 0">
+                <h6 class="text-muted mb-1">價值分析</h6>
+                <div class="border rounded p-3 bg-light">
+                  <div class="row text-center">
+                    <div class="col-6">
+                      <div class="border-end">
+                        <h5 class="text-primary mb-1">{{ bundleValue }}</h5>
+                        <p class="text-muted mb-0 small">總價值（點數）</p>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <h5 class="text-success mb-1">{{ savings }}</h5>
+                      <p class="text-muted mb-0 small">節省（點數）</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 使用統計 -->
+      <!-- 兌換內容 -->
       <div class="row">
         <div class="col-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title mb-3">使用統計</h5>
+              <h5 class="card-title mb-3">兌換內容</h5>
+
+              <!-- 載入餐點詳情中 -->
+              <div v-if="isDishLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">載入餐點詳情中...</span>
+                </div>
+              </div>
+
+              <!-- 顯示餐點詳情 -->
+              <div v-else-if="dishTemplate" class="border rounded p-3 bg-light">
+                <div class="row">
+                  <div class="col-md-8">
+                    <h6 class="mb-2">{{ dishTemplate.name }}</h6>
+                    <p class="fs-5 text-success mb-2">
+                      <strong>${{ formatPrice(dishTemplate.basePrice) }}</strong>
+                    </p>
+                    <p class="text-muted small mb-0">
+                      {{ dishTemplate.description || '無描述' }}
+                    </p>
+                    <!-- 顯示標籤 -->
+                    <div v-if="dishTemplate.tags && dishTemplate.tags.length > 0" class="mt-2">
+                      <span v-for="tag in dishTemplate.tags" :key="tag" class="badge bg-secondary me-1 small">
+                        {{ tag }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="col-md-4" v-if="dishTemplate.image">
+                    <img :src="dishTemplate.image.url" class="img-fluid rounded"
+                      style="max-height: 120px; object-fit: cover;" :alt="dishTemplate.image.alt || dishTemplate.name">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 無法載入餐點詳情 -->
+              <div v-else-if="dishError" class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                無法載入兌換餐點詳情：{{ dishError }}
+              </div>
+
+              <!-- 沒有兌換內容 -->
+              <div v-else class="text-center text-muted py-4">
+                <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                <p>尚未設定兌換內容</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 統計資訊 -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">購買統計</h5>
               <div class="row text-center">
                 <div class="col-md-3">
                   <div class="border-end">
-                    <h3 class="text-primary mb-1">{{ template.totalIssued || 0 }}</h3>
-                    <p class="text-muted mb-0">總發行量</p>
+                    <h3 class="text-primary mb-1">{{ voucher.totalSold || 0 }}</h3>
+                    <p class="text-muted mb-0">總銷售</p>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <div class="border-end">
-                    <h3 class="text-success mb-1">{{ template.totalUsed || 0 }}</h3>
+                    <h3 class="text-success mb-1">{{ voucher.totalRevenue || 0 }}</h3>
+                    <p class="text-muted mb-0">總收益</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="border-end">
+                    <h3 class="text-warning mb-1">{{ voucher.totalUsed || 0 }}</h3>
                     <p class="text-muted mb-0">已使用</p>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="border-end">
-                    <h3 class="text-warning mb-1">{{ (template.totalIssued || 0) - (template.totalUsed || 0) }}</h3>
-                    <p class="text-muted mb-0">未使用</p>
                   </div>
                 </div>
                 <div class="col-md-3">
                   <h3 class="text-info mb-1">{{ usageRate }}%</h3>
                   <p class="text-muted mb-0">使用率</p>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bundle 使用情況 -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title mb-3">Bundle 使用情況</h5>
-              <div v-if="relatedBundles.length > 0">
-                <div class="row">
-                  <div v-for="bundle in relatedBundles" :key="bundle._id" class="col-md-6 col-lg-4 mb-3">
-                    <div class="card border-light">
-                      <div class="card-body">
-                        <h6 class="card-title">{{ bundle.name }}</h6>
-                        <p class="card-text small text-muted">{{ bundle.description || '無描述' }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                          <small class="text-muted">銷售: {{ bundle.totalSold || 0 }}</small>
-                          <span class="badge" :class="bundle.isActive ? 'bg-success' : 'bg-secondary'">
-                            {{ bundle.isActive ? '啟用' : '停用' }}
-                          </span>
-                        </div>
-                        <router-link :to="`/admin/${brandId}/bundles/detail/${bundle._id}`"
-                          class="btn btn-sm btn-outline-primary mt-2">
-                          查看 Bundle
-                        </router-link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-center text-muted py-4">
-                <i class="bi bi-inbox display-6 d-block mb-2"></i>
-                <p>此模板尚未被任何 Bundle 使用</p>
-                <router-link :to="`/admin/${brandId}/bundles/create`" class="btn btn-outline-primary">
-                  <i class="bi bi-plus-circle me-1"></i>建立 Bundle
-                </router-link>
               </div>
             </div>
           </div>
@@ -223,10 +240,13 @@
               <h5 class="card-title mb-3">操作</h5>
               <div class="d-flex gap-2">
                 <button class="btn btn-outline-primary" @click="showToggleStatusModal">
-                  <i class="bi bi-power me-1"></i>{{ template.isActive ? '停用' : '啟用' }}模板
+                  <i class="bi bi-power me-1"></i>{{ voucher.isActive ? '停用' : '啟用' }}兌換券
                 </button>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteTemplateModal">
-                  <i class="bi bi-trash me-1"></i>刪除模板
+                <button class="btn btn-outline-info" @click="triggerAutoUpdate">
+                  <i class="bi bi-arrow-clockwise me-1"></i>更新狀態
+                </button>
+                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteVoucherModal">
+                  <i class="bi bi-trash me-1"></i>刪除兌換券
                 </button>
               </div>
             </div>
@@ -244,19 +264,19 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <p v-if="template">
-              您確定要{{ template.isActive ? '停用' : '啟用' }}「{{ template.name }}」嗎？
+            <p v-if="voucher">
+              您確定要{{ voucher.isActive ? '停用' : '啟用' }}「{{ voucher.name }}」嗎？
             </p>
             <div class="alert alert-info">
               <i class="bi bi-info-circle-fill me-2"></i>
-              {{ template?.isActive ? '停用後此模板無法被用於建立新的 Bundle' : '啟用後此模板可以重新被用於建立 Bundle' }}
+              {{ voucher?.isActive ? '停用後顧客將無法購買此兌換券' : '啟用後顧客可以重新購買此兌換券' }}
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
             <button type="button" class="btn btn-primary" @click="confirmToggleStatus" :disabled="isToggling">
               <span v-if="isToggling" class="spinner-border spinner-border-sm me-1"></span>
-              確認{{ template?.isActive ? '停用' : '啟用' }}
+              確認{{ voucher?.isActive ? '停用' : '啟用' }}
             </button>
           </div>
         </div>
@@ -264,7 +284,7 @@
     </div>
 
     <!-- 刪除確認對話框 -->
-    <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
+    <div class="modal fade" id="deleteVoucherModal" tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -276,11 +296,11 @@
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               <strong>警告：</strong>此操作無法復原
             </div>
-            <p v-if="template">
-              您確定要刪除兌換券模板「{{ template.name }}」嗎？
+            <p v-if="voucher">
+              您確定要刪除兌換券「{{ voucher.name }}」嗎？
             </p>
             <p class="text-muted small">
-              刪除後，所有相關的兌換券實例和統計資料也會一併移除。
+              刪除後，所有相關的統計資料和已售出的兌換券實例也會一併移除。
             </p>
           </div>
           <div class="modal-footer">
@@ -306,19 +326,21 @@ import api from '@/api';
 const route = useRoute();
 const router = useRouter();
 
-// 從路由中獲取品牌ID和模板ID
+// 從路由中獲取品牌ID和兌換券ID
 const brandId = computed(() => route.params.brandId);
-const templateId = computed(() => route.params.id);
+const voucherId = computed(() => route.params.id);
 
 // 狀態
 const isLoading = ref(false);
 const isToggling = ref(false);
 const isDeleting = ref(false);
+const isDishLoading = ref(false);
 const error = ref('');
+const dishError = ref('');
 
-// 兌換券模板資料
-const template = ref(null);
-const relatedBundles = ref([]);
+// 兌換券和餐點資料
+const voucher = ref(null);
+const dishTemplate = ref(null);
 
 // 對話框
 const statusModal = ref(null);
@@ -341,17 +363,85 @@ const formatDateTime = (dateString) => {
   });
 };
 
-// 計算使用率
-const usageRate = computed(() => {
-  if (!template.value || !template.value.totalIssued || template.value.totalIssued === 0) {
-    return 0;
+// 獲取狀態徽章樣式
+const getStatusBadgeClass = (voucher) => {
+  if (!voucher.isActive) return 'bg-secondary';
+
+  const now = new Date();
+  if (voucher.autoStatusControl && voucher.validTo && new Date(voucher.validTo) < now) {
+    return 'bg-warning';
   }
-  return Math.round(((template.value.totalUsed || 0) / template.value.totalIssued) * 100);
+
+  return 'bg-success';
+};
+
+// 獲取狀態文字
+const getStatusText = (voucher) => {
+  if (!voucher.isActive) return '停用';
+
+  const now = new Date();
+  if (voucher.autoStatusControl && voucher.validTo && new Date(voucher.validTo) < now) {
+    return '已過期';
+  }
+
+  return '啟用';
+};
+
+// 計算兌換券總價值
+const bundleValue = computed(() => {
+  if (!voucher.value || !voucher.value.bundleItems) return 0;
+
+  return voucher.value.bundleItems.reduce((total, item) => {
+    const itemValue = (item.couponTemplate?.pointCost || 0) * item.quantity;
+    return total + itemValue;
+  }, 0);
 });
 
-// 獲取兌換券模板資料
-const fetchTemplateData = async () => {
-  if (!templateId.value || !brandId.value) return;
+// 計算節省的點數
+const savings = computed(() => {
+  if (!voucher.value || !voucher.value.pointPrice) return 0;
+
+  const cost = voucher.value.pointPrice.selling || voucher.value.pointPrice.original || 0;
+  return Math.max(0, bundleValue.value - cost);
+});
+
+// 計算使用率
+const usageRate = computed(() => {
+  if (!voucher.value || !voucher.value.totalSold || voucher.value.totalSold === 0) {
+    return 0;
+  }
+  return Math.round(((voucher.value.totalUsed || 0) / voucher.value.totalSold) * 100);
+});
+
+// 獲取餐點模板詳情
+const fetchDishTemplate = async (dishTemplateId) => {
+  if (!dishTemplateId || !brandId.value) return;
+
+  isDishLoading.value = true;
+  dishError.value = '';
+
+  try {
+    const response = await api.dish.getDishTemplateById({
+      brandId: brandId.value,
+      id: dishTemplateId
+    });
+
+    if (response && response.template) {
+      dishTemplate.value = response.template;
+    } else {
+      dishError.value = '餐點模板不存在';
+    }
+  } catch (err) {
+    console.error('獲取餐點模板詳情時發生錯誤:', err);
+    dishError.value = '載入餐點詳情失敗';
+  } finally {
+    isDishLoading.value = false;
+  }
+};
+
+// 獲取兌換券資料
+const fetchVoucherData = async () => {
+  if (!voucherId.value || !brandId.value) return;
 
   isLoading.value = true;
   error.value = '';
@@ -359,43 +449,24 @@ const fetchTemplateData = async () => {
   try {
     const response = await api.promotion.getVoucherTemplateById({
       brandId: brandId.value,
-      id: templateId.value
+      id: voucherId.value
     });
 
     if (response && response.template) {
-      template.value = response.template;
+      voucher.value = response.template;
+
+      // 如果有關聯的餐點模板，獲取詳細資訊
+      if (response.template.exchangeDishTemplate) {
+        await fetchDishTemplate(response.template.exchangeDishTemplate);
+      }
     } else {
-      error.value = '獲取兌換券模板資料失敗';
+      error.value = '獲取兌換券資料失敗';
     }
   } catch (err) {
-    console.error('獲取兌換券模板資料時發生錯誤:', err);
-    error.value = '獲取兌換券模板資料時發生錯誤，請稍後再試';
+    console.error('獲取兌換券資料時發生錯誤:', err);
+    error.value = '獲取兌換券資料時發生錯誤，請稍後再試';
   } finally {
     isLoading.value = false;
-  }
-};
-
-// 獲取相關的 Bundle
-const fetchRelatedBundles = async () => {
-  if (!templateId.value || !brandId.value) return;
-
-  try {
-    // 獲取所有 Bundle，然後篩選出使用此模板的
-    const response = await api.bundle.getAllBundles({
-      brandId: brandId.value,
-      includeInactive: true
-    });
-
-    if (response && response.bundles) {
-      relatedBundles.value = response.bundles.filter(bundle =>
-        bundle.bundleItems?.some(item =>
-          item.voucherTemplate === templateId.value
-        )
-      );
-    }
-  } catch (err) {
-    console.error('獲取相關 Bundle 失敗:', err);
-    // 不影響主要功能，只記錄錯誤
   }
 };
 
@@ -406,20 +477,20 @@ const showToggleStatusModal = () => {
 
 // 確認切換狀態
 const confirmToggleStatus = async () => {
-  if (!template.value) return;
+  if (!voucher.value) return;
 
   isToggling.value = true;
 
   try {
-    const newStatus = !template.value.isActive;
+    const newStatus = !voucher.value.isActive;
     await api.promotion.updateVoucherTemplate({
       brandId: brandId.value,
-      id: template.value._id,
+      id: voucher.value._id,
       data: { isActive: newStatus }
     });
 
     // 更新本地狀態
-    template.value.isActive = newStatus;
+    voucher.value.isActive = newStatus;
 
     // 關閉對話框
     statusModal.value.hide();
@@ -431,20 +502,35 @@ const confirmToggleStatus = async () => {
   }
 };
 
+// 觸發自動狀態更新
+const triggerAutoUpdate = async () => {
+  try {
+    await api.bundle.autoUpdateBundleStatus();
+
+    // 重新載入兌換券資料
+    await fetchVoucherData();
+
+    alert('狀態更新完成');
+  } catch (err) {
+    console.error('自動更新狀態失敗:', err);
+    alert('自動更新狀態失敗，請稍後再試');
+  }
+};
+
 // 處理刪除確認
 const handleDelete = async () => {
-  if (!template.value) return;
+  if (!voucher.value) return;
 
   isDeleting.value = true;
 
   try {
     await api.promotion.deleteVoucherTemplate({
       brandId: brandId.value,
-      id: template.value._id
+      id: voucher.value._id
     });
 
     // 關閉模態對話框
-    const modalElement = document.getElementById('deleteTemplateModal');
+    const modalElement = document.getElementById('deleteVoucherModal');
     const modal = Modal.getInstance(modalElement);
     if (modal) {
       modal.hide();
@@ -459,19 +545,19 @@ const handleDelete = async () => {
         document.body.classList.remove('modal-open');
       }
 
-      // 返回兌換券模板列表
+      // 返回兌換券列表
       router.push(`/admin/${brandId.value}/vouchers`);
 
       // 觸發刷新列表事件
       window.dispatchEvent(new CustomEvent('refresh-voucher-list'));
     }, 300);
   } catch (err) {
-    console.error('刪除兌換券模板失敗:', err);
+    console.error('刪除兌換券失敗:', err);
 
     if (err.response && err.response.data && err.response.data.message) {
       alert(`刪除失敗: ${err.response.data.message}`);
     } else {
-      alert('刪除兌換券模板時發生錯誤');
+      alert('刪除兌換券時發生錯誤');
     }
   } finally {
     isDeleting.value = false;
@@ -486,11 +572,8 @@ onMounted(() => {
     statusModal.value = new Modal(statusModalElement);
   }
 
-  // 獲取兌換券模板資料
-  fetchTemplateData();
-
-  // 獲取相關 Bundle
-  fetchRelatedBundles();
+  // 獲取兌換券資料
+  fetchVoucherData();
 });
 </script>
 
@@ -518,5 +601,10 @@ onMounted(() => {
 
 .border-end:last-child {
   border-right: none !important;
+}
+
+.img-fluid {
+  max-height: 200px;
+  object-fit: cover;
 }
 </style>

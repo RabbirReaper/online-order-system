@@ -78,36 +78,44 @@
             <div class="mb-3">
               <label for="exchangeDishTemplate" class="form-label required">可兌換餐點</label>
               <select class="form-select" id="exchangeDishTemplate" v-model="formData.exchangeDishTemplate"
-                :class="{ 'is-invalid': errors.exchangeDishTemplate }">
+                :class="{ 'is-invalid': errors.exchangeDishTemplate }" :disabled="isEditMode">
                 <option value="">請選擇餐點</option>
                 <option v-for="dish in dishTemplates" :key="dish._id" :value="dish._id">
                   {{ dish.name }} - ${{ formatPrice(dish.basePrice) }}
                 </option>
               </select>
               <div class="invalid-feedback" v-if="errors.exchangeDishTemplate">{{ errors.exchangeDishTemplate }}</div>
-              <div class="form-text">選擇此兌換券可以兌換的餐點</div>
+              <div class="form-text">
+                <span v-if="isEditMode" class="text-warning">
+                  <i class="bi bi-info-circle me-1"></i>
+                  編輯模式下無法修改可兌換餐點
+                </span>
+                <span v-else>選擇此兌換券可以兌換的餐點</span>
+              </div>
             </div>
 
             <!-- 選定餐點的詳細資訊 -->
-            <div v-if="selectedDish" class="alert alert-info">
-              <h6 class="alert-heading mb-2">
-                <i class="bi bi-info-circle me-2"></i>選定餐點資訊
-              </h6>
+            <div v-if="selectedDish" class="border rounded p-3 bg-light mt-3">
               <div class="row">
-                <div class="col-md-6">
-                  <strong>餐點名稱：</strong>{{ selectedDish.name }}<br>
-                  <strong>基本價格：</strong>${{ formatPrice(selectedDish.basePrice) }}<br>
-                  <strong>描述：</strong>{{ selectedDish.description || '無' }}
+                <div class="col-md-8">
+                  <h6 class="mb-2">{{ selectedDish.name }}</h6>
+                  <p class="fs-5 text-success mb-2">
+                    <strong>${{ formatPrice(selectedDish.basePrice) }}</strong>
+                  </p>
+                  <p class="text-muted small mb-0">
+                    {{ selectedDish.description || '無描述' }}
+                  </p>
+                  <!-- 顯示標籤 -->
+                  <div v-if="selectedDish.tags && selectedDish.tags.length > 0" class="mt-2">
+                    <span v-for="tag in selectedDish.tags" :key="tag" class="badge bg-secondary me-1 small">
+                      {{ tag }}
+                    </span>
+                  </div>
                 </div>
-                <div class="col-md-6" v-if="selectedDish.image">
-                  <img :src="selectedDish.image.url" class="img-thumbnail" style="max-width: 120px; max-height: 80px;">
+                <div class="col-md-4" v-if="selectedDish.image">
+                  <img :src="selectedDish.image.url" class="img-fluid rounded"
+                    style="max-height: 120px; object-fit: cover;" :alt="selectedDish.image.alt || selectedDish.name">
                 </div>
-              </div>
-              <div v-if="selectedDish.optionCategories && selectedDish.optionCategories.length > 0" class="mt-2">
-                <strong>可選選項：</strong>
-                <span v-for="(category, index) in selectedDish.optionCategories" :key="category._id">
-                  {{ category.name }}<span v-if="index < selectedDish.optionCategories.length - 1">、</span>
-                </span>
               </div>
             </div>
           </div>
