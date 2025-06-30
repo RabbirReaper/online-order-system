@@ -76,11 +76,9 @@ const bundleSchema = new mongoose.Schema({
   // 時限控制
   validFrom: {
     type: Date,
-    required: true
   }, // 購買開始時間
   validTo: {
     type: Date,
-    required: true
   }, // 購買結束時間
   voucherValidityDays: {
     type: Number,
@@ -112,12 +110,6 @@ const bundleSchema = new mongoose.Schema({
     default: 0,
     min: 0
   }, // 總銷售數量
-
-  // 適用店鋪
-  stores: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Store'
-  }] // 適用店鋪，空陣列表示所有店鋪適用
 
 }, { timestamps: true });
 
