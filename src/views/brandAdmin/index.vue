@@ -120,6 +120,11 @@
                 兌換券
               </router-link>
 
+              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/bundles`">
+                <i class="bi bi-ticket-perforated me-2"></i>
+                包裝商品
+              </router-link>
+
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/point-rules`">
                 <i class="bi bi-coin me-2"></i>
                 點數規則

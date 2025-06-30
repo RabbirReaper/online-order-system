@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js';
 import VoucherInstance from '../../models/Promotion/VoucherInstance.js';
 import Bundle from '../../models/Promotion/Bundle.js';
+import DishTemplate from '../../models/Dish/DishTemplate.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**
@@ -17,7 +18,6 @@ import { AppError } from '../../middlewares/error.js';
  */
 export const getAllVoucherTemplates = async (brandId) => {
   const templates = await VoucherTemplate.find({ brand: brandId })
-    .populate('exchangeInfo.items.dishTemplate')
     .sort({ createdAt: -1 });
 
   return templates;
@@ -33,7 +33,7 @@ export const getVoucherTemplateById = async (templateId, brandId) => {
   const template = await VoucherTemplate.findOne({
     _id: templateId,
     brand: brandId
-  }).populate('exchangeInfo.items.dishTemplate');
+  });
 
   if (!template) {
     throw new AppError('兌換券模板不存在或無權訪問', 404);
@@ -49,15 +49,13 @@ export const getVoucherTemplateById = async (templateId, brandId) => {
  */
 export const createVoucherTemplate = async (templateData) => {
   // 驗證必要欄位
-  if (!templateData.name || !templateData.voucherType || !templateData.validityPeriod) {
-    throw new AppError('名稱、類型和有效期為必填欄位', 400);
+  if (!templateData.name || !templateData.validityPeriod) {
+    throw new AppError('名稱和有效期為必填欄位', 400);
   }
 
-  // 兌換券通常是 exchange 類型
-  if (templateData.voucherType === 'exchange') {
-    if (!templateData.exchangeInfo || !templateData.exchangeInfo.items || templateData.exchangeInfo.items.length === 0) {
-      throw new AppError('兌換券必須提供可兌換的項目', 400);
-    }
+  // 驗證是否提供了可兌換的餐點
+  if (!templateData.exchangeDishTemplate) {
+    throw new AppError('兌換券必須指定可兌換的餐點', 400);
   }
 
   const newTemplate = new VoucherTemplate(templateData);
@@ -146,7 +144,7 @@ export const getAvailableVoucherTemplates = async (brandId) => {
     brand: brandId,
     isActive: true
   })
-    .select('name description voucherType validityPeriod')
+    .select('name description validityPeriod exchangeDishTemplate')
     .sort({ createdAt: -1 });
 
   return templates;
@@ -172,7 +170,7 @@ export const getUserVouchers = async (userId, options = {}) => {
   }
 
   const vouchers = await VoucherInstance.find(query)
-    .populate('template', 'name description voucherType exchangeInfo')
+    .populate('template', 'name description validityPeriod')
     .populate('sourceBundle', 'name') // populate 來源 Bundle
     .sort({ createdAt: -1 });
 
@@ -222,8 +220,8 @@ export const useVoucher = async (voucherId, userId, orderId = null) => {
 
 /**
  * 自動為沒有兌換券模板的餐點創建兌換券模板
- * @param { String } brandId - 品牌ID
- * @returns { Promise < Object >} 創建結果統計
+ * @param {String} brandId - 品牌ID
+ * @returns {Promise<Object>} 創建結果統計
  */
 export const autoCreateVoucherTemplatesForDishes = async (brandId) => {
   try {

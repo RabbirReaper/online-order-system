@@ -361,32 +361,60 @@ const router = createRouter({
           meta: { requiresAuth: true, title: '折價券詳情' }
         },
 
-        // 促銷管理 - 兌換券 (新增的 Voucher)
+        // 促銷管理 - 兌換券模板 (Voucher - 基礎兌換券模板管理)
         {
           path: 'vouchers',
           name: 'brand-admin-vouchers',
           component: () => import('@/components/BrandAdmin/Promotion/Voucher/List.vue'),
-          meta: { requiresAuth: true, title: '兌換券管理' }
+          meta: { requiresAuth: true, title: '兌換券模板管理' }
         },
         {
           path: 'vouchers/create',
           name: 'brand-admin-voucher-create',
           component: () => import('@/components/BrandAdmin/Promotion/Voucher/Form.vue'),
-          meta: { requiresAuth: true, title: '新增兌換券' }
+          meta: { requiresAuth: true, title: '新增兌換券模板' }
         },
         {
           path: 'vouchers/edit/:id',
           name: 'brand-admin-voucher-edit',
           component: () => import('@/components/BrandAdmin/Promotion/Voucher/Form.vue'),
           props: true,
-          meta: { requiresAuth: true, title: '編輯兌換券' }
+          meta: { requiresAuth: true, title: '編輯兌換券模板' }
         },
         {
           path: 'vouchers/detail/:id',
           name: 'brand-admin-voucher-detail',
           component: () => import('@/components/BrandAdmin/Promotion/Voucher/Detail.vue'),
           props: true,
-          meta: { requiresAuth: true, title: '兌換券詳情' }
+          meta: { requiresAuth: true, title: '兌換券模板詳情' }
+        },
+
+        // 促銷管理 - 包裝商品 (Bundle - 包裝商品管理)
+        {
+          path: 'bundles',
+          name: 'brand-admin-bundles',
+          component: () => import('@/components/BrandAdmin/Promotion/Bundle/List.vue'),
+          meta: { requiresAuth: true, title: '包裝商品管理' }
+        },
+        {
+          path: 'bundles/create',
+          name: 'brand-admin-bundle-create',
+          component: () => import('@/components/BrandAdmin/Promotion/Bundle/Form.vue'),
+          meta: { requiresAuth: true, title: '新增包裝商品' }
+        },
+        {
+          path: 'bundles/edit/:id',
+          name: 'brand-admin-bundle-edit',
+          component: () => import('@/components/BrandAdmin/Promotion/Bundle/Form.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '編輯包裝商品' }
+        },
+        {
+          path: 'bundles/detail/:id',
+          name: 'brand-admin-bundle-detail',
+          component: () => import('@/components/BrandAdmin/Promotion/Bundle/Detail.vue'),
+          props: true,
+          meta: { requiresAuth: true, title: '包裝商品詳情' }
         },
         // 點數規則
         {
