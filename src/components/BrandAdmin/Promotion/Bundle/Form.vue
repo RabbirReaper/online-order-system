@@ -149,7 +149,7 @@
                       <span class="input-group-text">點</span>
                     </div>
                     <div class="invalid-feedback" v-if="errors['pointPrice.original']">{{ errors['pointPrice.original']
-                      }}
+                    }}
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -170,24 +170,24 @@
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="card-title mb-0">包裝內容</h6>
                 <button type="button" class="btn btn-sm btn-outline-primary" @click="addBundleItem"
-                  :disabled="dishTemplates.length === 0">
+                  :disabled="voucherTemplates.length === 0">
                   <i class="bi bi-plus-circle me-1"></i>新增項目
                 </button>
               </div>
               <div class="card-body">
-                <!-- 餐點模板載入提示 -->
+                <!-- 兌換券模板載入提示 -->
                 <div v-if="isLoadingTemplates" class="text-center py-3">
                   <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                  載入餐點模板中...
+                  載入兌換券模板中...
                 </div>
 
                 <!-- 沒有可用模板提示 -->
-                <div v-else-if="dishTemplates.length === 0" class="alert alert-warning">
+                <div v-else-if="voucherTemplates.length === 0" class="alert alert-warning">
                   <i class="bi bi-exclamation-triangle me-2"></i>
-                  <strong>沒有可用的餐點模板</strong>
-                  <p class="mb-0 mt-2">請先到餐點管理頁面建立餐點模板，才能建立包裝商品。</p>
-                  <router-link :to="`/admin/${brandId}/dishes`" class="btn btn-sm btn-outline-primary mt-2">
-                    前往餐點管理
+                  <strong>沒有可用的兌換券模板</strong>
+                  <p class="mb-0 mt-2">請先到兌換券管理頁面建立兌換券模板，才能建立包裝商品。</p>
+                  <router-link :to="`/admin/${brandId}/vouchers`" class="btn btn-sm btn-outline-primary mt-2">
+                    前往兌換券管理
                   </router-link>
                 </div>
 
@@ -197,17 +197,17 @@
                     <div class="card-body">
                       <div class="row">
                         <div class="col-md-8 mb-3">
-                          <label class="form-label required">餐點模板</label>
-                          <select v-model="item.dishTemplate" class="form-select"
-                            :class="{ 'is-invalid': getItemError(index, 'dishTemplate') }"
-                            @change="updateDishName(index)">
-                            <option value="">選擇餐點模板</option>
-                            <option v-for="dish in dishTemplates" :key="dish._id" :value="dish._id">
-                              {{ dish.name }} - ${{ formatPrice(dish.basePrice) }}
+                          <label class="form-label required">兌換券模板</label>
+                          <select v-model="item.voucherTemplate" class="form-select"
+                            :class="{ 'is-invalid': getItemError(index, 'voucherTemplate') }"
+                            @change="updateVoucherName(index)">
+                            <option value="">選擇兌換券模板</option>
+                            <option v-for="voucher in voucherTemplates" :key="voucher._id" :value="voucher._id">
+                              {{ voucher.name }} - ${{ formatPrice(voucher.dishTemplateDetails?.basePrice || 0) }}
                             </option>
                           </select>
-                          <div class="invalid-feedback" v-if="getItemError(index, 'dishTemplate')">
-                            {{ getItemError(index, 'dishTemplate') }}
+                          <div class="invalid-feedback" v-if="getItemError(index, 'voucherTemplate')">
+                            {{ getItemError(index, 'voucherTemplate') }}
                           </div>
                         </div>
                         <div class="col-md-3 mb-3">
@@ -226,27 +226,35 @@
                         </div>
                       </div>
 
-                      <!-- 選定餐點的詳細資訊 -->
-                      <div v-if="getSelectedDish(item.dishTemplate)" class="alert alert-info mb-0">
+                      <!-- 選定兌換券的詳細資訊 -->
+                      <div v-if="getSelectedVoucher(item.voucherTemplate)" class="alert alert-info mb-0">
                         <div class="row">
                           <div class="col-md-8">
-                            <h6 class="mb-1">{{ getSelectedDish(item.dishTemplate).name }}</h6>
+                            <h6 class="mb-1">{{ getSelectedVoucher(item.voucherTemplate).name }}</h6>
                             <div>
-                              <strong>餐點價格：</strong>${{ formatPrice(getSelectedDish(item.dishTemplate).basePrice) }}<br>
-                              <strong>描述：</strong>{{ getSelectedDish(item.dishTemplate).description || '無描述' }}
-                              <div
-                                v-if="getSelectedDish(item.dishTemplate).tags && getSelectedDish(item.dishTemplate).tags.length > 0"
-                                class="mt-2">
-                                <span v-for="tag in getSelectedDish(item.dishTemplate).tags" :key="tag"
-                                  class="badge bg-secondary me-1 small">
-                                  {{ tag }}
-                                </span>
+                              <strong>兌換券描述：</strong>{{ getSelectedVoucher(item.voucherTemplate).description || '無描述'
+                              }}<br>
+                              <strong>有效期限：</strong>{{ getSelectedVoucher(item.voucherTemplate).validityPeriod }} 天<br>
+                              <div v-if="getSelectedVoucher(item.voucherTemplate).dishTemplateDetails">
+                                <strong>可兌換餐點：</strong>{{
+                                  getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.name }}<br>
+                                <strong>餐點價格：</strong>${{
+                                  formatPrice(getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.basePrice) }}
+                                <div
+                                  v-if="getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.tags && getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.tags.length > 0"
+                                  class="mt-2">
+                                  <span v-for="tag in getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.tags"
+                                    :key="tag" class="badge bg-secondary me-1 small">
+                                    {{ tag }}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                          <div class="col-md-4" v-if="getSelectedDish(item.dishTemplate).image">
-                            <img :src="getSelectedDish(item.dishTemplate).image.url" class="img-thumbnail"
-                              style="max-width: 80px; max-height: 60px;">
+                          <div class="col-md-4"
+                            v-if="getSelectedVoucher(item.voucherTemplate).dishTemplateDetails?.image">
+                            <img :src="getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.image.url"
+                              class="img-thumbnail" style="max-width: 80px; max-height: 60px;">
                           </div>
                         </div>
                       </div>
@@ -259,7 +267,7 @@
                   <i class="bi bi-inbox display-6 d-block mb-2"></i>
                   <p>尚未添加任何包裝項目</p>
                   <button type="button" class="btn btn-outline-primary" @click="addBundleItem"
-                    :disabled="dishTemplates.length === 0">
+                    :disabled="voucherTemplates.length === 0">
                     <i class="bi bi-plus-circle me-1"></i>新增第一個項目
                   </button>
                 </div>
@@ -300,16 +308,6 @@
                       :class="{ 'is-invalid': errors.validTo }" />
                     <div class="invalid-feedback" v-if="errors.validTo">{{ errors.validTo }}</div>
                   </div>
-
-                  <div class="mb-3">
-                    <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
-                    <input type="number" class="form-control" id="voucherValidityDays"
-                      v-model="formData.voucherValidityDays" min="1" max="365"
-                      :class="{ 'is-invalid': errors.voucherValidityDays }" />
-                    <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
-                    </div>
-                    <div class="form-text">生成的兌換券有效天數</div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -325,6 +323,16 @@
                   <input type="number" class="form-control" id="purchaseLimitPerUser"
                     v-model="formData.purchaseLimitPerUser" min="0" placeholder="0 表示無限制">
                   <div class="form-text">設為0表示每人無購買數量限制</div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
+                  <input type="number" class="form-control" id="voucherValidityDays"
+                    v-model="formData.voucherValidityDays" min="1" max="365"
+                    :class="{ 'is-invalid': errors.voucherValidityDays }" />
+                  <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
+                  </div>
+                  <div class="form-text">生成的兌換券有效天數</div>
                 </div>
               </div>
             </div>
@@ -417,7 +425,8 @@ const isSubmitting = ref(false);
 const isLoadingTemplates = ref(false);
 const successMessage = ref('');
 const formErrors = ref([]);
-const dishTemplates = ref([]); // 改為餐點模板
+const voucherTemplates = ref([]); // 兌換券模板
+const dishTemplates = ref([]); // 餐點模板詳細資訊
 
 // 價格計算相關
 const calculatedPrice = ref({
@@ -443,14 +452,19 @@ watch(() => formData.bundleItems, () => {
   calculateBundlePrice();
 }, { deep: true });
 
+// 監聽兌換券模板載入，重新計算價格
+watch(() => voucherTemplates.value, () => {
+  calculateBundlePrice();
+}, { deep: true });
+
 // 計算包裝總價值
 const calculateBundlePrice = () => {
   let totalValue = 0;
 
   formData.bundleItems.forEach(item => {
-    const dish = getSelectedDish(item.dishTemplate);
-    if (dish && dish.basePrice && item.quantity) {
-      totalValue += dish.basePrice * item.quantity;
+    const voucher = getSelectedVoucher(item.voucherTemplate);
+    if (voucher && voucher.dishTemplateDetails?.basePrice && item.quantity) {
+      totalValue += voucher.dishTemplateDetails.basePrice * item.quantity;
     }
   });
 
@@ -469,16 +483,16 @@ const getItemError = (index, field) => {
   return errors[`bundleItems.${index}.${field}`];
 };
 
-// 獲取選定的餐點模板
-const getSelectedDish = (dishId) => {
-  return dishTemplates.value.find(dish => dish._id === dishId);
+// 獲取選定的兌換券模板
+const getSelectedVoucher = (voucherId) => {
+  return voucherTemplates.value.find(voucher => voucher._id === voucherId);
 };
 
-// 更新餐點名稱
-const updateDishName = (index) => {
-  const dish = getSelectedDish(formData.bundleItems[index].dishTemplate);
-  if (dish) {
-    formData.bundleItems[index].dishName = dish.name;
+// 更新兌換券名稱
+const updateVoucherName = (index) => {
+  const voucher = getSelectedVoucher(formData.bundleItems[index].voucherTemplate);
+  if (voucher) {
+    formData.bundleItems[index].voucherName = voucher.name;
   }
   // 更新價格計算
   calculateBundlePrice();
@@ -527,9 +541,9 @@ const removeImage = () => {
 // 新增包裝項目
 const addBundleItem = () => {
   formData.bundleItems.push({
-    dishTemplate: '',
+    voucherTemplate: '',
     quantity: 1,
-    dishName: ''
+    voucherName: ''
   });
 };
 
@@ -634,9 +648,9 @@ const validateForm = () => {
     isValid = false;
   } else {
     formData.bundleItems.forEach((item, index) => {
-      if (!item.dishTemplate) {
-        errors[`bundleItems.${index}.dishTemplate`] = '請選擇餐點模板';
-        formErrors.value.push(`第 ${index + 1} 個項目未選擇餐點模板`);
+      if (!item.voucherTemplate) {
+        errors[`bundleItems.${index}.voucherTemplate`] = '請選擇兌換券模板';
+        formErrors.value.push(`第 ${index + 1} 個項目未選擇兌換券模板`);
         isValid = false;
       }
       if (!item.quantity || item.quantity < 1) {
@@ -664,32 +678,72 @@ const validateForm = () => {
       formErrors.value.push('販售結束時間必須晚於開始時間');
       isValid = false;
     }
-    if (!formData.voucherValidityDays || formData.voucherValidityDays < 1) {
-      errors.voucherValidityDays = '兌換券有效期必須大於 0';
-      formErrors.value.push('兌換券有效期必須大於 0');
-      isValid = false;
-    }
+  }
+
+  // 驗證兌換券有效期
+  if (!formData.voucherValidityDays || formData.voucherValidityDays < 1) {
+    errors.voucherValidityDays = '兌換券有效期必須大於 0';
+    formErrors.value.push('兌換券有效期必須大於 0');
+    isValid = false;
   }
 
   return isValid;
 };
 
-// 獲取餐點模板 (改用 dish API)
-const fetchDishTemplates = async () => {
+// 獲取兌換券模板
+const fetchVoucherTemplates = async () => {
   if (!brandId.value) return;
 
   isLoadingTemplates.value = true;
 
   try {
-    const response = await api.dish.getAllDishTemplates({ brandId: brandId.value });
-    if (response && response.templates) {
-      dishTemplates.value = response.templates;
+    // 1. 獲取兌換券模板
+    const voucherResponse = await api.promotion.getAvailableVoucherTemplates(brandId.value);
+    if (voucherResponse && voucherResponse.templates) {
+      voucherTemplates.value = voucherResponse.templates;
+
+      // 2. 提取所有餐點模板ID
+      const dishTemplateIds = voucherTemplates.value
+        .map(voucher => voucher.exchangeDishTemplate)
+        .filter(id => id); // 過濾空值
+
+      if (dishTemplateIds.length > 0) {
+        // 3. 獲取餐點模板詳細資訊
+        const dishResponse = await api.dish.getAllDishTemplates({ brandId: brandId.value });
+        if (dishResponse && dishResponse.templates) {
+          // 建立餐點ID到餐點資訊的映射
+          const dishMap = {};
+          dishResponse.templates.forEach(dish => {
+            dishMap[dish._id] = dish;
+          });
+
+          // 4. 將餐點資訊合併到兌換券模板中
+          voucherTemplates.value = voucherTemplates.value.map(voucher => ({
+            ...voucher,
+            dishTemplateDetails: voucher.exchangeDishTemplate ? dishMap[voucher.exchangeDishTemplate] : null
+          }));
+        }
+      }
     }
   } catch (error) {
-    console.error('獲取餐點模板失敗:', error);
-    formErrors.value.push('無法獲取餐點模板資料，請稍後再試');
+    console.error('獲取兌換券模板失敗:', error);
+    formErrors.value.push('無法獲取兌換券模板資料，請稍後再試');
   } finally {
     isLoadingTemplates.value = false;
+  }
+};
+
+// 獲取單個餐點詳情 (用於編輯模式填充資料)
+const fetchDishDetails = async (dishId) => {
+  try {
+    const response = await api.dish.getDishTemplateById({
+      brandId: brandId.value,
+      id: dishId
+    });
+    return response?.template || null;
+  } catch (error) {
+    console.error('獲取餐點詳情失敗:', error);
+    return null;
   }
 };
 
@@ -731,6 +785,11 @@ const fetchBundleData = async () => {
       // 設定圖片預覽
       if (bundle.image) {
         imagePreview.value = bundle.image.url;
+      }
+
+      // 確保兌換券模板已載入後，重新計算價格
+      if (voucherTemplates.value.length > 0) {
+        calculateBundlePrice();
       }
     } else {
       formErrors.value = ['獲取包裝商品資料失敗'];
@@ -842,8 +901,10 @@ const performSubmit = async (submitData) => {
 
 // 組件掛載時執行
 onMounted(async () => {
-  await fetchDishTemplates(); // 改為獲取餐點模板
+  // 先載入兌換券模板
+  await fetchVoucherTemplates();
 
+  // 如果是編輯模式，在兌換券模板載入後再載入包裝商品資料
   if (isEditMode.value) {
     await fetchBundleData();
   }
