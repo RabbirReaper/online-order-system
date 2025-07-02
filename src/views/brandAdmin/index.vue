@@ -111,17 +111,17 @@
               <template #icon><i class="bi bi-megaphone me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/coupons`">
-                <i class="bi bi-ticket-perforated me-2"></i>
+                <i class="bi bi-percent me-2"></i>
                 優惠券
               </router-link>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/vouchers`">
-                <i class="bi bi-ticket-perforated me-2"></i>
+                <i class="bi bi-ticket-detailed me-2"></i>
                 兌換券
               </router-link>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/bundles`">
-                <i class="bi bi-ticket-perforated me-2"></i>
+                <i class="bi bi-box-seam me-2"></i>
                 包裝商品
               </router-link>
 
