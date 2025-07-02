@@ -279,165 +279,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 操作按鈕 -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title mb-3">操作</h5>
-              <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary" @click="showToggleStatusModal">
-                  <i class="bi bi-power me-1"></i>{{ bundle.isActive ? '停用' : '啟用' }}商品
-                </button>
-                <button class="btn btn-outline-info" @click="triggerAutoUpdate">
-                  <i class="bi bi-arrow-clockwise me-1"></i>更新狀態
-                </button>
-                <button class="btn btn-outline-secondary" @click="previewBundle">
-                  <i class="bi bi-eye me-1"></i>預覽商品
-                </button>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteBundleModal">
-                  <i class="bi bi-trash me-1"></i>刪除商品
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 狀態切換確認對話框 -->
-    <div class="modal fade" id="statusToggleModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認操作</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <p v-if="bundle">
-              您確定要{{ bundle.isActive ? '停用' : '啟用' }}「{{ bundle.name }}」嗎？
-            </p>
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle-fill me-2"></i>
-              {{ bundle?.isActive ? '停用後顧客將無法購買此商品' : '啟用後顧客可以重新購買此商品' }}
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="confirmToggleStatus" :disabled="isToggling">
-              <span v-if="isToggling" class="spinner-border spinner-border-sm me-1"></span>
-              確認{{ bundle?.isActive ? '停用' : '啟用' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 刪除確認對話框 -->
-    <div class="modal fade" id="deleteBundleModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="alert alert-danger">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              <strong>警告：</strong>此操作無法復原
-            </div>
-            <p v-if="bundle">
-              您確定要刪除包裝商品「{{ bundle.name }}」嗎？
-            </p>
-            <p class="text-muted small">
-              刪除後，所有相關的銷售資料和已售出的商品實例也會一併移除。
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isDeleting ? '刪除中...' : '確認刪除' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 商品預覽對話框 -->
-    <div class="modal fade" id="previewModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">商品預覽</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body" v-if="bundle">
-            <!-- 模擬客戶端看到的商品展示 -->
-            <div class="card">
-              <div class="row g-0">
-                <div class="col-md-4" v-if="bundle.image">
-                  <img :src="bundle.image.url" class="img-fluid rounded-start h-100" style="object-fit: cover;">
-                </div>
-                <div :class="bundle.image ? 'col-md-8' : 'col-12'">
-                  <div class="card-body">
-                    <h4 class="card-title">{{ bundle.name }}</h4>
-                    <p class="card-text" v-if="bundle.description">{{ bundle.description }}</p>
-
-                    <div class="mb-3" v-if="bundle.sellingPoint">
-                      <span class="badge bg-warning text-dark fs-6">
-                        <i class="bi bi-star-fill me-1"></i>{{ bundle.sellingPoint }}
-                      </span>
-                    </div>
-
-                    <div class="row mb-3">
-                      <div class="col-6" v-if="bundle.cashPrice">
-                        <h5 class="text-success">
-                          ${{ formatPrice(bundle.cashPrice.selling || bundle.cashPrice.original) }}
-                          <small v-if="bundle.cashPrice.selling && bundle.cashPrice.selling < bundle.cashPrice.original"
-                            class="text-muted text-decoration-line-through">
-                            ${{ formatPrice(bundle.cashPrice.original) }}
-                          </small>
-                        </h5>
-                      </div>
-                      <div class="col-6" v-if="bundle.pointPrice">
-                        <h5 class="text-primary">
-                          {{ bundle.pointPrice.selling || bundle.pointPrice.original }} 點
-                          <small
-                            v-if="bundle.pointPrice.selling && bundle.pointPrice.selling < bundle.pointPrice.original"
-                            class="text-muted text-decoration-line-through">
-                            {{ bundle.pointPrice.original }} 點
-                          </small>
-                        </h5>
-                      </div>
-                    </div>
-
-                    <div class="mb-3">
-                      <h6>包裝內容：</h6>
-                      <ul class="list-unstyled">
-                        <li v-for="(item, index) in bundle.bundleItems" :key="index" class="mb-1">
-                          <i class="bi bi-check-circle text-success me-2"></i>
-                          {{ item.quantity }}x {{ item.voucherName || '兌換券' }}
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                      <button class="btn btn-primary btn-lg" disabled>
-                        <i class="bi bi-cart-plus me-2"></i>加入購物車
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉預覽</button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -445,7 +286,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Modal } from 'bootstrap';
 import api from '@/api';
 
 // 路由
@@ -458,16 +298,10 @@ const bundleId = computed(() => route.params.id);
 
 // 狀態
 const isLoading = ref(false);
-const isToggling = ref(false);
-const isDeleting = ref(false);
 const error = ref('');
 
 // 包裝商品資料
 const bundle = ref(null);
-
-// 對話框
-const statusModal = ref(null);
-const previewModal = ref(null);
 
 // 格式化價格
 const formatPrice = (price) => {
@@ -604,119 +438,8 @@ const fetchBundleData = async () => {
   }
 };
 
-// 顯示狀態切換確認對話框
-const showToggleStatusModal = () => {
-  statusModal.value.show();
-};
-
-// 確認切換狀態
-const confirmToggleStatus = async () => {
-  if (!bundle.value) return;
-
-  isToggling.value = true;
-
-  try {
-    const newStatus = !bundle.value.isActive;
-    await api.bundle.updateBundle({
-      brandId: brandId.value,
-      bundleId: bundle.value._id,
-      data: { isActive: newStatus }
-    });
-
-    // 更新本地狀態
-    bundle.value.isActive = newStatus;
-
-    // 關閉對話框
-    statusModal.value.hide();
-  } catch (err) {
-    console.error('切換狀態失敗:', err);
-    alert('切換狀態失敗，請稍後再試');
-  } finally {
-    isToggling.value = false;
-  }
-};
-
-// 觸發自動狀態更新
-const triggerAutoUpdate = async () => {
-  try {
-    await api.bundle.autoUpdateBundleStatus();
-
-    // 重新載入商品資料
-    await fetchBundleData();
-
-    alert('狀態更新完成');
-  } catch (err) {
-    console.error('自動更新狀態失敗:', err);
-    alert('自動更新狀態失敗，請稍後再試');
-  }
-};
-
-// 預覽商品
-const previewBundle = () => {
-  previewModal.value.show();
-};
-
-// 處理刪除確認
-const handleDelete = async () => {
-  if (!bundle.value) return;
-
-  isDeleting.value = true;
-
-  try {
-    await api.bundle.deleteBundle({
-      brandId: brandId.value,
-      bundleId: bundle.value._id
-    });
-
-    // 關閉模態對話框
-    const modalElement = document.getElementById('deleteBundleModal');
-    const modal = Modal.getInstance(modalElement);
-    if (modal) {
-      modal.hide();
-    }
-
-    // 確保模態背景被移除後再導航
-    setTimeout(() => {
-      // 手動移除可能殘留的 backdrop
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-        document.body.classList.remove('modal-open');
-      }
-
-      // 返回包裝商品列表
-      router.push(`/admin/${brandId.value}/bundles`);
-
-      // 觸發刷新列表事件
-      window.dispatchEvent(new CustomEvent('refresh-bundle-list'));
-    }, 300);
-  } catch (err) {
-    console.error('刪除包裝商品失敗:', err);
-
-    if (err.response && err.response.data && err.response.data.message) {
-      alert(`刪除失敗: ${err.response.data.message}`);
-    } else {
-      alert('刪除包裝商品時發生錯誤');
-    }
-  } finally {
-    isDeleting.value = false;
-  }
-};
-
 // 生命週期鉤子
 onMounted(() => {
-  // 初始化狀態切換對話框
-  const statusModalElement = document.getElementById('statusToggleModal');
-  if (statusModalElement) {
-    statusModal.value = new Modal(statusModalElement);
-  }
-
-  // 初始化預覽對話框
-  const previewModalElement = document.getElementById('previewModal');
-  if (previewModalElement) {
-    previewModal.value = new Modal(previewModalElement);
-  }
-
   // 獲取包裝商品資料
   fetchBundleData();
 });
@@ -746,9 +469,5 @@ onMounted(() => {
 
 .border-end:last-child {
   border-right: none !important;
-}
-
-.modal-lg {
-  max-width: 800px;
 }
 </style>
