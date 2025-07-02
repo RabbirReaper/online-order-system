@@ -61,9 +61,10 @@
 
                 <!-- 圖片上傳 -->
                 <div class="mb-3">
-                  <label for="imageUpload" class="form-label">商品圖片</label>
-                  <input type="file" class="form-control" id="imageUpload" @change="handleImageUpload"
-                    accept="image/*" />
+                  <label for="imageUpload" class="form-label required">商品圖片</label>
+                  <input type="file" class="form-control" id="imageUpload" @change="handleImageUpload" accept="image/*"
+                    :class="{ 'is-invalid': errors.image }" />
+                  <div class="invalid-feedback" v-if="errors.image">{{ errors.image }}</div>
                   <div class="form-text">建議尺寸 800x600 像素，檔案大小不超過 5MB</div>
 
                   <!-- 圖片預覽 -->
@@ -185,7 +186,7 @@
                 <div v-else-if="voucherTemplates.length === 0" class="alert alert-warning">
                   <i class="bi bi-exclamation-triangle me-2"></i>
                   <strong>沒有可用的兌換券模板</strong>
-                  <p class="mb-0 mt-2">請先到兌換券管理頁面建立兌換券模板，才能建立包裝商品。</p>
+                  <p class="mb-0 mt-2">請先到促銷管理 → 兌換券管理建立兌換券模板，才能建立包裝商品。</p>
                   <router-link :to="`/admin/${brandId}/vouchers`" class="btn btn-sm btn-outline-primary mt-2">
                     前往兌換券管理
                   </router-link>
@@ -213,7 +214,7 @@
                         <div class="col-md-3 mb-3">
                           <label class="form-label required">數量</label>
                           <input type="number" class="form-control" v-model="item.quantity" min="1"
-                            :class="{ 'is-invalid': getItemError(index, 'quantity') }" />
+                            :class="{ 'is-invalid': getItemError(index, 'quantity') }" @change="calculateBundlePrice" />
                           <div class="invalid-feedback" v-if="getItemError(index, 'quantity')">
                             {{ getItemError(index, 'quantity') }}
                           </div>
@@ -232,22 +233,14 @@
                           <div class="col-md-8">
                             <h6 class="mb-1">{{ getSelectedVoucher(item.voucherTemplate).name }}</h6>
                             <div>
-                              <strong>兌換券描述：</strong>{{ getSelectedVoucher(item.voucherTemplate).description || '無描述'
+                              <strong>描述：</strong>{{ getSelectedVoucher(item.voucherTemplate).description || '無描述'
                               }}<br>
-                              <strong>有效期限：</strong>{{ getSelectedVoucher(item.voucherTemplate).validityPeriod }} 天<br>
+                              <strong>有效期：</strong>{{ getSelectedVoucher(item.voucherTemplate).validityPeriod }} 天<br>
                               <div v-if="getSelectedVoucher(item.voucherTemplate).dishTemplateDetails">
                                 <strong>可兌換餐點：</strong>{{
                                   getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.name }}<br>
-                                <strong>餐點價格：</strong>${{
+                                <strong>餐點價值：</strong>${{
                                   formatPrice(getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.basePrice) }}
-                                <div
-                                  v-if="getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.tags && getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.tags.length > 0"
-                                  class="mt-2">
-                                  <span v-for="tag in getSelectedVoucher(item.voucherTemplate).dishTemplateDetails.tags"
-                                    :key="tag" class="badge bg-secondary me-1 small">
-                                    {{ tag }}
-                                  </span>
-                                </div>
                               </div>
                             </div>
                           </div>
@@ -265,7 +258,7 @@
                 <!-- 空狀態 -->
                 <div v-else class="text-center text-muted py-4">
                   <i class="bi bi-inbox display-6 d-block mb-2"></i>
-                  <p>尚未添加任何包裝項目</p>
+                  <p>尚未添加任何兌換券項目</p>
                   <button type="button" class="btn btn-outline-primary" @click="addBundleItem"
                     :disabled="voucherTemplates.length === 0">
                     <i class="bi bi-plus-circle me-1"></i>新增第一個項目
@@ -308,6 +301,16 @@
                       :class="{ 'is-invalid': errors.validTo }" />
                     <div class="invalid-feedback" v-if="errors.validTo">{{ errors.validTo }}</div>
                   </div>
+
+                  <div class="mb-3">
+                    <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
+                    <input type="number" class="form-control" id="voucherValidityDays"
+                      v-model="formData.voucherValidityDays" min="1" max="365"
+                      :class="{ 'is-invalid': errors.voucherValidityDays }" />
+                    <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
+                    </div>
+                    <div class="form-text">生成的兌換券有效天數</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -323,16 +326,6 @@
                   <input type="number" class="form-control" id="purchaseLimitPerUser"
                     v-model="formData.purchaseLimitPerUser" min="0" placeholder="0 表示無限制">
                   <div class="form-text">設為0表示每人無購買數量限制</div>
-                </div>
-
-                <div class="mb-3">
-                  <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
-                  <input type="number" class="form-control" id="voucherValidityDays"
-                    v-model="formData.voucherValidityDays" min="1" max="365"
-                    :class="{ 'is-invalid': errors.voucherValidityDays }" />
-                  <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
-                  </div>
-                  <div class="form-text">生成的兌換券有效天數</div>
                 </div>
               </div>
             </div>
@@ -375,17 +368,12 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
 
-// 路由
 const router = useRouter();
 const route = useRoute();
 
-// 判斷是否為編輯模式
 const isEditMode = computed(() => !!route.params.id);
-
-// 從路由中獲取品牌ID
 const brandId = computed(() => route.params.brandId);
 
-// 表單數據
 const formData = reactive({
   name: '',
   description: '',
@@ -409,32 +397,25 @@ const formData = reactive({
   stores: []
 });
 
-// 價格類型控制
 const hasCashPrice = ref(false);
 const hasPointPrice = ref(false);
 
-// 圖片相關
 const imagePreview = ref('');
 const imageFile = ref(null);
 
-// 錯誤訊息
 const errors = reactive({});
 
-// 狀態
 const isSubmitting = ref(false);
 const isLoadingTemplates = ref(false);
 const successMessage = ref('');
 const formErrors = ref([]);
-const voucherTemplates = ref([]); // 兌換券模板
-const dishTemplates = ref([]); // 餐點模板詳細資訊
+const voucherTemplates = ref([]);
 
-// 價格計算相關
 const calculatedPrice = ref({
   totalValue: 0,
   suggestedPrice: 0
 });
 
-// 監聽價格類型變化
 watch(hasCashPrice, (newVal) => {
   if (!newVal) {
     formData.cashPrice = { original: null, selling: null };
@@ -447,69 +428,53 @@ watch(hasPointPrice, (newVal) => {
   }
 });
 
-// 監聽包裝內容變化，自動計算價格
 watch(() => formData.bundleItems, () => {
   calculateBundlePrice();
 }, { deep: true });
 
-// 監聽兌換券模板載入，重新計算價格
-watch(() => voucherTemplates.value, () => {
-  calculateBundlePrice();
-}, { deep: true });
-
-// 計算包裝總價值
 const calculateBundlePrice = () => {
   let totalValue = 0;
 
   formData.bundleItems.forEach(item => {
     const voucher = getSelectedVoucher(item.voucherTemplate);
-    if (voucher && voucher.dishTemplateDetails?.basePrice && item.quantity) {
+    if (voucher && voucher.dishTemplateDetails && voucher.dishTemplateDetails.basePrice && item.quantity) {
       totalValue += voucher.dishTemplateDetails.basePrice * item.quantity;
     }
   });
 
   calculatedPrice.value.totalValue = totalValue;
-  // 建議價格可以是總價值的 85%（給予 15% 折扣）
   calculatedPrice.value.suggestedPrice = Math.round(totalValue * 0.85);
 };
 
-// 格式化價格
 const formatPrice = (price) => {
   return price?.toLocaleString('zh-TW') || '0';
 };
 
-// 獲取項目錯誤
 const getItemError = (index, field) => {
   return errors[`bundleItems.${index}.${field}`];
 };
 
-// 獲取選定的兌換券模板
 const getSelectedVoucher = (voucherId) => {
   return voucherTemplates.value.find(voucher => voucher._id === voucherId);
 };
 
-// 更新兌換券名稱
 const updateVoucherName = (index) => {
   const voucher = getSelectedVoucher(formData.bundleItems[index].voucherTemplate);
   if (voucher) {
     formData.bundleItems[index].voucherName = voucher.name;
   }
-  // 更新價格計算
   calculateBundlePrice();
 };
 
-// 處理圖片上傳
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  // 檢查檔案類型
   if (!file.type.startsWith('image/')) {
     alert('請選擇圖片檔案');
     return;
   }
 
-  // 檢查檔案大小 (5MB)
   if (file.size > 5 * 1024 * 1024) {
     alert('圖片檔案不得超過 5MB');
     return;
@@ -517,7 +482,6 @@ const handleImageUpload = (event) => {
 
   imageFile.value = file;
 
-  // 預覽圖片
   const reader = new FileReader();
   reader.onload = (e) => {
     imagePreview.value = e.target.result;
@@ -525,20 +489,17 @@ const handleImageUpload = (event) => {
   reader.readAsDataURL(file);
 };
 
-// 移除圖片
 const removeImage = () => {
   imageFile.value = null;
   imagePreview.value = '';
   formData.image = null;
 
-  // 清除 file input
   const fileInput = document.getElementById('imageUpload');
   if (fileInput) {
     fileInput.value = '';
   }
 };
 
-// 新增包裝項目
 const addBundleItem = () => {
   formData.bundleItems.push({
     voucherTemplate: '',
@@ -547,18 +508,14 @@ const addBundleItem = () => {
   });
 };
 
-// 移除包裝項目
 const removeBundleItem = (index) => {
   formData.bundleItems.splice(index, 1);
 };
 
-// 重置表單
 const resetForm = () => {
   if (isEditMode.value) {
-    // 重新獲取商品資料
     fetchBundleData();
   } else {
-    // 清空表單
     Object.assign(formData, {
       name: '',
       description: '',
@@ -581,20 +538,16 @@ const resetForm = () => {
     removeImage();
   }
 
-  // 清除錯誤
   Object.keys(errors).forEach(key => delete errors[key]);
   formErrors.value = [];
   successMessage.value = '';
 };
 
-// 驗證表單
 const validateForm = () => {
-  // 清除先前的錯誤
   Object.keys(errors).forEach(key => delete errors[key]);
   formErrors.value = [];
   let isValid = true;
 
-  // 驗證名稱
   if (!formData.name.trim()) {
     errors.name = '商品名稱為必填項';
     formErrors.value.push('商品名稱為必填項');
@@ -605,14 +558,18 @@ const validateForm = () => {
     isValid = false;
   }
 
-  // 驗證描述
   if (!formData.description.trim()) {
     errors.description = '商品描述為必填項';
     formErrors.value.push('商品描述為必填項');
     isValid = false;
   }
 
-  // 驗證價格設定
+  if (!imageFile.value && !formData.image) {
+    errors.image = '請上傳商品圖片';
+    formErrors.value.push('請上傳商品圖片');
+    isValid = false;
+  }
+
   if (!hasCashPrice.value && !hasPointPrice.value) {
     formErrors.value.push('請至少設定一種價格（現金或點數）');
     isValid = false;
@@ -642,9 +599,8 @@ const validateForm = () => {
     }
   }
 
-  // 驗證包裝項目
   if (formData.bundleItems.length === 0) {
-    formErrors.value.push('請至少添加一個包裝項目');
+    formErrors.value.push('請至少添加一個兌換券項目');
     isValid = false;
   } else {
     formData.bundleItems.forEach((item, index) => {
@@ -661,7 +617,6 @@ const validateForm = () => {
     });
   }
 
-  // 驗證時間設定
   if (formData.autoStatusControl) {
     if (!formData.validFrom) {
       errors.validFrom = '請設定販售開始時間';
@@ -678,52 +633,45 @@ const validateForm = () => {
       formErrors.value.push('販售結束時間必須晚於開始時間');
       isValid = false;
     }
-  }
-
-  // 驗證兌換券有效期
-  if (!formData.voucherValidityDays || formData.voucherValidityDays < 1) {
-    errors.voucherValidityDays = '兌換券有效期必須大於 0';
-    formErrors.value.push('兌換券有效期必須大於 0');
-    isValid = false;
+    if (!formData.voucherValidityDays || formData.voucherValidityDays < 1) {
+      errors.voucherValidityDays = '兌換券有效期必須大於 0';
+      formErrors.value.push('兌換券有效期必須大於 0');
+      isValid = false;
+    }
   }
 
   return isValid;
 };
 
-// 獲取兌換券模板
 const fetchVoucherTemplates = async () => {
   if (!brandId.value) return;
 
   isLoadingTemplates.value = true;
 
   try {
-    // 1. 獲取兌換券模板
-    const voucherResponse = await api.promotion.getAvailableVoucherTemplates(brandId.value);
-    if (voucherResponse && voucherResponse.templates) {
-      voucherTemplates.value = voucherResponse.templates;
-
-      // 2. 提取所有餐點模板ID
-      const dishTemplateIds = voucherTemplates.value
-        .map(voucher => voucher.exchangeDishTemplate)
-        .filter(id => id); // 過濾空值
-
-      if (dishTemplateIds.length > 0) {
-        // 3. 獲取餐點模板詳細資訊
-        const dishResponse = await api.dish.getAllDishTemplates({ brandId: brandId.value });
-        if (dishResponse && dishResponse.templates) {
-          // 建立餐點ID到餐點資訊的映射
-          const dishMap = {};
-          dishResponse.templates.forEach(dish => {
-            dishMap[dish._id] = dish;
-          });
-
-          // 4. 將餐點資訊合併到兌換券模板中
-          voucherTemplates.value = voucherTemplates.value.map(voucher => ({
-            ...voucher,
-            dishTemplateDetails: voucher.exchangeDishTemplate ? dishMap[voucher.exchangeDishTemplate] : null
-          }));
-        }
-      }
+    const response = await api.promotion.getAllVoucherTemplates(brandId.value);
+    if (response && response.templates) {
+      // 為每個兌換券模板獲取餐點詳細資訊
+      const templatesWithDishDetails = await Promise.all(
+        response.templates.map(async (voucher) => {
+          if (voucher.exchangeDishTemplate) {
+            try {
+              const dishResponse = await api.dish.getDishTemplateById({
+                brandId: brandId.value,
+                id: voucher.exchangeDishTemplate
+              });
+              if (dishResponse && dishResponse.template) {
+                voucher.dishTemplateDetails = dishResponse.template;
+              }
+            } catch (error) {
+              console.warn(`無法獲取餐點詳情 ${voucher.exchangeDishTemplate}:`, error);
+              voucher.dishTemplateDetails = null;
+            }
+          }
+          return voucher;
+        })
+      );
+      voucherTemplates.value = templatesWithDishDetails;
     }
   } catch (error) {
     console.error('獲取兌換券模板失敗:', error);
@@ -733,21 +681,6 @@ const fetchVoucherTemplates = async () => {
   }
 };
 
-// 獲取單個餐點詳情 (用於編輯模式填充資料)
-const fetchDishDetails = async (dishId) => {
-  try {
-    const response = await api.dish.getDishTemplateById({
-      brandId: brandId.value,
-      id: dishId
-    });
-    return response?.template || null;
-  } catch (error) {
-    console.error('獲取餐點詳情失敗:', error);
-    return null;
-  }
-};
-
-// 獲取包裝商品資料 (編輯模式)
 const fetchBundleData = async () => {
   if (!isEditMode.value || !route.params.id) return;
 
@@ -760,7 +693,6 @@ const fetchBundleData = async () => {
     if (response && response.bundle) {
       const bundle = response.bundle;
 
-      // 填充表單資料
       Object.assign(formData, {
         name: bundle.name,
         description: bundle.description,
@@ -778,18 +710,11 @@ const fetchBundleData = async () => {
         stores: bundle.stores || []
       });
 
-      // 設定價格類型
       hasCashPrice.value = !!(bundle.cashPrice && bundle.cashPrice.original);
       hasPointPrice.value = !!(bundle.pointPrice && bundle.pointPrice.original);
 
-      // 設定圖片預覽
       if (bundle.image) {
         imagePreview.value = bundle.image.url;
-      }
-
-      // 確保兌換券模板已載入後，重新計算價格
-      if (voucherTemplates.value.length > 0) {
-        calculateBundlePrice();
       }
     } else {
       formErrors.value = ['獲取包裝商品資料失敗'];
@@ -806,13 +731,10 @@ const fetchBundleData = async () => {
   }
 };
 
-// 提交表單
 const submitForm = async () => {
-  // 清除上一次的成功訊息
   successMessage.value = '';
 
   if (!validateForm()) {
-    // 滾動到頁面頂部顯示錯誤
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
@@ -820,13 +742,11 @@ const submitForm = async () => {
   isSubmitting.value = true;
 
   try {
-    // 準備提交資料
     const submitData = {
       brand: brandId.value,
       ...formData
     };
 
-    // 處理價格
     if (!hasCashPrice.value) {
       delete submitData.cashPrice;
     }
@@ -834,7 +754,6 @@ const submitForm = async () => {
       delete submitData.pointPrice;
     }
 
-    // 處理圖片
     if (imageFile.value) {
       const reader = new FileReader();
       reader.onload = async () => {
@@ -853,20 +772,17 @@ const submitForm = async () => {
   }
 };
 
-// 執行實際提交
 const performSubmit = async (submitData) => {
   try {
     let response;
 
     if (isEditMode.value) {
-      // 更新包裝商品
       response = await api.bundle.updateBundle({
         brandId: brandId.value,
         bundleId: route.params.id,
         data: submitData
       });
     } else {
-      // 創建包裝商品
       response = await api.bundle.createBundle({
         brandId: brandId.value,
         data: submitData
@@ -876,10 +792,8 @@ const performSubmit = async (submitData) => {
     if (response && response.bundle) {
       successMessage.value = isEditMode.value ? '包裝商品已成功更新！' : '包裝商品已成功建立！';
 
-      // 滾動到頁面頂部顯示成功訊息
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // 2秒後跳轉到列表頁面
       setTimeout(() => {
         router.push(`/admin/${brandId.value}/bundles`);
       }, 2000);
@@ -899,12 +813,9 @@ const performSubmit = async (submitData) => {
   }
 };
 
-// 組件掛載時執行
 onMounted(async () => {
-  // 先載入兌換券模板
   await fetchVoucherTemplates();
 
-  // 如果是編輯模式，在兌換券模板載入後再載入包裝商品資料
   if (isEditMode.value) {
     await fetchBundleData();
   }

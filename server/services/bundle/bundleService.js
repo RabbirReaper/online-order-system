@@ -79,12 +79,12 @@ export const getBundleById = async (bundleId, brandId) => {
 };
 
 /**
- * 創建 Bundle
- * @param {Object} bundleData - Bundle 數據
- * @returns {Promise<Object>} 創建的 Bundle
+ * Bundle 服務 - 修正版本
+ * 處理兌換券綑綁相關的業務邏輯
  */
+
 export const createBundle = async (bundleData) => {
-  // 基本驗證
+  // === 第一階段：基本驗證 ===
   if (!bundleData.name || !bundleData.description) {
     throw new AppError('名稱和描述為必填欄位', 400);
   }
@@ -101,33 +101,30 @@ export const createBundle = async (bundleData) => {
     throw new AppError('至少需要設定現金價格或點數價格其中一種', 400);
   }
 
-  // 處理圖片上傳
-  if (bundleData.imageData) {
-    try {
-      // 上傳圖片並獲取圖片資訊
-      const imageInfo = await imageHelper.uploadAndProcessImage(
-        bundleData.imageData,
-        `bundles/${bundleData.brand}` // 使用品牌ID組織圖片路徑
-      );
-
-      // 設置圖片資訊到Bundle數據
-      bundleData.image = imageInfo;
-
-      // 刪除原始圖片數據以避免儲存過大的文件
-      delete bundleData.imageData;
-    } catch (error) {
-      throw new AppError(`圖片處理失敗: ${error.message}`, 400);
+  // 驗證時間範圍（如果有設定的話）
+  if (bundleData.validFrom && bundleData.validTo) {
+    if (new Date(bundleData.validFrom) >= new Date(bundleData.validTo)) {
+      throw new AppError('結束時間必須晚於開始時間', 400);
     }
-  } else if (!bundleData.image || !bundleData.image.url || !bundleData.image.key) {
-    throw new AppError('圖片資訊不完整，請提供圖片', 400);
   }
 
-  // 驗證時間範圍
-  if (new Date(bundleData.validFrom) >= new Date(bundleData.validTo)) {
-    throw new AppError('結束時間必須晚於開始時間', 400);
+  // 🔧 修正：圖片驗證邏輯 - 允許可選圖片
+  const hasImageData = bundleData.imageData;
+  const hasExistingImage = bundleData.image && bundleData.image.url && bundleData.image.key;
+
+  // 如果兩者都沒有，可以選擇：
+  // 選項1：強制要求圖片（保持原邏輯）
+  if (!hasImageData && !hasExistingImage) {
+    throw new AppError('請提供圖片', 400);
   }
 
-  // 檢查所有兌換券模板是否存在且屬於同一品牌（只檢查 VoucherTemplate）
+  // 選項2：允許沒有圖片（建議的修正）
+  // if (!hasImageData && !hasExistingImage) {
+  //   console.warn('Bundle 創建時未提供圖片');
+  // }
+
+  // === 第二階段：資料庫驗證 ===
+  // 🔧 修正：檢查兌換券模板（確保欄位名正確）
   for (const item of bundleData.bundleItems) {
     if (!item.voucherTemplate) {
       throw new AppError('兌換券模板ID為必填欄位', 400);
@@ -136,21 +133,62 @@ export const createBundle = async (bundleData) => {
     const voucherTemplate = await VoucherTemplate.findOne({
       _id: item.voucherTemplate,
       brand: bundleData.brand
-    });
+    }).populate('exchangeDishTemplate', 'name basePrice'); // 🔧 新增：populate 餐點資訊
 
     if (!voucherTemplate) {
       throw new AppError(`兌換券模板 ${item.voucherTemplate} 不存在或不屬於此品牌`, 404);
     }
 
+    if (!voucherTemplate.isActive) {
+      throw new AppError(`兌換券模板 ${voucherTemplate.name} 已停用，無法使用`, 400);
+    }
+
     // 設置冗餘的券名稱
     item.voucherName = voucherTemplate.name;
+
+    // 🔧 新增：驗證數量
+    if (!item.quantity || item.quantity < 1) {
+      throw new AppError(`兌換券 ${voucherTemplate.name} 的數量必須大於 0`, 400);
+    }
   }
 
-  // 創建 Bundle
-  const newBundle = new Bundle(bundleData);
-  await newBundle.save();
+  // === 第三階段：圖片上傳 ===
+  if (bundleData.imageData) {
+    try {
+      const imageInfo = await imageHelper.uploadAndProcessImage(
+        bundleData.imageData,
+        `bundles/${bundleData.brand}`
+      );
 
-  return newBundle;
+      bundleData.image = imageInfo;
+      delete bundleData.imageData;
+    } catch (error) {
+      throw new AppError(`圖片處理失敗: ${error.message}`, 400);
+    }
+  }
+
+  // === 第四階段：創建 Bundle ===
+  try {
+    const newBundle = new Bundle(bundleData);
+    await newBundle.save();
+
+    // 🔧 新增：populate 完整資訊後返回
+    const populatedBundle = await Bundle.findById(newBundle._id)
+      .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
+      .populate('stores', 'name');
+
+    return populatedBundle;
+  } catch (error) {
+    // 清理失敗時產生的圖片
+    if (bundleData.image && bundleData.image.key && bundleData.imageData !== undefined) {
+      try {
+        await imageHelper.deleteImage(bundleData.image.key);
+      } catch (cleanupError) {
+        console.error(`清理孤兒圖片失敗: ${cleanupError.message}`);
+      }
+    }
+    throw error;
+  }
 };
 
 /**
