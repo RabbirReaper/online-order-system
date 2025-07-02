@@ -38,25 +38,21 @@
               </div>
               <div class="card-body">
                 <div class="row">
-                  <div class="col-md-6 mb-3">
+                  <div class="col-md-12 mb-3">
                     <label for="name" class="form-label required">商品名稱</label>
                     <input type="text" class="form-control" id="name" v-model="formData.name"
-                      :class="{ 'is-invalid': errors.name }" maxlength="100" />
+                      :class="{ 'is-invalid': errors.name }" maxlength="100" placeholder="例：豬排兌換券超值組合" />
                     <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="sellingPoint" class="form-label">賣點</label>
-                    <input type="text" class="form-control" id="sellingPoint" v-model="formData.sellingPoint"
-                      placeholder="例：限時優惠、超值組合" />
-                    <div class="form-text">簡短的銷售亮點，將顯示在商品卡片上</div>
+                    <div class="form-text">簡潔明瞭的商品名稱，最多100個字元</div>
                   </div>
                 </div>
 
                 <div class="mb-3">
                   <label for="description" class="form-label required">商品描述</label>
                   <textarea class="form-control" id="description" v-model="formData.description" rows="3"
-                    :class="{ 'is-invalid': errors.description }" placeholder="詳細描述此包裝商品的內容和特色"></textarea>
+                    :class="{ 'is-invalid': errors.description }" placeholder="詳細描述此包裝商品的內容、特色和使用方式"></textarea>
                   <div class="invalid-feedback" v-if="errors.description">{{ errors.description }}</div>
+                  <div class="form-text">向顧客說明商品內容和優勢</div>
                 </div>
 
                 <!-- 圖片上傳 -->
@@ -301,16 +297,17 @@
                       :class="{ 'is-invalid': errors.validTo }" />
                     <div class="invalid-feedback" v-if="errors.validTo">{{ errors.validTo }}</div>
                   </div>
+                </div>
 
-                  <div class="mb-3">
-                    <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
-                    <input type="number" class="form-control" id="voucherValidityDays"
-                      v-model="formData.voucherValidityDays" min="1" max="365"
-                      :class="{ 'is-invalid': errors.voucherValidityDays }" />
-                    <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
-                    </div>
-                    <div class="form-text">生成的兌換券有效天數</div>
+                <!-- 兌換券有效期設定（移到必填區域） -->
+                <div class="mb-3">
+                  <label for="voucherValidityDays" class="form-label required">兌換券有效期（天）</label>
+                  <input type="number" class="form-control" id="voucherValidityDays"
+                    v-model="formData.voucherValidityDays" min="1" max="365"
+                    :class="{ 'is-invalid': errors.voucherValidityDays }" />
+                  <div class="invalid-feedback" v-if="errors.voucherValidityDays">{{ errors.voucherValidityDays }}
                   </div>
+                  <div class="form-text">購買後生成的兌換券有效天數</div>
                 </div>
               </div>
             </div>
@@ -325,7 +322,7 @@
                   <label for="purchaseLimitPerUser" class="form-label">每人購買限制</label>
                   <input type="number" class="form-control" id="purchaseLimitPerUser"
                     v-model="formData.purchaseLimitPerUser" min="0" placeholder="0 表示無限制">
-                  <div class="form-text">設為0表示每人無購買數量限制</div>
+                  <div class="form-text">設為0或留空表示每人無購買數量限制</div>
                 </div>
               </div>
             </div>
@@ -374,11 +371,11 @@ const route = useRoute();
 const isEditMode = computed(() => !!route.params.id);
 const brandId = computed(() => route.params.brandId);
 
+// 🔧 修正：移除 sellingPoint 和 stores 欄位
 const formData = reactive({
   name: '',
   description: '',
   image: null,
-  sellingPoint: null,
   cashPrice: {
     original: null,
     selling: null
@@ -393,8 +390,7 @@ const formData = reactive({
   voucherValidityDays: 30,
   isActive: true,
   autoStatusControl: false,
-  purchaseLimitPerUser: null,
-  stores: []
+  purchaseLimitPerUser: null
 });
 
 const hasCashPrice = ref(false);
@@ -516,11 +512,11 @@ const resetForm = () => {
   if (isEditMode.value) {
     fetchBundleData();
   } else {
+    // 🔧 修正：移除 sellingPoint 和 stores
     Object.assign(formData, {
       name: '',
       description: '',
       image: null,
-      sellingPoint: null,
       cashPrice: { original: null, selling: null },
       pointPrice: { original: null, selling: null },
       bundleItems: [],
@@ -529,8 +525,7 @@ const resetForm = () => {
       voucherValidityDays: 30,
       isActive: true,
       autoStatusControl: false,
-      purchaseLimitPerUser: null,
-      stores: []
+      purchaseLimitPerUser: null
     });
 
     hasCashPrice.value = false;
@@ -548,6 +543,7 @@ const validateForm = () => {
   formErrors.value = [];
   let isValid = true;
 
+  // 驗證名稱
   if (!formData.name.trim()) {
     errors.name = '商品名稱為必填項';
     formErrors.value.push('商品名稱為必填項');
@@ -558,18 +554,21 @@ const validateForm = () => {
     isValid = false;
   }
 
+  // 驗證描述
   if (!formData.description.trim()) {
     errors.description = '商品描述為必填項';
     formErrors.value.push('商品描述為必填項');
     isValid = false;
   }
 
+  // 🔧 修正：圖片驗證邏輯
   if (!imageFile.value && !formData.image) {
     errors.image = '請上傳商品圖片';
     formErrors.value.push('請上傳商品圖片');
     isValid = false;
   }
 
+  // 驗證價格設定
   if (!hasCashPrice.value && !hasPointPrice.value) {
     formErrors.value.push('請至少設定一種價格（現金或點數）');
     isValid = false;
@@ -599,6 +598,7 @@ const validateForm = () => {
     }
   }
 
+  // 驗證包裝項目
   if (formData.bundleItems.length === 0) {
     formErrors.value.push('請至少添加一個兌換券項目');
     isValid = false;
@@ -617,6 +617,14 @@ const validateForm = () => {
     });
   }
 
+  // 🔧 修正：兌換券有效期驗證（必填）
+  if (!formData.voucherValidityDays || formData.voucherValidityDays < 1) {
+    errors.voucherValidityDays = '兌換券有效期必須大於 0';
+    formErrors.value.push('兌換券有效期必須大於 0');
+    isValid = false;
+  }
+
+  // 🔧 修正：時間設定驗證（只在自動控制時才必填）
   if (formData.autoStatusControl) {
     if (!formData.validFrom) {
       errors.validFrom = '請設定販售開始時間';
@@ -631,11 +639,6 @@ const validateForm = () => {
     if (formData.validFrom && formData.validTo && new Date(formData.validFrom) >= new Date(formData.validTo)) {
       errors.validTo = '結束時間必須晚於開始時間';
       formErrors.value.push('販售結束時間必須晚於開始時間');
-      isValid = false;
-    }
-    if (!formData.voucherValidityDays || formData.voucherValidityDays < 1) {
-      errors.voucherValidityDays = '兌換券有效期必須大於 0';
-      formErrors.value.push('兌換券有效期必須大於 0');
       isValid = false;
     }
   }
@@ -693,11 +696,11 @@ const fetchBundleData = async () => {
     if (response && response.bundle) {
       const bundle = response.bundle;
 
+      // 🔧 修正：移除 sellingPoint 和 stores 的處理
       Object.assign(formData, {
         name: bundle.name,
         description: bundle.description,
         image: bundle.image,
-        sellingPoint: bundle.sellingPoint,
         cashPrice: bundle.cashPrice || { original: null, selling: null },
         pointPrice: bundle.pointPrice || { original: null, selling: null },
         bundleItems: bundle.bundleItems || [],
@@ -706,8 +709,7 @@ const fetchBundleData = async () => {
         voucherValidityDays: bundle.voucherValidityDays || 30,
         isActive: bundle.isActive,
         autoStatusControl: bundle.autoStatusControl,
-        purchaseLimitPerUser: bundle.purchaseLimitPerUser,
-        stores: bundle.stores || []
+        purchaseLimitPerUser: bundle.purchaseLimitPerUser
       });
 
       hasCashPrice.value = !!(bundle.cashPrice && bundle.cashPrice.original);
@@ -747,6 +749,7 @@ const submitForm = async () => {
       ...formData
     };
 
+    // 🔧 修正：清理不需要的價格欄位
     if (!hasCashPrice.value) {
       delete submitData.cashPrice;
     }
@@ -796,7 +799,7 @@ const performSubmit = async (submitData) => {
 
       setTimeout(() => {
         router.push(`/admin/${brandId.value}/bundles`);
-      }, 2000);
+      }, 200);
     } else {
       formErrors.value = [isEditMode.value ? '更新包裝商品失敗' : '建立包裝商品失敗'];
     }

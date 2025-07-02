@@ -31,11 +31,11 @@ export const getAllBundles = async (brandId, options = {}) => {
   // 查詢總數
   const total = await Bundle.countDocuments(query);
 
-  // 查詢 Bundle - 只包含 Voucher，移除 stores populate
+  // 查詢 Bundle - 只包含 Voucher
   const bundles = await Bundle.find(query)
-    .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
     .populate({
       path: 'bundleItems.voucherTemplate',
+      select: 'name description validityPeriod exchangeDishTemplate',
       populate: {
         path: 'exchangeDishTemplate',
         select: 'name basePrice image'
@@ -74,9 +74,9 @@ export const getBundleById = async (bundleId, brandId) => {
     _id: bundleId,
     brand: brandId
   })
-    .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
     .populate({
       path: 'bundleItems.voucherTemplate',
+      select: 'name description validityPeriod exchangeDishTemplate',
       populate: {
         path: 'exchangeDishTemplate',
         select: 'name basePrice image description tags'
@@ -183,9 +183,9 @@ export const createBundle = async (bundleData) => {
 
     // populate 完整資訊後返回
     const populatedBundle = await Bundle.findById(newBundle._id)
-      .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
       .populate({
         path: 'bundleItems.voucherTemplate',
+        select: 'name description validityPeriod exchangeDishTemplate',
         populate: {
           path: 'exchangeDishTemplate',
           select: 'name basePrice image'

@@ -24,9 +24,9 @@ export const getInstanceById = async (instanceId, brandId = null) => {
 
   const instance = await BundleInstance.findOne(query)
     .populate('templateId')
-    .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
     .populate({
       path: 'bundleItems.voucherTemplate',
+      select: 'name description validityPeriod exchangeDishTemplate',
       populate: {
         path: 'exchangeDishTemplate',
         select: 'name basePrice image'
@@ -105,9 +105,9 @@ export const createInstance = async (instanceData) => {
   // 返回完整的實例資料
   const populatedInstance = await BundleInstance.findById(newInstance._id)
     .populate('templateId')
-    .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
     .populate({
       path: 'bundleItems.voucherTemplate',
+      select: 'name description validityPeriod exchangeDishTemplate',
       populate: {
         path: 'exchangeDishTemplate',
         select: 'name basePrice image'
