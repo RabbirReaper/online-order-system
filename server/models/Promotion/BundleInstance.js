@@ -42,10 +42,6 @@ const BundleInstanceSchema = new mongoose.Schema({
       min: 0
     } // 點數售價
   },
-  sellingPoint: {
-    type: Number
-  }, // 賣點數值
-
   // Bundle 內容 - 冗餘存儲
   bundleItems: [{
     voucherTemplate: {
@@ -84,6 +80,5 @@ const BundleInstanceSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 BundleInstanceSchema.index({ brand: 1 });
-BundleInstanceSchema.index({ templateId: 1 });
 
 export default mongoose.model("BundleInstance", BundleInstanceSchema);

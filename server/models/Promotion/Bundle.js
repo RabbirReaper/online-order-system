@@ -82,7 +82,7 @@ const bundleSchema = new mongoose.Schema({
     required: true,
     min: 1,
     default: 30
-  }, // 生成兌換券的有效期天數
+  }, // 生成兌換券的有效期天數(從購買當天開始計算)
 
   // 購買限制
   purchaseLimitPerUser: {
