@@ -31,10 +31,16 @@ export const getAllBundles = async (brandId, options = {}) => {
   // 查詢總數
   const total = await Bundle.countDocuments(query);
 
-  // 查詢 Bundle - 只包含 Voucher
+  // 查詢 Bundle - 只包含 Voucher，移除 stores populate
   const bundles = await Bundle.find(query)
-    .populate('bundleItems.voucherTemplate', 'name description voucherType')
-    .populate('stores', 'name')
+    .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
+    .populate({
+      path: 'bundleItems.voucherTemplate',
+      populate: {
+        path: 'exchangeDishTemplate',
+        select: 'name basePrice image'
+      }
+    })
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -68,8 +74,14 @@ export const getBundleById = async (bundleId, brandId) => {
     _id: bundleId,
     brand: brandId
   })
-    .populate('bundleItems.voucherTemplate', 'name description voucherType validityPeriod')
-    .populate('stores', 'name');
+    .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
+    .populate({
+      path: 'bundleItems.voucherTemplate',
+      populate: {
+        path: 'exchangeDishTemplate',
+        select: 'name basePrice image description tags'
+      }
+    });
 
   if (!bundle) {
     throw new AppError('Bundle 不存在或無權訪問', 404);
@@ -79,10 +91,10 @@ export const getBundleById = async (bundleId, brandId) => {
 };
 
 /**
- * Bundle 服務 - 修正版本
- * 處理兌換券綑綁相關的業務邏輯
+ * 創建 Bundle
+ * @param {Object} bundleData - Bundle 數據
+ * @returns {Promise<Object>} 創建的 Bundle
  */
-
 export const createBundle = async (bundleData) => {
   // === 第一階段：基本驗證 ===
   if (!bundleData.name || !bundleData.description) {
@@ -101,30 +113,23 @@ export const createBundle = async (bundleData) => {
     throw new AppError('至少需要設定現金價格或點數價格其中一種', 400);
   }
 
-  // 驗證時間範圍（如果有設定的話）
+  // 驗證時間範圍（如果有設定的話）- 更新為可選
   if (bundleData.validFrom && bundleData.validTo) {
     if (new Date(bundleData.validFrom) >= new Date(bundleData.validTo)) {
       throw new AppError('結束時間必須晚於開始時間', 400);
     }
   }
 
-  // 🔧 修正：圖片驗證邏輯 - 允許可選圖片
+  // 圖片驗證邏輯 - 圖片為必需
   const hasImageData = bundleData.imageData;
   const hasExistingImage = bundleData.image && bundleData.image.url && bundleData.image.key;
 
-  // 如果兩者都沒有，可以選擇：
-  // 選項1：強制要求圖片（保持原邏輯）
   if (!hasImageData && !hasExistingImage) {
     throw new AppError('請提供圖片', 400);
   }
 
-  // 選項2：允許沒有圖片（建議的修正）
-  // if (!hasImageData && !hasExistingImage) {
-  //   console.warn('Bundle 創建時未提供圖片');
-  // }
-
   // === 第二階段：資料庫驗證 ===
-  // 🔧 修正：檢查兌換券模板（確保欄位名正確）
+  // 檢查兌換券模板
   for (const item of bundleData.bundleItems) {
     if (!item.voucherTemplate) {
       throw new AppError('兌換券模板ID為必填欄位', 400);
@@ -133,7 +138,7 @@ export const createBundle = async (bundleData) => {
     const voucherTemplate = await VoucherTemplate.findOne({
       _id: item.voucherTemplate,
       brand: bundleData.brand
-    }).populate('exchangeDishTemplate', 'name basePrice'); // 🔧 新增：populate 餐點資訊
+    }).populate('exchangeDishTemplate', 'name basePrice');
 
     if (!voucherTemplate) {
       throw new AppError(`兌換券模板 ${item.voucherTemplate} 不存在或不屬於此品牌`, 404);
@@ -146,7 +151,7 @@ export const createBundle = async (bundleData) => {
     // 設置冗餘的券名稱
     item.voucherName = voucherTemplate.name;
 
-    // 🔧 新增：驗證數量
+    // 驗證數量
     if (!item.quantity || item.quantity < 1) {
       throw new AppError(`兌換券 ${voucherTemplate.name} 的數量必須大於 0`, 400);
     }
@@ -167,15 +172,25 @@ export const createBundle = async (bundleData) => {
     }
   }
 
+  // 移除不存在的欄位
+  delete bundleData.sellingPoint; // Model 中已移除
+  delete bundleData.stores; // Model 中已移除
+
   // === 第四階段：創建 Bundle ===
   try {
     const newBundle = new Bundle(bundleData);
     await newBundle.save();
 
-    // 🔧 新增：populate 完整資訊後返回
+    // populate 完整資訊後返回
     const populatedBundle = await Bundle.findById(newBundle._id)
       .populate('bundleItems.voucherTemplate', 'name description validityPeriod exchangeDishTemplate')
-      .populate('stores', 'name');
+      .populate({
+        path: 'bundleItems.voucherTemplate',
+        populate: {
+          path: 'exchangeDishTemplate',
+          select: 'name basePrice image'
+        }
+      });
 
     return populatedBundle;
   } catch (error) {
@@ -236,12 +251,9 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
     }
   }
 
-  // 如果更新了時間範圍，驗證時間
-  if (updateData.validFrom || updateData.validTo) {
-    const startTime = new Date(updateData.validFrom || bundle.validFrom);
-    const endTime = new Date(updateData.validTo || bundle.validTo);
-
-    if (startTime >= endTime) {
+  // 如果更新了時間範圍，驗證時間（可選欄位）
+  if (updateData.validFrom && updateData.validTo) {
+    if (new Date(updateData.validFrom) >= new Date(updateData.validTo)) {
       throw new AppError('結束時間必須晚於開始時間', 400);
     }
   }
@@ -259,7 +271,7 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
     }
   }
 
-  // 如果更新了 bundleItems，驗證券模板（只檢查 VoucherTemplate）
+  // 如果更新了 bundleItems，驗證券模板
   if (updateData.bundleItems) {
     for (const item of updateData.bundleItems) {
       if (!item.voucherTemplate) {
@@ -277,11 +289,18 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
 
       // 設置冗餘的券名稱
       item.voucherName = voucherTemplate.name;
+
+      // 驗證數量
+      if (!item.quantity || item.quantity < 1) {
+        throw new AppError(`兌換券 ${voucherTemplate.name} 的數量必須大於 0`, 400);
+      }
     }
   }
 
-  // 防止更改品牌
+  // 移除不存在的欄位
   delete updateData.brand;
+  delete updateData.sellingPoint; // Model 中已移除
+  delete updateData.stores; // Model 中已移除
 
   // 更新 Bundle
   Object.keys(updateData).forEach(key => {
