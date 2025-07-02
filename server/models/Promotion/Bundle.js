@@ -26,9 +26,6 @@ const bundleSchema = new mongoose.Schema({
       required: true
     } // S3/雲端儲存的key，用於刪除圖片
   }, // Bundle 的主要顯示圖片
-  sellingPoint: {
-    type: Number
-  }, // 賣點數值（可能是折扣百分比、節省金額、贈送數量等）
 
   // 綑綁內容 - 包含兌換券模板
   bundleItems: [{
