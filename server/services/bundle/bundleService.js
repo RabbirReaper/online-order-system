@@ -113,13 +113,6 @@ export const createBundle = async (bundleData) => {
     throw new AppError('至少需要設定現金價格或點數價格其中一種', 400);
   }
 
-  // 驗證時間範圍（如果有設定的話）- 更新為可選
-  if (bundleData.validFrom && bundleData.validTo) {
-    if (new Date(bundleData.validFrom) >= new Date(bundleData.validTo)) {
-      throw new AppError('結束時間必須晚於開始時間', 400);
-    }
-  }
-
   // 圖片驗證邏輯 - 圖片為必需
   const hasImageData = bundleData.imageData;
   const hasExistingImage = bundleData.image && bundleData.image.url && bundleData.image.key;
@@ -171,10 +164,6 @@ export const createBundle = async (bundleData) => {
       throw new AppError(`圖片處理失敗: ${error.message}`, 400);
     }
   }
-
-  // 移除不存在的欄位
-  delete bundleData.sellingPoint; // Model 中已移除
-  delete bundleData.stores; // Model 中已移除
 
   // === 第四階段：創建 Bundle ===
   try {
@@ -251,13 +240,6 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
     }
   }
 
-  // 如果更新了時間範圍，驗證時間（可選欄位）
-  if (updateData.validFrom && updateData.validTo) {
-    if (new Date(updateData.validFrom) >= new Date(updateData.validTo)) {
-      throw new AppError('結束時間必須晚於開始時間', 400);
-    }
-  }
-
   // 如果更新了價格，驗證至少有一種價格
   if (updateData.cashPrice !== undefined || updateData.pointPrice !== undefined) {
     const finalCashPrice = updateData.cashPrice || bundle.cashPrice;
@@ -296,11 +278,6 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
       }
     }
   }
-
-  // 移除不存在的欄位
-  delete updateData.brand;
-  delete updateData.sellingPoint; // Model 中已移除
-  delete updateData.stores; // Model 中已移除
 
   // 更新 Bundle
   Object.keys(updateData).forEach(key => {
@@ -352,131 +329,50 @@ export const deleteBundle = async (bundleId, brandId) => {
 };
 
 /**
- * 自動更新 Bundle 狀態（必須 - 前端在使用）
- */
-export const autoUpdateBundleStatus = async () => {
-  try {
-    const now = new Date();
-    let updatedCount = 0;
-
-    // 查找所有啟用自動控制的 Bundle
-    const bundlesWithAutoControl = await Bundle.find({
-      autoStatusControl: true
-    });
-
-    for (const bundle of bundlesWithAutoControl) {
-      let newStatus = bundle.isActive;
-      let shouldUpdate = false;
-
-      if (bundle.validFrom && bundle.validTo) {
-        // 檢查是否在有效期內
-        if (now >= bundle.validFrom && now <= bundle.validTo) {
-          newStatus = true;
-        } else {
-          newStatus = false;
-        }
-
-        // 如果狀態需要改變
-        if (newStatus !== bundle.isActive) {
-          bundle.isActive = newStatus;
-          await bundle.save();
-          updatedCount++;
-        }
-      }
-    }
-
-    return {
-      success: true,
-      message: `自動更新完成，共更新 ${updatedCount} 個Bundle狀態`,
-      updatedCount
-    };
-
-  } catch (error) {
-    console.error('自動更新Bundle狀態失敗:', error);
-    throw new AppError(`自動更新失敗: ${error.message}`, 500);
-  }
-};
-
-/**
- * 驗證 Bundle 購買資格（建議實作）
- */
-export const validateBundlePurchase = async (bundleId, userId = null) => {
-  try {
-    const bundle = await Bundle.findById(bundleId);
-
-    if (!bundle) {
-      return {
-        valid: false,
-        errors: ['包裝商品不存在'],
-        warnings: []
-      };
-    }
-
-    const errors = [];
-    const warnings = [];
-
-    // 檢查是否啟用
-    if (!bundle.isActive) {
-      errors.push('此包裝商品已停用');
-    }
-
-    // 檢查時間限制
-    const now = new Date();
-    if (bundle.autoStatusControl && bundle.validFrom && bundle.validTo) {
-      if (now < bundle.validFrom) {
-        errors.push('此包裝商品尚未開始販售');
-      } else if (now > bundle.validTo) {
-        errors.push('此包裝商品販售已結束');
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings,
-      bundle: errors.length === 0 ? bundle : null
-    };
-
-  } catch (error) {
-    return {
-      valid: false,
-      errors: ['驗證時發生錯誤'],
-      warnings: []
-    };
-  }
-};
-
-/**
- * 檢查用戶購買限制（可選 - 如果不需要限購功能可以簡化）
+ * 檢查用戶購買限制
+ * @param {String} bundleId - Bundle ID
+ * @param {String} userId - 用戶 ID
+ * @returns {Promise<Object>} 購買限制檢查結果
  */
 export const checkPurchaseLimit = async (bundleId, userId) => {
   try {
+    // 1. 查找 Bundle 模板
     const bundle = await Bundle.findById(bundleId);
 
     if (!bundle) {
       throw new AppError('包裝商品不存在', 404);
     }
 
-    // 如果沒有購買限制
+    // 2. 如果沒有購買限制，直接返回可購買
     if (!bundle.purchaseLimitPerUser) {
       return {
         canPurchase: true,
         remainingLimit: null,
+        purchasedCount: 0,
+        totalLimit: null,
         message: '無購買限制'
       };
     }
 
-    // 這裡可以查詢用戶已購買數量
-    // 暫時返回基本結構
+    // 3. 查詢用戶已購買的該 Bundle 實例數量
+    const purchasedCount = await BundleInstance.countDocuments({
+      templateId: bundleId,
+      user: userId
+    });
+
+    // 4. 計算剩餘可購買數量
+    const remainingLimit = Math.max(0, bundle.purchaseLimitPerUser - purchasedCount);
+    const canPurchase = remainingLimit > 0;
+
     return {
-      canPurchase: true,
-      remainingLimit: bundle.purchaseLimitPerUser,
-      purchasedCount: 0,
+      canPurchase,
+      remainingLimit,
+      purchasedCount,
       totalLimit: bundle.purchaseLimitPerUser,
-      message: `您還可以購買 ${bundle.purchaseLimitPerUser} 個`
     };
 
   } catch (error) {
+    console.error('檢查購買限制時發生錯誤:', error);
     throw new AppError(`檢查購買限制失敗: ${error.message}`, 500);
   }
 };

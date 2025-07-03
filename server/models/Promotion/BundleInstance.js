@@ -12,6 +12,13 @@ const BundleInstanceSchema = new mongoose.Schema({
     required: true
   },
 
+  // 新增：購買用戶
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+
   // 冗餘儲存一些模板資訊
   name: {
     type: String,
@@ -80,5 +87,6 @@ const BundleInstanceSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 BundleInstanceSchema.index({ brand: 1 });
+BundleInstanceSchema.index({ user: 1, templateId: 1 }); // 新增複合索引，優化購買限制查詢
 
 export default mongoose.model("BundleInstance", BundleInstanceSchema);
