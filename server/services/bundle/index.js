@@ -21,8 +21,6 @@ export const {
   updateBundle,
   deleteBundle,
   checkPurchaseLimit,
-  validateBundlePurchase,
-  autoUpdateBundleStatus
 } = bundleService;
 
 // =============================================================================
