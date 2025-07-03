@@ -69,14 +69,6 @@ const bundleSchema = new mongoose.Schema({
       min: 0
     } // 點數售價
   },
-
-  // 時限控制
-  validFrom: {
-    type: Date,
-  }, // 購買開始時間
-  validTo: {
-    type: Date,
-  }, // 購買結束時間
   voucherValidityDays: {
     type: Number,
     required: true,
@@ -96,11 +88,6 @@ const bundleSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   }, // 手動啟用/停用
-  autoStatusControl: {
-    type: Boolean,
-    default: true
-  }, // 是否自動根據時間啟用/停用
-
   // 統計
   totalSold: {
     type: Number,
@@ -112,18 +99,5 @@ const bundleSchema = new mongoose.Schema({
 
 // 索引
 bundleSchema.index({ brand: 1 });
-
-// 虛擬屬性 - 檢查是否在有效期內
-bundleSchema.virtual('isInValidPeriod').get(function () {
-  const now = new Date();
-  return now >= this.validFrom && now <= this.validTo;
-});
-
-// 虛擬屬性 - 檢查是否可購買
-bundleSchema.virtual('isPurchasable').get(function () {
-  if (!this.isActive) return false;
-  if (this.autoStatusControl && !this.isInValidPeriod) return false;
-  return true;
-});
 
 export default mongoose.model('Bundle', bundleSchema);
