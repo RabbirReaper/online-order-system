@@ -31,25 +31,12 @@
           <div class="mb-4">
             <h6 class="border-bottom pb-2 mb-3">基本資訊</h6>
 
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="name" class="form-label required">兌換券名稱</label>
-                <input type="text" class="form-control" id="name" v-model="formData.name"
-                  :class="{ 'is-invalid': errors.name }" maxlength="100" placeholder="請輸入兌換券名稱">
-                <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
-                <div class="form-text">最多100個字元</div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="validityPeriod" class="form-label required">有效期限</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" id="validityPeriod" v-model="formData.validityPeriod"
-                    :class="{ 'is-invalid': errors.validityPeriod }" min="1" placeholder="30">
-                  <span class="input-group-text">天</span>
-                </div>
-                <div class="invalid-feedback" v-if="errors.validityPeriod">{{ errors.validityPeriod }}</div>
-                <div class="form-text">兌換券從發放日起的有效天數</div>
-              </div>
+            <div class="mb-3">
+              <label for="name" class="form-label required">兌換券名稱</label>
+              <input type="text" class="form-control" id="name" v-model="formData.name"
+                :class="{ 'is-invalid': errors.name }" maxlength="100" placeholder="請輸入兌換券名稱">
+              <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
+              <div class="form-text">最多100個字元</div>
             </div>
 
             <div class="mb-3">
@@ -156,7 +143,6 @@ const formData = reactive({
   name: '',
   description: '',
   exchangeDishTemplate: '',
-  validityPeriod: 30,
   isActive: true
 });
 
@@ -193,7 +179,6 @@ const resetForm = () => {
       name: '',
       description: '',
       exchangeDishTemplate: '',
-      validityPeriod: 30,
       isActive: true
     });
   }
@@ -226,13 +211,6 @@ const validateForm = () => {
   if (!formData.exchangeDishTemplate) {
     errors.exchangeDishTemplate = '請選擇可兌換的餐點';
     formErrors.value.push('請選擇可兌換的餐點');
-    isValid = false;
-  }
-
-  // 驗證有效期限
-  if (!formData.validityPeriod || formData.validityPeriod < 1) {
-    errors.validityPeriod = '有效期限必須大於 0';
-    formErrors.value.push('有效期限必須大於 0');
     isValid = false;
   }
 
@@ -272,7 +250,6 @@ const fetchTemplateData = async () => {
         name: template.name,
         description: template.description || '',
         exchangeDishTemplate: template.exchangeDishTemplate?._id || template.exchangeDishTemplate || '',
-        validityPeriod: template.validityPeriod,
         isActive: template.isActive
       });
     } else {

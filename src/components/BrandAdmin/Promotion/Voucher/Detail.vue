@@ -102,15 +102,6 @@
                 </div>
               </div>
 
-              <div class="mb-3" v-if="voucher.validFrom && voucher.validTo">
-                <h6 class="text-muted mb-1">販售期間</h6>
-                <p>
-                  {{ formatDateTime(voucher.validFrom) }}<br>
-                  <span class="text-muted">至</span><br>
-                  {{ formatDateTime(voucher.validTo) }}
-                </p>
-              </div>
-
               <div class="mb-3">
                 <h6 class="text-muted mb-1">購買限制</h6>
                 <p>
@@ -231,87 +222,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 操作按鈕 -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title mb-3">操作</h5>
-              <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary" @click="showToggleStatusModal">
-                  <i class="bi bi-power me-1"></i>{{ voucher.isActive ? '停用' : '啟用' }}兌換券
-                </button>
-                <button class="btn btn-outline-info" @click="triggerAutoUpdate">
-                  <i class="bi bi-arrow-clockwise me-1"></i>更新狀態
-                </button>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteVoucherModal">
-                  <i class="bi bi-trash me-1"></i>刪除兌換券
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 狀態切換確認對話框 -->
-    <div class="modal fade" id="statusToggleModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認操作</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <p v-if="voucher">
-              您確定要{{ voucher.isActive ? '停用' : '啟用' }}「{{ voucher.name }}」嗎？
-            </p>
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle-fill me-2"></i>
-              {{ voucher?.isActive ? '停用後顧客將無法購買此兌換券' : '啟用後顧客可以重新購買此兌換券' }}
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="confirmToggleStatus" :disabled="isToggling">
-              <span v-if="isToggling" class="spinner-border spinner-border-sm me-1"></span>
-              確認{{ voucher?.isActive ? '停用' : '啟用' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 刪除確認對話框 -->
-    <div class="modal fade" id="deleteVoucherModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="alert alert-danger">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              <strong>警告：</strong>此操作無法復原
-            </div>
-            <p v-if="voucher">
-              您確定要刪除兌換券「{{ voucher.name }}」嗎？
-            </p>
-            <p class="text-muted small">
-              刪除後，所有相關的統計資料和已售出的兌換券實例也會一併移除。
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isDeleting ? '刪除中...' : '確認刪除' }}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -319,7 +229,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Modal } from 'bootstrap';
 import api from '@/api';
 
 // 路由
@@ -332,8 +241,6 @@ const voucherId = computed(() => route.params.id);
 
 // 狀態
 const isLoading = ref(false);
-const isToggling = ref(false);
-const isDeleting = ref(false);
 const isDishLoading = ref(false);
 const error = ref('');
 const dishError = ref('');
@@ -341,9 +248,6 @@ const dishError = ref('');
 // 兌換券和餐點資料
 const voucher = ref(null);
 const dishTemplate = ref(null);
-
-// 對話框
-const statusModal = ref(null);
 
 // 格式化價格
 const formatPrice = (price) => {
@@ -470,108 +374,8 @@ const fetchVoucherData = async () => {
   }
 };
 
-// 顯示狀態切換確認對話框
-const showToggleStatusModal = () => {
-  statusModal.value.show();
-};
-
-// 確認切換狀態
-const confirmToggleStatus = async () => {
-  if (!voucher.value) return;
-
-  isToggling.value = true;
-
-  try {
-    const newStatus = !voucher.value.isActive;
-    await api.promotion.updateVoucherTemplate({
-      brandId: brandId.value,
-      id: voucher.value._id,
-      data: { isActive: newStatus }
-    });
-
-    // 更新本地狀態
-    voucher.value.isActive = newStatus;
-
-    // 關閉對話框
-    statusModal.value.hide();
-  } catch (err) {
-    console.error('切換狀態失敗:', err);
-    alert('切換狀態失敗，請稍後再試');
-  } finally {
-    isToggling.value = false;
-  }
-};
-
-// 觸發自動狀態更新
-const triggerAutoUpdate = async () => {
-  try {
-    await api.bundle.autoUpdateBundleStatus();
-
-    // 重新載入兌換券資料
-    await fetchVoucherData();
-
-    alert('狀態更新完成');
-  } catch (err) {
-    console.error('自動更新狀態失敗:', err);
-    alert('自動更新狀態失敗，請稍後再試');
-  }
-};
-
-// 處理刪除確認
-const handleDelete = async () => {
-  if (!voucher.value) return;
-
-  isDeleting.value = true;
-
-  try {
-    await api.promotion.deleteVoucherTemplate({
-      brandId: brandId.value,
-      id: voucher.value._id
-    });
-
-    // 關閉模態對話框
-    const modalElement = document.getElementById('deleteVoucherModal');
-    const modal = Modal.getInstance(modalElement);
-    if (modal) {
-      modal.hide();
-    }
-
-    // 確保模態背景被移除後再導航
-    setTimeout(() => {
-      // 手動移除可能殘留的 backdrop
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-        document.body.classList.remove('modal-open');
-      }
-
-      // 返回兌換券列表
-      router.push(`/admin/${brandId.value}/vouchers`);
-
-      // 觸發刷新列表事件
-      window.dispatchEvent(new CustomEvent('refresh-voucher-list'));
-    }, 300);
-  } catch (err) {
-    console.error('刪除兌換券失敗:', err);
-
-    if (err.response && err.response.data && err.response.data.message) {
-      alert(`刪除失敗: ${err.response.data.message}`);
-    } else {
-      alert('刪除兌換券時發生錯誤');
-    }
-  } finally {
-    isDeleting.value = false;
-  }
-};
-
 // 生命週期鉤子
 onMounted(() => {
-  // 初始化狀態切換對話框
-  const statusModalElement = document.getElementById('statusToggleModal');
-  if (statusModalElement) {
-    statusModal.value = new Modal(statusModalElement);
-  }
-
   // 獲取兌換券資料
   fetchVoucherData();
 });
