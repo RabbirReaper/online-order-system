@@ -115,23 +115,18 @@ export const deleteBundle = asyncHandler(async (req, res) => {
 
 // 檢查購買限制
 export const checkPurchaseLimit = asyncHandler(async (req, res) => {
-  const { brandId, bundleId } = req.params;
-  const userId = req.auth.userId;
+  const { bundleId } = req.params; // 修正：從 params 獲取 bundleId
+  const userId = req.auth.userId;   // 假設用戶ID來自認證中間件
 
-  const result = await bundleService.checkPurchaseLimit(brandId, bundleId, userId);
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: '用戶未認證'
+    });
+  }
 
-  res.json({
-    success: true,
-    ...result
-  });
-});
-
-// 驗證 Bundle 購買資格
-export const validateBundlePurchase = asyncHandler(async (req, res) => {
-  const { brandId, storeId, bundleId } = req.params;
-  const userId = req.auth.userId;
-
-  const result = await bundleService.validateBundlePurchase(brandId, storeId, bundleId, userId);
+  // 修正參數順序：bundleId, userId
+  const result = await bundleService.checkPurchaseLimit(bundleId, userId);
 
   res.json({
     success: true,
@@ -139,13 +134,3 @@ export const validateBundlePurchase = asyncHandler(async (req, res) => {
   });
 });
 
-// 自動更新 Bundle 狀態
-export const autoUpdateBundleStatus = asyncHandler(async (req, res) => {
-  const result = await bundleService.autoUpdateBundleStatus();
-
-  res.json({
-    success: true,
-    message: 'Bundle 狀態更新完成',
-    ...result
-  });
-});
