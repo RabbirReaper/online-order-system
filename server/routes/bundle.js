@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 // =============================================================================
-// Bundle 模板路由（後台）
+// Bundle 模板路由（後台管理）
 // =============================================================================
 
 // 獲取所有 Bundle
@@ -54,7 +54,7 @@ router.delete('/brands/:brandId/bundles/:id',
 );
 
 // =============================================================================
-// Bundle 模板路由（客戶端）
+// Bundle 客戶端路由
 // =============================================================================
 
 // 檢查購買限制
@@ -63,21 +63,8 @@ router.get('/brands/:brandId/bundles/:bundleId/purchase-limit',
   bundleController.checkPurchaseLimit
 );
 
-// 驗證 Bundle 購買資格
-router.get('/brands/:brandId/stores/:storeId/bundles/:bundleId/validate',
-  authenticate('user'),
-  bundleController.validateBundlePurchase
-);
-
-// 自動更新 Bundle 狀態（系統任務）
-router.post('/bundles/auto-update-status',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin'),
-  bundleController.autoUpdateBundleStatus
-);
-
 // =============================================================================
-// Bundle 實例路由（後台）
+// Bundle 實例路由（後台管理）
 // =============================================================================
 
 // 獲取單個 Bundle 實例
