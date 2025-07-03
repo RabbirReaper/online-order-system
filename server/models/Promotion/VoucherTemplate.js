@@ -19,10 +19,6 @@ const voucherTemplateSchema = new mongoose.Schema({
     ref: 'DishTemplate',
     required: true
   },
-  validityPeriod: {
-    type: Number,
-    required: true
-  },
   isActive: {
     type: Boolean,
     default: true

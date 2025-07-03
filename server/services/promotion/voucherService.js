@@ -49,7 +49,7 @@ export const getVoucherTemplateById = async (templateId, brandId) => {
  */
 export const createVoucherTemplate = async (templateData) => {
   // 驗證必要欄位
-  if (!templateData.name || !templateData.validityPeriod) {
+  if (!templateData.name) {
     throw new AppError('名稱和有效期為必填欄位', 400);
   }
 
@@ -144,7 +144,7 @@ export const getAvailableVoucherTemplates = async (brandId) => {
     brand: brandId,
     isActive: true
   })
-    .select('name description validityPeriod exchangeDishTemplate')
+    .select('name description exchangeDishTemplate')
     .sort({ createdAt: -1 });
 
   return templates;
@@ -170,7 +170,7 @@ export const getUserVouchers = async (userId, options = {}) => {
   }
 
   const vouchers = await VoucherInstance.find(query)
-    .populate('template', 'name description validityPeriod')
+    .populate('template', 'name description')
     .populate('sourceBundle', 'name') // populate 來源 Bundle
     .sort({ createdAt: -1 });
 
@@ -252,7 +252,6 @@ export const autoCreateVoucherTemplatesForDishes = async (brandId) => {
         name: `${dish.name} 兌換券`,
         description: `可兌換 ${dish.name} 一份`,
         exchangeDishTemplate: dish._id,
-        validityPeriod: 30, // 預設30天有效期
         isActive: true
       };
 
