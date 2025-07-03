@@ -61,7 +61,7 @@
                   <input type="file" class="form-control" id="imageUpload" @change="handleImageUpload" accept="image/*"
                     :class="{ 'is-invalid': errors.image }" />
                   <div class="invalid-feedback" v-if="errors.image">{{ errors.image }}</div>
-                  <div class="form-text">建議尺寸 800x600 像素，檔案大小不超過 5MB</div>
+                  <div class="form-text">檔案大小限制為 1MB，支援 JPG、PNG 格式</div>
 
                   <!-- 圖片預覽 -->
                   <div v-if="imagePreview || formData.image" class="mt-3">
@@ -434,7 +434,7 @@ const handleImageUpload = (event) => {
     return;
   }
 
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > 1 * 1024 * 1024) {
     alert('圖片檔案不得超過 5MB');
     return;
   }
