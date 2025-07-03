@@ -447,9 +447,10 @@ const confirmToggleStatus = async () => {
 
   try {
     const newStatus = !bundleToToggle.value.isActive;
+    // 🔧 修正：參數名從 bundleId 改為 id
     await api.bundle.updateBundle({
       brandId: brandId.value,
-      bundleId: bundleToToggle.value._id,
+      id: bundleToToggle.value._id,
       data: { isActive: newStatus }
     });
 
@@ -477,9 +478,10 @@ const deleteBundle = async () => {
   isDeleting.value = true;
 
   try {
+    // 🔧 修正：參數名從 bundleId 改為 id
     await api.bundle.deleteBundle({
       brandId: brandId.value,
-      bundleId: bundleToDelete.value._id
+      id: bundleToDelete.value._id
     });
 
     // 關閉對話框

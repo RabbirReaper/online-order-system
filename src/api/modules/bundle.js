@@ -26,11 +26,11 @@ export default function (apiClient) {
      * 獲取單個 Bundle 詳情 (管理員功能)
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.bundleId - Bundle ID（必填）
+     * @param {string} params.id - Bundle ID（必填）
      * @returns {Promise} - API 回應
      */
-    getBundleById({ brandId, bundleId }) {
-      return apiClient.get(`/bundle/brands/${brandId}/bundles/${bundleId}`);
+    getBundleById({ brandId, id }) {
+      return apiClient.get(`/bundle/brands/${brandId}/bundles/${id}`);
     },
 
     /**
@@ -43,12 +43,12 @@ export default function (apiClient) {
      * @param {Object} params.data.cashPrice - 現金價格
      * @param {Object} params.data.pointPrice - 點數價格
      * @param {Array} params.data.bundleItems - Bundle 項目列表
-     * @param {Array} [params.data.stores] - 適用店鋪ID列表
      * @param {boolean} [params.data.isActive=true] - 是否啟用
      * @param {boolean} [params.data.autoStatusControl=false] - 是否自動控制狀態
      * @param {Date} [params.data.validFrom] - 有效期起始時間
      * @param {Date} [params.data.validTo] - 有效期結束時間
-     * @param {number} [params.data.purchaseLimit] - 購買限制
+     * @param {number} [params.data.voucherValidityDays=30] - 兌換券有效期天數
+     * @param {number} [params.data.purchaseLimitPerUser] - 購買限制
      * @returns {Promise} - API 回應
      */
     createBundle({ brandId, data }) {
@@ -59,23 +59,23 @@ export default function (apiClient) {
      * 更新 Bundle (管理員功能)
      * @param {Object} params - 更新參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.bundleId - Bundle ID（必填）
+     * @param {string} params.id - Bundle ID（必填）
      * @param {Object} params.data - 更新資料
      * @returns {Promise} - API 回應
      */
-    updateBundle({ brandId, bundleId, data }) {
-      return apiClient.put(`/bundle/brands/${brandId}/bundles/${bundleId}`, data);
+    updateBundle({ brandId, id, data }) {
+      return apiClient.put(`/bundle/brands/${brandId}/bundles/${id}`, data);
     },
 
     /**
      * 刪除 Bundle (管理員功能)
      * @param {Object} params - 刪除參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.bundleId - Bundle ID（必填）
+     * @param {string} params.id - Bundle ID（必填）
      * @returns {Promise} - API 回應
      */
-    deleteBundle({ brandId, bundleId }) {
-      return apiClient.delete(`/bundle/brands/${brandId}/bundles/${bundleId}`);
+    deleteBundle({ brandId, id }) {
+      return apiClient.delete(`/bundle/brands/${brandId}/bundles/${id}`);
     },
 
     // ========== 客戶端功能 ==========
@@ -89,26 +89,6 @@ export default function (apiClient) {
      */
     checkPurchaseLimit({ brandId, bundleId }) {
       return apiClient.get(`/bundle/brands/${brandId}/bundles/${bundleId}/purchase-limit`);
-    },
-
-    /**
-     * 驗證 Bundle 購買資格 (客戶端)
-     * @param {Object} params - 驗證參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID（必填）
-     * @param {string} params.bundleId - Bundle ID（必填）
-     * @returns {Promise} - API 回應，包含驗證結果
-     */
-    validateBundlePurchase({ brandId, storeId, bundleId }) {
-      return apiClient.get(`/bundle/brands/${brandId}/stores/${storeId}/bundles/${bundleId}/validate`);
-    },
-
-    /**
-     * 自動更新 Bundle 狀態 (系統功能)
-     * @returns {Promise} - API 回應
-     */
-    autoUpdateBundleStatus() {
-      return apiClient.post('/bundle/bundles/auto-update-status');
     },
 
     // ========== Bundle 實例相關 ==========

@@ -412,7 +412,7 @@ const conversionRate = computed(() => {
   return Math.min(Math.round((bundle.value?.totalSold || 0) / 10), 100);
 });
 
-// 獲取包裝商品資料
+// 修正 fetchBundleData 函數
 const fetchBundleData = async () => {
   if (!bundleId.value || !brandId.value) return;
 
@@ -420,9 +420,10 @@ const fetchBundleData = async () => {
   error.value = '';
 
   try {
+    // 🔧 修正：參數名從 bundleId 改為 id
     const response = await api.bundle.getBundleById({
       brandId: brandId.value,
-      bundleId: bundleId.value
+      id: bundleId.value
     });
 
     if (response && response.bundle) {
