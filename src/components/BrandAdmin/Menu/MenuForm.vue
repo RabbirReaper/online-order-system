@@ -156,13 +156,14 @@
                           </div>
                         </td>
 
-                        <!-- 現金價格覆蓋 -->
+                        <!-- 現金價格覆蓋（僅餐點類型支援） -->
                         <td v-if="showCashPriceColumn()">
                           <div class="input-group input-group-sm">
                             <span class="input-group-text">$</span>
                             <input type="number" class="form-control" v-model.number="item.priceOverride" min="0"
-                              placeholder="原價" />
+                              placeholder="留空使用原價" />
                           </div>
+                          <div class="form-text small">用於促銷或差異化定價</div>
                         </td>
 
                         <!-- 點數價格覆蓋 -->
@@ -298,9 +299,9 @@ const errors = reactive({
 // 獲取菜單類型描述
 const getMenuTypeDescription = (type) => {
   const descriptions = {
-    'food': '顧客使用現金購買餐點，直接享用',
-    'cash_coupon': '顧客使用現金購買預購券套餐，可後續兌換',
-    'point_exchange': '顧客使用點數兌換預購券套餐'
+    'food': '顧客使用現金購買餐點，直接享用（支援價格覆蓋）',
+    'cash_coupon': '顧客使用現金購買預購券套餐，價格由套餐設定',
+    'point_exchange': '顧客使用點數兌換預購券套餐，價格由套餐設定'
   };
   return descriptions[type] || '';
 };
@@ -325,14 +326,14 @@ const getItemButtonText = () => {
   return texts[formData.menuType] || '商品';
 };
 
-// 是否顯示現金價格欄位
+// 是否顯示現金價格欄位（只有餐點類型支援價格覆蓋）
 const showCashPriceColumn = () => {
-  return formData.menuType === 'food' || formData.menuType === 'cash_coupon';
+  return formData.menuType === 'food';
 };
 
-// 是否顯示點數價格欄位
+// 是否顯示點數價格欄位（Bundle 不支援價格覆蓋）
 const showPointPriceColumn = () => {
-  return formData.menuType === 'point_exchange';
+  return false;
 };
 
 // 獲取表格欄位數量
@@ -347,14 +348,15 @@ const getTableColumnCount = () => {
 const getFilteredBundles = () => {
   if (formData.menuType === 'cash_coupon') {
     // 現金購買預購券：需要有現金價格的 Bundle
-    return bundles.value.filter(bundle =>      bundle.cashPrice &&
-     (bundle.cashPrice.selling > 0 || bundle.cashPrice.original > 0)
+    return bundles.value.filter(bundle =>
+      bundle.cashPrice &&
+      (bundle.cashPrice.selling > 0 || bundle.cashPrice.original > 0)
     );
   } else if (formData.menuType === 'point_exchange') {
     // 點數兌換：需要有點數價格的 Bundle
     return bundles.value.filter(bundle =>
-     bundle.pointPrice &&
-     (bundle.pointPrice.selling > 0 || bundle.pointPrice.original > 0)
+      bundle.pointPrice &&
+      (bundle.pointPrice.selling > 0 || bundle.pointPrice.original > 0)
     );
   }
   return bundles.value;
@@ -413,8 +415,15 @@ const onMenuTypeChange = () => {
         // 重置商品選擇
         item.dishTemplate = '';
         item.bundle = '';
-        item.priceOverride = null;
-        item.pointOverride = null;
+
+        // 根據新的菜單類型設定價格覆蓋欄位
+        if (formData.menuType === 'food') {
+          item.priceOverride = null; // 只有餐點類型支援價格覆蓋
+        } else {
+          // Bundle 類型移除價格覆蓋欄位
+          delete item.priceOverride;
+          delete item.pointOverride;
+        }
       });
     }
   });
@@ -570,12 +579,15 @@ const cleanItemData = (item) => {
   if (formData.menuType === 'food') {
     cleanedItem.itemType = 'dish';
     delete cleanedItem.bundle;
+    delete cleanedItem.pointOverride; // 餐點不支援點數覆蓋
     if (typeof cleanedItem.dishTemplate === 'object' && cleanedItem.dishTemplate._id) {
       cleanedItem.dishTemplate = cleanedItem.dishTemplate._id;
     }
   } else {
     cleanedItem.itemType = 'bundle';
     delete cleanedItem.dishTemplate;
+    delete cleanedItem.priceOverride; // Bundle 不支援價格覆蓋
+    delete cleanedItem.pointOverride; // Bundle 不支援價格覆蓋
     if (typeof cleanedItem.bundle === 'object' && cleanedItem.bundle._id) {
       cleanedItem.bundle = cleanedItem.bundle._id;
     }
@@ -631,8 +643,6 @@ const addItem = (category) => {
   }
 
   const newItem = {
-    priceOverride: null,
-    pointOverride: null,
     isShowing: true,
     order: category.items.length
   };
@@ -641,9 +651,11 @@ const addItem = (category) => {
   if (formData.menuType === 'food') {
     newItem.itemType = 'dish';
     newItem.dishTemplate = '';
+    newItem.priceOverride = null; // 只有餐點類型支援價格覆蓋
   } else {
     newItem.itemType = 'bundle';
     newItem.bundle = '';
+    // Bundle 類型不支援價格覆蓋，依賴 Bundle 本身的定價
   }
 
   category.items.push(newItem);
