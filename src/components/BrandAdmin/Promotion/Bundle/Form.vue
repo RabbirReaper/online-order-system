@@ -146,7 +146,7 @@
                       <span class="input-group-text">點</span>
                     </div>
                     <div class="invalid-feedback" v-if="errors['pointPrice.original']">{{ errors['pointPrice.original']
-                    }}
+                      }}
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -687,12 +687,12 @@ const submitForm = async () => {
       ...formData
     };
 
-    // 清理不需要的價格欄位
-    if (!hasPointPrice.value) {
-      submitData.pointPrice = null; // ✅ 明確告訴後端要清除
+    // ✅ 明確告訴後端要清除或保留價格欄位
+    if (!hasCashPrice.value) {
+      submitData.cashPrice = null; // 明確傳送 null 表示要清除
     }
     if (!hasPointPrice.value) {
-      delete submitData.pointPrice;
+      submitData.pointPrice = null; // 明確傳送 null 表示要清除
     }
 
     if (imageFile.value) {

@@ -268,6 +268,22 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
     }
   }
 
+  if (updateData.hasOwnProperty('cashPrice')) {
+    if (updateData.cashPrice === null) {
+      // 前端明確要求清除現金價格
+      bundle.cashPrice = undefined;
+      delete updateData.cashPrice; // 避免後續被覆蓋
+    }
+  }
+
+  if (updateData.hasOwnProperty('pointPrice')) {
+    if (updateData.pointPrice === null) {
+      // 前端明確要求清除點數價格
+      bundle.pointPrice = undefined;
+      delete updateData.pointPrice; // 避免後續被覆蓋
+    }
+  }
+
   // 如果更新了價格，驗證至少有一種價格
   if (updateData.cashPrice !== undefined || updateData.pointPrice !== undefined) {
     const finalCashPrice = updateData.cashPrice || bundle.cashPrice;
