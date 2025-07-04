@@ -79,7 +79,7 @@
                 </td>
                 <td>{{ template.totalIssued || 0 }}</td>
                 <td>
-                  <span class="badge" :class="template.isActive ? 'bg-success' : 'bg-secondary'">
+                  <span class="badge" :class="template.isActive ? 'bg-success' : 'bg-danger'">
                     {{ template.isActive ? '啟用' : '停用' }}
                   </span>
                 </td>

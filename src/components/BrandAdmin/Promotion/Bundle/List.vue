@@ -294,12 +294,7 @@ const formatDate = (dateString) => {
 
 // 獲取狀態徽章樣式
 const getStatusBadgeClass = (bundle) => {
-  if (!bundle.isActive) return 'bg-secondary';
-
-  const now = new Date();
-  if (bundle.autoStatusControl && bundle.validTo && new Date(bundle.validTo) < now) {
-    return 'bg-warning';
-  }
+  if (!bundle.isActive) return 'bg-danger';
 
   return 'bg-success';
 };
