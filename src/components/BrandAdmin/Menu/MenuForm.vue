@@ -40,13 +40,16 @@
               <div class="mb-3">
                 <label for="menuType" class="form-label required">菜單類型</label>
                 <select v-model="formData.menuType" class="form-select" id="menuType"
-                  :class="{ 'is-invalid': errors.menuType }">
+                  :class="{ 'is-invalid': errors.menuType }" :disabled="isEditMode" @change="onMenuTypeChange">
                   <option value="food">現金購買餐點</option>
                   <option value="cash_coupon">現金購買預購券</option>
                   <option value="point_exchange">點數兌換</option>
                 </select>
                 <div class="invalid-feedback" v-if="errors.menuType">{{ errors.menuType }}</div>
-                <div class="form-text">選擇菜單的主要用途類型</div>
+                <div class="form-text">
+                  {{ getMenuTypeDescription(formData.menuType) }}
+                  <span v-if="isEditMode" class="text-muted">（編輯模式下無法更改菜單類型）</span>
+                </div>
               </div>
             </div>
           </div>
@@ -113,31 +116,19 @@
                   <table class="table table-bordered table-hover">
                     <thead class="table-light">
                       <tr>
-                        <th style="width: 15%">類型</th>
-                        <th style="width: 30%">商品</th>
-                        <th style="width: 15%">價格覆蓋</th>
-                        <th style="width: 15%">點數覆蓋</th>
+                        <th style="width: 40%">{{ getItemColumnTitle() }}</th>
+                        <th style="width: 15%" v-if="showCashPriceColumn()">現金價格覆蓋</th>
+                        <th style="width: 15%" v-if="showPointPriceColumn()">點數價格覆蓋</th>
                         <th style="width: 10%">狀態</th>
-                        <th style="width: 15%">操作</th>
+                        <th style="width: 20%">操作</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="(item, itemIndex) in category.items" :key="itemIndex">
+                        <!-- 商品選擇 -->
                         <td>
-                          <select v-model="item.itemType" class="form-select form-select-sm"
-                            :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'itemType') }"
-                            @change="onItemTypeChange(categoryIndex, itemIndex)">
-                            <option value="">選擇類型</option>
-                            <option value="dish">餐點</option>
-                            <option value="bundle">套餐</option>
-                          </select>
-                          <div class="invalid-feedback" v-if="getItemError(categoryIndex, itemIndex, 'itemType')">
-                            {{ getItemError(categoryIndex, itemIndex, 'itemType') }}
-                          </div>
-                        </td>
-                        <td>
-                          <!-- 餐點選擇 -->
-                          <select v-if="item.itemType === 'dish'" :value="getDishTemplateId(item)"
+                          <!-- 餐點選擇 (現金購買餐點) -->
+                          <select v-if="formData.menuType === 'food'" :value="getDishTemplateId(item)"
                             @change="updateDishTemplate(categoryIndex, itemIndex, $event.target.value)"
                             class="form-select form-select-sm"
                             :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'dishTemplate') }">
@@ -147,18 +138,16 @@
                             </option>
                           </select>
 
-                          <!-- 套餐選擇 -->
-                          <select v-else-if="item.itemType === 'bundle'" :value="getBundleId(item)"
+                          <!-- Bundle 選擇 (現金購買預購券/點數兌換) -->
+                          <select v-else :value="getBundleId(item)"
                             @change="updateBundle(categoryIndex, itemIndex, $event.target.value)"
                             class="form-select form-select-sm"
                             :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'bundle') }">
-                            <option value="">選擇套餐</option>
-                            <option v-for="bundle in bundles" :key="bundle._id" :value="bundle._id">
-                              {{ bundle.name }} - ${{ bundle.sellingPrice }}
+                            <option value="">選擇{{ formData.menuType === 'cash_coupon' ? '預購券套餐' : '兌換套餐' }}</option>
+                            <option v-for="bundle in getFilteredBundles()" :key="bundle._id" :value="bundle._id">
+                              {{ bundle.name }} - {{ getBundlePriceDisplay(bundle) }}
                             </option>
                           </select>
-
-                          <div class="text-muted small" v-else>請先選擇商品類型</div>
 
                           <div class="invalid-feedback"
                             v-if="getItemError(categoryIndex, itemIndex, 'dishTemplate') || getItemError(categoryIndex, itemIndex, 'bundle')">
@@ -166,25 +155,23 @@
                               itemIndex, 'bundle') }}
                           </div>
                         </td>
-                        <td>
+
+                        <!-- 現金價格覆蓋 -->
+                        <td v-if="showCashPriceColumn()">
                           <div class="input-group input-group-sm">
                             <span class="input-group-text">$</span>
                             <input type="number" class="form-control" v-model.number="item.priceOverride" min="0"
-                              placeholder="原價" :disabled="formData.menuType === 'point_exchange'" />
-                          </div>
-                          <div v-if="formData.menuType === 'point_exchange'" class="form-text small text-muted">
-                            點數兌換菜單無需設定價格
+                              placeholder="原價" />
                           </div>
                         </td>
-                        <td>
+
+                        <!-- 點數價格覆蓋 -->
+                        <td v-if="showPointPriceColumn()">
                           <input type="number" class="form-control form-control-sm" v-model.number="item.pointOverride"
-                            min="0" placeholder="原點數"
-                            :disabled="formData.menuType === 'food' || formData.menuType === 'cash_coupon'" />
-                          <div v-if="formData.menuType === 'food' || formData.menuType === 'cash_coupon'"
-                            class="form-text small text-muted">
-                            現金購買菜單無需設定點數
-                          </div>
+                            min="0" placeholder="原點數" />
                         </td>
+
+                        <!-- 狀態 -->
                         <td>
                           <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox"
@@ -194,6 +181,8 @@
                             </label>
                           </div>
                         </td>
+
+                        <!-- 操作 -->
                         <td>
                           <div class="btn-group btn-group-sm">
                             <button type="button" class="btn btn-outline-secondary"
@@ -213,14 +202,14 @@
                         </td>
                       </tr>
                       <tr v-if="category.items.length === 0">
-                        <td colspan="6" class="text-center py-3 text-muted">此分類尚未添加商品</td>
+                        <td :colspan="getTableColumnCount()" class="text-center py-3 text-muted">此分類尚未添加商品</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
                 <button type="button" class="btn btn-outline-primary btn-sm" @click="addItem(category)">
-                  <i class="bi bi-plus-lg me-1"></i>添加商品
+                  <i class="bi bi-plus-lg me-1"></i>添加{{ getItemButtonText() }}
                 </button>
               </div>
             </div>
@@ -306,6 +295,83 @@ const errors = reactive({
   categories: []
 });
 
+// 獲取菜單類型描述
+const getMenuTypeDescription = (type) => {
+  const descriptions = {
+    'food': '顧客使用現金購買餐點，直接享用',
+    'cash_coupon': '顧客使用現金購買預購券套餐，可後續兌換',
+    'point_exchange': '顧客使用點數兌換預購券套餐'
+  };
+  return descriptions[type] || '';
+};
+
+// 獲取商品欄位標題
+const getItemColumnTitle = () => {
+  const titles = {
+    'food': '餐點選擇',
+    'cash_coupon': '預購券套餐選擇',
+    'point_exchange': '兌換套餐選擇'
+  };
+  return titles[formData.menuType] || '商品選擇';
+};
+
+// 獲取添加按鈕文字
+const getItemButtonText = () => {
+  const texts = {
+    'food': '餐點',
+    'cash_coupon': '預購券套餐',
+    'point_exchange': '兌換套餐'
+  };
+  return texts[formData.menuType] || '商品';
+};
+
+// 是否顯示現金價格欄位
+const showCashPriceColumn = () => {
+  return formData.menuType === 'food' || formData.menuType === 'cash_coupon';
+};
+
+// 是否顯示點數價格欄位
+const showPointPriceColumn = () => {
+  return formData.menuType === 'point_exchange';
+};
+
+// 獲取表格欄位數量
+const getTableColumnCount = () => {
+  let count = 3; // 商品選擇 + 狀態 + 操作
+  if (showCashPriceColumn()) count++;
+  if (showPointPriceColumn()) count++;
+  return count;
+};
+
+// 根據菜單類型篩選 Bundle
+const getFilteredBundles = () => {
+  if (formData.menuType === 'cash_coupon') {
+    // 現金購買預購券：需要有現金價格的 Bundle
+    return bundles.value.filter(bundle =>      bundle.cashPrice &&
+     (bundle.cashPrice.selling > 0 || bundle.cashPrice.original > 0)
+    );
+  } else if (formData.menuType === 'point_exchange') {
+    // 點數兌換：需要有點數價格的 Bundle
+    return bundles.value.filter(bundle =>
+     bundle.pointPrice &&
+     (bundle.pointPrice.selling > 0 || bundle.pointPrice.original > 0)
+    );
+  }
+  return bundles.value;
+};
+
+// 獲取 Bundle 價格顯示
+const getBundlePriceDisplay = (bundle) => {
+  if (formData.menuType === 'cash_coupon' && bundle.cashPrice) {
+    const price = bundle.cashPrice.selling || bundle.cashPrice.original || 0;
+    return `$${price}`;
+  } else if (formData.menuType === 'point_exchange' && bundle.pointPrice) {
+    const price = bundle.pointPrice.selling || bundle.pointPrice.original || 0;
+    return `${price} 點`;
+  }
+  return '未設定價格';
+};
+
 // 檢查表單是否有效
 const isFormValid = computed(() => {
   // 檢查菜單名稱
@@ -327,56 +393,57 @@ const isFormValid = computed(() => {
 
     // 檢查每個商品
     for (const item of category.items) {
-      if (!item.itemType) return false;
-
-      if (item.itemType === 'dish' && !getDishTemplateId(item)) return false;
-      if (item.itemType === 'bundle' && !getBundleId(item)) return false;
+      if (formData.menuType === 'food') {
+        if (!getDishTemplateId(item)) return false;
+      } else {
+        if (!getBundleId(item)) return false;
+      }
     }
   }
 
   return true;
 });
 
+// 菜單類型改變處理
+const onMenuTypeChange = () => {
+  // 清空所有分類的商品，因為類型改變了
+  formData.categories.forEach(category => {
+    if (category.items) {
+      category.items.forEach(item => {
+        // 重置商品選擇
+        item.dishTemplate = '';
+        item.bundle = '';
+        item.priceOverride = null;
+        item.pointOverride = null;
+      });
+    }
+  });
+};
+
 // 輔助函數：獲取餐點模板ID
 const getDishTemplateId = (item) => {
   if (!item.dishTemplate) return '';
-
-  // 如果是物件，返回其 _id；如果是字串，直接返回
   return typeof item.dishTemplate === 'object' ? item.dishTemplate._id : item.dishTemplate;
 };
 
 // 輔助函數：獲取套餐ID
 const getBundleId = (item) => {
   if (!item.bundle) return '';
-
-  // 如果是物件，返回其 _id；如果是字串，直接返回
   return typeof item.bundle === 'object' ? item.bundle._id : item.bundle;
 };
 
 // 更新餐點模板選擇
 const updateDishTemplate = (categoryIndex, itemIndex, value) => {
   const item = formData.categories[categoryIndex].items[itemIndex];
-
-  // 如果選擇了新的模板，從模板列表中找到對應的物件
-  if (value) {
-    const template = dishTemplates.value.find(t => t._id === value);
-    item.dishTemplate = template ? template._id : value; // 儲存時只需要ID
-  } else {
-    item.dishTemplate = '';
-  }
+  item.dishTemplate = value;
+  item.bundle = ''; // 清除bundle選擇
 };
 
 // 更新套餐選擇
 const updateBundle = (categoryIndex, itemIndex, value) => {
   const item = formData.categories[categoryIndex].items[itemIndex];
-
-  // 如果選擇了新的套餐，從套餐列表中找到對應的物件
-  if (value) {
-    const bundle = bundles.value.find(b => b._id === value);
-    item.bundle = bundle ? bundle._id : value; // 儲存時只需要ID
-  } else {
-    item.bundle = '';
-  }
+  item.bundle = value;
+  item.dishTemplate = ''; // 清除dishTemplate選擇
 };
 
 // 獲取店鋪資料
@@ -387,8 +454,6 @@ const fetchStoreData = async () => {
     const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
     if (response && response.store) {
       store.value = response.store;
-
-      // 設置品牌ID和店鋪ID
       formData.brand = store.value.brand;
       formData.store = storeId.value;
     }
@@ -415,19 +480,18 @@ const fetchDishTemplates = async () => {
 
 // 獲取套餐資料
 const fetchBundles = async () => {
-  // TODO: 實作套餐 API 後再補上
-  // if (!brandId.value) return;
-  // try {
-  //   const response = await api.bundle.getAllBundles({ brandId: brandId.value });
-  //   if (response && response.bundles) {
-  //     bundles.value = response.bundles;
-  //   }
-  // } catch (error) {
-  //   console.error('獲取套餐資料失敗:', error);
-  // }
+  if (!brandId.value) return;
 
-  // 暫時使用空陣列
-  bundles.value = [];
+  try {
+    const response = await api.bundle.getAllBundles({ brandId: brandId.value });
+    if (response && response.bundles) {
+      bundles.value = response.bundles;
+    }
+  } catch (error) {
+    console.error('獲取套餐資料失敗:', error);
+    // 不顯示錯誤，因為 bundle 功能可能還沒實作
+    bundles.value = [];
+  }
 };
 
 // 獲取菜單資料（編輯模式）
@@ -440,25 +504,26 @@ const fetchMenuData = async () => {
     if (response && response.menu && response.menu._id === menuId.value) {
       const menu = response.menu;
 
-      // 更新表單數據
       formData.name = menu.name || '';
       formData.menuType = menu.menuType || 'food';
       formData.isActive = menu.isActive !== undefined ? menu.isActive : true;
 
       // 處理分類資料
       if (menu.categories && menu.categories.length > 0) {
-        // 深複製分類資料，確保 dishTemplate 和 bundle 資料正確處理
         formData.categories = menu.categories.map(category => ({
           ...category,
-          items: category.items.map(item => ({
-            ...item,
-            // 確保 dishTemplate 和 bundle 正確處理（如果是物件，保持物件形式供顯示用）
-            dishTemplate: item.dishTemplate || '',
-            bundle: item.bundle || ''
-          }))
+          items: category.items.map(item => {
+            // 根據菜單類型設定正確的 itemType
+            const newItem = { ...item };
+            if (formData.menuType === 'food') {
+              newItem.itemType = 'dish';
+            } else {
+              newItem.itemType = 'bundle';
+            }
+            return newItem;
+          })
         }));
       }
-      console.log('菜單分類資料:', formData.categories);
     } else {
       formErrors.value.push('獲取菜單資料失敗');
     }
@@ -497,34 +562,20 @@ const getItemError = (categoryIndex, itemIndex, field) => {
   return errors.categories[categoryIndex].items[itemIndex][field] || '';
 };
 
-// 商品類型改變處理
-const onItemTypeChange = (categoryIndex, itemIndex) => {
-  const item = formData.categories[categoryIndex].items[itemIndex];
-
-  // 清除之前的選擇
-  if (item.itemType === 'dish') {
-    item.bundle = '';
-    item.dishTemplate = '';
-  } else if (item.itemType === 'bundle') {
-    item.dishTemplate = '';
-    item.bundle = '';
-  }
-};
-
 // 清理商品資料，移除空值欄位
 const cleanItemData = (item) => {
   const cleanedItem = { ...item };
 
-  // 根據商品類型，只保留相關欄位，並確保使用 ID 而非物件
-  if (cleanedItem.itemType === 'dish') {
+  // 根據菜單類型設定 itemType 和清理不需要的欄位
+  if (formData.menuType === 'food') {
+    cleanedItem.itemType = 'dish';
     delete cleanedItem.bundle;
-    // 確保 dishTemplate 是 ID
     if (typeof cleanedItem.dishTemplate === 'object' && cleanedItem.dishTemplate._id) {
       cleanedItem.dishTemplate = cleanedItem.dishTemplate._id;
     }
-  } else if (cleanedItem.itemType === 'bundle') {
+  } else {
+    cleanedItem.itemType = 'bundle';
     delete cleanedItem.dishTemplate;
-    // 確保 bundle 是 ID
     if (typeof cleanedItem.bundle === 'object' && cleanedItem.bundle._id) {
       cleanedItem.bundle = cleanedItem.bundle._id;
     }
@@ -554,8 +605,6 @@ const addCategory = () => {
 const removeCategory = (index) => {
   if (confirm(`確定要刪除「${formData.categories[index].name || '未命名分類'}」嗎？`)) {
     formData.categories.splice(index, 1);
-
-    // 重新排序
     formData.categories.forEach((category, idx) => {
       category.order = idx;
     });
@@ -567,12 +616,10 @@ const moveCategory = (categoryIndex, direction) => {
   const newIndex = categoryIndex + direction;
   if (newIndex < 0 || newIndex >= formData.categories.length) return;
 
-  // 交換分類位置
   const temp = formData.categories[categoryIndex];
   formData.categories[categoryIndex] = formData.categories[newIndex];
   formData.categories[newIndex] = temp;
 
-  // 更新順序值
   formData.categories[categoryIndex].order = categoryIndex;
   formData.categories[newIndex].order = newIndex;
 };
@@ -583,22 +630,28 @@ const addItem = (category) => {
     category.items = [];
   }
 
-  category.items.push({
-    itemType: '',
-    dishTemplate: '',
-    bundle: '',
+  const newItem = {
     priceOverride: null,
     pointOverride: null,
     isShowing: true,
     order: category.items.length
-  });
+  };
+
+  // 根據菜單類型設定 itemType 和初始化對應欄位
+  if (formData.menuType === 'food') {
+    newItem.itemType = 'dish';
+    newItem.dishTemplate = '';
+  } else {
+    newItem.itemType = 'bundle';
+    newItem.bundle = '';
+  }
+
+  category.items.push(newItem);
 };
 
 // 移除商品
 const removeItem = (categoryIndex, itemIndex) => {
   formData.categories[categoryIndex].items.splice(itemIndex, 1);
-
-  // 重新排序
   formData.categories[categoryIndex].items.forEach((item, idx) => {
     item.order = idx;
   });
@@ -611,12 +664,10 @@ const moveItem = (categoryIndex, itemIndex, direction) => {
 
   if (newIndex < 0 || newIndex >= items.length) return;
 
-  // 交換商品位置
   const temp = items[itemIndex];
   items[itemIndex] = items[newIndex];
   items[newIndex] = temp;
 
-  // 更新順序值
   items[itemIndex].order = itemIndex;
   items[newIndex].order = newIndex;
 };
@@ -677,15 +728,11 @@ const validateForm = () => {
           errors.categories[categoryIndex].items[itemIndex] = {};
         }
 
-        if (!item.itemType) {
-          errors.categories[categoryIndex].items[itemIndex].itemType = '請選擇商品類型';
-          formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇商品類型`);
-          isValid = false;
-        } else if (item.itemType === 'dish' && !getDishTemplateId(item)) {
+        if (formData.menuType === 'food' && !getDishTemplateId(item)) {
           errors.categories[categoryIndex].items[itemIndex].dishTemplate = '請選擇餐點';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇餐點`);
           isValid = false;
-        } else if (item.itemType === 'bundle' && !getBundleId(item)) {
+        } else if (formData.menuType !== 'food' && !getBundleId(item)) {
           errors.categories[categoryIndex].items[itemIndex].bundle = '請選擇套餐';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇套餐`);
           isValid = false;
@@ -700,17 +747,14 @@ const validateForm = () => {
 // 重置表單
 const resetForm = () => {
   if (isEditMode.value) {
-    // 重新獲取菜單資料
     fetchMenuData();
   } else {
-    // 清空表單
     formData.name = '';
     formData.menuType = 'food';
     formData.categories = [];
     formData.isActive = true;
   }
 
-  // 清除錯誤
   errors.name = '';
   errors.menuType = '';
   errors.categories = [];
@@ -720,7 +764,6 @@ const resetForm = () => {
 
 // 提交表單
 const submitForm = async () => {
-  // 驗證表單
   if (!validateForm()) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
@@ -731,7 +774,6 @@ const submitForm = async () => {
   formErrors.value = [];
 
   try {
-    // 準備提交資料，清理空值
     const submitData = {
       name: formData.name,
       menuType: formData.menuType,
@@ -747,7 +789,6 @@ const submitForm = async () => {
     let response;
 
     if (isEditMode.value) {
-      // 更新菜單
       response = await api.menu.updateMenu({
         brandId: brandId.value,
         storeId: storeId.value,
@@ -756,7 +797,6 @@ const submitForm = async () => {
       });
       successMessage.value = '菜單更新成功！';
     } else {
-      // 創建新菜單
       response = await api.menu.createMenu({
         brandId: brandId.value,
         storeId: storeId.value,
@@ -765,7 +805,6 @@ const submitForm = async () => {
       successMessage.value = '菜單創建成功！';
     }
 
-    // 延遲導航，讓用戶看到成功訊息
     setTimeout(() => {
       router.push(`/admin/${brandId.value}/menus/store/${storeId.value}`);
     }, 1500);
@@ -774,7 +813,6 @@ const submitForm = async () => {
 
     if (error.response && error.response.data) {
       const { message } = error.response.data;
-
       if (message) {
         formErrors.value.push(`錯誤: ${message}`);
       } else {
@@ -795,7 +833,6 @@ watch([storeId, menuId, brandId], ([newStoreId, newMenuId, newBrandId]) => {
   if (newStoreId && newBrandId) {
     isLoading.value = true;
 
-    // 按順序執行資料獲取
     Promise.all([
       fetchStoreData(),
       fetchDishTemplates(),
@@ -809,7 +846,6 @@ watch([storeId, menuId, brandId], ([newStoreId, newMenuId, newBrandId]) => {
 
 // 生命週期鉤子
 onMounted(() => {
-  // 載入所有資料
   isLoading.value = true;
 
   Promise.all([
