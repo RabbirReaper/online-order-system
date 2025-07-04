@@ -203,10 +203,16 @@ export const createBundle = async (bundleData) => {
  * @returns {Promise<Object>} 更新後的 Bundle
  */
 export const updateBundle = async (bundleId, updateData, brandId) => {
-  // 檢查 Bundle 是否存在且屬於該品牌
+  // 檢查 Bundle 是否存在且屬於該品牌，並預載入相關的 dish 圖片資訊
   const bundle = await Bundle.findOne({
     _id: bundleId,
     brand: brandId
+  }).populate({
+    path: 'bundleItems.voucherTemplate',
+    populate: {
+      path: 'exchangeDishTemplate',
+      select: 'image'
+    }
   });
 
   if (!bundle) {
@@ -216,21 +222,43 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
   // 處理圖片更新
   if (updateData.imageData) {
     try {
-      // 如果存在舊圖片，則更新圖片
-      if (bundle.image && bundle.image.key) {
-        const imageInfo = await imageHelper.updateImage(
-          updateData.imageData,
-          bundle.image.key,
-          `bundles/${brandId}`
-        );
-        updateData.image = imageInfo;
-      } else {
-        // 如果不存在舊圖片，則上傳新圖片
+      let currentImageKey = bundle.image?.key;
+
+      // 檢查當前圖片是否與任何 dish 圖片共享同一個 key
+      const isSharedWithDish = bundle.bundleItems.some(item =>
+        item.voucherTemplate?.exchangeDishTemplate?.image?.key === currentImageKey
+      );
+
+      if (isSharedWithDish && currentImageKey) {
+        // 如果與 dish 共享圖片，直接創建新的獨立圖片，不刪除舊圖片
+        console.log(`Bundle ${bundle.name} 的圖片與 dish 共享 (key: ${currentImageKey})，創建獨立的新圖片`);
+
         const imageInfo = await imageHelper.uploadAndProcessImage(
           updateData.imageData,
           `bundles/${brandId}`
         );
         updateData.image = imageInfo;
+
+        console.log(`為 Bundle ${bundle.name} 創建了新的獨立圖片 (key: ${imageInfo.key})`);
+      } else {
+        // Bundle 有獨立圖片或沒有圖片，使用正常的更新邏輯
+        if (bundle.image && bundle.image.key) {
+          console.log(`Bundle ${bundle.name} 使用獨立圖片，進行正常更新`);
+          const imageInfo = await imageHelper.updateImage(
+            updateData.imageData,
+            bundle.image.key,
+            `bundles/${brandId}`
+          );
+          updateData.image = imageInfo;
+        } else {
+          // 如果不存在舊圖片，則上傳新圖片
+          console.log(`Bundle ${bundle.name} 沒有現有圖片，上傳新圖片`);
+          const imageInfo = await imageHelper.uploadAndProcessImage(
+            updateData.imageData,
+            `bundles/${brandId}`
+          );
+          updateData.image = imageInfo;
+        }
       }
 
       // 刪除原始圖片數據
@@ -456,11 +484,9 @@ export const autoCreateBundlesForVouchers = async (brandId) => {
         // 設定價格，基於餐點價格
         cashPrice: {
           original: dish.basePrice,
-          selling: dish.basePrice
         },
         pointPrice: {
-          original: Math.ceil(dish.basePrice / 10), // 假設10元=1點的轉換率
-          selling: Math.ceil(dish.basePrice / 10)
+          original: Math.ceil(dish.basePrice / 100), // 假設10元=1點的轉換率
         },
         voucherValidityDays: 30, // 預設30天有效期
         isActive: true
