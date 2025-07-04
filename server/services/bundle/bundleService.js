@@ -324,9 +324,16 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
  * @returns {Promise<Object>} 刪除結果
  */
 export const deleteBundle = async (bundleId, brandId) => {
+  // 預載入相關的 dish 圖片資訊，以便檢查圖片共享
   const bundle = await Bundle.findOne({
     _id: bundleId,
     brand: brandId
+  }).populate({
+    path: 'bundleItems.voucherTemplate',
+    populate: {
+      path: 'exchangeDishTemplate',
+      select: 'image'
+    }
   });
 
   if (!bundle) {
@@ -342,15 +349,27 @@ export const deleteBundle = async (bundleId, brandId) => {
     throw new AppError('此Bundle已有相關訂單，無法刪除', 400);
   }
 
-  // 刪除圖片
+  // 智慧圖片刪除邏輯
   if (bundle.image && bundle.image.key) {
     try {
-      await imageHelper.deleteImage(bundle.image.key);
+      const currentImageKey = bundle.image.key;
+
+      // 檢查當前圖片是否與任何 dish 圖片共享同一個 key
+      const isSharedWithDish = bundle.bundleItems.some(item =>
+        item.voucherTemplate?.exchangeDishTemplate?.image?.key === currentImageKey
+      );
+
+      if (!isSharedWithDish) {
+        await imageHelper.deleteImage(bundle.image.key);
+      }
+
     } catch (error) {
-      console.warn('刪除Bundle圖片失敗:', error);
+      // 圖片刪除失敗不影響 Bundle 刪除，只記錄警告
+      console.warn(`刪除 Bundle ${bundle.name} 的圖片時發生錯誤:`, error);
     }
   }
 
+  // 刪除 Bundle 記錄
   await bundle.deleteOne();
 
   return { success: true, message: 'Bundle已刪除' };
