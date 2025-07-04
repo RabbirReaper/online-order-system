@@ -379,8 +379,8 @@ export const checkPurchaseLimit = async (bundleId, userId) => {
 
 /**
  * 自動為沒有Bundle包裝的兌換券模板創建單一Bundle包裝
- * @param { String } brandId - 品牌ID
- * @returns { Promise < Object >} 創建結果統計
+ * @param {String} brandId - 品牌ID
+ * @returns {Promise<Object>} 創建結果統計
  */
 export const autoCreateBundlesForVouchers = async (brandId) => {
   try {
@@ -410,30 +410,44 @@ export const autoCreateBundlesForVouchers = async (brandId) => {
 
     // 4. 為沒有Bundle的兌換券創建單一Bundle包裝
     const newBundles = [];
+    const skippedVouchers = []; // 記錄跳過的兌換券
 
     for (const voucher of vouchersWithoutBundles) {
       const dish = voucher.exchangeDishTemplate;
-      if (!dish) continue;
+      if (!dish) {
+        console.warn(`兌換券 ${voucher.name} 沒有關聯的餐點模板，跳過`);
+        skippedVouchers.push({
+          voucherName: voucher.name,
+          reason: '沒有關聯的餐點模板'
+        });
+        continue;
+      }
 
-      // 複製餐點圖片作為Bundle圖片
+      // 處理Bundle圖片
       let bundleImageInfo = null;
-      if (dish.image && dish.image.url) {
-        try {
-          bundleImageInfo = await imageHelper.copyImageForBundle(
-            dish.image.key,
-            `bundles/${brandId}`,
-            `${voucher.name.replace(/\s+/g, '_')}_bundle`
-          );
-        } catch (imageError) {
-          console.warn(`複製圖片失敗，使用預設圖片: ${imageError.message}`);
-          // 如果圖片複製失敗，可以設定預設圖片或跳過圖片
-        }
+
+      if (dish.image && dish.image.url && dish.image.key) {
+        // 方法1：直接重複使用餐點圖片的URL和key（共享圖片）
+        bundleImageInfo = {
+          url: dish.image.url,
+          key: dish.image.key,
+          alt: `${voucher.name} bundle image`
+        };
+      } else {
+        // 沒有圖片的情況下跳過這個兌換券
+        console.warn(`兌換券 ${voucher.name} 對應的餐點沒有圖片，跳過`);
+        skippedVouchers.push({
+          voucherName: voucher.name,
+          reason: '餐點沒有圖片'
+        });
+        continue;
       }
 
       const bundleData = {
         brand: brandId,
         name: voucher.name,
         description: `單個 ${voucher.name}`,
+        image: bundleImageInfo, // 確保圖片資訊存在
         bundleItems: [{
           voucherTemplate: voucher._id,
           quantity: 1,
@@ -445,28 +459,33 @@ export const autoCreateBundlesForVouchers = async (brandId) => {
           selling: dish.basePrice
         },
         pointPrice: {
-          original: Math.ceil(dish.basePrice / 100), // 假設100元=1點的轉換率
+          original: Math.ceil(dish.basePrice / 10), // 假設10元=1點的轉換率
           selling: Math.ceil(dish.basePrice / 10)
         },
         voucherValidityDays: 30, // 預設30天有效期
         isActive: true
       };
 
-      if (bundleImageInfo) {
-        bundleData.image = bundleImageInfo;
+      try {
+        const newBundle = new Bundle(bundleData);
+        await newBundle.save();
+        newBundles.push(newBundle);
+      } catch (saveError) {
+        console.error(`創建Bundle失敗 - 兌換券: ${voucher.name}`, saveError);
+        skippedVouchers.push({
+          voucherName: voucher.name,
+          reason: `創建失敗: ${saveError.message}`
+        });
       }
-
-      const newBundle = new Bundle(bundleData);
-      await newBundle.save();
-      newBundles.push(newBundle);
     }
 
     // 5. 準備回傳的統計資訊
     const statistics = {
       totalVouchers: allVoucherTemplates.length,           // 總兌換券數量
       existingCount: existingBundles.length,              // 已有Bundle的數量
-      createdCount: vouchersWithoutBundles.length,        // 新建立的數量
-      finalTotal: existingBundles.length + vouchersWithoutBundles.length  // 處理後的總數量
+      createdCount: newBundles.length,                    // 成功建立的數量
+      skippedCount: skippedVouchers.length,               // 跳過的數量
+      finalTotal: existingBundles.length + newBundles.length  // 處理後的總數量
     };
 
     const createdBundlesInfo = newBundles.map(bundle => {
@@ -486,7 +505,8 @@ export const autoCreateBundlesForVouchers = async (brandId) => {
     return {
       success: true,
       statistics,
-      createdBundles: createdBundlesInfo
+      createdBundles: createdBundlesInfo,
+      skippedVouchers // 新增：回傳跳過的兌換券資訊
     };
 
   } catch (error) {

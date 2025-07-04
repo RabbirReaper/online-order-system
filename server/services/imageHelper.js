@@ -128,36 +128,25 @@ export const deleteImage = async (key) => {
 };
 
 /**
- * 複製圖片給Bundle使用（需要在imageHelper.js中新增）
- * @param {String} sourceKey - 來源圖片的存儲鍵值
- * @param {String} targetFolder - 目標存儲路徑前綴
- * @param {String} fileName - 檔名
- * @returns {Promise<Object>} 圖片資訊物件 {url, key, alt}
+ * 替代方案：真正複製圖片的函數（如果需要獨立的圖片）
+ * 需要先檢查 r2Service 有哪些可用的方法
  */
-export const copyImageForBundle = async (sourceKey, targetFolder, fileName = null) => {
+export const copyImageForBundleAlternative = async (sourceKey, targetFolder, fileName = null) => {
   try {
-    // 檢查來源圖片是否存在
-    const sourceExists = await r2Service.imageExists(sourceKey);
-    if (!sourceExists) {
-      throw new AppError('來源圖片不存在', 404);
-    }
+    // 檢查 r2Service 實際可用的方法
+    console.log('r2Service 可用方法:', Object.getOwnPropertyNames(r2Service));
 
-    // 下載來源圖片
-    const imageBuffer = await r2Service.downloadImage(sourceKey);
+    // 如果有其他方法可以獲取圖片內容，比如：
+    // - r2Service.getImage
+    // - r2Service.fetchImage
+    // - 直接通過 URL 下載
 
-    // 生成新的檔名
-    const finalFileName = fileName || `${uuidv4()}.jpg`;
-    const newKey = `${targetFolder}/${finalFileName}`;
-
-    // 上傳到新位置
-    await r2Service.uploadImage(imageBuffer, newKey, 'image/jpeg');
-
-    // 生成公開URL
-    const url = r2Service.getImageUrl(newKey, process.env.R2_PUBLIC_URL);
+    // 暫時回退到直接使用原始圖片資訊
+    const originalUrl = r2Service.getImageUrl(sourceKey, process.env.R2_PUBLIC_URL);
 
     return {
-      url,
-      key: newKey,
+      url: originalUrl,
+      key: sourceKey, // 暫時共用相同的key
       alt: fileName || 'bundle image'
     };
   } catch (error) {

@@ -29,11 +29,28 @@
         </div>
       </div>
 
-      <div>
+      <div class="d-flex">
+        <button class="btn btn-success me-2" @click="autoCreateBundles" :disabled="isAutoCreating">
+          <span v-if="isAutoCreating" class="spinner-border spinner-border-sm me-1"></span>
+          <i v-else class="bi bi-magic me-1"></i>
+          {{ isAutoCreating ? '自動建立中...' : '自動建立包裝' }}
+        </button>
         <router-link :to="`/admin/${brandId}/bundles/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增包裝商品
         </router-link>
       </div>
+    </div>
+
+    <!-- 自動建立結果提示 -->
+    <div class="alert alert-success alert-dismissible" v-if="autoCreateResult" @click="autoCreateResult = null">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <strong>自動建立完成！</strong>
+      <div class="mt-2">
+        <div>總兌換券數量: {{ autoCreateResult.statistics?.totalVouchers || 0 }}</div>
+        <div>已有包裝數量: {{ autoCreateResult.statistics?.existingCount || 0 }}</div>
+        <div>新建立數量: {{ autoCreateResult.statistics?.createdCount || 0 }}</div>
+      </div>
+      <button type="button" class="btn-close" @click="autoCreateResult = null"></button>
     </div>
 
     <!-- 網路錯誤提示 -->
@@ -161,8 +178,11 @@
                   <i class="bi bi-inbox display-4 d-block mb-2"></i>
                   {{ searchQuery ? '沒有符合條件的包裝商品' : '尚未建立任何包裝商品' }}
                   <div class="mt-3" v-if="!searchQuery && bundles.length === 0">
+                    <button class="btn btn-success me-2" @click="autoCreateBundles">
+                      <i class="bi bi-magic me-1"></i>自動建立包裝商品
+                    </button>
                     <router-link :to="`/admin/${brandId}/bundles/create`" class="btn btn-primary">
-                      <i class="bi bi-plus-lg me-1"></i>建立第一個包裝商品
+                      <i class="bi bi-plus-lg me-1"></i>手動建立包裝商品
                     </router-link>
                   </div>
                 </td>
@@ -261,7 +281,9 @@ const brandId = computed(() => route.params.brandId);
 // 狀態
 const isLoading = ref(false);
 const isDeleting = ref(false);
+const isAutoCreating = ref(false);
 const errorMessage = ref('');
+const autoCreateResult = ref(null);
 
 // 搜尋和篩選
 const searchQuery = ref('');
@@ -397,6 +419,36 @@ const changePage = (page) => {
   }
 };
 
+// 自動建立 Bundle 包裝
+const autoCreateBundles = async () => {
+  if (!brandId.value) return;
+
+  isAutoCreating.value = true;
+  errorMessage.value = '';
+  autoCreateResult.value = null;
+
+  try {
+    const response = await api.bundle.autoCreateBundlesForVouchers({
+      brandId: brandId.value
+    });
+
+    if (response) {
+      autoCreateResult.value = response;
+      // 重新載入列表
+      await fetchBundles();
+    }
+  } catch (error) {
+    console.error('自動建立 Bundle 包裝失敗:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+      errorMessage.value = error.response.data.message;
+    } else {
+      errorMessage.value = '自動建立 Bundle 包裝時發生錯誤，請稍後再試';
+    }
+  } finally {
+    isAutoCreating.value = false;
+  }
+};
+
 // 獲取包裝商品列表
 const fetchBundles = async () => {
   if (!brandId.value) return;
@@ -442,7 +494,6 @@ const confirmToggleStatus = async () => {
 
   try {
     const newStatus = !bundleToToggle.value.isActive;
-    // 🔧 修正：參數名從 bundleId 改為 id
     await api.bundle.updateBundle({
       brandId: brandId.value,
       id: bundleToToggle.value._id,
@@ -473,7 +524,6 @@ const deleteBundle = async () => {
   isDeleting.value = true;
 
   try {
-    // 🔧 修正：參數名從 bundleId 改為 id
     await api.bundle.deleteBundle({
       brandId: brandId.value,
       id: bundleToDelete.value._id
@@ -547,5 +597,9 @@ onUnmounted(() => {
 .pagination .page-item.active .page-link {
   background-color: #0d6efd;
   border-color: #0d6efd;
+}
+
+.alert-dismissible {
+  cursor: pointer;
 }
 </style>
