@@ -146,7 +146,7 @@
                       <span class="input-group-text">點</span>
                     </div>
                     <div class="invalid-feedback" v-if="errors['pointPrice.original']">{{ errors['pointPrice.original']
-                      }}
+                    }}
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -195,7 +195,7 @@
                       <div class="row">
                         <div class="col-md-8 mb-3">
                           <label class="form-label required">兌換券模板</label>
-                          <select v-model="item.voucherTemplate" class="form-select"
+                          <select v-model="item.voucherTemplate._id" class="form-select"
                             :class="{ 'is-invalid': getItemError(index, 'voucherTemplate') }"
                             @change="updateVoucherName(index)">
                             <option value="">選擇兌換券模板</option>
@@ -688,8 +688,8 @@ const submitForm = async () => {
     };
 
     // 清理不需要的價格欄位
-    if (!hasCashPrice.value) {
-      delete submitData.cashPrice;
+    if (!hasPointPrice.value) {
+      submitData.pointPrice = null; // ✅ 明確告訴後端要清除
     }
     if (!hasPointPrice.value) {
       delete submitData.pointPrice;
