@@ -116,6 +116,16 @@ export default function (apiClient) {
      */
     createBundleInstance({ brandId, data }) {
       return apiClient.post(`/bundle/brands/${brandId}/bundles/instances`, data);
-    }
+    },
+
+    /**
+     * 自動為兌換券創建Bundle包裝 (管理員功能)
+     * @param {Object} params - 創建參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @returns {Promise} - API 回應，包含創建統計和詳情
+     */
+    autoCreateBundlesForVouchers({ brandId }) {
+      return apiClient.post(`/bundle/brands/${brandId}/bundles/auto-create`);
+    },
   };
 }

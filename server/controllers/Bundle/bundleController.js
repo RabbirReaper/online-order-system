@@ -134,3 +134,24 @@ export const checkPurchaseLimit = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * 自動為兌換券創建Bundle包裝
+ */
+export const autoCreateBundlesForVouchers = asyncHandler(async (req, res) => {
+  const brandId = req.brandId || req.params.brandId;
+
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID為必須參數'
+    });
+  }
+
+  const result = await bundleService.autoCreateBundlesForVouchers(brandId);
+
+  res.json({
+    success: true,
+    message: 'Bundle包裝自動創建完成',
+    ...result
+  });
+});

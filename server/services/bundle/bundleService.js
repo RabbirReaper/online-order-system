@@ -376,3 +376,121 @@ export const checkPurchaseLimit = async (bundleId, userId) => {
     throw new AppError(`檢查購買限制失敗: ${error.message}`, 500);
   }
 };
+
+/**
+ * 自動為沒有Bundle包裝的兌換券模板創建單一Bundle包裝
+ * @param { String } brandId - 品牌ID
+ * @returns { Promise < Object >} 創建結果統計
+ */
+export const autoCreateBundlesForVouchers = async (brandId) => {
+  try {
+    // 1. 獲取所有該品牌的兌換券模板
+    const allVoucherTemplates = await VoucherTemplate.find({
+      brand: brandId,
+      isActive: true
+    }).populate('exchangeDishTemplate', 'name basePrice image');
+
+    // 2. 獲取已經有Bundle包裝的兌換券模板ID列表
+    const existingBundles = await Bundle.find({
+      brand: brandId,
+      'bundleItems.quantity': 1,  // 只有一個兌換券的Bundle
+      'bundleItems': { $size: 1 } // 只有一個bundleItem
+    }).select('bundleItems.voucherTemplate');
+
+    const existingVoucherIds = new Set(
+      existingBundles.flatMap(bundle =>
+        bundle.bundleItems.map(item => item.voucherTemplate.toString())
+      )
+    );
+
+    // 3. 找出沒有Bundle包裝的兌換券模板
+    const vouchersWithoutBundles = allVoucherTemplates.filter(
+      voucher => !existingVoucherIds.has(voucher._id.toString())
+    );
+
+    // 4. 為沒有Bundle的兌換券創建單一Bundle包裝
+    const newBundles = [];
+
+    for (const voucher of vouchersWithoutBundles) {
+      const dish = voucher.exchangeDishTemplate;
+      if (!dish) continue;
+
+      // 複製餐點圖片作為Bundle圖片
+      let bundleImageInfo = null;
+      if (dish.image && dish.image.url) {
+        try {
+          bundleImageInfo = await imageHelper.copyImageForBundle(
+            dish.image.key,
+            `bundles/${brandId}`,
+            `${voucher.name.replace(/\s+/g, '_')}_bundle`
+          );
+        } catch (imageError) {
+          console.warn(`複製圖片失敗，使用預設圖片: ${imageError.message}`);
+          // 如果圖片複製失敗，可以設定預設圖片或跳過圖片
+        }
+      }
+
+      const bundleData = {
+        brand: brandId,
+        name: voucher.name,
+        description: `單個 ${voucher.name}`,
+        bundleItems: [{
+          voucherTemplate: voucher._id,
+          quantity: 1,
+          voucherName: voucher.name
+        }],
+        // 設定價格，基於餐點價格
+        cashPrice: {
+          original: dish.basePrice,
+          selling: dish.basePrice
+        },
+        pointPrice: {
+          original: Math.ceil(dish.basePrice / 100), // 假設100元=1點的轉換率
+          selling: Math.ceil(dish.basePrice / 10)
+        },
+        voucherValidityDays: 30, // 預設30天有效期
+        isActive: true
+      };
+
+      if (bundleImageInfo) {
+        bundleData.image = bundleImageInfo;
+      }
+
+      const newBundle = new Bundle(bundleData);
+      await newBundle.save();
+      newBundles.push(newBundle);
+    }
+
+    // 5. 準備回傳的統計資訊
+    const statistics = {
+      totalVouchers: allVoucherTemplates.length,           // 總兌換券數量
+      existingCount: existingBundles.length,              // 已有Bundle的數量
+      createdCount: vouchersWithoutBundles.length,        // 新建立的數量
+      finalTotal: existingBundles.length + vouchersWithoutBundles.length  // 處理後的總數量
+    };
+
+    const createdBundlesInfo = newBundles.map(bundle => {
+      const voucher = vouchersWithoutBundles.find(v =>
+        bundle.bundleItems[0].voucherTemplate.toString() === v._id.toString()
+      );
+      return {
+        id: bundle._id,
+        name: bundle.name,
+        voucherName: voucher?.name,
+        dishName: voucher?.exchangeDishTemplate?.name,
+        cashPrice: bundle.cashPrice?.selling || bundle.cashPrice?.original,
+        pointPrice: bundle.pointPrice?.selling || bundle.pointPrice?.original
+      };
+    });
+
+    return {
+      success: true,
+      statistics,
+      createdBundles: createdBundlesInfo
+    };
+
+  } catch (error) {
+    console.error('自動創建Bundle包裝時發生錯誤:', error);
+    throw new AppError(`自動創建Bundle包裝失敗: ${error.message}`, 500);
+  }
+};

@@ -83,4 +83,12 @@ router.post('/brands/:brandId/bundles/instances',
   bundleInstanceController.createBundleInstance
 );
 
+// 自動為兌換券創建Bundle包裝
+router.post('/brands/:brandId/bundles/auto-create',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleController.autoCreateBundlesForVouchers
+);
+
 export default router;

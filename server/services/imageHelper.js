@@ -126,3 +126,43 @@ export const deleteImage = async (key) => {
     throw new AppError(`圖片刪除失敗: ${error.message}`, 500);
   }
 };
+
+/**
+ * 複製圖片給Bundle使用（需要在imageHelper.js中新增）
+ * @param {String} sourceKey - 來源圖片的存儲鍵值
+ * @param {String} targetFolder - 目標存儲路徑前綴
+ * @param {String} fileName - 檔名
+ * @returns {Promise<Object>} 圖片資訊物件 {url, key, alt}
+ */
+export const copyImageForBundle = async (sourceKey, targetFolder, fileName = null) => {
+  try {
+    // 檢查來源圖片是否存在
+    const sourceExists = await r2Service.imageExists(sourceKey);
+    if (!sourceExists) {
+      throw new AppError('來源圖片不存在', 404);
+    }
+
+    // 下載來源圖片
+    const imageBuffer = await r2Service.downloadImage(sourceKey);
+
+    // 生成新的檔名
+    const finalFileName = fileName || `${uuidv4()}.jpg`;
+    const newKey = `${targetFolder}/${finalFileName}`;
+
+    // 上傳到新位置
+    await r2Service.uploadImage(imageBuffer, newKey, 'image/jpeg');
+
+    // 生成公開URL
+    const url = r2Service.getImageUrl(newKey, process.env.R2_PUBLIC_URL);
+
+    return {
+      url,
+      key: newKey,
+      alt: fileName || 'bundle image'
+    };
+  } catch (error) {
+    console.error('複製圖片錯誤:', error);
+    throw new AppError(`圖片複製失敗: ${error.message}`, 500);
+  }
+};
+
