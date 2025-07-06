@@ -15,8 +15,8 @@ import { AppError } from '../../middlewares/error.js';
  * @returns {Promise<Array>} 所有優惠券模板
  */
 export const getAllCouponTemplates = async (brandId) => {
+  // 移除錯誤的 populate，因為 CouponTemplate 沒有 exchangeInfo 欄位
   const templates = await CouponTemplate.find({ brand: brandId })
-    .populate('exchangeInfo.items.dishTemplate')
     .sort({ createdAt: -1 });
 
   return templates;
@@ -29,10 +29,11 @@ export const getAllCouponTemplates = async (brandId) => {
  * @returns {Promise<Object>} 優惠券模板
  */
 export const getCouponTemplateById = async (templateId, brandId) => {
+  // 移除錯誤的 populate
   const template = await CouponTemplate.findOne({
     _id: templateId,
     brand: brandId
-  }).populate('exchangeInfo.items.dishTemplate');
+  });
 
   if (!template) {
     throw new AppError('優惠券模板不存在或無權訪問', 404);
@@ -48,19 +49,13 @@ export const getCouponTemplateById = async (templateId, brandId) => {
  */
 export const createCouponTemplate = async (templateData) => {
   // 驗證必要欄位
-  if (!templateData.name || !templateData.couponType || !templateData.validityPeriod) {
-    throw new AppError('名稱、類型和有效期為必填欄位', 400);
+  if (!templateData.name || !templateData.validityPeriod) {
+    throw new AppError('名稱和有效期為必填欄位', 400);
   }
 
-  // 根據類型驗證特定欄位
-  if (templateData.couponType === 'discount') {
-    if (!templateData.discountInfo || !templateData.discountInfo.discountType || !templateData.discountInfo.discountValue) {
-      throw new AppError('折扣券必須提供折扣類型和折扣值', 400);
-    }
-  } else if (templateData.couponType === 'exchange') {
-    if (!templateData.exchangeInfo || !templateData.exchangeInfo.items || templateData.exchangeInfo.items.length === 0) {
-      throw new AppError('兌換券必須提供可兌換的項目', 400);
-    }
+  // 驗證折扣資訊 (Coupon 系統只處理折扣，不處理兌換)
+  if (!templateData.discountInfo || !templateData.discountInfo.discountType || !templateData.discountInfo.discountValue) {
+    throw new AppError('折扣券必須提供折扣類型和折扣值', 400);
   }
 
   const newTemplate = new CouponTemplate(templateData);
@@ -125,9 +120,6 @@ export const deleteCouponTemplate = async (templateId, brandId) => {
     throw new AppError('還有未使用的優惠券實例，無法刪除模板', 400);
   }
 
-  // 注意：移除了 Bundle 相關檢查
-  // Coupon 系統現在完全獨立，不與 Bundle 系統關聯
-
   await template.deleteOne();
 
   return { success: true, message: '優惠券模板已刪除' };
@@ -153,7 +145,7 @@ export const getUserCoupons = async (userId, options = {}) => {
   }
 
   const coupons = await CouponInstance.find(query)
-    .populate('template', 'name description couponType discountInfo exchangeInfo')
+    .populate('template', 'name description discountInfo')
     .sort({ createdAt: -1 });
 
   return coupons;
@@ -183,25 +175,22 @@ export const issueCouponToUser = async (userId, templateId, adminId, reason = '�
   expiryDate.setDate(expiryDate.getDate() + template.validityPeriod);
 
   const couponInstance = new CouponInstance({
+    brand: template.brand,
     template: templateId,
     user: userId,
     couponName: template.name,
-    couponType: template.couponType,
+    discountInfo: template.discountInfo, // 複製折扣資訊
     acquiredAt: new Date(),
     expiryDate,
-    pointsUsed: 0, // Coupon 不消耗點數
     issuedBy: adminId,
     issueReason: reason
   });
 
-  // 根據券類型設置相關資訊
-  if (template.couponType === 'discount') {
-    couponInstance.discount = template.discountInfo.discountValue;
-  } else if (template.couponType === 'exchange') {
-    couponInstance.exchangeItems = template.exchangeInfo.items;
-  }
-
   await couponInstance.save();
+
+  // 更新模板發放數量
+  template.totalIssued += 1;
+  await template.save();
 
   return {
     success: true,
@@ -235,7 +224,7 @@ export const useCoupon = async (couponId, orderId = null) => {
   coupon.isUsed = true;
   coupon.usedAt = new Date();
   if (orderId) {
-    coupon.usedInOrder = orderId;
+    coupon.order = orderId;
   }
 
   await coupon.save();
