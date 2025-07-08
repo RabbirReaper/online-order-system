@@ -22,14 +22,12 @@ export const getAllStoreMenus = asyncHandler(async (req, res) => {
 
   const menus = await menuService.getAllStoreMenus(storeId, options);
 
-  res.status(200).json({
+  res.json({
     success: true,
-    menus,
-    message: '店鋪菜單列表獲取成功'
+    message: '店鋪菜單列表獲取成功',
+    menus
   });
 });
-
-
 
 /**
  * 根據ID獲取特定菜單
@@ -44,10 +42,10 @@ export const getMenuById = asyncHandler(async (req, res) => {
     includeUnpublished === 'true'
   );
 
-  res.status(200).json({
+  res.json({
     success: true,
-    menu,
-    message: '菜單獲取成功'
+    message: '菜單獲取成功',
+    menu
   });
 });
 
@@ -68,8 +66,8 @@ export const createMenu = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    menu,
-    message: '菜單創建成功'
+    message: '菜單創建成功',
+    menu
   });
 });
 
@@ -81,10 +79,10 @@ export const updateMenu = asyncHandler(async (req, res) => {
 
   const menu = await menuService.updateMenu(storeId, menuId, req.body);
 
-  res.status(200).json({
+  res.json({
     success: true,
-    menu,
-    message: '菜單更新成功'
+    message: '菜單更新成功',
+    menu
   });
 });
 
@@ -94,10 +92,10 @@ export const updateMenu = asyncHandler(async (req, res) => {
 export const deleteMenu = asyncHandler(async (req, res) => {
   const { brandId, storeId, menuId } = req.params;
 
-  const result = await menuService.deleteMenu(storeId, menuId);
+  const message = await menuService.deleteMenu(storeId, menuId);
 
-  res.status(200).json({
+  res.json({
     success: true,
-    ...result
+    message
   });
 });

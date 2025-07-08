@@ -76,8 +76,6 @@ export const getAllStoreMenus = async (storeId, options = {}) => {
   return menus;
 };
 
-
-
 /**
  * 根據ID獲取菜單
  * @param {String} storeId - 店鋪ID
@@ -283,7 +281,7 @@ export const updateMenu = async (storeId, menuId, updateData) => {
  * 刪除菜單
  * @param {String} storeId - 店鋪ID
  * @param {String} menuId - 菜單ID
- * @returns {Promise<Object>} 刪除結果
+ * @returns {Promise<String>} 刪除成功訊息
  */
 export const deleteMenu = async (storeId, menuId) => {
   // 檢查店鋪是否存在
@@ -303,5 +301,5 @@ export const deleteMenu = async (storeId, menuId) => {
     throw new AppError('菜單不存在或不屬於指定店鋪', 404);
   }
 
-  return { success: true, message: '菜單已刪除' };
+  return '菜單已刪除';
 };
