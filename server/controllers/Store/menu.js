@@ -29,38 +29,7 @@ export const getAllStoreMenus = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * 獲取店鋪菜單（單個，向後兼容）
- */
-export const getStoreMenu = asyncHandler(async (req, res) => {
-  const { brandId, storeId } = req.params;
-  const { includeUnpublished, menuType } = req.query;
 
-  try {
-    const menu = await menuService.getStoreMenu(
-      storeId,
-      includeUnpublished === 'true',
-      menuType || null
-    );
-
-    res.status(200).json({
-      success: true,
-      menu,
-      message: '菜單獲取成功'
-    });
-  } catch (error) {
-    if (error.message === '此店鋪尚未建立菜單') {
-      // 兼容前端邏輯，返回特殊標記
-      res.status(200).json({
-        success: true,
-        menu: { exists: false },
-        message: '此店鋪尚未建立菜單'
-      });
-    } else {
-      throw error;
-    }
-  }
-});
 
 /**
  * 根據ID獲取特定菜單
@@ -130,87 +99,5 @@ export const deleteMenu = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     ...result
-  });
-});
-
-/**
- * 切換菜單啟用狀態
- */
-export const toggleMenuActive = asyncHandler(async (req, res) => {
-  const { brandId, storeId, menuId } = req.params;
-  const { active } = req.body;
-
-  const menu = await menuService.toggleMenuActive(storeId, menuId, active);
-
-  res.status(200).json({
-    success: true,
-    menu,
-    message: `菜單已${active ? '啟用' : '停用'}`
-  });
-});
-
-/**
- * 切換菜單項目啟用狀態
- */
-export const toggleMenuItem = asyncHandler(async (req, res) => {
-  const { brandId, storeId, menuId } = req.params;
-  const { categoryIndex, itemIndex, isShowing } = req.body;
-
-  const menu = await menuService.toggleMenuItem(
-    storeId,
-    menuId,
-    categoryIndex,
-    itemIndex,
-    isShowing
-  );
-
-  res.status(200).json({
-    success: true,
-    menu,
-    message: `菜單項目已${isShowing ? '顯示' : '隱藏'}`
-  });
-});
-
-
-
-/**
- * 添加商品到菜單
- */
-export const addItemToMenu = asyncHandler(async (req, res) => {
-  const { brandId, storeId, menuId } = req.params;
-  const { categoryIndex, itemData } = req.body;
-
-  const menu = await menuService.addItemToMenu(
-    storeId,
-    menuId,
-    categoryIndex,
-    itemData
-  );
-
-  res.status(200).json({
-    success: true,
-    menu,
-    message: '商品添加成功'
-  });
-});
-
-/**
- * 從菜單移除商品
- */
-export const removeItemFromMenu = asyncHandler(async (req, res) => {
-  const { brandId, storeId, menuId } = req.params;
-  const { categoryIndex, itemIndex } = req.body;
-
-  const menu = await menuService.removeItemFromMenu(
-    storeId,
-    menuId,
-    categoryIndex,
-    itemIndex
-  );
-
-  res.status(200).json({
-    success: true,
-    menu,
-    message: '商品移除成功'
   });
 });

@@ -26,23 +26,7 @@ export default function (apiClient) {
       });
     },
 
-    /**
-     * 獲取店鋪菜單（單個，向後兼容）
-     * @param {Object} params - 查詢參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID
-     * @param {boolean} [params.includeUnpublished=true] - 是否包含未發布的項目
-     * @param {string} [params.menuType] - 指定菜單類型，不指定則返回第一個啟用的菜單
-     * @returns {Promise} - API 回應
-     */
-    getStoreMenu({ brandId, storeId, includeUnpublished = true, menuType }) {
-      return apiClient.get(`/menu/brands/${brandId}/${storeId}/menu`, {
-        params: {
-          includeUnpublished,
-          menuType
-        }
-      });
-    },
+
 
     /**
      * 根據ID獲取特定菜單
@@ -99,75 +83,5 @@ export default function (apiClient) {
     deleteMenu({ brandId, storeId, menuId }) {
       return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`);
     },
-
-    /**
-     * 啟用/停用菜單
-     * @param {Object} params - 狀態參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.menuId - 菜單ID
-     * @param {boolean} params.active - 是否啟用
-     * @returns {Promise} - API 回應
-     */
-    toggleMenuActive({ brandId, storeId, menuId, active }) {
-      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/toggle`, { active });
-    },
-
-    /**
-     * 切換菜單項目啟用狀態
-     * @param {Object} params - 狀態參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.menuId - 菜單ID
-     * @param {number} params.categoryIndex - 分類索引
-     * @param {number} params.itemIndex - 商品索引
-     * @param {boolean} params.isShowing - 是否啟用
-     * @returns {Promise} - API 回應
-     */
-    toggleMenuItem({ brandId, storeId, menuId, categoryIndex, itemIndex, isShowing }) {
-      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/toggle-item`, {
-        categoryIndex: parseInt(categoryIndex, 10),
-        itemIndex: parseInt(itemIndex, 10),
-        isShowing
-      });
-    },
-
-
-
-    /**
-     * 添加商品到菜單
-     * @param {Object} params - 添加參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.menuId - 菜單ID
-     * @param {number} params.categoryIndex - 分類索引
-     * @param {Object} params.itemData - 商品資料
-     * @returns {Promise} - API 回應
-     */
-    addItemToMenu({ brandId, storeId, menuId, categoryIndex, itemData }) {
-      return apiClient.post(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
-        categoryIndex: parseInt(categoryIndex, 10),
-        itemData
-      });
-    },
-
-    /**
-     * 從菜單中移除商品
-     * @param {Object} params - 移除參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.menuId - 菜單ID
-     * @param {number} params.categoryIndex - 分類索引
-     * @param {number} params.itemIndex - 商品索引
-     * @returns {Promise} - API 回應
-     */
-    removeItemFromMenu({ brandId, storeId, menuId, categoryIndex, itemIndex }) {
-      return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/item`, {
-        data: {
-          categoryIndex: parseInt(categoryIndex, 10),
-          itemIndex: parseInt(itemIndex, 10)
-        }
-      });
-    }
   };
 }
