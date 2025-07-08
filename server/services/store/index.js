@@ -25,14 +25,18 @@ export const {
   updateStoreBusinessHours
 } = storeManagementService;
 
+// 更新菜單服務導出 - 支援多菜單邏輯
 export const {
-  getStoreMenu,
+  getAllStoreMenus,        // 🆕 獲取店鋪的所有菜單
+  getStoreMenu,           // 獲取店鋪菜單（向後兼容）
+  getMenuById,            // 🆕 根據ID獲取特定菜單
   createMenu,
   updateMenu,
   deleteMenu,
+  toggleMenuActive,       // 🆕 切換菜單啟用狀態
   toggleMenuItem,
-  updateCategoryOrder,
-  updateDishOrder
+  addItemToMenu,          // 🆕 添加商品到菜單
+  removeItemFromMenu      // 🆕 從菜單移除商品
 } = menuService;
 
 export const {

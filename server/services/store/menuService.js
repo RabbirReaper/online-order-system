@@ -2,6 +2,7 @@
  * 菜單服務
  * 處理店鋪菜單相關的業務邏輯
  * 菜單中顯示 Bundle 作為商品，Bundle 內含 VoucherTemplate
+ * 修改邏輯：一個店鋪可以有多個菜單，但同種類型一次只能有一個啟用
  */
 
 import Menu from '../../models/Menu/Menu.js';
@@ -11,12 +12,17 @@ import Bundle from '../../models/Promotion/Bundle.js';
 import { AppError } from '../../middlewares/error.js';
 
 /**
- * 獲取店鋪菜單
+ * 獲取店鋪的所有菜單
  * @param {String} storeId - 店鋪ID
- * @param {Boolean} includeUnpublished - 是否包含未發布的項目（預設 false）
- * @returns {Promise<Object>} 菜單物件
+ * @param {Object} options - 查詢選項
+ * @param {Boolean} options.includeUnpublished - 是否包含未發布的項目（預設 false）
+ * @param {Boolean} options.activeOnly - 是否只返回啟用的菜單（預設 false）
+ * @param {String} options.menuType - 篩選特定類型的菜單（可選）
+ * @returns {Promise<Array>} 菜單列表
  */
-export const getStoreMenu = async (storeId, includeUnpublished = false) => {
+export const getAllStoreMenus = async (storeId, options = {}) => {
+  const { includeUnpublished = false, activeOnly = false, menuType } = options;
+
   // 檢查店鋪是否存在
   const store = await Store.findById(storeId);
 
@@ -24,8 +30,126 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
     throw new AppError('店鋪不存在', 404);
   }
 
-  // 查詢菜單 - Bundle 作為商品項目
-  const menu = await Menu.findOne({ store: storeId })
+  // 構建查詢條件
+  const queryConditions = { store: storeId };
+
+  if (activeOnly) {
+    queryConditions.isActive = true;
+  }
+
+  if (menuType) {
+    queryConditions.menuType = menuType;
+  }
+
+  // 查詢菜單列表
+  const menus = await Menu.find(queryConditions)
+    .populate([
+      {
+        path: 'categories.items.dishTemplate',
+        model: 'DishTemplate',
+        select: 'name description basePrice image tags optionCategories'
+      },
+      {
+        path: 'categories.items.bundle',
+        model: 'Bundle',
+        select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
+        populate: {
+          path: 'bundleItems.voucherTemplate',
+          select: 'name description voucherType'
+        }
+      }
+    ])
+    .sort({ menuType: 1, createdAt: -1 });
+
+  // 如果不包含未發布項目，過濾掉 isShowing: false 的項目
+  if (!includeUnpublished) {
+    menus.forEach(menu => {
+      if (menu.categories) {
+        menu.categories = menu.categories.map(category => ({
+          ...category.toObject(),
+          items: category.items.filter(item => item.isShowing === true)
+        }));
+      }
+    });
+  }
+
+  return menus;
+};
+
+/**
+ * 獲取店鋪菜單（單個菜單，向後兼容）
+ * @param {String} storeId - 店鋪ID
+ * @param {Boolean} includeUnpublished - 是否包含未發布的項目（預設 false）
+ * @param {String} menuType - 菜單類型（可選，預設獲取第一個啟用的菜單）
+ * @returns {Promise<Object>} 菜單物件
+ */
+export const getStoreMenu = async (storeId, includeUnpublished = false, menuType = null) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  // 構建查詢條件
+  const queryConditions = { store: storeId, isActive: true };
+
+  if (menuType) {
+    queryConditions.menuType = menuType;
+  }
+
+  // 查詢菜單 - 如果指定類型則找該類型，否則找第一個啟用的
+  const menu = await Menu.findOne(queryConditions)
+    .populate([
+      {
+        path: 'categories.items.dishTemplate',
+        model: 'DishTemplate',
+        select: 'name description basePrice image tags optionCategories'
+      },
+      {
+        path: 'categories.items.bundle',
+        model: 'Bundle',
+        select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
+        populate: {
+          path: 'bundleItems.voucherTemplate',
+          select: 'name description voucherType'
+        }
+      }
+    ])
+    .sort({ createdAt: -1 });
+
+  if (!menu) {
+    throw new AppError('此店鋪尚未建立菜單', 404);
+  }
+
+  // 如果不包含未發布項目，過濾掉 isShowing: false 的項目
+  if (!includeUnpublished) {
+    menu.categories = menu.categories.map(category => ({
+      ...category.toObject(),
+      items: category.items.filter(item => item.isShowing === true)
+    }));
+  }
+
+  return menu;
+};
+
+/**
+ * 根據ID獲取菜單
+ * @param {String} storeId - 店鋪ID
+ * @param {String} menuId - 菜單ID
+ * @param {Boolean} includeUnpublished - 是否包含未發布的項目（預設 false）
+ * @returns {Promise<Object>} 菜單物件
+ */
+export const getMenuById = async (storeId, menuId, includeUnpublished = false) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  // 查詢特定菜單
+  const menu = await Menu.findOne({ _id: menuId, store: storeId })
     .populate([
       {
         path: 'categories.items.dishTemplate',
@@ -44,7 +168,7 @@ export const getStoreMenu = async (storeId, includeUnpublished = false) => {
     ]);
 
   if (!menu) {
-    throw new AppError('此店鋪尚未建立菜單', 404);
+    throw new AppError('菜單不存在', 404);
   }
 
   // 如果不包含未發布項目，過濾掉 isShowing: false 的項目
@@ -72,11 +196,17 @@ export const createMenu = async (storeId, menuData) => {
     throw new AppError('店鋪不存在', 404);
   }
 
-  // 檢查是否已有菜單
-  const existingMenu = await Menu.findOne({ store: storeId });
+  // 如果新菜單要設為啟用，檢查同類型是否已有啟用的菜單
+  if (menuData.isActive !== false) { // 預設為啟用
+    const existingActiveMenu = await Menu.findOne({
+      store: storeId,
+      menuType: menuData.menuType,
+      isActive: true
+    });
 
-  if (existingMenu) {
-    throw new AppError('此店鋪已有菜單，請使用更新功能', 400);
+    if (existingActiveMenu) {
+      throw new AppError(`此店鋪已有啟用的「${getMenuTypeText(menuData.menuType)}」類型菜單：${existingActiveMenu.name}。請先停用現有菜單或將新菜單設為停用狀態。`, 400);
+    }
   }
 
   // 創建菜單
@@ -119,6 +249,53 @@ export const updateMenu = async (storeId, menuId, updateData) => {
 
   if (!store) {
     throw new AppError('店鋪不存在', 404);
+  }
+
+  // 先獲取當前菜單資訊
+  const currentMenu = await Menu.findOne({ _id: menuId, store: storeId });
+
+  if (!currentMenu) {
+    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
+  }
+
+  // 檢查啟用狀態變更的邏輯
+  if (updateData.isActive === true && !currentMenu.isActive) {
+    // 要啟用此菜單，檢查同類型是否已有其他啟用的菜單
+    const menuType = updateData.menuType || currentMenu.menuType;
+    const existingActiveMenu = await Menu.findOne({
+      store: storeId,
+      menuType: menuType,
+      isActive: true,
+      _id: { $ne: menuId } // 排除當前菜單
+    });
+
+    if (existingActiveMenu) {
+      // 自動停用同類型的其他啟用菜單
+      await Menu.updateMany(
+        {
+          store: storeId,
+          menuType: menuType,
+          isActive: true,
+          _id: { $ne: menuId }
+        },
+        { isActive: false }
+      );
+    }
+  }
+
+  // 檢查菜單類型變更的邏輯
+  if (updateData.menuType && updateData.menuType !== currentMenu.menuType && currentMenu.isActive) {
+    // 如果要改變菜單類型且當前是啟用狀態，檢查新類型是否已有啟用的菜單
+    const existingActiveMenu = await Menu.findOne({
+      store: storeId,
+      menuType: updateData.menuType,
+      isActive: true,
+      _id: { $ne: menuId }
+    });
+
+    if (existingActiveMenu) {
+      throw new AppError(`此店鋪已有啟用的「${getMenuTypeText(updateData.menuType)}」類型菜單：${existingActiveMenu.name}。請先停用該菜單再進行類型變更。`, 400);
+    }
   }
 
   // 查找並更新菜單
@@ -176,6 +353,71 @@ export const deleteMenu = async (storeId, menuId) => {
   }
 
   return { success: true, message: '菜單已刪除' };
+};
+
+/**
+ * 切換菜單啟用狀態
+ * @param {String} storeId - 店鋪ID
+ * @param {String} menuId - 菜單ID
+ * @param {Boolean} isActive - 是否啟用
+ * @returns {Promise<Object>} 更新後的菜單
+ */
+export const toggleMenuActive = async (storeId, menuId, isActive) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId);
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404);
+  }
+
+  const menu = await Menu.findOne({ _id: menuId, store: storeId });
+
+  if (!menu) {
+    throw new AppError('菜單不存在或不屬於指定店鋪', 404);
+  }
+
+  // 如果要啟用菜單，檢查同類型是否已有啟用的菜單
+  if (isActive && !menu.isActive) {
+    const existingActiveMenu = await Menu.findOne({
+      store: storeId,
+      menuType: menu.menuType,
+      isActive: true,
+      _id: { $ne: menuId }
+    });
+
+    if (existingActiveMenu) {
+      // 自動停用同類型的其他啟用菜單
+      await Menu.updateMany(
+        {
+          store: storeId,
+          menuType: menu.menuType,
+          isActive: true,
+          _id: { $ne: menuId }
+        },
+        { isActive: false }
+      );
+    }
+  }
+
+  menu.isActive = isActive;
+  await menu.save();
+
+  return await Menu.findById(menu._id).populate([
+    {
+      path: 'categories.items.dishTemplate',
+      model: 'DishTemplate',
+      select: 'name description basePrice image tags optionCategories'
+    },
+    {
+      path: 'categories.items.bundle',
+      model: 'Bundle',
+      select: 'name description image sellingPoint cashPrice pointPrice bundleItems',
+      populate: {
+        path: 'bundleItems.voucherTemplate',
+        select: 'name description voucherType'
+      }
+    }
+  ]);
 };
 
 /**
@@ -361,4 +603,18 @@ export const toggleMenuItem = async (storeId, menuId, categoryIndex, itemIndex, 
       }
     }
   ]);
+};
+
+/**
+ * 獲取菜單類型文字（輔助函數）
+ * @param {String} menuType - 菜單類型
+ * @returns {String} 菜單類型文字
+ */
+const getMenuTypeText = (menuType) => {
+  const typeMap = {
+    'food': '現金購買餐點',
+    'cash_coupon': '現金購買預購券',
+    'point_exchange': '點數兌換'
+  };
+  return typeMap[menuType] || menuType;
 };

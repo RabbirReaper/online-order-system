@@ -9,10 +9,23 @@ import {
 
 const router = express.Router();
 
-// 菜單路由
-// 獲取店鋪菜單
+// =============================================================================
+// 菜單路由 - 支援多菜單邏輯
+// =============================================================================
+
+// 🆕 獲取店鋪的所有菜單
+router.get('/brands/:brandId/:storeId/menus',
+  menuController.getAllStoreMenus
+);
+
+// 獲取店鋪菜單（單個，向後兼容）
 router.get('/brands/:brandId/:storeId/menu',
   menuController.getStoreMenu
+);
+
+// 🆕 根據ID獲取特定菜單
+router.get('/brands/:brandId/:storeId/menu/:menuId',
+  menuController.getMenuById
 );
 
 // 創建菜單（系統級和品牌級）
@@ -60,23 +73,6 @@ router.put('/brands/:brandId/:storeId/menu/:menuId/toggle-item',
   menuController.toggleMenuItem
 );
 
-// 更新分類順序
-router.put('/brands/:brandId/:storeId/menu/:menuId/category-order',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  requireStoreAccess,
-  menuController.updateCategoryOrder
-);
-
-// 更新商品順序
-router.put('/brands/:brandId/:storeId/menu/:menuId/item-order',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
-  requireStoreAccess,
-  menuController.updateItemOrder
-);
 
 // 添加商品到菜單
 router.post('/brands/:brandId/:storeId/menu/:menuId/item',
