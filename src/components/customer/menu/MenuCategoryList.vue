@@ -20,8 +20,9 @@
           <h4 class="fw-bold">{{ category.name }}</h4>
         </div>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
-          <div v-for="item in getVisibleItems(category)" :key="item._id" class="col">
-            <MenuItemCard :item="item" :inventory-info="getInventoryInfo(item)" @select-item="handleItemSelect" />
+          <div v-for="item in getVisibleItems(category)" :key="getItemKey(item)" class="col">
+            <MenuItemCard :item="item" :inventory-info="getInventoryInfo(item)" :menu-type="menuType"
+              @select-item="handleItemSelect" />
           </div>
         </div>
       </div>
@@ -53,6 +54,10 @@ const props = defineProps({
   storeId: {
     type: String,
     required: true
+  },
+  menuType: {
+    type: String,
+    default: 'food'
   }
 });
 
@@ -61,6 +66,16 @@ const emit = defineEmits(['select-item']);
 // 響應式資料
 const inventoryData = ref({});
 const isLoadingInventory = ref(false);
+
+// 生成項目的唯一鍵值
+const getItemKey = (item) => {
+  if (item.itemType === 'dish') {
+    return `dish-${item._id || item.dishTemplate?._id}`;
+  } else if (item.itemType === 'bundle') {
+    return `bundle-${item._id || item.bundle?._id}`;
+  }
+  return `item-${item._id}`;
+};
 
 // 獲取分類中可見的項目
 const getVisibleItems = (category) => {

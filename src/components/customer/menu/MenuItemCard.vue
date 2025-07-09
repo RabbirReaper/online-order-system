@@ -75,6 +75,10 @@ const props = defineProps({
   inventoryInfo: {
     type: Object,
     default: null
+  },
+  menuType: {
+    type: String,
+    default: 'food' // 'food', 'cash_coupon', 'point_exchange'
   }
 });
 
@@ -138,7 +142,14 @@ const dishPrice = computed(() => {
 // 計算屬性 - 套餐價格
 const bundleCashPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.priceOverride || props.item.bundle?.sellingPrice || 0;
+    // 根據菜單類型決定顯示的價格
+    if (props.menuType === 'cash_coupon') {
+      // 現金購買預購券菜單，顯示現金價格
+      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0;
+    } else {
+      // 其他菜單類型，顯示一般現金價格
+      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0;
+    }
   }
   return 0;
 });

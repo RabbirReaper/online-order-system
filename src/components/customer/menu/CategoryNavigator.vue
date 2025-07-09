@@ -2,7 +2,7 @@
   <div ref="navContainer" class="category-navigator">
     <div class="category-nav-wrapper" ref="navWrapper">
       <nav class="nav nav-pills category-nav-custom" ref="categoryNav">
-        <a v-for="category in categories" :key="category.categoryId" class="nav-link nav-link-custom"
+        <a v-for="category in formattedCategories" :key="category.categoryId" class="nav-link nav-link-custom"
           :class="{ 'active': activeCategory === category.categoryId }" :href="'#category-' + category.categoryId"
           @click.prevent="scrollToCategory(category.categoryId)">
           {{ category.categoryName }}
@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 
 const props = defineProps({
   categories: {
@@ -28,6 +28,19 @@ const categoryNav = ref(null);
 const activeCategory = ref('');
 const observer = ref(null);
 const scrollHandler = ref(null);
+
+// 格式化分類數據以適配組件需求
+// 格式化分類數據以適配組件需求
+const formattedCategories = computed(() => {
+  if (!props.categories || !Array.isArray(props.categories)) {
+    return [];
+  }
+
+  return props.categories.map(category => ({
+    categoryId: category._id || category.categoryId,
+    categoryName: category.name || category.categoryName
+  })).filter(category => category.categoryId && category.categoryName);
+});
 
 // 滾動到指定類別
 const scrollToCategory = (categoryId) => {
@@ -72,15 +85,15 @@ const setupScrollSpy = () => {
     }
   );
 
-  props.categories.forEach(category => {
+  formattedCategories.value.forEach(category => {
     const element = document.getElementById('category-' + category.categoryId);
     if (element) {
       observer.value.observe(element);
     }
   });
 
-  if (props.categories.length > 0) {
-    activeCategory.value = props.categories[0].categoryId;
+  if (formattedCategories.value.length > 0) {
+    activeCategory.value = formattedCategories.value[0].categoryId;
   }
 };
 
@@ -130,9 +143,10 @@ const setupStickyNav = () => {
 onMounted(async () => {
   await nextTick();
   setupStickyNav();
-  setupScrollSpy();
 
-  if (props.categories.length > 0) {
+  // 等待分類數據載入後再設置滾動監聽
+  if (formattedCategories.value.length > 0) {
+    setupScrollSpy();
     setTimeout(() => {
       scrollNavToActiveItem();
     }, 300);
@@ -148,6 +162,25 @@ onUnmounted(() => {
     window.removeEventListener('scroll', scrollHandler.value);
   }
 });
+
+// 監聽分類變化，重新設置滾動監聽
+const updateScrollSpy = () => {
+  if (observer.value) {
+    observer.value.disconnect();
+  }
+
+  if (formattedCategories.value.length > 0) {
+    setupScrollSpy();
+  }
+};
+
+// 監聽 categories 變化
+import { watch } from 'vue';
+watch(() => formattedCategories.value, () => {
+  nextTick(() => {
+    updateScrollSpy();
+  });
+}, { deep: true });
 </script>
 
 <style scoped>

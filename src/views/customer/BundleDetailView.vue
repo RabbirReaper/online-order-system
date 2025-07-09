@@ -209,14 +209,14 @@ const addToCartCash = async () => {
   isAddingToCart.value = true;
 
   try {
-    // 創建套餐購物車項目
+    // 創建符合 cartStore.addItem 期望格式的套餐購物車項目
     const bundleCartItem = {
       dishInstance: {
         templateId: bundle.value._id,
         name: bundle.value.name,
         basePrice: bundle.value.sellingPrice,
         finalPrice: bundle.value.sellingPrice,
-        options: [],
+        options: [], // 套餐沒有選項
         bundleType: 'cash' // 標記為現金購買套餐
       },
       quantity: 1,
@@ -253,7 +253,7 @@ const addToCartPoints = async () => {
     const bundleCartItem = {
       dishInstance: {
         templateId: bundle.value._id,
-        name: bundle.value.name,
+        name: `${bundle.value.name} (點數兌換)`,
         basePrice: 0, // 點數兌換價格為0
         finalPrice: 0,
         options: [],
@@ -261,7 +261,7 @@ const addToCartPoints = async () => {
         pointCost: bundle.value.sellingPoint
       },
       quantity: 1,
-      note: '',
+      note: '點數兌換商品',
       subtotal: 0 // 點數兌換不計入現金小計
     };
 

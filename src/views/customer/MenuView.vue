@@ -3,17 +3,43 @@
     <div class="container-wrapper">
       <!-- 店鋪標題區 -->
       <Transition name="fade-slide" appear>
-        <MenuHeader v-if="!isLoading || store.name" :store-name="store.name" :store-image="store.image"
+        <MenuHeader v-if="!isLoadingStore || store.name" :store-name="store.name" :store-image="store.image"
           :announcements="store.announcements" :business-hours="store.businessHours"
           :is-logged-in="authStore.isLoggedIn" :customer-name="authStore.userName" :store-address="store.address"
           @login="handleLogin" @logout="handleLogout" />
       </Transition>
 
       <!-- 骨架載入動畫 -->
-      <div v-if="isLoading && !store.name" class="header-skeleton">
+      <div v-if="isLoadingStore && !store.name" class="header-skeleton">
         <div class="skeleton-banner"></div>
         <div class="skeleton-title"></div>
         <div class="skeleton-subtitle"></div>
+      </div>
+
+      <!-- 菜單類型切換按鈕 -->
+      <div class="menu-type-selector bg-white border-bottom">
+        <div class="container px-3 py-2">
+          <div class="btn-group w-100" role="group">
+            <button type="button" class="btn menu-type-btn"
+              :class="currentMenuType === 'food' ? 'btn-primary' : 'btn-outline-primary'"
+              @click="switchMenuType('food')">
+              <i class="bi bi-cup-hot me-2"></i>
+              餐點菜單
+            </button>
+            <button type="button" class="btn menu-type-btn"
+              :class="currentMenuType === 'cash_coupon' ? 'btn-primary' : 'btn-outline-primary'"
+              @click="switchMenuType('cash_coupon')">
+              <i class="bi bi-ticket-perforated me-2"></i>
+              預購券
+            </button>
+            <button type="button" class="btn menu-type-btn"
+              :class="currentMenuType === 'point_exchange' ? 'btn-primary' : 'btn-outline-primary'"
+              @click="switchMenuType('point_exchange')">
+              <i class="bi bi-gift me-2"></i>
+              點數兌換
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 類別導航器 -->
@@ -21,8 +47,16 @@
         <CategoryNavigator v-if="hasMenuCategories" :categories="navigationCategories" />
       </Transition>
 
+      <!-- 載入狀態 -->
+      <div v-if="isLoadingMenu" class="loading-container text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">載入菜單中...</span>
+        </div>
+        <p class="mt-3 text-muted">載入{{ getMenuTypeText(currentMenuType) }}中...</p>
+      </div>
+
       <!-- 菜單列表骨架動畫 -->
-      <div v-if="isLoading" class="menu-skeleton">
+      <div v-else-if="isLoadingStore" class="menu-skeleton">
         <div v-for="i in 3" :key="i" class="category-skeleton">
           <div class="skeleton-category-title"></div>
           <div class="items-skeleton">
@@ -38,16 +72,29 @@
         </div>
       </div>
 
+      <!-- 錯誤狀態 -->
+      <div v-else-if="menuError" class="error-container text-center py-5">
+        <div class="alert alert-danger mx-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          {{ menuError }}
+          <button class="btn btn-outline-danger btn-sm ms-3" @click="loadMenuData">
+            重新載入
+          </button>
+        </div>
+      </div>
+
       <!-- 菜單列表 -->
       <TransitionGroup name="stagger-fade" tag="div" appear>
-        <MenuCategoryList v-if="!isLoading && hasMenuCategories" key="menu-list" :categories="menu.categories"
-          :brand-id="brandId" :store-id="storeId" @select-item="handleItemSelect" class="menu-content" />
+        <MenuCategoryList v-if="!isLoadingMenu && !menuError && hasMenuCategories" key="menu-list"
+          :categories="currentMenu.categories" :brand-id="brandId" :store-id="storeId" :menu-type="currentMenuType"
+          @select-item="handleItemSelect" class="menu-content" />
       </TransitionGroup>
 
       <!-- 空狀態 -->
-      <div v-if="!isLoading && !hasMenuCategories" class="text-center py-5">
+      <div v-if="!isLoadingMenu && !menuError && !hasMenuCategories" class="text-center py-5">
         <i class="bi bi-journal-x display-1 text-muted"></i>
-        <p class="text-muted mt-3">店鋪尚未設定菜單</p>
+        <h5 class="mt-3 text-muted">目前沒有可用的{{ getMenuTypeText(currentMenuType) }}</h5>
+        <p class="text-muted">請稍後再試或聯繫店家</p>
       </div>
 
       <!-- 購物車按鈕 -->
@@ -100,20 +147,22 @@ const store = ref({
   businessHours: null,
   address: ''
 });
-const menu = ref({
-  categories: []
-});
-const isLoading = ref(true);
+
+const currentMenuType = ref('food'); // 預設顯示餐點菜單
+const currentMenu = ref({ categories: [] });
+const isLoadingStore = ref(true);
+const isLoadingMenu = ref(false);
+const menuError = ref(null);
 
 // 計算屬性
 const hasMenuCategories = computed(() => {
-  return menu.value.categories && menu.value.categories.length > 0;
+  return currentMenu.value.categories && currentMenu.value.categories.length > 0;
 });
 
 const navigationCategories = computed(() => {
   if (!hasMenuCategories.value) return [];
 
-  return menu.value.categories.map(category => ({
+  return currentMenu.value.categories.map(category => ({
     categoryName: category.name,
     categoryId: category._id,
     description: category.description,
@@ -134,6 +183,22 @@ const cartTotal = computed(() => {
 });
 
 // 方法
+const getMenuTypeText = (type) => {
+  const typeMap = {
+    'food': '餐點菜單',
+    'cash_coupon': '預購券',
+    'point_exchange': '點數兌換'
+  };
+  return typeMap[type] || type;
+};
+
+const switchMenuType = async (type) => {
+  if (currentMenuType.value === type || isLoadingMenu.value) return;
+
+  currentMenuType.value = type;
+  await loadMenuData();
+};
+
 const loadStoreData = async () => {
   try {
     const storeData = await api.store.getStoreById({
@@ -153,44 +218,49 @@ const loadStoreData = async () => {
 };
 
 const loadMenuData = async () => {
+  if (!brandId.value || !storeId.value) {
+    menuError.value = '缺少必要的店鋪資訊';
+    return;
+  }
+
+  isLoadingMenu.value = true;
+  menuError.value = null;
+
   try {
-    const menuData = await api.menu.getStoreMenu({
+    // 獲取指定類型的啟用菜單
+    const response = await api.menu.getAllStoreMenus({
       brandId: brandId.value,
       storeId: storeId.value,
-      includeUnpublished: false
+      includeUnpublished: false,
+      activeOnly: true,
+      menuType: currentMenuType.value
     });
 
-    if (menuData.success && menuData.menu) {
-      // 檢查菜單是否存在
-      if (menuData.menu.exists === false) {
-        console.warn('店鋪尚未設定菜單');
-        menu.value = { categories: [] };
-        return;
-      }
-
-      // 使用後端回傳的完整菜單資料
-      menu.value = menuData.menu;
+    if (response.success && response.menus && response.menus.length > 0) {
+      // 取第一個啟用的菜單（同類型應該只有一個啟用）
+      currentMenu.value = response.menus[0];
 
       // 確保分類按順序排列
-      if (menu.value.categories) {
-        menu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+      if (currentMenu.value.categories) {
+        currentMenu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
 
         // 確保每個分類的商品按順序排列
-        menu.value.categories.forEach(category => {
+        currentMenu.value.categories.forEach(category => {
           if (category.items) {
             category.items.sort((a, b) => (a.order || 0) - (b.order || 0));
           }
         });
       }
     } else {
-      console.error('Invalid menu data structure:', menuData);
+      currentMenu.value = { categories: [] };
+      console.warn(`沒有找到啟用的${getMenuTypeText(currentMenuType.value)}`);
     }
-  } catch (error) {
-    console.error('無法載入菜單數據:', error);
+  } catch (err) {
+    console.error('載入菜單資料失敗:', err);
+    menuError.value = err.response?.data?.message || err.message || '載入菜單失敗，請稍後再試';
+    currentMenu.value = { categories: [] };
   } finally {
-    setTimeout(() => {
-      isLoading.value = false;
-    }, 200);
+    isLoadingMenu.value = false;
   }
 };
 
@@ -263,11 +333,10 @@ onMounted(async () => {
     }
   }
 
-  // 並行載入數據
-  await Promise.all([
-    loadStoreData(),
-    loadMenuData()
-  ]);
+  // 載入數據
+  await loadStoreData();
+  isLoadingStore.value = false;
+  await loadMenuData();
 });
 </script>
 
@@ -287,6 +356,51 @@ onMounted(async () => {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
   min-height: 100vh;
   position: relative;
+}
+
+/* 菜單類型切換器樣式 */
+.menu-type-selector {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.menu-type-btn {
+  font-weight: 500;
+  border-radius: 0;
+  transition: all 0.3s ease;
+}
+
+.menu-type-btn:first-child {
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+}
+
+.menu-type-btn:last-child {
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+.btn-primary {
+  background-color: #d35400;
+  border-color: #d35400;
+}
+
+.btn-primary:hover {
+  background-color: #e67e22;
+  border-color: #e67e22;
+}
+
+.btn-outline-primary {
+  color: #d35400;
+  border-color: #d35400;
+}
+
+.btn-outline-primary:hover {
+  background-color: #d35400;
+  border-color: #d35400;
+  color: white;
 }
 
 /* ===== 動畫效果 ===== */
@@ -462,7 +576,28 @@ onMounted(async () => {
   transform: translateY(0);
 }
 
+/* 載入容器 */
+.loading-container,
+.error-container {
+  min-height: 30vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ===== 響應式設計 ===== */
+@media (max-width: 768px) {
+  .menu-type-btn {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.5rem;
+  }
+
+  .menu-type-btn i {
+    font-size: 0.8rem;
+  }
+}
+
 @media (max-width: 576px) {
   .container-wrapper {
     max-width: 100%;
@@ -475,6 +610,15 @@ onMounted(async () => {
 
   .item-skeleton {
     padding: 12px;
+  }
+
+  .menu-type-btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.25rem;
+  }
+
+  .menu-type-btn .me-2 {
+    margin-right: 0.25rem !important;
   }
 }
 
