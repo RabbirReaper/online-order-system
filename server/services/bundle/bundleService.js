@@ -575,3 +575,41 @@ export const autoCreateBundlesForVouchers = async (brandId) => {
     throw new AppError(`自動創建Bundle包裝失敗: ${error.message}`, 500);
   }
 };
+
+
+/**
+ * 驗證 Bundle 購買資格
+ * @param {String} bundleId - Bundle ID
+ * @param {String} userId - 用戶 ID
+ * @param {Number} quantity - 購買數量
+ * @param {String} storeId - 店鋪 ID
+ * @returns {Promise<void>} 驗證通過或拋出錯誤
+ */
+export const validateBundlePurchase = async (bundleId, userId, quantity, storeId) => {
+  // 1. 查找 Bundle 模板
+  const bundle = await Bundle.findById(bundleId);
+
+  if (!bundle) {
+    throw new AppError('Bundle 不存在', 404);
+  }
+
+  if (!bundle.isActive) {
+    throw new AppError('Bundle 已停用', 400);
+  }
+
+  // 2. 檢查購買數量限制
+  if (bundle.purchaseLimitPerUser && userId) {
+    const purchasedCount = await BundleInstance.countDocuments({
+      templateId: bundleId,
+      user: userId
+    });
+
+    const remainingLimit = Math.max(0, bundle.purchaseLimitPerUser - purchasedCount);
+
+    if (quantity > remainingLimit) {
+      throw new AppError(`購買數量超過限制，您還可以購買 ${remainingLimit} 個`, 400);
+    }
+  }
+
+  return true;
+};

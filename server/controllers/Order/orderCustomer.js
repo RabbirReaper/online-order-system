@@ -21,7 +21,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   }
 
   // 生成訂單編號
-  const orderNumber = await orderService.generateOrderNumber();
+  const orderNumber = await orderService.generateOrderNumber(storeId);
   orderData.orderDateCode = orderNumber.orderDateCode;
   orderData.sequence = orderNumber.sequence;
 

@@ -11,7 +11,7 @@ import { parseDateString, getStartOfDay, getEndOfDay } from '../../utils/date.js
 import {
   processOrderPaymentComplete,
   processOrderPointsReward,
-  calculateOrderAmounts
+  updateOrderAmounts
 } from './orderCustomer.js';
 
 /**
@@ -58,14 +58,13 @@ export const getStoreOrders = async (storeId, options = {}) => {
   const skip = (page - 1) * limit;
   const total = await Order.countDocuments(query);
 
-  // 查詢訂單，包含 Bundle 資訊 - 修改 populate
+  // 查詢訂單，包含 Bundle 資訊
   const orders = await Order.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice')
-    // .populate('items.generatedVouchers', 'voucherName voucherType isUsed expiryDate') // 修改這行
     .populate('user', 'name email phone')
     .lean();
 
@@ -87,7 +86,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
 };
 
 /**
- * 獲取訂單詳情（管理員）- 修改 populate
+ * 獲取訂單詳情（管理員）
  */
 export const getOrderById = async (orderId, storeId) => {
   const query = { _id: orderId };
@@ -96,7 +95,6 @@ export const getOrderById = async (orderId, storeId) => {
   const order = await Order.findOne(query)
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice bundleItems')
-    // .populate('items.generatedVouchers', 'voucherName voucherType isUsed expiryDate usedAt') // 修改這行
     .populate('user', 'name email phone')
     .lean();
 
@@ -145,8 +143,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
 
   // 如果更新了手動調整金額，重新計算總額
   if (updateData.manualAdjustment !== undefined) {
-    const amounts = calculateOrderAmounts(order);
-    order.total = amounts.total;
+    updateOrderAmounts(order);
   }
 
   order.updatedAt = new Date();
@@ -184,8 +181,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
  * 管理員取消訂單 - 支援 Bundle 訂單
  */
 export const cancelOrder = async (orderId, reason, adminId) => {
-  const order = await Order.findById(orderId)
-  // .populate('items.generatedVouchers');
+  const order = await Order.findById(orderId);
 
   if (!order) {
     throw new AppError('訂單不存在', 404);

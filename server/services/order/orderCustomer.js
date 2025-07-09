@@ -115,6 +115,7 @@ const createBundleItem = async (item, userId, storeId, brandId) => {
   const bundleInstanceData = {
     templateId: item.bundleId || item.templateId,
     brand: brandId,
+    user: userId,
     purchasedAt: new Date()
   };
 
@@ -123,7 +124,7 @@ const createBundleItem = async (item, userId, storeId, brandId) => {
   return {
     itemType: 'bundle',
     itemName: item.name || bundleInstance.name,
-    bundle: bundleInstance._id, // 記錄購買的 Bundle 實例
+    bundleInstance: bundleInstance._id, // 記錄購買的 Bundle 實例
     quantity: item.quantity,
     subtotal: item.subtotal || (bundleInstance.finalPrice * item.quantity),
     note: item.note || '',
@@ -171,7 +172,7 @@ export const processOrderPaymentComplete = async (order) => {
  * 拆解 Bundle 生成 VoucherInstance - 付款完成後執行
  */
 const generateVouchersForBundle = async (bundleItem, order) => {
-  const bundleInstance = await BundleInstance.findById(bundleItem.bundle)
+  const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance)
     .populate('bundleItems.voucherTemplate');
 
   if (!bundleInstance) {
@@ -196,7 +197,7 @@ const generateVouchersForBundle = async (bundleItem, order) => {
             acquiredAt: new Date(),
             pointsUsed: 0, // Bundle 購買不直接消耗點數
             order: order._id,
-            sourceBundle: bundleItem.bundle // 記錄來源 Bundle
+            sourceBundle: bundleItem.bundleInstance // 記錄來源 Bundle
           });
 
           // 設置兌換項目資訊
@@ -225,7 +226,7 @@ const generateVouchersForBundle = async (bundleItem, order) => {
 const updateBundleSalesStats = async (order) => {
   for (const item of order.items) {
     if (item.itemType === 'bundle') {
-      const bundleInstance = await BundleInstance.findById(item.bundle);
+      const bundleInstance = await BundleInstance.findById(item.bundleInstance);
       if (bundleInstance) {
         await Bundle.findByIdAndUpdate(bundleInstance.templateId, {
           $inc: { totalSold: item.quantity }
@@ -250,12 +251,15 @@ export const processOrderPointsReward = async (order) => {
  * 更新訂單金額
  */
 export const updateOrderAmounts = (order) => {
-  // 計算總金額
-  order.totalAmount = order.dishSubtotal + order.bundleSubtotal + order.manualAdjustment;
+  // 計算 subtotal
+  order.subtotal = order.dishSubtotal + order.bundleSubtotal;
+
+  // 計算 total（subtotal + 服務費 + 手動調整 - 折扣）
+  order.total = order.subtotal + (order.serviceCharge || 0) + (order.manualAdjustment || 0) - (order.totalDiscount || 0);
 
   // 確保金額不為負數
-  if (order.totalAmount < 0) {
-    order.totalAmount = 0;
+  if (order.total < 0) {
+    order.total = 0;
   }
 };
 
@@ -279,8 +283,8 @@ export const getUserOrders = async (userId, options = {}) => {
     .skip(skip)
     .limit(limit)
     .populate('store', 'name')
-    .populate('items.dishInstance')
-    .populate('items.bundle'); // populate Bundle 實例
+    .populate('items.dishInstance', 'name basePrice finalPrice options')
+    .populate('items.bundleInstance', 'name finalPrice bundleItems'); // 指定要 populate 的欄位
 
   const totalPages = Math.ceil(total / limit);
 
@@ -306,8 +310,8 @@ export const getUserOrderById = async (orderId, userId) => {
     user: userId
   })
     .populate('store', 'name')
-    .populate('items.dishInstance')
-    .populate('items.bundle'); // populate Bundle 實例
+    .populate('items.dishInstance', 'name basePrice finalPrice options')
+    .populate('items.bundleInstance', 'name finalPrice bundleItems'); // 指定要 populate 的欄位
 
   if (!order) {
     throw new AppError('訂單不存在或無權訪問', 404);
@@ -318,11 +322,25 @@ export const getUserOrderById = async (orderId, userId) => {
 
 /**
  * 生成訂單編號
+ * @param {String} storeId - 店鋪ID，用於查詢當天訂單數量
+ * @returns {Promise<Object>} 包含 orderDateCode 和 sequence 的物件
  */
-export const generateOrderNumber = () => {
-  const dateCode = generateDateCode();
-  const randomPart = Math.random().toString(36).substr(2, 4).toUpperCase();
-  return `${dateCode}${randomPart}`;
+export const generateOrderNumber = async (storeId) => {
+  const dateCode = generateDateCode(); // 例如 '250109'
+
+  // 查詢當天已有的訂單數量
+  const todayOrderCount = await Order.countDocuments({
+    store: storeId,
+    orderDateCode: dateCode
+  });
+
+  // 序號 = 當天訂單數 + 1
+  const sequence = todayOrderCount + 1;
+
+  return {
+    orderDateCode: dateCode,
+    sequence: sequence
+  };
 };
 
 /**
@@ -345,4 +363,20 @@ export const calculateOrderAmounts = (items) => {
     bundleSubtotal,
     totalAmount: dishSubtotal + bundleSubtotal
   };
+};
+
+/**
+ * 處理支付
+ */
+export const processPayment = async (orderId, paymentData) => {
+  // TODO: 實現支付處理邏輯
+  return { success: true, message: '支付處理成功' };
+};
+
+/**
+ * 處理支付回調
+ */
+export const handlePaymentCallback = async (orderId, callbackData) => {
+  // TODO: 實現支付回調處理邏輯
+  return { success: true, message: '支付回調處理完成' };
 };

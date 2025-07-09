@@ -99,14 +99,14 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 0
   }, // 餐點小計
-  couponSubtotal: {
+  bundleSubtotal: {
     type: Number,
     default: 0
-  }, // 兌換券小計
+  }, // Bundle 小計
   subtotal: {
     type: Number,
     required: true
-  }, // 總小計 (dishSubtotal + couponSubtotal)
+  }, // 總小計 (dishSubtotal + bundleSubtotal)
   serviceCharge: {
     type: Number,
     default: 0
