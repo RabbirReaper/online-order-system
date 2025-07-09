@@ -224,16 +224,41 @@ export const useCounterStore = defineStore('counter', () => {
   // 載入菜單資料
   async function fetchMenuData(brandId, storeId) {
     try {
-      const response = await api.menu.getStoreMenu({
+      const response = await api.menu.getAllStoreMenus({
         brandId,
         storeId,
-        includeUnpublished: false
+        includeUnpublished: false,
+        activeOnly: true,
+        menuType: 'food' // counter 主要處理餐點菜單
       });
 
-      if (response.success) {
-        menuData.value = response.menu;
-        await fetchDishTemplates(brandId);
-        await fetchOptionCategoriesWithOptions(brandId);
+      if (response.success && response.menus && response.menus.length > 0) {
+        // 尋找 food 類型的菜單（現金購買餐點）
+        const foodMenu = response.menus.find(menu => menu.menuType === 'food');
+        if (foodMenu) {
+          menuData.value = foodMenu;
+
+          // 確保分類按順序排列
+          if (menuData.value.categories) {
+            menuData.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            // 確保每個分類的商品按順序排列
+            menuData.value.categories.forEach(category => {
+              if (category.items) {
+                category.items.sort((a, b) => (a.order || 0) - (b.order || 0));
+              }
+            });
+          }
+
+          await fetchDishTemplates(brandId);
+          await fetchOptionCategoriesWithOptions(brandId);
+        } else {
+          console.warn('沒有找到現金購買餐點菜單');
+          menuData.value = { categories: [] };
+        }
+      } else {
+        console.warn('沒有找到啟用的菜單');
+        menuData.value = { categories: [] };
       }
     } catch (error) {
       console.error('載入菜單資料失敗:', error);
