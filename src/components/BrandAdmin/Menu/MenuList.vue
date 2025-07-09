@@ -16,6 +16,41 @@
       </div>
     </div>
 
+    <!-- 篩選器 -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row align-items-end">
+          <div class="col-md-3">
+            <label class="form-label">菜單類型</label>
+            <select v-model="filters.menuType" @change="applyFilters" class="form-select">
+              <option value="">所有類型</option>
+              <option value="food">現金購買餐點</option>
+              <option value="cash_coupon">現金購買預購券</option>
+              <option value="point_exchange">點數兌換</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">狀態</label>
+            <select v-model="filters.activeOnly" @change="applyFilters" class="form-select">
+              <option value="">所有狀態</option>
+              <option value="true">僅啟用</option>
+              <option value="false">僅停用</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">搜尋</label>
+            <input type="text" v-model="filters.search" @input="applyFilters" class="form-control"
+              placeholder="搜尋菜單名稱...">
+          </div>
+          <div class="col-md-2">
+            <button @click="resetFilters" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>重置
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 載入中提示 -->
     <div v-if="isLoading" class="d-flex justify-content-center my-5">
       <div class="spinner-border text-primary" role="status">
@@ -23,8 +58,14 @@
       </div>
     </div>
 
+    <!-- 錯誤提示 -->
+    <div v-else-if="error" class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ error }}
+    </div>
+
     <!-- 菜單列表 -->
-    <div v-else-if="menus.length > 0">
+    <div v-else-if="filteredMenus.length > 0">
       <!-- 統計資訊 -->
       <div class="row mb-4">
         <div class="col-md-3">
@@ -33,7 +74,7 @@
               <div class="d-flex justify-content-between">
                 <div>
                   <h6 class="card-title">總菜單數</h6>
-                  <h4 class="mb-0">{{ menus.length }}</h4>
+                  <h4 class="mb-0">{{ allMenus.length }}</h4>
                 </div>
                 <div class="align-self-center">
                   <i class="bi bi-menu-button-wide fs-2"></i>
@@ -91,7 +132,7 @@
 
       <!-- 菜單卡片列表 -->
       <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-4">
-        <div v-for="menu in menus" :key="menu._id" class="col">
+        <div v-for="menu in filteredMenus" :key="menu._id" class="col">
           <div class="card h-100 menu-card hover-shadow"
             :class="{ 'border-success': menu.isActive, 'border-secondary': !menu.isActive }">
             <!-- 卡片頭部 -->
@@ -167,7 +208,7 @@
                 <!-- 狀態切換 -->
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
-                    v-model="menu.isActive" @change="toggleMenuActive(menu._id)" :disabled="isToggling">
+                    v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
                   <label class="form-check-label small" :for="`menu-active-${menu._id}`">
                     {{ menu.isActive ? '啟用中' : '已停用' }}
                   </label>
@@ -197,10 +238,10 @@
     <!-- 無菜單提示 -->
     <div v-else class="text-center py-5 bg-light rounded">
       <i class="bi bi-menu-button-wide display-1 text-muted mb-3"></i>
-      <h5>此店鋪尚未設置菜單</h5>
-      <p class="text-muted">創建菜單後，您可以添加餐點分類和商品項目</p>
+      <h5>{{ allMenus.length === 0 ? '此店鋪尚未設置菜單' : '沒有符合篩選條件的菜單' }}</h5>
+      <p class="text-muted">{{ allMenus.length === 0 ? '創建菜單後，您可以添加餐點分類和商品項目' : '請調整篩選條件或新增菜單' }}</p>
       <router-link :to="`/admin/${brandId}/menus/create/${storeId}`" class="btn btn-primary mt-2">
-        <i class="bi bi-plus-lg me-1"></i>新增第一個菜單
+        <i class="bi bi-plus-lg me-1"></i>{{ allMenus.length === 0 ? '新增第一個菜單' : '新增菜單' }}
       </router-link>
     </div>
 
@@ -214,6 +255,7 @@
       </div>
       <div v-if="selectedMenu">
         <ul class="mb-0">
+          <li>菜單類型：{{ getMenuTypeText(selectedMenu.menuType) }}</li>
           <li>分類數量：{{ selectedMenu.categories?.length || 0 }}</li>
           <li>商品數量：{{ countTotalItems(selectedMenu) }}</li>
         </ul>
@@ -228,10 +270,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
+import {
+  getMenuTypeText,
+  formatDate,
+  countTotalItems,
+  countActiveItems
+} from './menuUtils';
 
 // 路由相關
 const route = useRoute();
@@ -241,164 +289,154 @@ const storeId = computed(() => route.params.storeId);
 
 // 狀態變數
 const store = ref(null);
-const menus = ref([]); // 改為陣列
+const allMenus = ref([]);
 const isLoading = ref(true);
 const isDeleting = ref(false);
 const isToggling = ref(false);
 const storeName = ref('載入中...');
 const showDeleteModal = ref(false);
 const selectedMenu = ref(null);
+const error = ref('');
+
+// 篩選器
+const filters = reactive({
+  menuType: '',
+  activeOnly: '',
+  search: ''
+});
 
 // 計算屬性
+const filteredMenus = computed(() => {
+  let filtered = [...allMenus.value];
+
+  // 類型篩選
+  if (filters.menuType) {
+    filtered = filtered.filter(menu => menu.menuType === filters.menuType);
+  }
+
+  // 狀態篩選
+  if (filters.activeOnly !== '') {
+    const isActive = filters.activeOnly === 'true';
+    filtered = filtered.filter(menu => menu.isActive === isActive);
+  }
+
+  // 搜尋篩選
+  if (filters.search.trim()) {
+    const searchQuery = filters.search.toLowerCase().trim();
+    filtered = filtered.filter(menu =>
+      menu.name && menu.name.toLowerCase().includes(searchQuery)
+    );
+  }
+
+  return filtered;
+});
+
 const activeMenusCount = computed(() => {
-  return menus.value.filter(menu => menu.isActive).length;
+  return allMenus.value.filter(menu => menu.isActive).length;
 });
 
 const totalCategoriesCount = computed(() => {
-  return menus.value.reduce((total, menu) => {
+  return allMenus.value.reduce((total, menu) => {
     return total + (menu.categories ? menu.categories.length : 0);
   }, 0);
 });
 
 const totalItemsCount = computed(() => {
-  return menus.value.reduce((total, menu) => {
+  return allMenus.value.reduce((total, menu) => {
     return total + countTotalItems(menu);
   }, 0);
 });
 
-// 獲取菜單類型文字
-const getMenuTypeText = (type) => {
-  const typeMap = {
-    'food': '現金購買餐點',
-    'cash_coupon': '現金購買預購券',
-    'point_exchange': '點數兌換'
-  };
-  return typeMap[type] || type;
-};
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
-// 計算菜單總商品數量
-const countTotalItems = (menu) => {
-  if (!menu || !menu.categories) return 0;
-  return menu.categories.reduce((total, category) => {
-    return total + (category.items ? category.items.length : 0);
-  }, 0);
-};
-
-// 計算菜單已啟用商品數量
-const countActiveItems = (menu) => {
-  if (!menu || !menu.categories) return 0;
-  return menu.categories.reduce((total, category) => {
-    if (!category.items) return total;
-    return total + category.items.filter(item => item.isShowing).length;
-  }, 0);
-};
-
 // 獲取店鋪和菜單資料
 const fetchData = async () => {
-  if (!storeId.value) return;
+  if (!storeId.value || !brandId.value) return;
 
   isLoading.value = true;
+  error.value = '';
 
   try {
     // 1. 獲取店鋪資料
-    const storeResponse = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+    const storeResponse = await api.store.getStoreById({
+      brandId: brandId.value,
+      id: storeId.value
+    });
+
     if (storeResponse && storeResponse.store) {
       store.value = storeResponse.store;
       storeName.value = storeResponse.store.name;
+    } else {
+      error.value = '無法獲取店鋪資訊';
+      return;
     }
 
-    // 2. 獲取所有菜單資料 (假設 API 支援獲取所有菜單)
-    // 如果 API 不支援，這裡需要調整邏輯
-    try {
-      const menusResponse = await api.menu.getAllStoreMenus({
-        brandId: brandId.value,
-        storeId: storeId.value
-      });
+    // 2. 獲取所有菜單資料
+    const menusResponse = await api.menu.getAllStoreMenus({
+      brandId: brandId.value,
+      storeId: storeId.value,
+      includeUnpublished: true // 管理界面顯示所有菜單
+    });
 
-      if (menusResponse && menusResponse.menus) {
-        menus.value = menusResponse.menus;
-      } else {
-        // 如果 API 不支援多菜單，回退到單菜單模式
-        const menuResponse = await api.menu.getStoreMenu({
-          brandId: brandId.value,
-          storeId: storeId.value
-        });
-
-        if (menuResponse.menu && menuResponse.menu.exists !== false) {
-          menus.value = [menuResponse.menu];
-        } else {
-          menus.value = [];
-        }
-      }
-    } catch (error) {
-      // API 可能不支援多菜單，回退到單菜單
-      console.log('回退到單菜單模式:', error);
-      try {
-        const menuResponse = await api.menu.getStoreMenu({
-          brandId: brandId.value,
-          storeId: storeId.value
-        });
-
-        if (menuResponse.menu && menuResponse.menu.exists !== false) {
-          menus.value = [menuResponse.menu];
-        } else {
-          menus.value = [];
-        }
-      } catch (singleError) {
-        console.error('獲取菜單失敗:', singleError);
-        menus.value = [];
-      }
+    if (menusResponse && menusResponse.menus) {
+      allMenus.value = menusResponse.menus;
+    } else {
+      allMenus.value = [];
     }
 
-  } catch (error) {
-    console.error('獲取資料失敗:', error);
+  } catch (err) {
+    console.error('獲取資料失敗:', err);
+    error.value = '獲取資料時發生錯誤，請稍後再試';
   } finally {
     isLoading.value = false;
   }
 };
 
+// 應用篩選器
+const applyFilters = () => {
+  // 篩選會自動通過計算屬性處理
+};
+
+// 重置篩選器
+const resetFilters = () => {
+  filters.menuType = '';
+  filters.activeOnly = '';
+  filters.search = '';
+};
+
 // 切換菜單啟用狀態
-const toggleMenuActive = async (menuId) => {
+const toggleMenuActive = async (menu) => {
   if (isToggling.value) return;
 
-  const menu = menus.value.find(m => m._id === menuId);
-  if (!menu) return;
-
   isToggling.value = true;
-  const newStatus = menu.isActive;
+  const originalStatus = !menu.isActive; // 記錄原始狀態
 
   try {
-    // 發送API請求切換狀態
-    const response = await api.menu.toggleMenuActive({
+    // 發送API請求更新狀態
+    const response = await api.menu.updateMenu({
       brandId: brandId.value,
       storeId: storeId.value,
-      menuId: menuId,
-      active: newStatus
+      menuId: menu._id,
+      data: { isActive: menu.isActive }
     });
 
     if (response && response.menu) {
       // 更新本地狀態
-      const menuIndex = menus.value.findIndex(m => m._id === menuId);
+      const menuIndex = allMenus.value.findIndex(m => m._id === menu._id);
       if (menuIndex !== -1) {
-        menus.value[menuIndex] = response.menu;
+        allMenus.value[menuIndex] = response.menu;
       }
     }
-  } catch (error) {
-    console.error('切換菜單狀態失敗:', error);
+  } catch (err) {
+    console.error('切換菜單狀態失敗:', err);
+
     // 恢復原狀態
-    menu.isActive = !newStatus;
-    alert('切換菜單狀態時發生錯誤，請稍後再試');
+    menu.isActive = originalStatus;
+
+    // 顯示錯誤訊息
+    let errorMessage = '切換菜單狀態時發生錯誤';
+    if (err.response && err.response.data && err.response.data.message) {
+      errorMessage = err.response.data.message;
+    }
+    alert(errorMessage);
   } finally {
     isToggling.value = false;
   }
@@ -425,18 +463,23 @@ const deleteMenu = async () => {
     });
 
     // 從本地陣列中移除
-    const menuIndex = menus.value.findIndex(m => m._id === selectedMenu.value._id);
+    const menuIndex = allMenus.value.findIndex(m => m._id === selectedMenu.value._id);
     if (menuIndex !== -1) {
-      menus.value.splice(menuIndex, 1);
+      allMenus.value.splice(menuIndex, 1);
     }
 
     // 隱藏對話框
     showDeleteModal.value = false;
     selectedMenu.value = null;
 
-  } catch (error) {
-    console.error('刪除菜單失敗:', error);
-    alert('刪除菜單時發生錯誤，請稍後再試');
+  } catch (err) {
+    console.error('刪除菜單失敗:', err);
+
+    let errorMessage = '刪除菜單時發生錯誤，請稍後再試';
+    if (err.response && err.response.data && err.response.data.message) {
+      errorMessage = err.response.data.message;
+    }
+    alert(errorMessage);
   } finally {
     isDeleting.value = false;
   }
@@ -451,7 +494,6 @@ watch([storeId, brandId], ([newStoreId, newBrandId]) => {
 
 // 生命週期鉤子
 onMounted(() => {
-  // 載入數據
   fetchData();
 });
 </script>

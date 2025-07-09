@@ -59,7 +59,7 @@
               <input class="form-check-input" type="checkbox" id="menuActive" v-model="formData.isActive">
               <label class="form-check-label" for="menuActive">立即啟用菜單</label>
             </div>
-            <div class="form-text">啟用後，顧客可以在線上瀏覽此菜單並下單</div>
+            <div class="form-text">啟用後，顧客可以在線上瀏覽此菜單並下單。同類型菜單一次只能有一個啟用。</div>
           </div>
         </div>
       </div>
@@ -134,7 +134,7 @@
                             :class="{ 'is-invalid': getItemError(categoryIndex, itemIndex, 'dishTemplate') }">
                             <option value="">選擇餐點</option>
                             <option v-for="template in dishTemplates" :key="template._id" :value="template._id">
-                              {{ template.name }} - ${{ template.basePrice }}
+                              {{ template.name }} - {{ formatPrice(template.basePrice) }}
                             </option>
                           </select>
 
@@ -161,7 +161,7 @@
                           <div class="input-group input-group-sm">
                             <span class="input-group-text">$</span>
                             <input type="number" class="form-control" v-model.number="item.priceOverride" min="0"
-                              placeholder="留空使用原價" />
+                              placeholder="留空使用原價" step="0.01" />
                           </div>
                           <div class="form-text small">用於促銷或差異化定價</div>
                         </td>
@@ -209,7 +209,7 @@
                   </table>
                 </div>
 
-                <button type="button" class="btn btn-outline-primary btn-sm" @click="addItem(category)">
+                <button type="button" class="btn btn-outline-primary btn-sm" @click="addItem(categoryIndex)">
                   <i class="bi bi-plus-lg me-1"></i>添加{{ getItemButtonText() }}
                 </button>
               </div>
@@ -259,6 +259,11 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api';
+import {
+  getMenuTypeDescription,
+  formatPrice,
+  validateMenuForm
+} from './menuUtils';
 
 // 路由相關
 const router = useRouter();
@@ -296,14 +301,33 @@ const errors = reactive({
   categories: []
 });
 
-// 獲取菜單類型描述
-const getMenuTypeDescription = (type) => {
-  const descriptions = {
-    'food': '顧客使用現金購買餐點，直接享用（支援價格覆蓋）',
-    'cash_coupon': '顧客使用現金購買預購券套餐，價格由套餐設定',
-    'point_exchange': '顧客使用點數兌換預購券套餐，價格由套餐設定'
-  };
-  return descriptions[type] || '';
+// 檢查表單是否有效
+const isFormValid = computed(() => {
+  const validation = validateMenuForm(formData);
+  return validation.isValid;
+});
+
+// 菜單類型改變處理
+const onMenuTypeChange = () => {
+  // 清空所有分類的商品，因為類型改變了
+  formData.categories.forEach(category => {
+    if (category.items) {
+      category.items.forEach(item => {
+        // 重置商品選擇
+        item.dishTemplate = '';
+        item.bundle = '';
+
+        // 根據新的菜單類型設定價格覆蓋欄位
+        if (formData.menuType === 'food') {
+          item.priceOverride = null; // 只有餐點類型支援價格覆蓋
+        } else {
+          // Bundle 類型移除價格覆蓋欄位
+          delete item.priceOverride;
+          delete item.pointOverride;
+        }
+      });
+    }
+  });
 };
 
 // 獲取商品欄位標題
@@ -366,67 +390,12 @@ const getFilteredBundles = () => {
 const getBundlePriceDisplay = (bundle) => {
   if (formData.menuType === 'cash_coupon' && bundle.cashPrice) {
     const price = bundle.cashPrice.selling || bundle.cashPrice.original || 0;
-    return `$${price}`;
+    return formatPrice(price);
   } else if (formData.menuType === 'point_exchange' && bundle.pointPrice) {
     const price = bundle.pointPrice.selling || bundle.pointPrice.original || 0;
     return `${price} 點`;
   }
   return '未設定價格';
-};
-
-// 檢查表單是否有效
-const isFormValid = computed(() => {
-  // 檢查菜單名稱
-  if (!formData.name.trim()) return false;
-
-  // 檢查菜單類型
-  if (!formData.menuType) return false;
-
-  // 檢查是否有分類
-  if (formData.categories.length === 0) return false;
-
-  // 檢查每個分類
-  for (const category of formData.categories) {
-    // 檢查分類名稱
-    if (!category.name || !category.name.trim()) return false;
-
-    // 檢查是否有商品
-    if (!category.items || category.items.length === 0) return false;
-
-    // 檢查每個商品
-    for (const item of category.items) {
-      if (formData.menuType === 'food') {
-        if (!getDishTemplateId(item)) return false;
-      } else {
-        if (!getBundleId(item)) return false;
-      }
-    }
-  }
-
-  return true;
-});
-
-// 菜單類型改變處理
-const onMenuTypeChange = () => {
-  // 清空所有分類的商品，因為類型改變了
-  formData.categories.forEach(category => {
-    if (category.items) {
-      category.items.forEach(item => {
-        // 重置商品選擇
-        item.dishTemplate = '';
-        item.bundle = '';
-
-        // 根據新的菜單類型設定價格覆蓋欄位
-        if (formData.menuType === 'food') {
-          item.priceOverride = null; // 只有餐點類型支援價格覆蓋
-        } else {
-          // Bundle 類型移除價格覆蓋欄位
-          delete item.priceOverride;
-          delete item.pointOverride;
-        }
-      });
-    }
-  });
 };
 
 // 輔助函數：獲取餐點模板ID
@@ -453,6 +422,67 @@ const updateBundle = (categoryIndex, itemIndex, value) => {
   const item = formData.categories[categoryIndex].items[itemIndex];
   item.bundle = value;
   item.dishTemplate = ''; // 清除dishTemplate選擇
+};
+
+// 獲取分類錯誤訊息
+const getCategoryError = (categoryIndex, field) => {
+  if (!errors.categories || !errors.categories[categoryIndex]) {
+    return '';
+  }
+  return errors.categories[categoryIndex][field] || '';
+};
+
+// 獲取商品錯誤訊息
+const getItemError = (categoryIndex, itemIndex, field) => {
+  if (!errors.categories ||
+    !errors.categories[categoryIndex] ||
+    !errors.categories[categoryIndex].items ||
+    !errors.categories[categoryIndex].items[itemIndex]) {
+    return '';
+  }
+  return errors.categories[categoryIndex].items[itemIndex][field] || '';
+};
+
+// 驗證菜單名稱
+const validateMenuName = () => {
+  if (!formData.name.trim()) {
+    errors.name = '請輸入菜單名稱';
+    return false;
+  }
+  errors.name = '';
+  return true;
+};
+
+// 清理商品資料，移除空值欄位
+const cleanItemData = (item) => {
+  const cleanedItem = { ...item };
+
+  // 根據菜單類型設定 itemType 和清理不需要的欄位
+  if (formData.menuType === 'food') {
+    cleanedItem.itemType = 'dish';
+    delete cleanedItem.bundle;
+    delete cleanedItem.pointOverride; // 餐點不支援點數覆蓋
+    if (typeof cleanedItem.dishTemplate === 'object' && cleanedItem.dishTemplate._id) {
+      cleanedItem.dishTemplate = cleanedItem.dishTemplate._id;
+    }
+  } else {
+    cleanedItem.itemType = 'bundle';
+    delete cleanedItem.dishTemplate;
+    delete cleanedItem.priceOverride; // Bundle 不支援價格覆蓋
+    delete cleanedItem.pointOverride; // Bundle 不支援價格覆蓋
+    if (typeof cleanedItem.bundle === 'object' && cleanedItem.bundle._id) {
+      cleanedItem.bundle = cleanedItem.bundle._id;
+    }
+  }
+
+  // 清理空值
+  Object.keys(cleanedItem).forEach(key => {
+    if (cleanedItem[key] === '' || cleanedItem[key] === null || cleanedItem[key] === undefined) {
+      delete cleanedItem[key];
+    }
+  });
+
+  return cleanedItem;
 };
 
 // 獲取店鋪資料
@@ -508,9 +538,14 @@ const fetchMenuData = async () => {
   if (!isEditMode.value || !storeId.value || !menuId.value) return;
 
   try {
-    const response = await api.menu.getStoreMenu({ brandId: brandId.value, storeId: storeId.value });
+    const response = await api.menu.getMenuById({
+      brandId: brandId.value,
+      storeId: storeId.value,
+      menuId: menuId.value,
+      includeUnpublished: true
+    });
 
-    if (response && response.menu && response.menu._id === menuId.value) {
+    if (response && response.menu) {
       const menu = response.menu;
 
       formData.name = menu.name || '';
@@ -521,7 +556,7 @@ const fetchMenuData = async () => {
       if (menu.categories && menu.categories.length > 0) {
         formData.categories = menu.categories.map(category => ({
           ...category,
-          items: category.items.map(item => {
+          items: category.items ? category.items.map(item => {
             // 根據菜單類型設定正確的 itemType
             const newItem = { ...item };
             if (formData.menuType === 'food') {
@@ -530,7 +565,7 @@ const fetchMenuData = async () => {
               newItem.itemType = 'bundle';
             }
             return newItem;
-          })
+          }) : []
         }));
       }
     } else {
@@ -540,67 +575,6 @@ const fetchMenuData = async () => {
     console.error('獲取菜單資料時發生錯誤:', err);
     formErrors.value.push('獲取菜單資料時發生錯誤，請稍後再試');
   }
-};
-
-// 驗證菜單名稱
-const validateMenuName = () => {
-  if (!formData.name.trim()) {
-    errors.name = '請輸入菜單名稱';
-    return false;
-  }
-  errors.name = '';
-  return true;
-};
-
-// 獲取分類錯誤訊息
-const getCategoryError = (categoryIndex, field) => {
-  if (!errors.categories || !errors.categories[categoryIndex]) {
-    return '';
-  }
-  return errors.categories[categoryIndex][field] || '';
-};
-
-// 獲取商品錯誤訊息
-const getItemError = (categoryIndex, itemIndex, field) => {
-  if (!errors.categories ||
-    !errors.categories[categoryIndex] ||
-    !errors.categories[categoryIndex].items ||
-    !errors.categories[categoryIndex].items[itemIndex]) {
-    return '';
-  }
-  return errors.categories[categoryIndex].items[itemIndex][field] || '';
-};
-
-// 清理商品資料，移除空值欄位
-const cleanItemData = (item) => {
-  const cleanedItem = { ...item };
-
-  // 根據菜單類型設定 itemType 和清理不需要的欄位
-  if (formData.menuType === 'food') {
-    cleanedItem.itemType = 'dish';
-    delete cleanedItem.bundle;
-    delete cleanedItem.pointOverride; // 餐點不支援點數覆蓋
-    if (typeof cleanedItem.dishTemplate === 'object' && cleanedItem.dishTemplate._id) {
-      cleanedItem.dishTemplate = cleanedItem.dishTemplate._id;
-    }
-  } else {
-    cleanedItem.itemType = 'bundle';
-    delete cleanedItem.dishTemplate;
-    delete cleanedItem.priceOverride; // Bundle 不支援價格覆蓋
-    delete cleanedItem.pointOverride; // Bundle 不支援價格覆蓋
-    if (typeof cleanedItem.bundle === 'object' && cleanedItem.bundle._id) {
-      cleanedItem.bundle = cleanedItem.bundle._id;
-    }
-  }
-
-  // 清理空值
-  Object.keys(cleanedItem).forEach(key => {
-    if (cleanedItem[key] === '' || cleanedItem[key] === null || cleanedItem[key] === undefined) {
-      delete cleanedItem[key];
-    }
-  });
-
-  return cleanedItem;
 };
 
 // 添加分類
@@ -637,7 +611,9 @@ const moveCategory = (categoryIndex, direction) => {
 };
 
 // 添加商品
-const addItem = (category) => {
+const addItem = (categoryIndex) => {
+  const category = formData.categories[categoryIndex];
+
   if (!category.items) {
     category.items = [];
   }
@@ -686,74 +662,48 @@ const moveItem = (categoryIndex, itemIndex, direction) => {
 
 // 驗證整個表單
 const validateForm = () => {
+  const validation = validateMenuForm(formData);
+
+  // 更新錯誤狀態
+  errors.name = validation.errors.name;
+  errors.menuType = validation.errors.menuType;
+  errors.categories = validation.errors.categories;
+
+  // 生成錯誤訊息列表
   formErrors.value = [];
-  let isValid = true;
 
-  // 驗證菜單名稱
-  if (!validateMenuName()) {
-    formErrors.value.push('請輸入菜單名稱');
-    isValid = false;
+  if (validation.errors.name) {
+    formErrors.value.push(validation.errors.name);
   }
 
-  // 驗證菜單類型
-  if (!formData.menuType) {
-    errors.menuType = '請選擇菜單類型';
-    formErrors.value.push('請選擇菜單類型');
-    isValid = false;
-  } else {
-    errors.menuType = '';
+  if (validation.errors.menuType) {
+    formErrors.value.push(validation.errors.menuType);
   }
 
-  // 驗證分類
-  if (formData.categories.length === 0) {
+  if (!formData.categories || formData.categories.length === 0) {
     formErrors.value.push('菜單至少需要一個分類');
-    isValid = false;
   }
 
-  // 初始化錯誤對象
-  errors.categories = [];
-
-  // 驗證每個分類
+  // 檢查分類和商品錯誤
   formData.categories.forEach((category, categoryIndex) => {
-    if (!errors.categories[categoryIndex]) {
-      errors.categories[categoryIndex] = {};
-    }
-
-    // 驗證分類名稱
     if (!category.name || !category.name.trim()) {
-      errors.categories[categoryIndex].name = '請輸入分類名稱';
       formErrors.value.push(`分類 #${categoryIndex + 1}: 請輸入分類名稱`);
-      isValid = false;
     }
 
-    // 檢查是否有商品
     if (!category.items || category.items.length === 0) {
       formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 至少需要一個商品`);
-      isValid = false;
     } else {
-      // 初始化商品錯誤對象
-      errors.categories[categoryIndex].items = [];
-
-      // 驗證每個商品
       category.items.forEach((item, itemIndex) => {
-        if (!errors.categories[categoryIndex].items[itemIndex]) {
-          errors.categories[categoryIndex].items[itemIndex] = {};
-        }
-
         if (formData.menuType === 'food' && !getDishTemplateId(item)) {
-          errors.categories[categoryIndex].items[itemIndex].dishTemplate = '請選擇餐點';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇餐點`);
-          isValid = false;
         } else if (formData.menuType !== 'food' && !getBundleId(item)) {
-          errors.categories[categoryIndex].items[itemIndex].bundle = '請選擇套餐';
           formErrors.value.push(`分類 "${category.name || `#${categoryIndex + 1}`}" 中的商品 #${itemIndex + 1}: 請選擇套餐`);
-          isValid = false;
         }
       });
     }
   });
 
-  return isValid;
+  return validation.isValid && formErrors.value.length === 0;
 };
 
 // 重置表單

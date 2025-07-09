@@ -63,6 +63,9 @@
                         <span class="badge" :class="getItemTypeBadgeClass(item.itemType)">
                           {{ getItemTypeText(item.itemType) }}
                         </span>
+                        <span class="badge bg-light text-dark ms-1">
+                          {{ getItemName(item) }}
+                        </span>
                       </div>
                       <div v-if="category.items.length > 3" class="col-auto">
                         <span class="text-muted">+{{ category.items.length - 3 }} 項...</span>
@@ -118,6 +121,12 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue';
 import { BModal } from 'bootstrap-vue-next';
+import {
+  getItemTypeText,
+  getItemTypeBadgeClass,
+  getItemName,
+  sortCategories
+} from './menuUtils';
 
 // 定義props
 const props = defineProps({
@@ -132,6 +141,16 @@ const props = defineProps({
   },
   // 錯誤信息
   errors: {
+    type: Array,
+    default: () => []
+  },
+  // 餐點模板陣列 (用於顯示商品名稱)
+  dishTemplates: {
+    type: Array,
+    default: () => []
+  },
+  // 套餐陣列 (用於顯示商品名稱)
+  bundles: {
     type: Array,
     default: () => []
   }
@@ -161,31 +180,13 @@ const modalErrors = reactive({
 
 // 按照順序排序的分類
 const sortedCategories = computed(() => {
-  return [...categories.value].sort((a, b) => a.order - b.order);
+  return sortCategories(categories.value);
 });
 
 // 從props同步資料
 watch(() => props.modelValue, (newValue) => {
   categories.value = JSON.parse(JSON.stringify(newValue)); // 深複製
 }, { deep: true, immediate: true });
-
-// 獲取商品類型文字
-const getItemTypeText = (type) => {
-  const typeMap = {
-    'dish': '餐點',
-    'bundle': '套餐'
-  };
-  return typeMap[type] || type;
-};
-
-// 獲取商品類型標記樣式
-const getItemTypeBadgeClass = (type) => {
-  const classMap = {
-    'dish': 'bg-primary',
-    'bundle': 'bg-success'
-  };
-  return classMap[type] || 'bg-secondary';
-};
 
 // 獲取分類欄位錯誤
 const getCategoryError = (categoryIndex, field) => {
@@ -307,6 +308,11 @@ const saveCategory = () => {
 
   // 關閉模態框
   showModal.value = false;
+};
+
+// 使用工具函數獲取商品名稱，傳入必要的陣列
+const getItemNameWithData = (item) => {
+  return getItemName(item, props.dishTemplates, props.bundles);
 };
 </script>
 

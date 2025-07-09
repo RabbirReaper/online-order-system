@@ -58,10 +58,10 @@
                 <p class="mb-2"><strong>所屬店鋪:</strong> {{ storeName }}</p>
                 <p class="mb-2"><strong>菜單類型:</strong> {{ getMenuTypeText(menu.menuType) }}</p>
                 <p class="mb-2"><strong>分類數量:</strong> {{ menu.categories ? menu.categories.length : 0 }}</p>
-                <p class="mb-2"><strong>商品數量:</strong> {{ countTotalItems() }}</p>
+                <p class="mb-2"><strong>商品數量:</strong> {{ countTotalItems(menu) }}</p>
               </div>
               <div class="col-md-6">
-                <p class="mb-2"><strong>顯示商品數量:</strong> {{ countActiveItems() }}</p>
+                <p class="mb-2"><strong>顯示商品數量:</strong> {{ countActiveItems(menu) }}</p>
                 <p class="mb-2"><strong>建立時間:</strong> {{ formatDate(menu.createdAt) }}</p>
                 <p class="mb-2"><strong>最後更新:</strong> {{ formatDate(menu.updatedAt) }}</p>
               </div>
@@ -116,27 +116,28 @@
                             <!-- 現金價格 -->
                             <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
                               <p class="item-price text-success mb-1">
-                                <strong>現金價: ${{ item.priceOverride }}</strong>
+                                <strong>現金價: {{ formatPrice(item.priceOverride) }}</strong>
                               </p>
                               <p class="original-price text-muted small text-decoration-line-through">
-                                原價: ${{ getItemOriginalPrice(item) }}
+                                原價: {{ formatPrice(getItemOriginalPrice(item)) }}
                               </p>
                             </div>
                             <div v-else>
-                              <p class="item-price mb-1">現金價: ${{ getItemOriginalPrice(item) }}</p>
+                              <p class="item-price mb-1">現金價: {{ formatPrice(getItemOriginalPrice(item)) }}</p>
                             </div>
 
                             <!-- 點數價格 -->
                             <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
                               <p class="item-points text-warning mb-0">
-                                <strong>點數價: {{ item.pointOverride }} 點</strong>
+                                <strong>點數價: {{ formatPoints(item.pointOverride) }}</strong>
                               </p>
                               <p class="original-points text-muted small text-decoration-line-through">
-                                原點數: {{ getItemOriginalPoints(item) }} 點
+                                原點數: {{ formatPoints(getItemOriginalPoints(item)) }}
                               </p>
                             </div>
                             <div v-else-if="getItemOriginalPoints(item) > 0">
-                              <p class="item-points text-warning mb-0">點數價: {{ getItemOriginalPoints(item) }} 點</p>
+                              <p class="item-points text-warning mb-0">點數價: {{ formatPoints(getItemOriginalPoints(item))
+                                }}</p>
                             </div>
                           </div>
                         </div>
@@ -190,27 +191,24 @@
                         <td>{{ getItemName(item) }}</td>
                         <td>
                           <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
-                            <span class="text-success fw-bold">${{ item.priceOverride }}</span>
+                            <span class="text-success fw-bold">{{ formatPrice(item.priceOverride) }}</span>
                             <small class="text-muted text-decoration-line-through d-block">
-                              原價: ${{ getItemOriginalPrice(item) }}
+                              原價: {{ formatPrice(getItemOriginalPrice(item)) }}
                             </small>
                           </div>
                           <div v-else>
-                            ${{ getItemOriginalPrice(item) }}
+                            {{ formatPrice(getItemOriginalPrice(item)) }}
                           </div>
                         </td>
                         <td>
                           <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
-                            <span class="text-warning fw-bold">{{ item.pointOverride }} 點</span>
+                            <span class="text-warning fw-bold">{{ formatPoints(item.pointOverride) }}</span>
                             <small class="text-muted text-decoration-line-through d-block">
-                              原點數: {{ getItemOriginalPoints(item) }} 點
+                              原點數: {{ formatPoints(getItemOriginalPoints(item)) }}
                             </small>
                           </div>
-                          <div v-else-if="getItemOriginalPoints(item) > 0">
-                            {{ getItemOriginalPoints(item) }} 點
-                          </div>
                           <div v-else>
-                            -
+                            {{ formatPoints(getItemOriginalPoints(item)) }}
                           </div>
                         </td>
                         <td>
@@ -242,6 +240,23 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import api from '@/api';
+import {
+  getMenuTypeText,
+  getItemTypeText,
+  getItemTypeBadgeClass,
+  formatPrice,
+  formatPoints,
+  formatDate,
+  countTotalItems,
+  countActiveItems,
+  sortCategories,
+  sortItems,
+  getItemName,
+  getItemDescription,
+  getItemImage,
+  getItemOriginalPrice,
+  getItemOriginalPoints
+} from './menuUtils';
 
 // 路由相關
 const route = useRoute();
@@ -252,8 +267,6 @@ const menuId = computed(() => route.params.menuId);
 // 狀態變數
 const store = ref(null);
 const menu = ref(null);
-const dishTemplates = ref([]);
-const bundles = ref([]);
 const isLoading = ref(true);
 const error = ref('');
 const storeName = ref('載入中...');
@@ -261,237 +274,52 @@ const storeName = ref('載入中...');
 // 計算屬性
 const sortedCategories = computed(() => {
   if (!menu.value || !menu.value.categories) return [];
-  return [...menu.value.categories].sort((a, b) => a.order - b.order);
+  return sortCategories(menu.value.categories);
 });
-
-// 獲取菜單類型文字
-const getMenuTypeText = (type) => {
-  const typeMap = {
-    'food': '現金購買餐點',
-    'cash_coupon': '現金購買預購券',
-    'point_exchange': '點數兌換'
-  };
-  return typeMap[type] || type;
-};
-
-// 獲取商品類型文字
-const getItemTypeText = (type) => {
-  const typeMap = {
-    'dish': '餐點',
-    'bundle': '套餐'
-  };
-  return typeMap[type] || type;
-};
-
-// 獲取商品類型標記樣式
-const getItemTypeBadgeClass = (type) => {
-  const classMap = {
-    'dish': 'bg-primary',
-    'bundle': 'bg-success'
-  };
-  return classMap[type] || 'bg-secondary';
-};
-
-// 格式化價格
-const formatPrice = (price) => {
-  if (price === undefined || price === null) return '$0';
-  return `$${price}`;
-};
-
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// 排序商品
-const sortItems = (items) => {
-  if (!items) return [];
-  return [...items].sort((a, b) => a.order - b.order);
-};
-
-// 獲取商品名稱
-const getItemName = (item) => {
-  if (!item) return '未知商品';
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.name;
-    }
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template ? template.name : '未知餐點';
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.name;
-    }
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.name : '未知套餐';
-  }
-
-  return '未知商品';
-};
-
-// 獲取商品描述
-const getItemDescription = (item) => {
-  if (!item) return '';
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.description || '';
-    }
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template ? template.description || '' : '';
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.description || '';
-    }
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.description || '' : '';
-  }
-
-  return '';
-};
-
-// 獲取商品圖片
-const getItemImage = (item) => {
-  if (!item) return '/placeholder.jpg';
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.image?.url || '/placeholder.jpg';
-    }
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template && template.image && template.image.url ? template.image.url : '/placeholder.jpg';
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    // 套餐暫時使用預設圖片
-    return '/placeholder.jpg';
-  }
-
-  return '/placeholder.jpg';
-};
-
-// 獲取商品原始價格
-const getItemOriginalPrice = (item) => {
-  if (!item) return 0;
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.basePrice || 0;
-    }
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template ? template.basePrice || 0 : 0;
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.sellingPrice || 0;
-    }
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.sellingPrice || 0 : 0;
-  }
-
-  return 0;
-};
-
-// 獲取商品原始點數
-const getItemOriginalPoints = (item) => {
-  if (!item) return 0;
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.sellingPoint || 0;
-    }
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.sellingPoint || 0 : 0;
-  }
-
-  // 餐點暫時沒有點數價格
-  return 0;
-};
-
-// 計算總商品數量
-const countTotalItems = () => {
-  if (!menu.value || !menu.value.categories) return 0;
-  return menu.value.categories.reduce((total, category) => {
-    return total + (category.items ? category.items.length : 0);
-  }, 0);
-};
-
-// 計算已啟用商品數量
-const countActiveItems = () => {
-  if (!menu.value || !menu.value.categories) return 0;
-  return menu.value.categories.reduce((total, category) => {
-    if (!category.items) return total;
-    return total + category.items.filter(item => item.isShowing).length;
-  }, 0);
-};
-
-// 獲取餐點模板資料
-const fetchDishTemplates = async () => {
-  if (!brandId.value) return;
-
-  try {
-    const response = await api.dish.getAllDishTemplates({ brandId: brandId.value });
-    if (response && response.templates) {
-      dishTemplates.value = response.templates;
-    }
-  } catch (err) {
-    console.error('獲取餐點模板失敗:', err);
-  }
-};
-
-// 獲取套餐資料
-const fetchBundles = async () => {
-  // TODO: 實作套餐 API 後再補上
-  bundles.value = [];
-};
 
 // 獲取店鋪和菜單資料
 const fetchData = async () => {
-  if (!storeId.value || !menuId.value) return;
+  if (!storeId.value || !menuId.value || !brandId.value) return;
 
   isLoading.value = true;
   error.value = '';
 
   try {
     // 1. 獲取店鋪資料
-    const storeResponse = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+    const storeResponse = await api.store.getStoreById({
+      brandId: brandId.value,
+      id: storeId.value
+    });
+
     if (storeResponse && storeResponse.store) {
       store.value = storeResponse.store;
       storeName.value = storeResponse.store.name;
     } else {
       error.value = '無法獲取店鋪資訊';
+      return;
     }
 
-    // 2. 獲取餐點模板資料
-    await fetchDishTemplates();
+    // 2. 獲取菜單資料
+    const menuResponse = await api.menu.getMenuById({
+      brandId: brandId.value,
+      storeId: storeId.value,
+      menuId: menuId.value,
+      includeUnpublished: true // 管理界面顯示所有商品
+    });
 
-    // 3. 獲取套餐資料
-    await fetchBundles();
-
-    // 4. 獲取菜單資料
-    const menuResponse = await api.menu.getStoreMenu({ brandId: brandId.value, storeId: storeId.value });
-    if (menuResponse && menuResponse.menu && menuResponse.menu._id === menuId.value) {
+    if (menuResponse && menuResponse.menu) {
       menu.value = menuResponse.menu;
     } else {
       error.value = '無法獲取菜單資訊';
     }
+
   } catch (err) {
     console.error('獲取資料失敗:', err);
-    error.value = '獲取資料時發生錯誤，請稍後再試';
+    if (err.response && err.response.status === 404) {
+      error.value = '找不到指定的菜單';
+    } else {
+      error.value = '獲取資料時發生錯誤，請稍後再試';
+    }
   } finally {
     isLoading.value = false;
   }
@@ -506,7 +334,6 @@ watch([storeId, menuId, brandId], ([newStoreId, newMenuId, newBrandId]) => {
 
 // 生命週期鉤子
 onMounted(() => {
-  // 載入資料
   fetchData();
 });
 </script>

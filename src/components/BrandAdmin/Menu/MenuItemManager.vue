@@ -27,7 +27,7 @@
               <tr v-for="(item, index) in sortedItems" :key="index" :class="{ 'table-secondary': !item.isShowing }">
                 <td>{{ item.order }}</td>
                 <td>
-                  <img :src="getItemImage(item)" class="item-thumbnail" :alt="getItemName(item)">
+                  <img :src="getItemImageDisplay(item)" class="item-thumbnail" :alt="getItemNameDisplay(item)">
                 </td>
                 <td>
                   <span class="badge" :class="getItemTypeBadgeClass(item.itemType)">
@@ -35,33 +35,30 @@
                   </span>
                 </td>
                 <td>
-                  <div class="fw-bold">{{ getItemName(item) }}</div>
-                  <div class="small text-muted">{{ getItemDescription(item) }}</div>
+                  <div class="fw-bold">{{ getItemNameDisplay(item) }}</div>
+                  <div class="small text-muted">{{ getItemDescriptionDisplay(item) }}</div>
                 </td>
                 <td>
                   <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
-                    <span class="text-success fw-bold">${{ item.priceOverride }}</span>
+                    <span class="text-success fw-bold">{{ formatPrice(item.priceOverride) }}</span>
                     <small class="text-muted text-decoration-line-through d-block">
-                      原: ${{ getItemOriginalPrice(item) }}
+                      原: {{ formatPrice(getItemOriginalPriceDisplay(item)) }}
                     </small>
                   </div>
                   <div v-else>
-                    ${{ getItemOriginalPrice(item) }}
+                    {{ formatPrice(getItemOriginalPriceDisplay(item)) }}
                   </div>
                 </td>
                 <td>
                   <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
-                    <span class="text-warning fw-bold">{{ item.pointOverride }} 點</span>
+                    <span class="text-warning fw-bold">{{ formatPoints(item.pointOverride) }}</span>
                     <small class="text-muted text-decoration-line-through d-block"
-                      v-if="getItemOriginalPoints(item) > 0">
-                      原: {{ getItemOriginalPoints(item) }} 點
+                      v-if="getItemOriginalPointsDisplay(item) > 0">
+                      原: {{ formatPoints(getItemOriginalPointsDisplay(item)) }}
                     </small>
                   </div>
-                  <div v-else-if="getItemOriginalPoints(item) > 0">
-                    {{ getItemOriginalPoints(item) }} 點
-                  </div>
                   <div v-else>
-                    -
+                    {{ formatPoints(getItemOriginalPointsDisplay(item)) }}
                   </div>
                 </td>
                 <td>
@@ -123,7 +120,7 @@
         <input type="text" class="form-control" disabled :value="formatPrice(editForm.originalPrice)">
       </div>
 
-      <div class="mb-3">
+      <div class="mb-3" v-if="editForm.itemType === 'dish'">
         <label for="itemPriceOverride" class="form-label">自訂現金價格 (可選)</label>
         <div class="input-group">
           <span class="input-group-text">$</span>
@@ -135,10 +132,10 @@
 
       <div class="mb-3" v-if="editForm.originalPoints > 0">
         <label class="form-label">原始點數</label>
-        <input type="text" class="form-control" disabled :value="`${editForm.originalPoints} 點`">
+        <input type="text" class="form-control" disabled :value="formatPoints(editForm.originalPoints)">
       </div>
 
-      <div class="mb-3">
+      <div class="mb-3" v-if="editForm.itemType === 'bundle' && editForm.originalPoints > 0">
         <label for="itemPointOverride" class="form-label">自訂點數價格 (可選)</label>
         <div class="input-group">
           <input type="number" id="itemPointOverride" class="form-control" v-model="editForm.pointOverride"
@@ -231,7 +228,7 @@
             <thead>
               <tr>
                 <th>套餐名稱</th>
-                <th style="width: 120px">售價</th>
+                <th style="width: 120px">現金價格</th>
                 <th style="width: 120px">點數價格</th>
                 <th style="width: 100px">操作</th>
               </tr>
@@ -242,8 +239,8 @@
                   <div class="fw-bold">{{ bundle.name }}</div>
                   <div class="small text-muted">{{ bundle.description }}</div>
                 </td>
-                <td>{{ formatPrice(bundle.sellingPrice) }}</td>
-                <td>{{ bundle.sellingPoint ? `${bundle.sellingPoint} 點` : '-' }}</td>
+                <td>{{ getBundleCashPrice(bundle) }}</td>
+                <td>{{ getBundlePointPrice(bundle) }}</td>
                 <td>
                   <button class="btn btn-sm btn-primary" @click="selectItem('bundle', bundle)">
                     <i class="bi bi-plus-lg me-1"></i>選擇
@@ -273,6 +270,18 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { BModal } from 'bootstrap-vue-next';
 import api from '@/api';
+import {
+  getItemTypeText,
+  getItemTypeBadgeClass,
+  formatPrice,
+  formatPoints,
+  sortItems,
+  getItemName,
+  getItemDescription,
+  getItemImage,
+  getItemOriginalPrice,
+  getItemOriginalPoints
+} from './menuUtils';
 
 // 定義props
 const props = defineProps({
@@ -289,6 +298,11 @@ const props = defineProps({
   brandId: {
     type: String,
     required: true
+  },
+  // 菜單類型 (用於篩選 Bundle)
+  menuType: {
+    type: String,
+    default: 'food'
   }
 });
 
@@ -322,7 +336,7 @@ const editForm = reactive({
 
 // 按照順序排序的商品
 const sortedItems = computed(() => {
-  return [...items.value].sort((a, b) => a.order - b.order);
+  return sortItems(items.value);
 });
 
 // 從props同步資料
@@ -330,111 +344,46 @@ watch(() => props.modelValue, (newValue) => {
   items.value = JSON.parse(JSON.stringify(newValue)); // 深複製
 }, { deep: true, immediate: true });
 
-// 獲取商品類型文字
-const getItemTypeText = (type) => {
-  const typeMap = {
-    'dish': '餐點',
-    'bundle': '套餐'
-  };
-  return typeMap[type] || type;
-};
-
-// 獲取商品類型標記樣式
-const getItemTypeBadgeClass = (type) => {
-  const classMap = {
-    'dish': 'bg-primary',
-    'bundle': 'bg-success'
-  };
-  return classMap[type] || 'bg-secondary';
-};
-
-// 格式化價格
-const formatPrice = (price) => {
-  if (price === undefined || price === null) return '$0';
-  return `$${price}`;
-};
-
-// 獲取商品名稱
-const getItemName = (item) => {
-  if (!item) return '未知商品';
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template ? template.name : '未知餐點';
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.name : '未知套餐';
-  }
-
-  return '未知商品';
-};
-
-// 獲取商品描述
-const getItemDescription = (item) => {
-  if (!item) return '';
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template ? template.description || '' : '';
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.description || '' : '';
-  }
-
-  return '';
-};
-
-// 獲取商品圖片
-const getItemImage = (item) => {
-  if (!item) return '/placeholder.jpg';
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template && template.image && template.image.url ? template.image.url : '/placeholder.jpg';
-  }
-
-  // 套餐暫時使用預設圖片
-  return '/placeholder.jpg';
-};
-
-// 獲取商品原始價格
-const getItemOriginalPrice = (item) => {
-  if (!item) return 0;
-
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    const template = dishTemplates.value.find(t => t._id === item.dishTemplate);
-    return template ? template.basePrice || 0 : 0;
-  }
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.sellingPrice || 0 : 0;
-  }
-
-  return 0;
-};
-
-// 獲取商品原始點數
-const getItemOriginalPoints = (item) => {
-  if (!item) return 0;
-
-  if (item.itemType === 'bundle' && item.bundle) {
-    const bundle = bundles.value.find(b => b._id === item.bundle);
-    return bundle ? bundle.sellingPoint || 0 : 0;
-  }
-
-  // 餐點暫時沒有點數價格
-  return 0;
-};
-
 // 商品類型改變處理
 const onItemTypeChange = () => {
   searchQuery.value = '';
   filterItems();
+};
+
+// 獲取套餐現金價格顯示
+const getBundleCashPrice = (bundle) => {
+  if (bundle.cashPrice) {
+    const price = bundle.cashPrice.selling || bundle.cashPrice.original || 0;
+    return formatPrice(price);
+  }
+  return '-';
+};
+
+// 獲取套餐點數價格顯示
+const getBundlePointPrice = (bundle) => {
+  if (bundle.pointPrice) {
+    const price = bundle.pointPrice.selling || bundle.pointPrice.original || 0;
+    return formatPoints(price);
+  }
+  return '-';
+};
+
+// 篩選 Bundle 根據菜單類型
+const getFilteredBundlesByMenuType = () => {
+  if (props.menuType === 'cash_coupon') {
+    // 現金購買預購券：需要有現金價格的 Bundle
+    return bundles.value.filter(bundle =>
+      bundle.cashPrice &&
+      (bundle.cashPrice.selling > 0 || bundle.cashPrice.original > 0)
+    );
+  } else if (props.menuType === 'point_exchange') {
+    // 點數兌換：需要有點數價格的 Bundle
+    return bundles.value.filter(bundle =>
+      bundle.pointPrice &&
+      (bundle.pointPrice.selling > 0 || bundle.pointPrice.original > 0)
+    );
+  }
+  return bundles.value;
 };
 
 // 添加商品
@@ -465,10 +414,11 @@ const filterItems = () => {
       );
     }
   } else if (selectedItemType.value === 'bundle') {
+    const availableBundles = getFilteredBundlesByMenuType();
     if (!query) {
-      filteredBundles.value = [...bundles.value];
+      filteredBundles.value = [...availableBundles];
     } else {
-      filteredBundles.value = bundles.value.filter(bundle =>
+      filteredBundles.value = availableBundles.filter(bundle =>
         bundle.name.toLowerCase().includes(query) ||
         (bundle.description && bundle.description.toLowerCase().includes(query))
       );
@@ -519,9 +469,9 @@ const editItem = (index) => {
 
   // 設置表單值
   editForm.itemType = item.itemType;
-  editForm.name = getItemName(item);
-  editForm.originalPrice = getItemOriginalPrice(item);
-  editForm.originalPoints = getItemOriginalPoints(item);
+  editForm.name = getItemName(item, dishTemplates.value, bundles.value);
+  editForm.originalPrice = getItemOriginalPrice(item, dishTemplates.value, bundles.value);
+  editForm.originalPoints = getItemOriginalPoints(item, dishTemplates.value, bundles.value);
   editForm.priceOverride = item.priceOverride !== undefined && item.priceOverride !== null ? item.priceOverride : null;
   editForm.pointOverride = item.pointOverride !== undefined && item.pointOverride !== null ? item.pointOverride : null;
   editForm.isShowing = item.isShowing !== undefined ? item.isShowing : true;
@@ -563,7 +513,8 @@ const saveItem = () => {
 
 // 移除商品
 const removeItem = (index) => {
-  if (!confirm(`確定要移除「${getItemName(items.value[index])}」嗎？`)) {
+  const itemName = getItemName(items.value[index], dishTemplates.value, bundles.value);
+  if (!confirm(`確定要移除「${itemName}」嗎？`)) {
     return;
   }
 
@@ -625,16 +576,18 @@ const fetchData = async () => {
       filteredDishTemplates.value = [...dishResponse.templates];
     }
 
-    // TODO: 獲取套餐資料
-    // const bundleResponse = await api.bundle.getAllBundles({ brandId: props.brandId });
-    // if (bundleResponse && bundleResponse.bundles) {
-    //   bundles.value = bundleResponse.bundles;
-    //   filteredBundles.value = [...bundleResponse.bundles];
-    // }
-
-    // 暫時使用空陣列
-    bundles.value = [];
-    filteredBundles.value = [];
+    // 獲取套餐資料
+    try {
+      const bundleResponse = await api.bundle.getAllBundles({ brandId: props.brandId });
+      if (bundleResponse && bundleResponse.bundles) {
+        bundles.value = bundleResponse.bundles;
+        filteredBundles.value = getFilteredBundlesByMenuType();
+      }
+    } catch (error) {
+      console.warn('套餐 API 可能尚未實作:', error);
+      bundles.value = [];
+      filteredBundles.value = [];
+    }
 
   } catch (error) {
     console.error('獲取資料失敗:', error);
@@ -642,6 +595,34 @@ const fetchData = async () => {
     isLoadingData.value = false;
   }
 };
+
+// 使用工具函數獲取商品相關資訊，傳入必要的陣列
+const getItemNameWithData = (item) => {
+  return getItemName(item, dishTemplates.value, bundles.value);
+};
+
+const getItemDescriptionWithData = (item) => {
+  return getItemDescription(item, dishTemplates.value, bundles.value);
+};
+
+const getItemImageWithData = (item) => {
+  return getItemImage(item, dishTemplates.value, bundles.value);
+};
+
+const getItemOriginalPriceWithData = (item) => {
+  return getItemOriginalPrice(item, dishTemplates.value, bundles.value);
+};
+
+const getItemOriginalPointsWithData = (item) => {
+  return getItemOriginalPoints(item, dishTemplates.value, bundles.value);
+};
+
+// 重新定義方法以避免重名
+const getItemNameDisplay = getItemNameWithData;
+const getItemDescriptionDisplay = getItemDescriptionWithData;
+const getItemImageDisplay = getItemImageWithData;
+const getItemOriginalPriceDisplay = getItemOriginalPriceWithData;
+const getItemOriginalPointsDisplay = getItemOriginalPointsWithData;
 
 // 生命週期鉤子
 onMounted(async () => {
