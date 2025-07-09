@@ -543,6 +543,7 @@ export const useCounterStore = defineStore('counter', () => {
         if (item.dishInstance) {
           // 餐點項目
           mergedItems[key] = {
+            itemType: 'dish', // ✅ 加入這行
             templateId: item.dishInstance.templateId,
             name: item.dishInstance.name,
             basePrice: item.dishInstance.basePrice,
@@ -555,6 +556,7 @@ export const useCounterStore = defineStore('counter', () => {
         } else if (item.bundleInstance) {
           // 套餐項目
           mergedItems[key] = {
+            itemType: 'bundle', // ✅ 加入這行
             bundleId: item.bundleInstance.bundleId,
             name: item.bundleInstance.name,
             sellingPrice: item.bundleInstance.sellingPrice,
@@ -609,8 +611,10 @@ export const useCounterStore = defineStore('counter', () => {
       if (response.success) {
         clearCart();
         await fetchTodayOrders(currentBrand.value, currentStore.value);
+        console.log('訂單提交成功:', response.order);
         return response.order;
       } else {
+        console.error('訂單提交失敗:', response);
         throw new Error(response.message || '訂單提交失敗');
       }
     } catch (error) {
