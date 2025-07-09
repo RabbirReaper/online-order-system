@@ -342,7 +342,7 @@ export const useCartStore = defineStore('cart', () => {
     return Object.keys(errors).length === 0;
   }
 
-  // 簡化 submitOrder 函數，統一使用 authStore
+  // 提交訂單
   async function submitOrder() {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' };
@@ -377,6 +377,7 @@ export const useCartStore = defineStore('cart', () => {
       const orderData = {
         // 訂單項目 - 轉換為後端期望的格式
         items: items.value.map(item => ({
+          itemType: 'dish', // ✅ 新增 itemType 欄位
           templateId: item.dishInstance.templateId,
           name: item.dishInstance.name,
           basePrice: item.dishInstance.basePrice,
