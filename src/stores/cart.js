@@ -376,17 +376,51 @@ export const useCartStore = defineStore('cart', () => {
       // 準備訂單資料，符合後端 API 期望的格式
       const orderData = {
         // 訂單項目 - 轉換為後端期望的格式
-        items: items.value.map(item => ({
-          itemType: 'dish', // ✅ 新增 itemType 欄位
-          templateId: item.dishInstance.templateId,
-          name: item.dishInstance.name,
-          basePrice: item.dishInstance.basePrice,
-          finalPrice: item.dishInstance.finalPrice || item.dishInstance.basePrice,
-          options: item.dishInstance.options || [],
-          quantity: item.quantity,
-          subtotal: item.subtotal,
-          note: item.note || ''
-        })),
+        items: items.value.map(item => {
+          // 動態判斷項目類型
+          if (item.dishInstance) {
+            // 餐點項目
+            return {
+              itemType: 'dish',
+              templateId: item.dishInstance.templateId,
+              name: item.dishInstance.name,
+              basePrice: item.dishInstance.basePrice,
+              finalPrice: item.dishInstance.finalPrice || item.dishInstance.basePrice,
+              options: item.dishInstance.options || [],
+              quantity: item.quantity,
+              subtotal: item.subtotal,
+              note: item.note || ''
+            };
+          } else if (item.bundleInstance) {
+            // 套餐項目
+            return {
+              itemType: 'bundle',
+              bundleId: item.bundleInstance.bundleId,
+              name: item.bundleInstance.name,
+              sellingPrice: item.bundleInstance.sellingPrice,
+              originalPrice: item.bundleInstance.originalPrice,
+              sellingPoint: item.bundleInstance.sellingPoint,
+              originalPoint: item.bundleInstance.originalPoint,
+              bundleItems: item.bundleInstance.bundleItems,
+              quantity: item.quantity,
+              subtotal: item.subtotal,
+              note: item.note || ''
+            };
+          } else {
+            // 預設為餐點（向下相容）
+            return {
+              itemType: 'dish',
+              templateId: item.dishInstance?.templateId,
+              name: item.dishInstance?.name,
+              basePrice: item.dishInstance?.basePrice,
+              finalPrice: item.dishInstance?.finalPrice || item.dishInstance?.basePrice,
+              options: item.dishInstance?.options || [],
+              quantity: item.quantity,
+              subtotal: item.subtotal,
+              note: item.note || ''
+            };
+          }
+        }),
 
         // 訂單基本資訊
         orderType: orderType.value,
