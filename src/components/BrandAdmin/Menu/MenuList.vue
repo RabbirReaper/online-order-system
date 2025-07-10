@@ -144,7 +144,7 @@
                       <div class="d-flex justify-content-between align-items-center">
                         <div class="flex-grow-1">
                           <div class="d-flex align-items-center mb-1">
-                            <h6 class="mb-0 me-2">{{ storeName }}-{{ menu.name || '未命名菜單' }}</h6>
+                            <h6 class="mb-0 me-2">{{ menu.name || '未命名菜單' }}</h6>
                             <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
                               {{ menu.isActive ? '啟用中' : '已停用' }}
                             </span>
@@ -209,7 +209,7 @@
                       <div class="d-flex justify-content-between align-items-center">
                         <div class="flex-grow-1">
                           <div class="d-flex align-items-center mb-1">
-                            <h6 class="mb-0 me-2">{{ storeName }}-預購券</h6>
+                            <h6 class="mb-0 me-2">{{ menu.name }}</h6>
                             <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
                               {{ menu.isActive ? '啟用中' : '已停用' }}
                             </span>
@@ -274,7 +274,7 @@
                       <div class="d-flex justify-content-between align-items-center">
                         <div class="flex-grow-1">
                           <div class="d-flex align-items-center mb-1">
-                            <h6 class="mb-0 me-2">{{ storeName }}-{{ menu.name || '點數兌換' }}</h6>
+                            <h6 class="mb-0 me-2">{{ menu.name || '點數兌換' }}</h6>
                             <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
                               {{ menu.isActive ? '啟用中' : '已停用' }}
                             </span>
