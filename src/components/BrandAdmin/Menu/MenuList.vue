@@ -20,16 +20,7 @@
     <div class="card mb-4">
       <div class="card-body">
         <div class="row align-items-end">
-          <div class="col-md-3">
-            <label class="form-label">菜單類型</label>
-            <select v-model="filters.menuType" @change="applyFilters" class="form-select">
-              <option value="">所有類型</option>
-              <option value="food">現金購買餐點</option>
-              <option value="cash_coupon">現金購買預購券</option>
-              <option value="point_exchange">點數兌換</option>
-            </select>
-          </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label class="form-label">狀態</label>
             <select v-model="filters.activeOnly" @change="applyFilters" class="form-select">
               <option value="">所有狀態</option>
@@ -37,7 +28,7 @@
               <option value="false">僅停用</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <label class="form-label">搜尋</label>
             <input type="text" v-model="filters.search" @input="applyFilters" class="form-control"
               placeholder="搜尋菜單名稱...">
@@ -64,8 +55,8 @@
       {{ error }}
     </div>
 
-    <!-- 菜單列表 -->
-    <div v-else-if="filteredMenus.length > 0">
+    <!-- 菜單分類顯示 -->
+    <div v-else>
       <!-- 統計資訊 -->
       <div class="row mb-4">
         <div class="col-md-3">
@@ -88,11 +79,11 @@
             <div class="card-body">
               <div class="d-flex justify-content-between">
                 <div>
-                  <h6 class="card-title">啟用菜單</h6>
-                  <h4 class="mb-0">{{ activeMenusCount }}</h4>
+                  <h6 class="card-title">現金購買餐點</h6>
+                  <h4 class="mb-0">{{ foodMenus.length }}</h4>
                 </div>
                 <div class="align-self-center">
-                  <i class="bi bi-check-circle fs-2"></i>
+                  <i class="bi bi-cup-hot fs-2"></i>
                 </div>
               </div>
             </div>
@@ -103,11 +94,11 @@
             <div class="card-body">
               <div class="d-flex justify-content-between">
                 <div>
-                  <h6 class="card-title">總分類數</h6>
-                  <h4 class="mb-0">{{ totalCategoriesCount }}</h4>
+                  <h6 class="card-title">現金購買預購券</h6>
+                  <h4 class="mb-0">{{ cashCouponMenus.length }}</h4>
                 </div>
                 <div class="align-self-center">
-                  <i class="bi bi-list fs-2"></i>
+                  <i class="bi bi-ticket fs-2"></i>
                 </div>
               </div>
             </div>
@@ -118,11 +109,11 @@
             <div class="card-body">
               <div class="d-flex justify-content-between">
                 <div>
-                  <h6 class="card-title">總商品數</h6>
-                  <h4 class="mb-0">{{ totalItemsCount }}</h4>
+                  <h6 class="card-title">點數兌換</h6>
+                  <h4 class="mb-0">{{ pointExchangeMenus.length }}</h4>
                 </div>
                 <div class="align-self-center">
-                  <i class="bi bi-grid fs-2"></i>
+                  <i class="bi bi-star fs-2"></i>
                 </div>
               </div>
             </div>
@@ -130,119 +121,213 @@
         </div>
       </div>
 
-      <!-- 菜單卡片列表 -->
-      <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-3 g-4">
-        <div v-for="menu in filteredMenus" :key="menu._id" class="col">
-          <div class="card h-100 menu-card hover-shadow"
-            :class="{ 'border-success': menu.isActive, 'border-secondary': !menu.isActive }">
-            <!-- 卡片頭部 -->
-            <div class="card-header d-flex justify-content-between align-items-center"
-              :class="menu.isActive ? 'bg-success text-white' : 'bg-secondary text-white'">
-              <div class="d-flex align-items-center">
-                <h6 class="mb-0 me-2">{{ menu.name || '未命名菜單' }}</h6>
-                <span class="badge rounded-pill bg-light text-dark">
-                  {{ menu.isActive ? '啟用中' : '已停用' }}
-                </span>
-              </div>
-              <!-- 菜單類型標記 -->
-              <span class="badge rounded-pill bg-info text-white">
-                {{ getMenuTypeText(menu.menuType) }}
-              </span>
+      <!-- 三欄分類顯示 -->
+      <div class="row">
+        <!-- 現金購買餐點 -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-cup-hot me-2"></i>現金購買餐點
+                <span class="badge bg-light text-dark ms-2">{{ foodMenus.length }}</span>
+              </h5>
             </div>
-
-            <!-- 卡片內容 -->
-            <div class="card-body">
-              <!-- 菜單基本資訊 -->
-              <div class="row mb-3">
-                <div class="col-6">
-                  <small class="text-muted">分類數量</small>
-                  <div class="fw-bold">{{ menu.categories ? menu.categories.length : 0 }}</div>
-                </div>
-                <div class="col-6">
-                  <small class="text-muted">商品數量</small>
-                  <div class="fw-bold">{{ countTotalItems(menu) }}</div>
-                </div>
+            <div class="card-body p-2">
+              <div v-if="foodMenus.length === 0" class="text-center py-4 text-muted">
+                <i class="bi bi-cup-hot display-4 mb-2"></i>
+                <p>尚未設置餐點菜單</p>
               </div>
+              <div v-else class="menu-list">
+                <div v-for="menu in foodMenus" :key="menu._id" class="menu-item mb-2">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body p-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                          <div class="d-flex align-items-center mb-1">
+                            <h6 class="mb-0 me-2">{{ storeName }}-{{ menu.name || '未命名菜單' }}</h6>
+                            <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
+                              {{ menu.isActive ? '啟用中' : '已停用' }}
+                            </span>
+                          </div>
+                          <small class="text-muted">
+                            分類: {{ menu.categories ? menu.categories.length : 0 }} |
+                            商品: {{ countTotalItems(menu) }}
+                          </small>
+                        </div>
 
-              <div class="row mb-3">
-                <div class="col-6">
-                  <small class="text-muted">已顯示商品</small>
-                  <div class="fw-bold text-success">{{ countActiveItems(menu) }}</div>
-                </div>
-                <div class="col-6">
-                  <small class="text-muted">隱藏商品</small>
-                  <div class="fw-bold text-warning">{{ countTotalItems(menu) - countActiveItems(menu) }}</div>
-                </div>
-              </div>
+                        <!-- 操作區域 -->
+                        <div class="d-flex align-items-center">
+                          <!-- 狀態切換 -->
+                          <div class="form-check form-switch me-2">
+                            <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
+                              v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
+                          </div>
 
-              <!-- 時間資訊 -->
-              <div class="border-top pt-3">
-                <div class="small text-muted mb-1">
-                  <i class="bi bi-calendar-plus me-1"></i>
-                  建立：{{ formatDate(menu.createdAt) }}
-                </div>
-                <div class="small text-muted">
-                  <i class="bi bi-clock me-1"></i>
-                  更新：{{ formatDate(menu.updatedAt) }}
-                </div>
-              </div>
-
-              <!-- 分類預覽 -->
-              <div class="mt-3" v-if="menu.categories && menu.categories.length > 0">
-                <small class="text-muted">分類預覽</small>
-                <div class="mt-1">
-                  <span v-for="category in menu.categories.slice(0, 3)" :key="category._id"
-                    class="badge bg-light text-dark me-1 mb-1">
-                    {{ category.name }}
-                  </span>
-                  <span v-if="menu.categories.length > 3" class="badge bg-secondary me-1 mb-1">
-                    +{{ menu.categories.length - 3 }} 個分類
-                  </span>
+                          <!-- 操作按鈕 -->
+                          <div class="btn-group btn-group-sm">
+                            <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
+                              class="btn btn-outline-primary btn-sm" title="查看詳情">
+                              <i class="bi bi-eye"></i>
+                            </router-link>
+                            <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+                              class="btn btn-outline-warning btn-sm" title="編輯菜單">
+                              <i class="bi bi-pencil"></i>
+                            </router-link>
+                            <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteMenu(menu)"
+                              title="刪除菜單">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- 卡片操作區 -->
-            <div class="card-footer bg-transparent border-top">
-              <div class="d-flex justify-content-between align-items-center">
-                <!-- 狀態切換 -->
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
-                    v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
-                  <label class="form-check-label small" :for="`menu-active-${menu._id}`">
-                    {{ menu.isActive ? '啟用中' : '已停用' }}
-                  </label>
+        <!-- 現金購買預購券 -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-ticket me-2"></i>現金購買預購券
+                <span class="badge bg-light text-dark ms-2">{{ cashCouponMenus.length }}</span>
+              </h5>
+            </div>
+            <div class="card-body p-2">
+              <div v-if="cashCouponMenus.length === 0" class="text-center py-4 text-muted">
+                <i class="bi bi-ticket display-4 mb-2"></i>
+                <p>尚未設置預購券菜單</p>
+              </div>
+              <div v-else class="menu-list">
+                <div v-for="menu in cashCouponMenus" :key="menu._id" class="menu-item mb-2">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body p-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                          <div class="d-flex align-items-center mb-1">
+                            <h6 class="mb-0 me-2">{{ storeName }}-預購券</h6>
+                            <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
+                              {{ menu.isActive ? '啟用中' : '已停用' }}
+                            </span>
+                          </div>
+                          <small class="text-muted">
+                            分類: {{ menu.categories ? menu.categories.length : 0 }} |
+                            商品: {{ countTotalItems(menu) }}
+                          </small>
+                        </div>
+
+                        <!-- 操作區域 -->
+                        <div class="d-flex align-items-center">
+                          <!-- 狀態切換 -->
+                          <div class="form-check form-switch me-2">
+                            <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
+                              v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
+                          </div>
+
+                          <!-- 操作按鈕 -->
+                          <div class="btn-group btn-group-sm">
+                            <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
+                              class="btn btn-outline-primary btn-sm" title="查看詳情">
+                              <i class="bi bi-eye"></i>
+                            </router-link>
+                            <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+                              class="btn btn-outline-warning btn-sm" title="編輯菜單">
+                              <i class="bi bi-pencil"></i>
+                            </router-link>
+                            <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteMenu(menu)"
+                              title="刪除菜單">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                <!-- 操作按鈕 -->
-                <div class="btn-group btn-group-sm">
-                  <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
-                    class="btn btn-outline-primary" title="查看詳情">
-                    <i class="bi bi-eye"></i>
-                  </router-link>
-                  <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
-                    class="btn btn-outline-warning" title="編輯菜單">
-                    <i class="bi bi-pencil"></i>
-                  </router-link>
-                  <button type="button" class="btn btn-outline-danger" @click="confirmDeleteMenu(menu)" title="刪除菜單">
-                    <i class="bi bi-trash"></i>
-                  </button>
+        <!-- 點數兌換 -->
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-header bg-warning text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-star me-2"></i>點數兌換
+                <span class="badge bg-light text-dark ms-2">{{ pointExchangeMenus.length }}</span>
+              </h5>
+            </div>
+            <div class="card-body p-2">
+              <div v-if="pointExchangeMenus.length === 0" class="text-center py-4 text-muted">
+                <i class="bi bi-star display-4 mb-2"></i>
+                <p>尚未設置點數兌換菜單</p>
+              </div>
+              <div v-else class="menu-list">
+                <div v-for="menu in pointExchangeMenus" :key="menu._id" class="menu-item mb-2">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body p-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1">
+                          <div class="d-flex align-items-center mb-1">
+                            <h6 class="mb-0 me-2">{{ storeName }}-{{ menu.name || '點數兌換' }}</h6>
+                            <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
+                              {{ menu.isActive ? '啟用中' : '已停用' }}
+                            </span>
+                          </div>
+                          <small class="text-muted">
+                            分類: {{ menu.categories ? menu.categories.length : 0 }} |
+                            商品: {{ countTotalItems(menu) }}
+                          </small>
+                        </div>
+
+                        <!-- 操作區域 -->
+                        <div class="d-flex align-items-center">
+                          <!-- 狀態切換 -->
+                          <div class="form-check form-switch me-2">
+                            <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
+                              v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
+                          </div>
+
+                          <!-- 操作按鈕 -->
+                          <div class="btn-group btn-group-sm">
+                            <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
+                              class="btn btn-outline-primary btn-sm" title="查看詳情">
+                              <i class="bi bi-eye"></i>
+                            </router-link>
+                            <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+                              class="btn btn-outline-warning btn-sm" title="編輯菜單">
+                              <i class="bi bi-pencil"></i>
+                            </router-link>
+                            <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteMenu(menu)"
+                              title="刪除菜單">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 無菜單提示 -->
-    <div v-else class="text-center py-5 bg-light rounded">
-      <i class="bi bi-menu-button-wide display-1 text-muted mb-3"></i>
-      <h5>{{ allMenus.length === 0 ? '此店鋪尚未設置菜單' : '沒有符合篩選條件的菜單' }}</h5>
-      <p class="text-muted">{{ allMenus.length === 0 ? '創建菜單後，您可以添加餐點分類和商品項目' : '請調整篩選條件或新增菜單' }}</p>
-      <router-link :to="`/admin/${brandId}/menus/create/${storeId}`" class="btn btn-primary mt-2">
-        <i class="bi bi-plus-lg me-1"></i>{{ allMenus.length === 0 ? '新增第一個菜單' : '新增菜單' }}
-      </router-link>
+      <!-- 無菜單提示 -->
+      <div v-if="allMenus.length === 0" class="text-center py-5 bg-light rounded mt-4">
+        <i class="bi bi-menu-button-wide display-1 text-muted mb-3"></i>
+        <h5>此店鋪尚未設置菜單</h5>
+        <p class="text-muted">創建菜單後，您可以添加餐點分類和商品項目</p>
+        <router-link :to="`/admin/${brandId}/menus/create/${storeId}`" class="btn btn-primary mt-2">
+          <i class="bi bi-plus-lg me-1"></i>新增第一個菜單
+        </router-link>
+      </div>
     </div>
 
     <!-- 確認刪除對話框 -->
@@ -300,19 +385,26 @@ const error = ref('');
 
 // 篩選器
 const filters = reactive({
-  menuType: '',
   activeOnly: '',
   search: ''
 });
 
-// 計算屬性
-const filteredMenus = computed(() => {
-  let filtered = [...allMenus.value];
+// 按類型分組的計算屬性
+const foodMenus = computed(() => {
+  return filteredMenusByType('food');
+});
 
-  // 類型篩選
-  if (filters.menuType) {
-    filtered = filtered.filter(menu => menu.menuType === filters.menuType);
-  }
+const cashCouponMenus = computed(() => {
+  return filteredMenusByType('cash_coupon');
+});
+
+const pointExchangeMenus = computed(() => {
+  return filteredMenusByType('point_exchange');
+});
+
+// 按類型篩選菜單的函數
+const filteredMenusByType = (menuType) => {
+  let filtered = allMenus.value.filter(menu => menu.menuType === menuType);
 
   // 狀態篩選
   if (filters.activeOnly !== '') {
@@ -329,23 +421,7 @@ const filteredMenus = computed(() => {
   }
 
   return filtered;
-});
-
-const activeMenusCount = computed(() => {
-  return allMenus.value.filter(menu => menu.isActive).length;
-});
-
-const totalCategoriesCount = computed(() => {
-  return allMenus.value.reduce((total, menu) => {
-    return total + (menu.categories ? menu.categories.length : 0);
-  }, 0);
-});
-
-const totalItemsCount = computed(() => {
-  return allMenus.value.reduce((total, menu) => {
-    return total + countTotalItems(menu);
-  }, 0);
-});
+};
 
 // 獲取店鋪和菜單資料
 const fetchData = async () => {
@@ -397,7 +473,6 @@ const applyFilters = () => {
 
 // 重置篩選器
 const resetFilters = () => {
-  filters.menuType = '';
   filters.activeOnly = '';
   filters.search = '';
 };
@@ -419,11 +494,9 @@ const toggleMenuActive = async (menu) => {
     });
 
     if (response && response.menu) {
-      // 更新本地狀態
-      const menuIndex = allMenus.value.findIndex(m => m._id === menu._id);
-      if (menuIndex !== -1) {
-        allMenus.value[menuIndex] = response.menu;
-      }
+      // 重新獲取所有菜單資料以確保同步
+      // 因為後台可能會自動停用同類型的其他菜單
+      await refreshMenuData();
     }
   } catch (err) {
     console.error('切換菜單狀態失敗:', err);
@@ -439,6 +512,23 @@ const toggleMenuActive = async (menu) => {
     alert(errorMessage);
   } finally {
     isToggling.value = false;
+  }
+};
+
+// 刷新菜單資料的輔助函數
+const refreshMenuData = async () => {
+  try {
+    const menusResponse = await api.menu.getAllStoreMenus({
+      brandId: brandId.value,
+      storeId: storeId.value,
+      includeUnpublished: true
+    });
+
+    if (menusResponse && menusResponse.menus) {
+      allMenus.value = menusResponse.menus;
+    }
+  } catch (err) {
+    console.error('刷新菜單資料失敗:', err);
   }
 };
 
@@ -499,31 +589,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.menu-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.menu-item {
+  transition: transform 0.2s ease;
 }
 
-.hover-shadow:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+.menu-item:hover {
+  transform: translateX(5px);
 }
 
-.card-header h6 {
+.menu-list {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.card-header h5 {
   font-weight: 600;
 }
 
 .badge {
   font-weight: 500;
-}
-
-.border-success {
-  border-color: #28a745 !important;
-  border-width: 2px;
-}
-
-.border-secondary {
-  border-color: #6c757d !important;
-  border-width: 1px;
 }
 
 .form-switch .form-check-input:checked {
@@ -533,11 +617,7 @@ onMounted(() => {
 
 .btn-group-sm .btn {
   padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-}
-
-.card-footer {
-  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
 }
 
 /* 統計卡片樣式 */
@@ -549,10 +629,29 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.card.bg-primary .card-body,
-.card.bg-success .card-body,
-.card.bg-info .card-body,
-.card.bg-warning .card-body {
-  padding: 1.25rem;
+/* 自定義滾動條 */
+.menu-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.menu-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.menu-list::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* 響應式調整 */
+@media (max-width: 991.98px) {
+  .row>.col-lg-4 {
+    margin-bottom: 1rem;
+  }
 }
 </style>
