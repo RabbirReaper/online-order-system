@@ -15,16 +15,13 @@
             <i class="bi bi-arrow-left fs-3"></i>
           </button>
           <h5 class="ms-3 mb-0 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-            套餐詳情
+            商品詳情
           </h5>
         </div>
 
         <!-- Bundle Image -->
         <div class="image-container" style="height: 240px; overflow: hidden; position: relative;">
           <img :src="bundleImage" :alt="bundle.name" class="w-100 h-100" style="object-fit: cover;">
-          <div class="bundle-type-overlay">
-            <span class="badge bg-warning text-dark fs-6">套餐優惠</span>
-          </div>
         </div>
 
         <!-- Bundle Info -->
@@ -34,47 +31,59 @@
           <!-- 價格顯示 -->
           <div class="price-section mb-3">
             <!-- 現金價格 -->
-            <div v-if="bundle.sellingPrice" class="price-item">
-              <div class="price-current text-danger fw-bold fs-4">${{ bundle.sellingPrice }}</div>
-              <div v-if="bundle.originalPrice && bundle.originalPrice > bundle.sellingPrice" class="price-original">
-                原價 ${{ bundle.originalPrice }}
-                <span class="discount-badge">省${{ bundle.originalPrice - bundle.sellingPrice }}</span>
-              </div>
+            <div v-if="bundle.cashPrice?.original" class="price-item">
+              <div class="price-current text-danger fw-bold fs-4">${{ bundle.cashPrice.original }}</div>
             </div>
 
             <!-- 點數價格 -->
-            <div v-if="bundle.sellingPoint !== undefined" class="price-item mt-2">
-              <div class="point-price text-primary fw-bold fs-5">{{ bundle.sellingPoint }} 點數</div>
-              <div v-if="bundle.originalPoint && bundle.originalPoint > bundle.sellingPoint" class="price-original">
-                原價 {{ bundle.originalPoint }} 點數
-                <span class="discount-badge">省{{ bundle.originalPoint - bundle.sellingPoint }}點</span>
-              </div>
+            <div v-if="bundle.pointPrice?.original !== undefined" class="price-item mt-2">
+              <div class="point-price text-primary fw-bold fs-5">{{ bundle.pointPrice.original }} 點數</div>
             </div>
           </div>
 
           <p class="text-muted fs-5" style="white-space: pre-line">{{ bundle.description }}</p>
+
+          <!-- 有效期限 -->
+          <div v-if="bundle.voucherValidityDays" class="validity-section mt-3 p-2 bg-light rounded">
+            <i class="bi bi-calendar-check text-success me-2"></i>
+            <span class="text-success fw-bold">有效期限：購買後 {{ bundle.voucherValidityDays }} 天內使用</span>
+          </div>
         </div>
 
         <!-- Bundle Items -->
         <div class="bundle-items p-3">
-          <h5 class="mb-3 fw-bold">套餐內容</h5>
+          <h5 class="mb-3 fw-bold">購買內容</h5>
 
           <div v-if="bundle.bundleItems && bundle.bundleItems.length > 0" class="items-list">
             <div v-for="(bundleItem, index) in bundle.bundleItems" :key="index" class="bundle-item-card mb-3">
               <div class="d-flex align-items-center">
                 <div class="item-icon me-3">
-                  <i v-if="bundleItem.itemType === 'dish'" class="bi bi-cup-hot-fill text-primary fs-4"></i>
-                  <i v-else-if="bundleItem.itemType === 'coupon'"
-                    class="bi bi-ticket-perforated-fill text-warning fs-4"></i>
+                  <i class="bi bi-ticket-perforated-fill text-warning fs-4"></i>
                 </div>
 
                 <div class="item-info flex-grow-1">
-                  <h6 class="mb-1 fw-bold">{{ bundleItem.itemName }}</h6>
+                  <h6 class="mb-1 fw-bold">{{ bundleItem.voucherName }}</h6>
                   <div class="item-meta">
-                    <span class="badge" :class="getItemTypeBadgeClass(bundleItem.itemType)">
-                      {{ getItemTypeText(bundleItem.itemType) }}
+                    <span class="badge bg-warning text-dark">
+                      兌換券
                     </span>
                     <span class="ms-2 text-muted">x{{ bundleItem.quantity }}</span>
+                  </div>
+
+                  <!-- 兌換商品資訊 -->
+                  <div v-if="bundleItem.voucherTemplate?.exchangeDishTemplate"
+                    class="exchange-info mt-2 p-2 bg-light rounded">
+                    <small class="text-muted">可兌換：</small>
+                    <div class="d-flex align-items-center mt-1">
+                      <img v-if="bundleItem.voucherTemplate.exchangeDishTemplate.image?.url"
+                        :src="bundleItem.voucherTemplate.exchangeDishTemplate.image.url"
+                        :alt="bundleItem.voucherTemplate.exchangeDishTemplate.name" class="exchange-dish-image me-2">
+                      <div>
+                        <div class="fw-bold">{{ bundleItem.voucherTemplate.exchangeDishTemplate.name }}</div>
+                        <small class="text-muted">{{ bundleItem.voucherTemplate.exchangeDishTemplate.description
+                        }}</small>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -83,7 +92,7 @@
 
           <div v-else class="text-center text-muted py-4">
             <i class="bi bi-box-seam fs-1 opacity-50"></i>
-            <p class="mt-2">此套餐尚未設定內容</p>
+            <p class="mt-2">此商品尚未設定內容</p>
           </div>
         </div>
 
@@ -92,16 +101,16 @@
           <div class="row g-2">
             <div class="col">
               <button class="btn btn-outline-primary w-100" @click="addToCartCash"
-                :disabled="!bundle.sellingPrice || isAddingToCart">
+                :disabled="!bundle.cashPrice?.original || isAddingToCart">
                 <i class="bi bi-cash-stack me-2"></i>
-                現金購買 ${{ bundle.sellingPrice }}
+                現金購買 ${{ bundle.cashPrice?.original }}
               </button>
             </div>
 
-            <div v-if="bundle.sellingPoint !== undefined" class="col">
+            <div v-if="bundle.pointPrice?.original !== undefined" class="col">
               <button class="btn btn-primary w-100" @click="addToCartPoints" :disabled="isAddingToCart">
                 <i class="bi bi-star-fill me-2"></i>
-                點數兌換 {{ bundle.sellingPoint }}點
+                點數兌換 {{ bundle.pointPrice.original }}點
               </button>
             </div>
           </div>
@@ -135,68 +144,27 @@ const bundleImage = computed(() => {
 
 const loadBundleData = async () => {
   try {
-    // 注意：這裡假設有獲取套餐詳情的API，你可能需要創建這個API
-    // 暫時使用模擬資料或從菜單中查找
-    console.log('載入套餐詳情:', bundleId.value);
+    console.log('載入商品詳情:', bundleId.value);
 
-    // 模擬載入延遲
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // 使用真實 API 調用
+    const response = await api.bundle.getBundleById({
+      brandId: brandId.value,
+      id: bundleId.value
+    });
 
-    // 這裡應該是實際的API調用
-    // const bundleData = await api.bundle.getBundleById({
-    //   brandId: brandId.value,
-    //   id: bundleId.value
-    // });
-
-    // 暫時使用模擬資料
-    bundle.value = {
-      _id: bundleId.value,
-      name: '經典套餐組合',
-      description: '包含招牌餐點和精選兌換券，超值優惠不容錯過！',
-      sellingPrice: 299,
-      originalPrice: 399,
-      sellingPoint: 150,
-      originalPoint: 200,
-      bundleItems: [
-        {
-          itemType: 'dish',
-          itemName: '招牌牛肉漢堡',
-          quantity: 1
-        },
-        {
-          itemType: 'dish',
-          itemName: '薯條（大）',
-          quantity: 1
-        },
-        {
-          itemType: 'coupon',
-          itemName: '飲料兌換券',
-          quantity: 2
-        }
-      ]
-    };
+    if (response.success) {
+      bundle.value = response.bundle;
+    } else {
+      throw new Error('無法載入商品詳情');
+    }
 
   } catch (error) {
-    console.error('無法載入套餐詳情:', error);
+    console.error('無法載入商品詳情:', error);
+    // 可以顯示錯誤訊息給用戶
+    alert('載入商品詳情失敗，請稍後再試');
   } finally {
     isLoading.value = false;
   }
-};
-
-const getItemTypeText = (itemType) => {
-  const typeMap = {
-    'dish': '餐點',
-    'coupon': '兌換券'
-  };
-  return typeMap[itemType] || itemType;
-};
-
-const getItemTypeBadgeClass = (itemType) => {
-  const classMap = {
-    'dish': 'bg-primary',
-    'coupon': 'bg-warning text-dark'
-  };
-  return classMap[itemType] || 'bg-secondary';
 };
 
 const goBack = () => {
@@ -204,7 +172,7 @@ const goBack = () => {
 };
 
 const addToCartCash = async () => {
-  if (isAddingToCart.value || !bundle.value.sellingPrice) return;
+  if (isAddingToCart.value || !bundle.value.cashPrice?.original) return;
 
   isAddingToCart.value = true;
 
@@ -214,14 +182,14 @@ const addToCartCash = async () => {
       dishInstance: {
         templateId: bundle.value._id,
         name: bundle.value.name,
-        basePrice: bundle.value.sellingPrice,
-        finalPrice: bundle.value.sellingPrice,
+        basePrice: bundle.value.cashPrice.original,
+        finalPrice: bundle.value.cashPrice.original,
         options: [], // 套餐沒有選項
         bundleType: 'cash' // 標記為現金購買套餐
       },
       quantity: 1,
       note: '',
-      subtotal: bundle.value.sellingPrice
+      subtotal: bundle.value.cashPrice.original
     };
 
     cartStore.addItem(bundleCartItem);
@@ -258,7 +226,7 @@ const addToCartPoints = async () => {
         finalPrice: 0,
         options: [],
         bundleType: 'points', // 標記為點數兌換套餐
-        pointCost: bundle.value.sellingPoint
+        pointCost: bundle.value.pointPrice.original
       },
       quantity: 1,
       note: '點數兌換商品',
@@ -341,22 +309,6 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
-.price-original {
-  font-size: 0.9rem;
-  color: #6c757d;
-  text-decoration: line-through;
-}
-
-.discount-badge {
-  background-color: #dc3545;
-  color: white;
-  padding: 0.125rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  margin-left: 0.5rem;
-  text-decoration: none;
-}
-
 .point-price {
   display: flex;
   align-items: center;
@@ -366,6 +318,10 @@ onMounted(async () => {
 .point-price::before {
   content: '★';
   color: #ffc107;
+}
+
+.validity-section {
+  border-left: 4px solid #198754;
 }
 
 .bundle-items {
@@ -401,6 +357,17 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
+.exchange-info {
+  border-left: 3px solid #ffc107;
+}
+
+.exchange-dish-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
 .action-section {
   border-top: 1px solid #e9ecef;
   position: sticky;
@@ -429,6 +396,11 @@ onMounted(async () => {
   .item-icon {
     width: 40px;
     height: 40px;
+  }
+
+  .exchange-dish-image {
+    width: 32px;
+    height: 32px;
   }
 }
 </style>
