@@ -77,7 +77,6 @@
                 <th>圖片</th>
                 <th>價格</th>
                 <th>包裝內容</th>
-                <th>販售期間</th>
                 <th>已售出</th>
                 <th>狀態</th>
                 <th>操作</th>
@@ -133,13 +132,6 @@
                     </div>
                   </div>
                   <span v-else class="text-muted small">未設定</span>
-                </td>
-                <td>
-                  <div v-if="bundle.validFrom && bundle.validTo">
-                    <div class="small">{{ formatDate(bundle.validFrom) }}</div>
-                    <div class="small text-muted">至 {{ formatDate(bundle.validTo) }}</div>
-                  </div>
-                  <span v-else class="text-muted">無限制</span>
                 </td>
                 <td>
                   <span class="badge bg-info">{{ bundle.totalSold || 0 }}</span>
