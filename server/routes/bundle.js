@@ -23,9 +23,6 @@ router.get('/brands/:brandId/bundles',
 
 // 獲取單個 Bundle
 router.get('/brands/:brandId/bundles/:id',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
-  requireBrandAccess,
   bundleController.getBundleById
 );
 
