@@ -307,7 +307,6 @@ export const getUserOrders = async (userId, options = {}) => {
 export const getUserOrderById = async (orderId, userId) => {
   const order = await Order.findOne({
     _id: orderId,
-    user: userId
   })
     .populate('store', 'name')
     .populate('items.dishInstance', 'name basePrice finalPrice options')
