@@ -129,11 +129,13 @@ import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue'
 import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue';
 import { useCartStore } from '@/stores/cart';
 import { useAuthStore } from '@/stores/customerAuth';
+import { useMenuStore } from '@/stores/menu'; // 新增
 
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+const menuStore = useMenuStore(); // 新增
 
 // 路由參數
 const brandId = computed(() => route.params.brandId);
@@ -148,7 +150,12 @@ const store = ref({
   address: ''
 });
 
-const currentMenuType = ref('food'); // 預設顯示餐點菜單
+// 使用 menuStore 的狀態，而不是本地狀態
+const currentMenuType = computed({
+  get: () => menuStore.currentMenuType,
+  set: (value) => menuStore.setMenuType(value)
+});
+
 const currentMenu = ref({ categories: [] });
 const isLoadingStore = ref(true);
 const isLoadingMenu = ref(false);
@@ -195,7 +202,7 @@ const getMenuTypeText = (type) => {
 const switchMenuType = async (type) => {
   if (currentMenuType.value === type || isLoadingMenu.value) return;
 
-  currentMenuType.value = type;
+  currentMenuType.value = type; // 這會自動調用 menuStore.setMenuType
   await loadMenuData();
 };
 
@@ -264,9 +271,9 @@ const loadMenuData = async () => {
   }
 };
 
-// 處理項目選擇
+// 處理項目選擇 - 修改為傳遞菜單類型
 const handleItemSelect = (item) => {
-  // 根據商品類型導航到不同的詳情頁面
+  // 根據商品類型導航到不同的詳情頁面，並帶上菜單類型
   if (item.itemType === 'dish' && item.dishTemplate) {
     router.push({
       name: 'dish-detail',
@@ -274,6 +281,9 @@ const handleItemSelect = (item) => {
         brandId: brandId.value,
         storeId: storeId.value,
         dishId: item.dishTemplate._id
+      },
+      query: {
+        menuType: menuStore.currentMenuType // 新增菜單類型參數
       }
     });
   } else if (item.itemType === 'bundle' && item.bundle) {
@@ -283,6 +293,9 @@ const handleItemSelect = (item) => {
         brandId: brandId.value,
         storeId: storeId.value,
         bundleId: item.bundle._id
+      },
+      query: {
+        menuType: menuStore.currentMenuType // 新增菜單類型參數
       }
     });
   } else {
@@ -290,7 +303,7 @@ const handleItemSelect = (item) => {
   }
 };
 
-// 登入相關方法 - 直接使用 authStore 方法
+// 登入相關方法
 const handleLogin = () => {
   router.push({ name: 'customer-login' });
 };
@@ -309,7 +322,7 @@ const goToCart = () => {
   router.push({ name: 'cart' });
 };
 
-// 監聽 brandId 變化，確保 authStore 有正確的 brandId
+// 監聽 brandId 變化
 watch(() => brandId.value, (newBrandId) => {
   if (newBrandId) {
     authStore.setBrandId(newBrandId);
@@ -318,6 +331,12 @@ watch(() => brandId.value, (newBrandId) => {
 
 // 生命周期
 onMounted(async () => {
+  // 設置菜單狀態 - 新增
+  menuStore.setBrandAndStore(brandId.value, storeId.value);
+
+  // 恢復菜單狀態 - 新增
+  menuStore.restoreState();
+
   // 設置購物車的品牌和店鋪ID
   cartStore.setBrandAndStore(brandId.value, storeId.value);
 
