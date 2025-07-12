@@ -83,7 +83,7 @@
                       <div>
                         <div class="fw-bold">{{ bundleItem.voucherTemplate.exchangeDishTemplate.name }}</div>
                         <small class="text-muted">{{ bundleItem.voucherTemplate.exchangeDishTemplate.description
-                          }}</small>
+                        }}</small>
                       </div>
                     </div>
                   </div>
@@ -134,14 +134,6 @@
                 點數兌換 {{ bundle.pointPrice?.original }}點
               </button>
             </div>
-          </div>
-
-          <!-- 登入用戶的會員資訊提示 -->
-          <div v-if="isLoggedIn && shouldShowPointPrice" class="member-info mt-2 p-2 bg-info bg-opacity-10 rounded">
-            <small class="text-info">
-              <i class="bi bi-person-check me-1"></i>
-              歡迎 {{ authStore.userName }}，您可以使用點數進行兌換
-            </small>
           </div>
         </div>
       </div>
