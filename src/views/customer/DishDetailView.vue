@@ -179,14 +179,15 @@ const goBack = () => {
 const addToCart = (dishInstance) => {
   cartStore.addItem(dishInstance);
 
+  router.go(-1);
   // 返回菜單頁面
-  router.push({
-    name: 'menu',
-    params: {
-      brandId: brandId.value,
-      storeId: storeId.value
-    }
-  });
+  // router.push({
+  //   name: 'menu',
+  //   params: {
+  //     brandId: brandId.value,
+  //     storeId: storeId.value
+  //   }
+  // });
 };
 
 const updateCart = (dishInstance) => {

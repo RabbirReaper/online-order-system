@@ -223,17 +223,7 @@ const showError = (message) => {
 
 // 方法
 const goBack = () => {
-  if (cartStore.currentBrand && cartStore.currentStore) {
-    router.push({
-      name: 'menu',
-      params: {
-        brandId: cartStore.currentBrand,
-        storeId: cartStore.currentStore
-      }
-    });
-  } else {
-    router.go(-1);
-  }
+  router.go(-1);
 };
 
 const removeFromCart = (index) => {
