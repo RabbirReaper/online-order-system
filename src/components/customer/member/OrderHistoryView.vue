@@ -38,6 +38,7 @@
             <div class="stat-item">
               <div class="stat-number">{{ totalOrders }}</div>
               <div class="stat-label">總訂單數</div>
+              <div class="stat-label">(最多顯示30筆)</div>
             </div>
             <div class="stat-item">
               <div class="stat-number">${{ totalAmount.toLocaleString() }}</div>
@@ -298,7 +299,7 @@ const selectedOrder = ref(null);
 const orders = ref([]);
 const currentPage = ref(1);
 const hasMoreOrders = ref(false);
-const pageLimit = ref(10);
+const pageLimit = ref(30);
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
