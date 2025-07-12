@@ -138,9 +138,6 @@
                 aria-hidden="true"></span>
               註冊
             </button>
-            <button type="button" class="btn btn-outline-secondary py-2 mt-2" @click="goToLogin">
-              已有帳號？點此登入
-            </button>
           </div>
         </form>
       </div>
@@ -366,11 +363,6 @@ const togglePasswordVisibility = () => {
 
 const toggleConfirmPasswordVisibility = () => {
   showConfirmPassword.value = !showConfirmPassword.value;
-};
-
-// 跳轉到登入頁面
-const goToLogin = () => {
-  router.push('/auth/login');
 };
 
 // 註冊成功後跳轉到登入頁面

@@ -215,7 +215,17 @@ onMounted(async () => {
 
 // 返回上一頁
 const goBack = () => {
-  router.back();
+  const brandId = sessionStorage.getItem('currentBrandId');
+  const storeId = sessionStorage.getItem('currentStoreId');
+
+  if (brandId && storeId) {
+    router.push({
+      name: 'menu',
+      params: { brandId, storeId }
+    });
+  } else {
+    router.push('/');
+  }
 };
 
 // 切換密碼可見性
