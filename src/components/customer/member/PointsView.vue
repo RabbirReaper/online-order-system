@@ -58,68 +58,103 @@
           </div>
         </div>
 
-        <!-- 點數明細 -->
+        <!-- 獲得點數明細 -->
         <div class="points-detail-card">
           <div class="card-header">
-            <h5 class="mb-0">點數明細</h5>
+            <h5 class="mb-0">
+              <i class="bi bi-plus-circle-fill text-success me-2"></i>獲得點數
+            </h5>
+            <small class="text-muted">按到期時間排序（即將到期優先）</small>
           </div>
           <div class="card-body">
-            <div v-if="groupedPointsDetail.length > 0" class="points-list">
-              <div v-for="(pointGroup, index) in groupedPointsDetail" :key="index" class="point-item">
+            <div v-if="groupedEarnedPoints.length > 0" class="points-list">
+              <div v-for="(record, index) in groupedEarnedPoints" :key="index" class="point-item">
                 <div class="point-info">
                   <div class="point-amount">
-                    <span class="amount">{{ pointGroup.totalAmount }}</span>
+                    <span class="amount">{{ record.amount }}</span>
                     <span class="unit">點</span>
                   </div>
                   <div class="point-details">
-                    <p class="point-source">{{ formatPointSource(pointGroup.source) }}</p>
-                    <p class="point-date">獲得時間：{{ formatDate(pointGroup.createdAt) }}</p>
+                    <p class="point-source">{{ formatPointSource(record.source) }}</p>
+                    <p class="point-date">獲得時間：{{ formatDate(record.createdAt) }}</p>
                   </div>
                 </div>
                 <div class="point-status">
-                  <span :class="getStatusClass(pointGroup.status)">{{ formatStatus(pointGroup.status) }}</span>
-                  <p class="expiry-date">到期日：{{ formatDate(pointGroup.expiryDate) }}</p>
+                  <span :class="getExpiryUrgencyClass(record.expiryDate)">
+                    {{ getExpiryStatus(record.expiryDate) }}
+                  </span>
+                  <p class="expiry-date">到期日：{{ formatDate(record.expiryDate) }}</p>
                 </div>
               </div>
             </div>
             <div v-else class="text-center py-4">
               <i class="bi bi-star text-muted" style="font-size: 3rem;"></i>
-              <p class="text-muted mt-2">目前沒有點數記錄</p>
+              <p class="text-muted mt-2">目前沒有可用點數</p>
             </div>
           </div>
         </div>
 
-        <!-- 點數使用歷史 -->
+        <!-- 使用點數記錄 -->
         <div class="points-history-card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">使用記錄</h5>
+            <div>
+              <h5 class="mb-0">
+                <i class="bi bi-dash-circle-fill text-primary me-2"></i>使用記錄
+              </h5>
+              <small class="text-muted">按使用時間排序（最近使用優先）</small>
+            </div>
             <button class="btn btn-sm btn-outline-secondary" @click="loadMoreHistory"
-              :disabled="isLoadingHistory || !hasMoreHistory" v-if="pointsHistory.length > 0">
+              :disabled="isLoadingHistory || !hasMoreHistory" v-if="groupedUsedPoints.length > 0">
               <span v-if="isLoadingHistory" class="spinner-border spinner-border-sm me-1" role="status"
                 aria-hidden="true"></span>
               {{ hasMoreHistory ? '載入更多' : '沒有更多' }}
             </button>
           </div>
           <div class="card-body">
-            <div v-if="pointsHistory.length > 0" class="history-list">
-              <div v-for="(record, index) in pointsHistory" :key="index" class="history-item">
+            <div v-if="groupedUsedPoints.length > 0" class="history-list">
+              <div v-for="(record, index) in groupedUsedPoints" :key="index" class="history-item">
                 <div class="history-icon">
-                  <i :class="getHistoryIcon(record)"></i>
+                  <i class="bi bi-dash-circle-fill text-primary"></i>
                 </div>
                 <div class="history-info">
-                  <p class="history-title">{{ formatHistoryTitle(record) }}</p>
-                  <p class="history-date">{{ formatDateTime(record.createdAt) }}</p>
+                  <p class="history-title">{{ formatPointSource(record.source) }}</p>
+                  <p class="history-date">使用時間：{{ formatDateTime(record.usedAt) }}</p>
+                  <p class="history-order" v-if="record.usedIn">訂單：{{ record.usedIn.id }}</p>
                 </div>
                 <div class="history-amount">
-                  <span :class="getAmountClass(record)">
-                    {{ getAmountPrefix(record) }}{{ record.amount }}
-                  </span>
+                  <span class="amount-negative">-{{ record.amount }}</span>
                 </div>
               </div>
             </div>
             <div v-else class="text-center py-4">
               <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
               <p class="text-muted mt-2">目前沒有使用記錄</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 過期點數記錄 -->
+        <div class="points-expired-card" v-if="groupedExpiredPoints.length > 0">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="bi bi-x-circle-fill text-danger me-2"></i>過期點數
+            </h5>
+            <small class="text-muted">按過期時間排序</small>
+          </div>
+          <div class="card-body">
+            <div class="expired-list">
+              <div v-for="(record, index) in groupedExpiredPoints" :key="index" class="expired-item">
+                <div class="expired-icon">
+                  <i class="bi bi-x-circle-fill text-danger"></i>
+                </div>
+                <div class="expired-info">
+                  <p class="expired-title">{{ formatPointSource(record.source) }}</p>
+                  <p class="expired-date">過期時間：{{ formatDate(record.expiryDate) }}</p>
+                </div>
+                <div class="expired-amount">
+                  <span class="amount-expired">{{ record.amount }} 點</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -138,6 +173,10 @@
               <div class="rule-item">
                 <i class="bi bi-check-circle-fill text-success me-2"></i>
                 過期點數將自動失效，不可恢復
+              </div>
+              <div class="rule-item">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                點數獲得後立即生效，可立即使用
               </div>
             </div>
           </div>
@@ -165,57 +204,56 @@ const errorMessage = ref('');
 
 // 點數資料
 const pointsBalance = ref(0);
-const pointsDetail = ref([]);
 const pointsHistory = ref([]);
 
 // 分頁相關
 const currentHistoryPage = ref(1);
 const hasMoreHistory = ref(false);
-const historyLimit = ref(10);
+const historyLimit = ref(20);
 
-// 群組化點數明細
-const groupedPointsDetail = computed(() => {
-  const groups = {};
-
-  pointsDetail.value.forEach(point => {
-    // 創建群組key：來源 + 來源ID + 狀態 + 日期（到天）
-    const dateKey = new Date(point.createdAt).toISOString().split('T')[0];
-    const groupKey = `${point.source}_${point.sourceId || 'no_source'}_${point.status}_${dateKey}`;
-
-    if (!groups[groupKey]) {
-      groups[groupKey] = {
-        source: point.source,
-        sourceModel: point.sourceModel,
-        sourceId: point.sourceId,
-        status: point.status,
-        totalAmount: 0,
-        createdAt: point.createdAt,
-        expiryDate: point.expiryDate,
-        points: []
-      };
-    }
-
-    groups[groupKey].totalAmount += 1;
-    groups[groupKey].points.push(point);
+// 獲得點數（按到期時間排序：快到期優先）
+const groupedEarnedPoints = computed(() => {
+  const earnedPoints = pointsHistory.value.filter(point => point.status === 'active');
+  return earnedPoints.sort((a, b) => {
+    const dateA = new Date(a.expiryDate || a.createdAt);
+    const dateB = new Date(b.expiryDate || b.createdAt);
+    return dateA - dateB; // 升序：快到期優先
   });
-
-  // 轉換為陣列並按創建時間排序
-  return Object.values(groups).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
-// 即將過期的點數群組 (30天內)
+// 使用點數（按使用時間排序：最近使用優先）
+const groupedUsedPoints = computed(() => {
+  const usedPoints = pointsHistory.value.filter(point => point.status === 'used');
+  return usedPoints.sort((a, b) => {
+    const dateA = new Date(a.usedAt || a.createdAt);
+    const dateB = new Date(b.usedAt || b.createdAt);
+    return dateB - dateA; // 降序：最近優先
+  });
+});
+
+// 過期點數（按過期時間排序）
+const groupedExpiredPoints = computed(() => {
+  const expiredPoints = pointsHistory.value.filter(point => point.status === 'expired');
+  return expiredPoints.sort((a, b) => {
+    const dateA = new Date(a.expiryDate || a.createdAt);
+    const dateB = new Date(b.expiryDate || b.createdAt);
+    return dateB - dateA; // 降序
+  });
+});
+
+// 即將過期的點數 (30天內)
 const expiringPointsGroups = computed(() => {
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-  return groupedPointsDetail.value.filter(group => {
-    const expiryDate = new Date(group.expiryDate);
-    return group.status === 'active' && expiryDate <= thirtyDaysFromNow;
+  return groupedEarnedPoints.value.filter(record => {
+    const expiryDate = new Date(record.expiryDate);
+    return expiryDate <= thirtyDaysFromNow;
   });
 });
 
 const expiringPointsTotal = computed(() => {
-  return expiringPointsGroups.value.reduce((total, group) => total + group.totalAmount, 0);
+  return expiringPointsGroups.value.reduce((total, record) => total + (record.amount || 0), 0);
 });
 
 // 返回上一頁
@@ -230,29 +268,45 @@ const formatPointSource = (source) => {
     'purchase_reward': '消費獎勵',
     'sign_up_bonus': '註冊獎勵',
     'referral_bonus': '推薦獎勵',
-    'admin_grant': '管理員給予'
+    'admin_grant': '管理員給予',
+    'order_reward': '訂單獎勵',
+    'first_purchase': '首次消費獎勵',
+    'birthday_bonus': '生日獎勵'
   };
   return sourceMap[source] || source;
 };
 
-// 格式化狀態
-const formatStatus = (status) => {
-  const statusMap = {
-    'active': '可用',
-    'used': '已使用',
-    'expired': '已過期'
-  };
-  return statusMap[status] || status;
+// 獲取到期狀態
+const getExpiryStatus = (expiryDate) => {
+  if (!expiryDate) return '永久有效';
+
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return '已過期';
+  if (diffDays === 0) return '今日過期';
+  if (diffDays <= 3) return `${diffDays}天後過期`;
+  if (diffDays <= 7) return '一週內過期';
+  if (diffDays <= 30) return '一個月內過期';
+
+  return '有效';
 };
 
-// 獲取狀態樣式
-const getStatusClass = (status) => {
-  const statusClasses = {
-    'active': 'badge bg-success',
-    'used': 'badge bg-secondary',
-    'expired': 'badge bg-danger'
-  };
-  return statusClasses[status] || 'badge bg-secondary';
+// 獲取到期緊急程度樣式
+const getExpiryUrgencyClass = (expiryDate) => {
+  if (!expiryDate) return 'badge bg-info';
+
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return 'badge bg-secondary';
+  if (diffDays <= 3) return 'badge bg-danger';
+  if (diffDays <= 7) return 'badge bg-warning';
+  if (diffDays <= 30) return 'badge bg-info';
+
+  return 'badge bg-success';
 };
 
 // 格式化日期
@@ -273,46 +327,6 @@ const formatDateTime = (dateString) => {
   if (isNaN(date.getTime())) return '無效日期';
 
   return date.toLocaleString('zh-TW');
-};
-
-// 格式化歷史記錄標題
-const formatHistoryTitle = (record) => {
-  const statusMap = {
-    'active': '獲得點數',
-    'used': '使用點數',
-    'expired': '點數過期'
-  };
-  return statusMap[record.status] || '點數異動';
-};
-
-// 獲取歷史記錄圖標
-const getHistoryIcon = (record) => {
-  const iconMap = {
-    'active': 'bi bi-plus-circle-fill text-success',
-    'used': 'bi bi-dash-circle-fill text-primary',
-    'expired': 'bi bi-x-circle-fill text-danger'
-  };
-  return iconMap[record.status] || 'bi bi-circle-fill text-secondary';
-};
-
-// 獲取金額樣式
-const getAmountClass = (record) => {
-  const amountClasses = {
-    'active': 'amount-positive',
-    'used': 'amount-negative',
-    'expired': 'amount-expired'
-  };
-  return amountClasses[record.status] || 'amount-neutral';
-};
-
-// 獲取金額前綴
-const getAmountPrefix = (record) => {
-  if (record.status === 'active') {
-    return '+';
-  } else if (record.status === 'used') {
-    return '-';
-  }
-  return '';
 };
 
 // 重新整理資料
@@ -341,8 +355,7 @@ const loadMoreHistory = async () => {
     }
 
     const nextPage = currentHistoryPage.value + 1;
-    const response = await api.promotion.getUserPointHistory({
-      brandId: authStore.currentBrandId,
+    const response = await api.promotion.getUserPointHistory(authStore.currentBrandId, {
       page: nextPage,
       limit: historyLimit.value
     });
@@ -378,20 +391,18 @@ const loadPointsData = async () => {
       throw new Error('請先登入以查看點數資料');
     }
 
-    // 並行獲取點數資料和歷史記錄
-    const [pointsResponse, historyResponse] = await Promise.all([
-      api.promotion.getUserPoints(authStore.currentBrandId),
-      api.promotion.getUserPointHistory({
-        brandId: authStore.currentBrandId,
+    // 並行獲取點數餘額和歷史記錄
+    const [balanceResponse, historyResponse] = await Promise.all([
+      api.promotion.getUserPointsBalance(authStore.currentBrandId),
+      api.promotion.getUserPointHistory(authStore.currentBrandId, {
         page: 1,
         limit: historyLimit.value
       })
     ]);
 
-    // 設置點數資料
-    if (pointsResponse) {
-      pointsBalance.value = pointsResponse.balance || 0;
-      pointsDetail.value = pointsResponse.points || [];
+    // 設置點數餘額
+    if (balanceResponse !== undefined && balanceResponse !== null) {
+      pointsBalance.value = typeof balanceResponse === 'number' ? balanceResponse : (balanceResponse.balance || 0);
     }
 
     // 設置歷史記錄
@@ -569,6 +580,7 @@ onMounted(async () => {
 /* 通用卡片樣式 */
 .points-detail-card,
 .points-history-card,
+.points-expired-card,
 .points-rules-card {
   background-color: white;
   border-radius: 12px;
@@ -589,12 +601,14 @@ onMounted(async () => {
 
 /* 點數明細列表 */
 .points-list,
-.history-list {
+.history-list,
+.expired-list {
   margin: -0.5rem;
 }
 
 .point-item,
-.history-item {
+.history-item,
+.expired-item {
   display: flex;
   align-items: center;
   padding: 1rem;
@@ -603,14 +617,20 @@ onMounted(async () => {
 }
 
 .point-item:last-child,
-.history-item:last-child {
+.history-item:last-child,
+.expired-item:last-child {
   border-bottom: none;
+}
+
+.point-info,
+.history-info,
+.expired-info {
+  flex: 1;
 }
 
 .point-info {
   display: flex;
   align-items: center;
-  flex: 1;
 }
 
 .point-amount {
@@ -635,19 +655,23 @@ onMounted(async () => {
   flex: 1;
 }
 
-.point-source {
+.point-source,
+.history-title,
+.expired-title {
   font-weight: 500;
   margin-bottom: 0.25rem;
   color: #333;
 }
 
-.point-date {
+.point-date,
+.history-date,
+.expired-date {
   font-size: 0.85rem;
   color: #6c757d;
   margin: 0;
 }
 
-.point-order {
+.history-order {
   font-size: 0.8rem;
   color: #999;
   margin: 0.25rem 0 0 0;
@@ -666,39 +690,20 @@ onMounted(async () => {
 }
 
 /* 歷史記錄樣式 */
-.history-icon {
+.history-icon,
+.expired-icon {
   margin-right: 1rem;
   width: 40px;
   text-align: center;
 }
 
-.history-icon i {
+.history-icon i,
+.expired-icon i {
   font-size: 1.2rem;
 }
 
-.history-info {
-  flex: 1;
-}
-
-.history-title {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  color: #333;
-}
-
-.history-desc {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-bottom: 0.25rem;
-}
-
-.history-date {
-  font-size: 0.8rem;
-  color: #999;
-  margin: 0;
-}
-
-.history-amount {
+.history-amount,
+.expired-amount {
   text-align: right;
   font-weight: 600;
   font-size: 1.1rem;
@@ -784,11 +789,13 @@ onMounted(async () => {
     min-width: auto;
   }
 
-  .history-item {
+  .history-item,
+  .expired-item {
     flex-wrap: wrap;
   }
 
-  .history-amount {
+  .history-amount,
+  .expired-amount {
     width: 100%;
     text-align: left;
     margin-top: 0.5rem;
