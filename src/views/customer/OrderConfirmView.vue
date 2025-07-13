@@ -297,7 +297,7 @@ const getStepStatus = (stepId) => {
     return stepId === 1 ? 'current' : 'pending';
   }
 
-  if (stepId < currentStep.value) return 'completed';
+  if (stepId < currentStep.value || currentStep.value === 3) return 'completed';
   if (stepId === currentStep.value) return 'current';
   return 'pending';
 };
