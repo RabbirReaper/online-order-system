@@ -21,7 +21,7 @@ import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils
  */
 export const createOrder = async (orderData) => {
   try {
-    console.log('Creating order with mixed purchase support...');
+    //console.log('Creating order with mixed purchase support...');
 
     // 設置預設手動調整金額
     orderData.manualAdjustment = orderData.manualAdjustment || 0;
@@ -41,12 +41,12 @@ export const createOrder = async (orderData) => {
 
     for (const item of orderData.items) {
       if (item.itemType === 'dish') {
-        console.log(`Processing dish: ${item.name}`);
+        //console.log(`Processing dish: ${item.name}`);
         const dishItem = await createDishItem(item, orderData.brand);
         items.push(dishItem);
         dishSubtotal += dishItem.subtotal;
       } else if (item.itemType === 'bundle') {
-        console.log(`Processing bundle: ${item.name}`);
+        //console.log(`Processing bundle: ${item.name}`);
         const bundleItem = await createBundleItem(item, orderData.user, orderData.store, orderData.brand);
         items.push(bundleItem);
         bundleSubtotal += bundleItem.subtotal;
@@ -63,7 +63,7 @@ export const createOrder = async (orderData) => {
     updateOrderAmounts(order);
     await order.save();
 
-    console.log(`Order created: dishes $${dishSubtotal} + bundles $${bundleSubtotal} = total $${order.total}`);
+    //console.log(`Order created: dishes $${dishSubtotal} + bundles $${bundleSubtotal} = total $${order.total}`);
 
     // Step 6: 實際扣除庫存 (這時應該不會失敗，因為已經預檢查過)
     try {
@@ -78,7 +78,7 @@ export const createOrder = async (orderData) => {
     let result = { ...order.toObject(), pointsAwarded: 0, generatedVouchers: [] };
 
     if (order.status === 'paid') {
-      console.log('Processing immediate payment completion...');
+      //console.log('Processing immediate payment completion...');
       result = await processOrderPaymentComplete(order);
     }
 
@@ -100,7 +100,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
     return; // 沒有餐點項目，跳過檢查
   }
 
-  console.log(`Validating inventory for ${dishItems.length} dish items...`);
+  //console.log(`Validating inventory for ${dishItems.length} dish items...`);
 
   for (const item of dishItems) {
     try {
@@ -112,7 +112,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
 
       // 如果沒有庫存記錄，跳過檢查
       if (!inventoryItem) {
-        console.log(`Dish ${item.name} has no inventory record, skipping check`);
+        //console.log(`Dish ${item.name} has no inventory record, skipping check`);
         continue;
       }
 
@@ -123,7 +123,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
 
       // 🔥 核心邏輯：enableAvailableStock 只有在 isInventoryTracked = true 時才有效
       if (inventoryItem.isInventoryTracked) {
-        console.log(`📊 ${item.name} inventory tracking enabled - will record stock changes`);
+        //console.log(`📊 ${item.name} inventory tracking enabled - will record stock changes`);
 
         // 只有在追蹤庫存 + 啟用可用庫存控制時，才檢查庫存限制
         if (inventoryItem.enableAvailableStock) {
@@ -133,12 +133,12 @@ const validateInventoryBeforeOrder = async (orderData) => {
               400
             );
           }
-          console.log(`✅ ${item.name} stock limit check passed (need: ${item.quantity}, available: ${inventoryItem.availableStock})`);
+          //console.log(`✅ ${item.name} stock limit check passed (need: ${item.quantity}, available: ${inventoryItem.availableStock})`);
         } else {
-          console.log(`✅ ${item.name} inventory tracked but no purchase limit`);
+          //console.log(`✅ ${item.name} inventory tracked but no purchase limit`);
         }
       } else {
-        console.log(`📊 ${item.name} inventory tracking disabled - no stock recording or limits`);
+        //console.log(`📊 ${item.name} inventory tracking disabled - no stock recording or limits`);
         // isInventoryTracked = false 時，enableAvailableStock 應該也是 false
         if (inventoryItem.enableAvailableStock) {
           console.warn(`⚠️  ${item.name} has enableAvailableStock=true but isInventoryTracked=false - logical inconsistency!`);
@@ -155,7 +155,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
     }
   }
 
-  console.log('✅ All dish inventory validation passed');
+  //console.log('✅ All dish inventory validation passed');
 };
 
 /**
@@ -168,7 +168,7 @@ const validateBundlesBeforeOrder = async (orderData) => {
     return; // 沒有Bundle項目，跳過檢查
   }
 
-  console.log(`Validating bundle purchase eligibility for ${bundleItems.length} bundle items...`);
+  //console.log(`Validating bundle purchase eligibility for ${bundleItems.length} bundle items...`);
 
   for (const item of bundleItems) {
     try {
@@ -179,14 +179,14 @@ const validateBundlesBeforeOrder = async (orderData) => {
         orderData.store
       );
 
-      console.log(`✅ Bundle ${item.name} purchase eligibility check passed`);
+      //console.log(`✅ Bundle ${item.name} purchase eligibility check passed`);
     } catch (error) {
       console.error(`Bundle ${item.name} purchase eligibility check failed:`, error);
       throw error; // 直接拋出，因為 bundleService 已經包裝了適當的錯誤訊息
     }
   }
 
-  console.log('✅ All bundle purchase eligibility validation passed');
+  //console.log('✅ All bundle purchase eligibility validation passed');
 };
 
 /**
@@ -194,7 +194,7 @@ const validateBundlesBeforeOrder = async (orderData) => {
  */
 const cleanupFailedOrder = async (orderId, items) => {
   try {
-    console.log('Cleaning up failed order data...');
+    //console.log('Cleaning up failed order data...');
 
     // 刪除已創建的實例
     const dishInstanceIds = items
@@ -207,21 +207,21 @@ const cleanupFailedOrder = async (orderId, items) => {
 
     if (dishInstanceIds.length > 0) {
       await DishInstance.deleteMany({ _id: { $in: dishInstanceIds } });
-      console.log(`Cleaned up ${dishInstanceIds.length} dish instances`);
+      //console.log(`Cleaned up ${dishInstanceIds.length} dish instances`);
     }
 
     if (bundleInstanceIds.length > 0) {
       await BundleInstance.deleteMany({ _id: { $in: bundleInstanceIds } });
-      console.log(`Cleaned up ${bundleInstanceIds.length} bundle instances`);
+      //console.log(`Cleaned up ${bundleInstanceIds.length} bundle instances`);
     }
 
     // 刪除訂單
     if (orderId) {
       await Order.findByIdAndDelete(orderId);
-      console.log('Cleaned up failed order');
+      //console.log('Cleaned up failed order');
     }
 
-    console.log('✅ Failed order cleanup completed');
+    //console.log('✅ Failed order cleanup completed');
   } catch (cleanupError) {
     console.error('❌ Error cleaning up failed order data:', cleanupError);
     // 不拋出錯誤，避免影響主要的錯誤處理
@@ -286,13 +286,13 @@ export const processOrderPaymentComplete = async (order) => {
   let pointsReward = { pointsAwarded: 0 };
   let generatedVouchers = [];
 
-  console.log(`Processing payment completion for order ${order._id}...`);
+  //console.log(`Processing payment completion for order ${order._id}...`);
 
   try {
     // 1. 拆解 Bundle 生成 VoucherInstance 給用戶
     for (const item of order.items) {
       if (item.itemType === 'bundle') {
-        console.log(`Generating vouchers for bundle: ${item.itemName}`);
+        //console.log(`Generating vouchers for bundle: ${item.itemName}`);
         const bundleVouchers = await generateVouchersForBundle(item, order);
         generatedVouchers.push(...bundleVouchers);
 
@@ -306,16 +306,16 @@ export const processOrderPaymentComplete = async (order) => {
 
     // 3. 處理點數給予
     if (order.user) {
-      console.log('Processing points reward...');
+      //console.log('Processing points reward...');
       pointsReward = await processOrderPointsReward(order);
     }
 
     // 4. 保存訂單更新
     await order.save();
 
-    console.log(`✅ Payment completion processed:`);
-    console.log(`   - Generated vouchers: ${generatedVouchers.length}`);
-    console.log(`   - Points awarded: ${pointsReward.pointsAwarded}`);
+    //console.log(`✅ Payment completion processed:`);
+    //console.log(`   - Generated vouchers: ${generatedVouchers.length}`);
+    //console.log(`   - Points awarded: ${pointsReward.pointsAwarded}`);
 
     return {
       ...order.toObject(),
@@ -342,7 +342,7 @@ const generateVouchersForBundle = async (bundleItem, order) => {
 
   const generatedVouchers = [];
 
-  console.log(`Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`);
+  //console.log(`Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`);
 
   // 根據購買的 Bundle 數量生成 Voucher
   for (let i = 0; i < bundleItem.quantity; i++) {
@@ -376,13 +376,13 @@ const generateVouchersForBundle = async (bundleItem, order) => {
           await voucherInstance.save();
           generatedVouchers.push(voucherInstance);
 
-          console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`);
+          //console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`);
         }
       }
     }
   }
 
-  console.log(`✅ Generated ${generatedVouchers.length} vouchers total`);
+  //console.log(`✅ Generated ${generatedVouchers.length} vouchers total`);
   return generatedVouchers;
 };
 
@@ -397,7 +397,7 @@ const updateBundleSalesStats = async (order) => {
         await Bundle.findByIdAndUpdate(bundleInstance.templateId, {
           $inc: { totalSold: item.quantity }
         });
-        console.log(`Updated sales stats for bundle: ${bundleInstance.name} (+${item.quantity})`);
+        //console.log(`Updated sales stats for bundle: ${bundleInstance.name} (+${item.quantity})`);
       }
     }
   }
@@ -408,10 +408,10 @@ const updateBundleSalesStats = async (order) => {
  */
 export const processOrderPointsReward = async (order) => {
   try {
-    console.log(`Processing points reward for order ${order._id}`);
+    //console.log(`Processing points reward for order ${order._id}`);
 
     if (!order.user) {
-      console.log('No user found, skipping points reward');
+      //console.log('No user found, skipping points reward');
       return { pointsAwarded: 0 };
     }
 
@@ -422,7 +422,7 @@ export const processOrderPointsReward = async (order) => {
     );
 
     if (!pointsCalculation || pointsCalculation.points === 0) {
-      console.log('No points awarded - rule not met or no active rules');
+      //console.log('No points awarded - rule not met or no active rules');
       return { pointsAwarded: 0 };
     }
 
@@ -434,7 +434,7 @@ export const processOrderPointsReward = async (order) => {
     );
 
     if (alreadyRewarded) {
-      console.log('Points already awarded, skipping duplicate reward');
+      //console.log('Points already awarded, skipping duplicate reward');
       return { pointsAwarded: 0 };
     }
 
@@ -463,8 +463,8 @@ export const processOrderPointsReward = async (order) => {
       pointsCalculation.rule.validityDays || 60  // validityDays，預設60天
     );
 
-    console.log(`✅ Awarded ${pointsCalculation.points} points to user ${order.user}`);
-    console.log(`💰 Calculation base: ${order.total} (dishes: ${order.dishSubtotal}, bundles: ${order.bundleSubtotal})`);
+    //console.log(`✅ Awarded ${pointsCalculation.points} points to user ${order.user}`);
+    //console.log(`💰 Calculation base: ${order.total} (dishes: ${order.dishSubtotal}, bundles: ${order.bundleSubtotal})`);
 
     return {
       pointsAwarded: pointsCalculation.points,
@@ -483,7 +483,7 @@ export const processOrderPointsReward = async (order) => {
  * 🧮 更新訂單金額 (支援混合購買)
  */
 export const updateOrderAmounts = (order) => {
-  console.log('Updating order amounts...');
+  //console.log('Updating order amounts...');
 
   // Step 1: 計算小計 (dishes + bundles)
   order.subtotal = order.dishSubtotal + order.bundleSubtotal;
@@ -504,14 +504,14 @@ export const updateOrderAmounts = (order) => {
     order.total = 0;
   }
 
-  console.log(`Order amounts updated:`);
-  console.log(`   - Dish subtotal: $${order.dishSubtotal}`);
-  console.log(`   - Bundle subtotal: $${order.bundleSubtotal}`);
-  console.log(`   - Subtotal: $${order.subtotal}`);
-  console.log(`   - Service charge: $${order.serviceCharge}`);
-  console.log(`   - Total discount: $${order.totalDiscount}`);
-  console.log(`   - Manual adjustment: $${order.manualAdjustment}`);
-  console.log(`   - Final total: $${order.total}`);
+  //console.log(`Order amounts updated:`);
+  //console.log(`   - Dish subtotal: $${order.dishSubtotal}`);
+  //console.log(`   - Bundle subtotal: $${order.bundleSubtotal}`);
+  //console.log(`   - Subtotal: $${order.subtotal}`);
+  //console.log(`   - Service charge: $${order.serviceCharge}`);
+  //console.log(`   - Total discount: $${order.totalDiscount}`);
+  //console.log(`   - Manual adjustment: $${order.manualAdjustment}`);
+  //console.log(`   - Final total: $${order.total}`);
 
   return order;
 };
