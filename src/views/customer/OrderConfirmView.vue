@@ -185,7 +185,7 @@
               v-if="orderDetails.manualAdjustment && orderDetails.manualAdjustment !== 0">
               <span>{{ orderDetails.manualAdjustment > 0 ? '額外費用' : '額外優惠' }}</span>
               <span :class="orderDetails.manualAdjustment > 0 ? 'text-danger' : 'text-success'">
-                {{ orderDetails.manualAdjustment > 0 ? '+' : '' }}${{ Math.abs(orderDetails.manualAdjustment) }}
+                {{ orderDetails.manualAdjustment > 0 ? '+' : '-' }}${{ Math.abs(orderDetails.manualAdjustment) }}
               </span>
             </div>
 
