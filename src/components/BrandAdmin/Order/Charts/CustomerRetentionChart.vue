@@ -5,8 +5,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
-import { Line } from 'vue-chartjs';
+import { computed, onMounted } from 'vue'
+import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
   Title,
@@ -16,8 +16,8 @@ import {
   PointElement,
   CategoryScale,
   LinearScale,
-  Filler
-} from 'chart.js';
+  Filler,
+} from 'chart.js'
 
 ChartJS.register(
   Title,
@@ -27,45 +27,47 @@ ChartJS.register(
   PointElement,
   CategoryScale,
   LinearScale,
-  Filler
-);
+  Filler,
+)
 
 const props = defineProps({
   chartData: {
     type: Object,
     required: true,
-    default: () => ({ labels: [], newCustomerRate: [], returnCustomerRate: [] })
+    default: () => ({ labels: [], newCustomerRate: [], returnCustomerRate: [] }),
   },
   width: {
     type: Number,
-    default: 400
+    default: 400,
   },
   height: {
     type: Number,
-    default: 400
-  }
-});
+    default: 400,
+  },
+})
 
 onMounted(() => {
-  console.log('CustomerRetentionChart mounted with props:', props);
-});
+  console.log('CustomerRetentionChart mounted with props:', props)
+})
 
 const chartData = computed(() => {
-  const data = props.chartData;
+  const data = props.chartData
 
   if (!data.labels || data.labels.length === 0) {
     return {
       labels: ['暫無數據'],
-      datasets: [{
-        label: '新客佔比',
-        data: [0],
-        backgroundColor: 'rgba(149, 165, 166, 0.2)',
-        borderColor: 'rgba(149, 165, 166, 1)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: false
-      }]
-    };
+      datasets: [
+        {
+          label: '新客佔比',
+          data: [0],
+          backgroundColor: 'rgba(149, 165, 166, 0.2)',
+          borderColor: 'rgba(149, 165, 166, 1)',
+          borderWidth: 2,
+          tension: 0.4,
+          fill: false,
+        },
+      ],
+    }
   }
 
   return {
@@ -83,7 +85,7 @@ const chartData = computed(() => {
         pointHoverRadius: 7,
         borderWidth: 3,
         tension: 0.4,
-        fill: false
+        fill: false,
       },
       {
         label: '回購率 (%)',
@@ -97,46 +99,53 @@ const chartData = computed(() => {
         pointHoverRadius: 7,
         borderWidth: 3,
         tension: 0.4,
-        fill: false
-      }
-    ]
-  };
-});
+        fill: false,
+      },
+    ],
+  }
+})
 
 const chartOptions = computed(() => {
-  const data = props.chartData;
+  const data = props.chartData
 
   // 計算平均值用於顯示
-  const avgNewCustomer = data.newCustomerRate && data.newCustomerRate.length > 0
-    ? (data.newCustomerRate.reduce((sum, val) => sum + val, 0) / data.newCustomerRate.length).toFixed(1)
-    : 0;
+  const avgNewCustomer =
+    data.newCustomerRate && data.newCustomerRate.length > 0
+      ? (
+          data.newCustomerRate.reduce((sum, val) => sum + val, 0) / data.newCustomerRate.length
+        ).toFixed(1)
+      : 0
 
-  const avgReturnCustomer = data.returnCustomerRate && data.returnCustomerRate.length > 0
-    ? (data.returnCustomerRate.reduce((sum, val) => sum + val, 0) / data.returnCustomerRate.length).toFixed(1)
-    : 0;
+  const avgReturnCustomer =
+    data.returnCustomerRate && data.returnCustomerRate.length > 0
+      ? (
+          data.returnCustomerRate.reduce((sum, val) => sum + val, 0) /
+          data.returnCustomerRate.length
+        ).toFixed(1)
+      : 0
 
   return {
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: 15
+      padding: 15,
     },
     plugins: {
       title: {
         display: true,
         text: [
           '顧客留存分析',
-          `平均新客佔比: ${avgNewCustomer}% | 平均回購率: ${avgReturnCustomer}%`
+          `平均新客佔比: ${avgNewCustomer}% | 平均回購率: ${avgReturnCustomer}%`,
         ],
         padding: {
           top: 10,
-          bottom: 25
+          bottom: 25,
         },
         font: {
           size: 16,
-          weight: 'bold'
+          weight: 'bold',
         },
-        color: '#2c3e50'
+        color: '#2c3e50',
       },
       legend: {
         position: 'top',
@@ -145,10 +154,10 @@ const chartOptions = computed(() => {
           padding: 20,
           font: {
             size: 13,
-            weight: '500'
+            weight: '500',
           },
-          color: '#2c3e50'
-        }
+          color: '#2c3e50',
+        },
       },
       tooltip: {
         mode: 'index',
@@ -158,10 +167,10 @@ const chartOptions = computed(() => {
         bodyColor: '#5a6c7d',
         titleFont: {
           size: 14,
-          weight: 'bold'
+          weight: 'bold',
         },
         bodyFont: {
-          size: 13
+          size: 13,
         },
         padding: 15,
         boxPadding: 8,
@@ -170,33 +179,33 @@ const chartOptions = computed(() => {
         cornerRadius: 8,
         callbacks: {
           title: function (context) {
-            return `日期: ${context[0].label}`;
+            return `日期: ${context[0].label}`
           },
           label: function (context) {
-            const value = context.raw || 0;
-            return `${context.dataset.label}: ${value.toFixed(1)}%`;
+            const value = context.raw || 0
+            return `${context.dataset.label}: ${value.toFixed(1)}%`
           },
           afterBody: function (context) {
             if (context.length === 2) {
-              const newCustomerRate = context[0].raw || 0;
-              const returnCustomerRate = context[1].raw || 0;
+              const newCustomerRate = context[0].raw || 0
+              const returnCustomerRate = context[1].raw || 0
 
               // 提供一些分析建議
-              let analysis = '';
+              let analysis = ''
               if (newCustomerRate > 70) {
-                analysis = '新客比例較高，建議加強客戶留存';
+                analysis = '新客比例較高，建議加強客戶留存'
               } else if (returnCustomerRate > 60) {
-                analysis = '回購率表現良好，客戶黏性佳';
+                analysis = '回購率表現良好，客戶黏性佳'
               } else {
-                analysis = '建議平衡新客獲取與老客維護';
+                analysis = '建議平衡新客獲取與老客維護'
               }
 
-              return [analysis];
+              return [analysis]
             }
-            return [];
-          }
-        }
-      }
+            return []
+          },
+        },
+      },
     },
     scales: {
       y: {
@@ -207,26 +216,26 @@ const chartOptions = computed(() => {
           text: '百分比 (%)',
           font: {
             size: 14,
-            weight: '600'
+            weight: '600',
           },
           color: '#5a6c7d',
           padding: {
-            bottom: 10
-          }
+            bottom: 10,
+          },
         },
         ticks: {
           font: {
-            size: 12
+            size: 12,
           },
           color: '#5a6c7d',
           callback: function (value) {
-            return value + '%';
-          }
+            return value + '%'
+          },
         },
         grid: {
           color: 'rgba(52, 152, 219, 0.1)',
-          drawBorder: false
-        }
+          drawBorder: false,
+        },
       },
       x: {
         title: {
@@ -234,46 +243,46 @@ const chartOptions = computed(() => {
           text: '日期',
           font: {
             size: 14,
-            weight: '600'
+            weight: '600',
           },
           color: '#5a6c7d',
           padding: {
-            top: 10
-          }
+            top: 10,
+          },
         },
         ticks: {
           font: {
-            size: 12
+            size: 12,
           },
           color: '#5a6c7d',
           maxRotation: 45,
-          minRotation: 0
+          minRotation: 0,
         },
         grid: {
           display: true,
           color: 'rgba(52, 152, 219, 0.1)',
-          drawBorder: false
-        }
-      }
+          drawBorder: false,
+        },
+      },
     },
     interaction: {
       mode: 'index',
-      intersect: false
+      intersect: false,
     },
     elements: {
       line: {
-        cubicInterpolationMode: 'monotone'
+        cubicInterpolationMode: 'monotone',
       },
       point: {
         hoverBackgroundColor: function (context) {
-          return context.element.options.backgroundColor;
-        }
-      }
+          return context.element.options.backgroundColor
+        },
+      },
     },
     animation: {
       duration: 1200,
-      easing: 'easeOutQuart'
-    }
-  };
-});
+      easing: 'easeOutQuart',
+    },
+  }
+})
 </script>

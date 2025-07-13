@@ -11,9 +11,9 @@ export const useMenuStore = defineStore('menu', () => {
   // 計算屬性
   const menuTypeText = computed(() => {
     const typeMap = {
-      'food': '餐點菜單',
-      'cash_coupon': '預購券',
-      'point_exchange': '點數兌換'
+      food: '餐點菜單',
+      cash_coupon: '預購券',
+      point_exchange: '點數兌換',
     }
     return typeMap[currentMenuType.value] || currentMenuType.value
   })
@@ -40,7 +40,7 @@ export const useMenuStore = defineStore('menu', () => {
       const state = {
         currentMenuType: currentMenuType.value,
         brandId: brandId.value,
-        storeId: storeId.value
+        storeId: storeId.value,
       }
       sessionStorage.setItem('menuState', JSON.stringify(state))
     } catch (error) {
@@ -88,6 +88,6 @@ export const useMenuStore = defineStore('menu', () => {
     setBrandAndStore,
     persistState,
     restoreState,
-    clearState
+    clearState,
   }
 })

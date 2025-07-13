@@ -8,8 +8,8 @@ export const authRoutes = [
     component: () => import('@/components/customer/auth/Login.vue'),
     beforeEnter: requireNoAuth,
     meta: {
-      title: '會員登入'
-    }
+      title: '會員登入',
+    },
   },
   {
     path: '/auth/register',
@@ -17,8 +17,8 @@ export const authRoutes = [
     component: () => import('@/components/customer/auth/Register.vue'),
     beforeEnter: requireNoAuth,
     meta: {
-      title: '會員註冊'
-    }
+      title: '會員註冊',
+    },
   },
   {
     path: '/auth/forgot-password',
@@ -26,7 +26,7 @@ export const authRoutes = [
     component: () => import('@/components/customer/auth/ForgotPassword.vue'),
     beforeEnter: requireNoAuth,
     meta: {
-      title: '忘記密碼'
-    }
-  }
+      title: '忘記密碼',
+    },
+  },
 ]

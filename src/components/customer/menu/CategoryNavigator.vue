@@ -2,9 +2,14 @@
   <div ref="navContainer" class="category-navigator">
     <div class="category-nav-wrapper" ref="navWrapper">
       <nav class="nav nav-pills category-nav-custom" ref="categoryNav">
-        <a v-for="category in formattedCategories" :key="category.categoryId" class="nav-link nav-link-custom"
-          :class="{ 'active': activeCategory === category.categoryId }" :href="'#category-' + category.categoryId"
-          @click.prevent="scrollToCategory(category.categoryId)">
+        <a
+          v-for="category in formattedCategories"
+          :key="category.categoryId"
+          class="nav-link nav-link-custom"
+          :class="{ active: activeCategory === category.categoryId }"
+          :href="'#category-' + category.categoryId"
+          @click.prevent="scrollToCategory(category.categoryId)"
+        >
           {{ category.categoryName }}
         </a>
       </nav>
@@ -13,174 +18,180 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 
 const props = defineProps({
   categories: {
     type: Array,
-    required: true
-  }
-});
+    required: true,
+  },
+})
 
-const navContainer = ref(null);
-const navWrapper = ref(null);
-const categoryNav = ref(null);
-const activeCategory = ref('');
-const observer = ref(null);
-const scrollHandler = ref(null);
+const navContainer = ref(null)
+const navWrapper = ref(null)
+const categoryNav = ref(null)
+const activeCategory = ref('')
+const observer = ref(null)
+const scrollHandler = ref(null)
 
 // 格式化分類數據以適配組件需求
 // 格式化分類數據以適配組件需求
 const formattedCategories = computed(() => {
   if (!props.categories || !Array.isArray(props.categories)) {
-    return [];
+    return []
   }
 
-  return props.categories.map(category => ({
-    categoryId: category._id || category.categoryId,
-    categoryName: category.name || category.categoryName
-  })).filter(category => category.categoryId && category.categoryName);
-});
+  return props.categories
+    .map((category) => ({
+      categoryId: category._id || category.categoryId,
+      categoryName: category.name || category.categoryName,
+    }))
+    .filter((category) => category.categoryId && category.categoryName)
+})
 
 // 滾動到指定類別
 const scrollToCategory = (categoryId) => {
-  const element = document.getElementById('category-' + categoryId);
+  const element = document.getElementById('category-' + categoryId)
   if (element) {
     // 考慮頂部固定導航欄的高度
-    const navHeight = navContainer.value?.offsetHeight || 0;
-    const rect = element.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const targetPosition = rect.top + scrollTop - navHeight - 10; // 10px 緩衝
+    const navHeight = navContainer.value?.offsetHeight || 0
+    const rect = element.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const targetPosition = rect.top + scrollTop - navHeight - 10 // 10px 緩衝
 
     window.scrollTo({
       top: targetPosition,
-      behavior: 'smooth'
-    });
+      behavior: 'smooth',
+    })
 
     // 更新激活狀態
-    activeCategory.value = categoryId;
+    activeCategory.value = categoryId
 
     // 立即滾動導航欄到當前項目
     setTimeout(() => {
-      scrollNavToActiveItem();
-    }, 100);
+      scrollNavToActiveItem()
+    }, 100)
   }
-};
+}
 
 // 設置滾動監聽
 const setupScrollSpy = () => {
   observer.value = new IntersectionObserver(
     (entries) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          const id = entry.target.id.replace('category-', '');
-          activeCategory.value = id;
-          scrollNavToActiveItem();
+          const id = entry.target.id.replace('category-', '')
+          activeCategory.value = id
+          scrollNavToActiveItem()
         }
-      });
+      })
     },
     {
       rootMargin: '-50px 0px -50% 0px',
-      threshold: 0
-    }
-  );
+      threshold: 0,
+    },
+  )
 
-  formattedCategories.value.forEach(category => {
-    const element = document.getElementById('category-' + category.categoryId);
+  formattedCategories.value.forEach((category) => {
+    const element = document.getElementById('category-' + category.categoryId)
     if (element) {
-      observer.value.observe(element);
+      observer.value.observe(element)
     }
-  });
+  })
 
   if (formattedCategories.value.length > 0) {
-    activeCategory.value = formattedCategories.value[0].categoryId;
+    activeCategory.value = formattedCategories.value[0].categoryId
   }
-};
+}
 
 // 滾動導航欄到活躍項目
 const scrollNavToActiveItem = () => {
-  if (!navWrapper.value) return;
+  if (!navWrapper.value) return
 
-  const activeItem = navWrapper.value.querySelector('.nav-link-custom.active');
-  if (!activeItem) return;
+  const activeItem = navWrapper.value.querySelector('.nav-link-custom.active')
+  if (!activeItem) return
 
-  const navRect = navWrapper.value.getBoundingClientRect();
-  const activeItemOffsetLeft = activeItem.offsetLeft;
-  const activeItemWidth = activeItem.offsetWidth;
-  const navWidth = navRect.width;
+  const navRect = navWrapper.value.getBoundingClientRect()
+  const activeItemOffsetLeft = activeItem.offsetLeft
+  const activeItemWidth = activeItem.offsetWidth
+  const navWidth = navRect.width
 
   // 計算理想的滾動位置（將活躍項目置於中央）
-  const idealScrollLeft = activeItemOffsetLeft - (navWidth / 2) + (activeItemWidth / 2);
+  const idealScrollLeft = activeItemOffsetLeft - navWidth / 2 + activeItemWidth / 2
 
   // 邊界檢查
-  const maxScrollLeft = navWrapper.value.scrollWidth - navWidth;
-  const targetScrollLeft = Math.max(0, Math.min(idealScrollLeft, maxScrollLeft));
+  const maxScrollLeft = navWrapper.value.scrollWidth - navWidth
+  const targetScrollLeft = Math.max(0, Math.min(idealScrollLeft, maxScrollLeft))
 
   // 平滑滾動到目標位置
   navWrapper.value.scrollTo({
     left: targetScrollLeft,
-    behavior: 'smooth'
-  });
-};
+    behavior: 'smooth',
+  })
+}
 
 // 設置粘性導航
 const setupStickyNav = () => {
-  if (!navContainer.value) return;
+  if (!navContainer.value) return
 
-  const stickyOffset = navContainer.value.offsetTop;
+  const stickyOffset = navContainer.value.offsetTop
 
   scrollHandler.value = () => {
     if (window.pageYOffset >= stickyOffset) {
-      navContainer.value.classList.add('sticky');
+      navContainer.value.classList.add('sticky')
     } else {
-      navContainer.value.classList.remove('sticky');
+      navContainer.value.classList.remove('sticky')
     }
-  };
+  }
 
-  window.addEventListener('scroll', scrollHandler.value);
-};
+  window.addEventListener('scroll', scrollHandler.value)
+}
 
 onMounted(async () => {
-  await nextTick();
-  setupStickyNav();
+  await nextTick()
+  setupStickyNav()
 
   // 等待分類數據載入後再設置滾動監聽
   if (formattedCategories.value.length > 0) {
-    setupScrollSpy();
+    setupScrollSpy()
     setTimeout(() => {
-      scrollNavToActiveItem();
-    }, 300);
+      scrollNavToActiveItem()
+    }, 300)
   }
-});
+})
 
 onUnmounted(() => {
   if (observer.value) {
-    observer.value.disconnect();
+    observer.value.disconnect()
   }
 
   if (scrollHandler.value) {
-    window.removeEventListener('scroll', scrollHandler.value);
+    window.removeEventListener('scroll', scrollHandler.value)
   }
-});
+})
 
 // 監聽分類變化，重新設置滾動監聽
 const updateScrollSpy = () => {
   if (observer.value) {
-    observer.value.disconnect();
+    observer.value.disconnect()
   }
 
   if (formattedCategories.value.length > 0) {
-    setupScrollSpy();
+    setupScrollSpy()
   }
-};
+}
 
 // 監聽 categories 變化
-import { watch } from 'vue';
-watch(() => formattedCategories.value, () => {
-  nextTick(() => {
-    updateScrollSpy();
-  });
-}, { deep: true });
+import { watch } from 'vue'
+watch(
+  () => formattedCategories.value,
+  () => {
+    nextTick(() => {
+      updateScrollSpy()
+    })
+  },
+  { deep: true },
+)
 </script>
 
 <style scoped>
@@ -323,7 +334,7 @@ watch(() => formattedCategories.value, () => {
 }
 
 /* 確保在所有裝置上都能正確顯示橫向滾動 */
-.category-nav-custom>* {
+.category-nav-custom > * {
   flex-shrink: 0;
 }
 </style>

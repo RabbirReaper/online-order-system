@@ -11,11 +11,11 @@ export default function () {
      */
     fileToBase64(file) {
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
-      });
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = (error) => reject(error)
+        reader.readAsDataURL(file)
+      })
     },
 
     /**
@@ -28,39 +28,39 @@ export default function () {
      * @returns {Promise<string>} - 壓縮後的 Base64 編碼圖片字符串
      */
     compressImage(base64, options = {}) {
-      const { maxWidth = 800, maxHeight = 800, quality = 0.8 } = options;
+      const { maxWidth = 800, maxHeight = 800, quality = 0.8 } = options
 
       return new Promise((resolve) => {
-        const img = new Image();
-        img.src = base64;
+        const img = new Image()
+        img.src = base64
         img.onload = () => {
           // 計算新尺寸
-          let width = img.width;
-          let height = img.height;
+          let width = img.width
+          let height = img.height
 
           if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
+            height *= maxWidth / width
+            width = maxWidth
           }
 
           if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
+            width *= maxHeight / height
+            height = maxHeight
           }
 
           // 創建畫布並繪製圖像
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
 
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
 
           // 轉換為 Base64
-          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-          resolve(compressedBase64);
-        };
-      });
-    }
-  };
+          const compressedBase64 = canvas.toDataURL('image/jpeg', quality)
+          resolve(compressedBase64)
+        }
+      })
+    },
+  }
 }

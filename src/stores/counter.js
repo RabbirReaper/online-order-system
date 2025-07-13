@@ -1,30 +1,30 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import api from '@/api';
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import api from '@/api'
 
 export const useCounterStore = defineStore('counter', () => {
   // 狀態
-  const activeComponent = ref('DineIn'); // 'DineIn', 'TakeOut', 'Orders'
-  const currentBrand = ref(null);
-  const currentStore = ref(null);
-  const storeData = ref(null);
-  const menuData = ref(null);
-  const dishTemplates = ref([]);
-  const optionCategories = ref([]);
+  const activeComponent = ref('DineIn') // 'DineIn', 'TakeOut', 'Orders'
+  const currentBrand = ref(null)
+  const currentStore = ref(null)
+  const storeData = ref(null)
+  const menuData = ref(null)
+  const dishTemplates = ref([])
+  const optionCategories = ref([])
 
   // 購物車相關 - 統一資料結構與 cart.js
-  const cart = ref([]);
-  const currentItem = ref(null);
-  const currentItemIndex = ref(null);
-  const manualAdjustment = ref(0); // 與 schema 保持一致
-  const totalDiscount = ref(0); // 與 schema 保持一致
-  const isCheckingOut = ref(false);
-  const isEditMode = ref(false);
+  const cart = ref([])
+  const currentItem = ref(null)
+  const currentItemIndex = ref(null)
+  const manualAdjustment = ref(0) // 與 schema 保持一致
+  const totalDiscount = ref(0) // 與 schema 保持一致
+  const isCheckingOut = ref(false)
+  const isEditMode = ref(false)
 
   // 訂單相關
-  const todayOrders = ref([]);
-  const selectedOrder = ref(null);
-  const currentDate = ref('');
+  const todayOrders = ref([])
+  const selectedOrder = ref(null)
+  const currentDate = ref('')
 
   // 模態框狀態管理
   const modals = ref({
@@ -32,133 +32,139 @@ export const useCounterStore = defineStore('counter', () => {
       show: false,
       tempAdjustment: 0,
       adjustmentType: 'add', // 'add' 或 'subtract'
-      editingOrder: null
+      editingOrder: null,
     },
     checkout: {
       show: false,
       total: 0,
-      orderId: null
+      orderId: null,
     },
     cashCalculator: {
       show: false,
-      total: 0
+      total: 0,
     },
     tableNumber: {
-      show: false
-    }
-  });
+      show: false,
+    },
+  })
 
   // 計算屬性 - 購物車
   const subtotal = computed(() => {
     return cart.value.reduce((total, item) => {
-      return total + (item.subtotal || 0);
-    }, 0);
-  });
+      return total + (item.subtotal || 0)
+    }, 0)
+  })
 
   const total = computed(() => {
-    return Math.max(0, subtotal.value + manualAdjustment.value - totalDiscount.value);
-  });
+    return Math.max(0, subtotal.value + manualAdjustment.value - totalDiscount.value)
+  })
 
   // 計算屬性 - 訂單相關（與 schema 命名一致）
   const calculateOrderSubtotal = (order) => {
-    if (!order || !order.items) return 0;
-    return order.items.reduce((total, item) => total + (item.subtotal || 0), 0);
-  };
+    if (!order || !order.items) return 0
+    return order.items.reduce((total, item) => total + (item.subtotal || 0), 0)
+  }
 
   const calculateOrderTotalDiscount = (order) => {
-    if (!order || !order.discounts) return 0;
-    return order.discounts.reduce((total, discount) => total + (discount.amount || 0), 0);
-  };
+    if (!order || !order.discounts) return 0
+    return order.discounts.reduce((total, discount) => total + (discount.amount || 0), 0)
+  }
 
   const calculateOrderTotal = (order) => {
-    if (!order) return 0;
-    const itemsSubtotal = calculateOrderSubtotal(order);
-    const adjustment = order.manualAdjustment || 0;
-    const discounts = calculateOrderTotalDiscount(order);
-    return Math.max(0, itemsSubtotal + adjustment - discounts);
-  };
+    if (!order) return 0
+    const itemsSubtotal = calculateOrderSubtotal(order)
+    const adjustment = order.manualAdjustment || 0
+    const discounts = calculateOrderTotalDiscount(order)
+    return Math.max(0, itemsSubtotal + adjustment - discounts)
+  }
 
   // 台灣時區日期處理工具函數
   const getTaiwanDate = (date = null) => {
     if (date) {
       if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return date;
+        return date
       }
-      const targetDate = new Date(date);
-      return targetDate.toISOString().split('T')[0];
+      const targetDate = new Date(date)
+      return targetDate.toISOString().split('T')[0]
     }
-    const now = new Date();
-    const taiwanTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (8 * 3600000));
-    return taiwanTime.toISOString().split('T')[0];
-  };
+    const now = new Date()
+    const taiwanTime = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 8 * 3600000)
+    return taiwanTime.toISOString().split('T')[0]
+  }
 
   const getTaiwanDateTime = (date = null) => {
-    const targetDate = date ? new Date(date) : new Date();
-    const taiwanTime = new Date(targetDate.getTime() + (targetDate.getTimezoneOffset() * 60000) + (8 * 3600000));
-    return taiwanTime;
-  };
+    const targetDate = date ? new Date(date) : new Date()
+    const taiwanTime = new Date(
+      targetDate.getTime() + targetDate.getTimezoneOffset() * 60000 + 8 * 3600000,
+    )
+    return taiwanTime
+  }
 
   // 模態框管理方法
   const openAdjustmentModal = (order = null) => {
     if (order) {
-      modals.value.adjustment.editingOrder = order;
-      modals.value.adjustment.tempAdjustment = Math.abs(order.manualAdjustment || 0);
-      modals.value.adjustment.adjustmentType = (order.manualAdjustment || 0) >= 0 ? 'add' : 'subtract';
+      modals.value.adjustment.editingOrder = order
+      modals.value.adjustment.tempAdjustment = Math.abs(order.manualAdjustment || 0)
+      modals.value.adjustment.adjustmentType =
+        (order.manualAdjustment || 0) >= 0 ? 'add' : 'subtract'
     } else {
-      modals.value.adjustment.editingOrder = null;
-      modals.value.adjustment.tempAdjustment = Math.abs(manualAdjustment.value);
-      modals.value.adjustment.adjustmentType = manualAdjustment.value >= 0 ? 'add' : 'subtract';
+      modals.value.adjustment.editingOrder = null
+      modals.value.adjustment.tempAdjustment = Math.abs(manualAdjustment.value)
+      modals.value.adjustment.adjustmentType = manualAdjustment.value >= 0 ? 'add' : 'subtract'
     }
-    modals.value.adjustment.show = true;
-  };
+    modals.value.adjustment.show = true
+  }
 
   const openCheckoutModal = (orderId, total) => {
-    modals.value.checkout.orderId = orderId;
-    modals.value.checkout.total = total;
-    modals.value.checkout.show = true;
-  };
+    modals.value.checkout.orderId = orderId
+    modals.value.checkout.total = total
+    modals.value.checkout.show = true
+  }
 
   const openCashCalculatorModal = (total) => {
-    modals.value.cashCalculator.total = total;
-    modals.value.cashCalculator.show = true;
-  };
+    modals.value.cashCalculator.total = total
+    modals.value.cashCalculator.show = true
+  }
 
   const openTableNumberModal = () => {
-    modals.value.tableNumber.show = true;
-  };
+    modals.value.tableNumber.show = true
+  }
 
   const closeModal = (modalName) => {
     if (modals.value[modalName]) {
-      modals.value[modalName].show = false;
+      modals.value[modalName].show = false
       // 重置相關狀態
       if (modalName === 'adjustment') {
-        modals.value.adjustment.editingOrder = null;
-        modals.value.adjustment.tempAdjustment = 0;
+        modals.value.adjustment.editingOrder = null
+        modals.value.adjustment.tempAdjustment = 0
       } else if (modalName === 'checkout') {
-        modals.value.checkout.orderId = null;
-        modals.value.checkout.total = 0;
+        modals.value.checkout.orderId = null
+        modals.value.checkout.total = 0
       }
     }
-  };
+  }
 
   // 調帳相關方法
   const setAdjustmentType = (type) => {
-    modals.value.adjustment.adjustmentType = type;
-    modals.value.adjustment.tempAdjustment = 0;
-  };
+    modals.value.adjustment.adjustmentType = type
+    modals.value.adjustment.tempAdjustment = 0
+  }
 
   const appendToAdjustment = (num) => {
-    modals.value.adjustment.tempAdjustment = parseInt(`${modals.value.adjustment.tempAdjustment}${num}`);
-  };
+    modals.value.adjustment.tempAdjustment = parseInt(
+      `${modals.value.adjustment.tempAdjustment}${num}`,
+    )
+  }
 
   const clearAdjustment = () => {
-    modals.value.adjustment.tempAdjustment = 0;
-  };
+    modals.value.adjustment.tempAdjustment = 0
+  }
 
   const confirmAdjustment = async () => {
-    const newAdjustment = modals.value.adjustment.adjustmentType === 'add'
-      ? modals.value.adjustment.tempAdjustment
-      : -modals.value.adjustment.tempAdjustment;
+    const newAdjustment =
+      modals.value.adjustment.adjustmentType === 'add'
+        ? modals.value.adjustment.tempAdjustment
+        : -modals.value.adjustment.tempAdjustment
 
     if (modals.value.adjustment.editingOrder) {
       // 更新訂單調帳
@@ -167,57 +173,60 @@ export const useCounterStore = defineStore('counter', () => {
           brandId: currentBrand.value,
           storeId: currentStore.value,
           orderId: modals.value.adjustment.editingOrder._id,
-          updateData: { manualAdjustment: newAdjustment }
-        });
+          updateData: { manualAdjustment: newAdjustment },
+        })
 
         if (response.success) {
-          await fetchTodayOrders(currentBrand.value, currentStore.value);
-          if (selectedOrder.value && selectedOrder.value._id === modals.value.adjustment.editingOrder._id) {
+          await fetchTodayOrders(currentBrand.value, currentStore.value)
+          if (
+            selectedOrder.value &&
+            selectedOrder.value._id === modals.value.adjustment.editingOrder._id
+          ) {
             const updatedOrder = await api.orderAdmin.getOrderById({
               brandId: currentBrand.value,
               storeId: currentStore.value,
-              orderId: modals.value.adjustment.editingOrder._id
-            });
+              orderId: modals.value.adjustment.editingOrder._id,
+            })
             if (updatedOrder.success) {
-              selectOrder(updatedOrder.order);
+              selectOrder(updatedOrder.order)
             }
           }
         }
       } catch (error) {
-        console.error('更新訂單調帳失敗:', error);
-        throw new Error('調整訂單失敗');
+        console.error('更新訂單調帳失敗:', error)
+        throw new Error('調整訂單失敗')
       }
     } else {
       // 更新購物車調帳
-      manualAdjustment.value = newAdjustment;
+      manualAdjustment.value = newAdjustment
     }
 
-    closeModal('adjustment');
-  };
+    closeModal('adjustment')
+  }
 
   // 方法
   function setBrandAndStore(brandId, storeId) {
-    currentBrand.value = brandId;
-    currentStore.value = storeId;
+    currentBrand.value = brandId
+    currentStore.value = storeId
   }
 
   function setActiveComponent(component) {
-    activeComponent.value = component;
+    activeComponent.value = component
     if (component === 'Orders') {
-      fetchTodayOrders(currentBrand.value, currentStore.value);
+      fetchTodayOrders(currentBrand.value, currentStore.value)
     }
   }
 
   // 載入店鋪資料
   async function fetchStoreData(brandId, storeId) {
     try {
-      const response = await api.store.getStoreById({ brandId, id: storeId });
+      const response = await api.store.getStoreById({ brandId, id: storeId })
       if (response.success) {
-        storeData.value = response.store;
+        storeData.value = response.store
       }
     } catch (error) {
-      console.error('載入店鋪資料失敗:', error);
-      throw error;
+      console.error('載入店鋪資料失敗:', error)
+      throw error
     }
   }
 
@@ -229,175 +238,190 @@ export const useCounterStore = defineStore('counter', () => {
         storeId,
         includeUnpublished: false,
         activeOnly: true,
-        menuType: 'food' // counter 主要處理餐點菜單
-      });
+        menuType: 'food', // counter 主要處理餐點菜單
+      })
 
       if (response.success && response.menus && response.menus.length > 0) {
         // 尋找 food 類型的菜單（現金購買餐點）
-        const foodMenu = response.menus.find(menu => menu.menuType === 'food');
+        const foodMenu = response.menus.find((menu) => menu.menuType === 'food')
         if (foodMenu) {
-          menuData.value = foodMenu;
+          menuData.value = foodMenu
 
           // 確保分類按順序排列
           if (menuData.value.categories) {
-            menuData.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+            menuData.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0))
 
             // 確保每個分類的商品按順序排列
-            menuData.value.categories.forEach(category => {
+            menuData.value.categories.forEach((category) => {
               if (category.items) {
-                category.items.sort((a, b) => (a.order || 0) - (b.order || 0));
+                category.items.sort((a, b) => (a.order || 0) - (b.order || 0))
               }
-            });
+            })
           }
 
-          await fetchDishTemplates(brandId);
-          await fetchOptionCategoriesWithOptions(brandId);
+          await fetchDishTemplates(brandId)
+          await fetchOptionCategoriesWithOptions(brandId)
         } else {
-          console.warn('沒有找到現金購買餐點菜單');
-          menuData.value = { categories: [] };
+          console.warn('沒有找到現金購買餐點菜單')
+          menuData.value = { categories: [] }
         }
       } else {
-        console.warn('沒有找到啟用的菜單');
-        menuData.value = { categories: [] };
+        console.warn('沒有找到啟用的菜單')
+        menuData.value = { categories: [] }
       }
     } catch (error) {
-      console.error('載入菜單資料失敗:', error);
-      throw error;
+      console.error('載入菜單資料失敗:', error)
+      throw error
     }
   }
 
   // 載入餐點模板
   async function fetchDishTemplates(brandId) {
     try {
-      const response = await api.dish.getAllDishTemplates({ brandId });
+      const response = await api.dish.getAllDishTemplates({ brandId })
       if (response.success) {
-        dishTemplates.value = response.templates;
+        dishTemplates.value = response.templates
       }
     } catch (error) {
-      console.error('載入餐點模板失敗:', error);
+      console.error('載入餐點模板失敗:', error)
     }
   }
 
   // 載入選項類別
   async function fetchOptionCategoriesWithOptions(brandId) {
     try {
-      const response = await api.dish.getAllOptionCategories(brandId);
+      const response = await api.dish.getAllOptionCategories(brandId)
       if (response.success) {
-        optionCategories.value = response.categories;
+        optionCategories.value = response.categories
       }
     } catch (error) {
-      console.error('載入選項類別失敗:', error);
+      console.error('載入選項類別失敗:', error)
     }
   }
 
   // 載入當日訂單
   async function fetchTodayOrders(brandId, storeId) {
-    const today = new Date(); // 直接使用當前時間
-    return await fetchOrdersByDate(brandId, storeId, today);
+    const today = new Date() // 直接使用當前時間
+    return await fetchOrdersByDate(brandId, storeId, today)
   }
 
   // 按日期載入訂單
   async function fetchOrdersByDate(brandId, storeId, date) {
     try {
       // 確保 date 是 Date 對象
-      const targetDate = date instanceof Date ? date : new Date(date);
+      const targetDate = date instanceof Date ? date : new Date(date)
 
       const response = await api.orderAdmin.getStoreOrders({
         brandId,
         storeId,
         fromDate: targetDate,
-        toDate: targetDate
-      });
+        toDate: targetDate,
+      })
 
       if (response.success) {
-        todayOrders.value = response.orders;
-        currentDate.value = targetDate.toLocaleDateString('zh-TW');
+        todayOrders.value = response.orders
+        currentDate.value = targetDate.toLocaleDateString('zh-TW')
 
-        return response;
+        return response
       } else {
-        console.error('❌ API 回應失敗:', response);
-        throw new Error(response.message || '獲取訂單失敗');
+        console.error('❌ API 回應失敗:', response)
+        throw new Error(response.message || '獲取訂單失敗')
       }
     } catch (error) {
       console.error('💥 載入訂單失敗:', {
         錯誤: error.message,
-        參數: { brandId, storeId, date }
-      });
-      throw error;
+        參數: { brandId, storeId, date },
+      })
+      throw error
     }
   }
 
   // 獲取餐點模板詳細資料
   function getDishTemplate(templateId) {
-    return dishTemplates.value.find(template => template._id === templateId);
+    return dishTemplates.value.find((template) => template._id === templateId)
   }
 
   // 生成購物車項目的唯一鍵值
   function generateItemKey(templateId, options, note = '') {
-    let optionsKey = '';
+    let optionsKey = ''
     if (options && options.length > 0) {
-      optionsKey = options.map(category => {
-        const selections = category.selections.map(s => s.optionId).sort().join('-');
-        return `${category.optionCategoryId}:${selections}`;
-      }).sort().join('|');
+      optionsKey = options
+        .map((category) => {
+          const selections = category.selections
+            .map((s) => s.optionId)
+            .sort()
+            .join('-')
+          return `${category.optionCategoryId}:${selections}`
+        })
+        .sort()
+        .join('|')
     }
-    const noteKey = note ? `:${note}` : '';
-    return `${templateId}:${optionsKey}${noteKey}`;
+    const noteKey = note ? `:${note}` : ''
+    return `${templateId}:${optionsKey}${noteKey}`
   }
 
   // 生成唯一的購物車項目 ID
   function generateUniqueItemId() {
-    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   // 獲取餐點的預設選項
   function getDefaultOptionsForDish(dishTemplate) {
-    const defaultOptions = [];
+    const defaultOptions = []
 
     if (dishTemplate.optionCategories && dishTemplate.optionCategories.length > 0) {
-      dishTemplate.optionCategories.forEach(categoryRef => {
-        const category = optionCategories.value.find(cat => cat._id === categoryRef.categoryId);
+      dishTemplate.optionCategories.forEach((categoryRef) => {
+        const category = optionCategories.value.find((cat) => cat._id === categoryRef.categoryId)
 
-        if (category && category.inputType === 'single' && category.options && category.options.length > 0) {
-          const firstOption = category.options[0];
-          const optionId = firstOption.refOption ? firstOption.refOption._id : firstOption._id;
-          const optionName = firstOption.refOption ? firstOption.refOption.name : firstOption.name;
-          const optionPrice = firstOption.refOption ? (firstOption.refOption.price || 0) : (firstOption.price || 0);
+        if (
+          category &&
+          category.inputType === 'single' &&
+          category.options &&
+          category.options.length > 0
+        ) {
+          const firstOption = category.options[0]
+          const optionId = firstOption.refOption ? firstOption.refOption._id : firstOption._id
+          const optionName = firstOption.refOption ? firstOption.refOption.name : firstOption.name
+          const optionPrice = firstOption.refOption
+            ? firstOption.refOption.price || 0
+            : firstOption.price || 0
 
           defaultOptions.push({
             optionCategoryId: category._id,
             optionCategoryName: category.name,
-            selections: [{
-              optionId: optionId,
-              name: optionName,
-              price: optionPrice
-            }]
-          });
+            selections: [
+              {
+                optionId: optionId,
+                name: optionName,
+                price: optionPrice,
+              },
+            ],
+          })
         }
-      });
+      })
     }
 
-    return defaultOptions;
+    return defaultOptions
   }
 
   // 快速添加餐點到購物車
   function quickAddDishToCart(dishTemplate) {
-    const defaultOptions = getDefaultOptionsForDish(dishTemplate);
-    addDishToCart(dishTemplate, defaultOptions, '');
+    const defaultOptions = getDefaultOptionsForDish(dishTemplate)
+    addDishToCart(dishTemplate, defaultOptions, '')
   }
 
   // 添加餐點到購物車
   function addDishToCart(dishTemplate, options = [], note = '') {
-    let finalPrice = dishTemplate.basePrice;
+    let finalPrice = dishTemplate.basePrice
 
-    options.forEach(category => {
-      category.selections.forEach(selection => {
-        finalPrice += selection.price || 0;
-      });
-    });
+    options.forEach((category) => {
+      category.selections.forEach((selection) => {
+        finalPrice += selection.price || 0
+      })
+    })
 
-    const uniqueId = generateUniqueItemId();
-    const itemKey = generateItemKey(dishTemplate._id, options, note);
+    const uniqueId = generateUniqueItemId()
+    const itemKey = generateItemKey(dishTemplate._id, options, note)
 
     const cartItem = {
       id: uniqueId,
@@ -407,24 +431,24 @@ export const useCounterStore = defineStore('counter', () => {
         name: dishTemplate.name,
         basePrice: dishTemplate.basePrice,
         finalPrice: finalPrice,
-        options: options
+        options: options,
       },
       quantity: 1,
       note: note || '',
-      subtotal: finalPrice
-    };
+      subtotal: finalPrice,
+    }
 
-    cart.value.push(cartItem);
+    cart.value.push(cartItem)
   }
 
   // 移除購物車項目
   function removeFromCart(index) {
     if (index >= 0 && index < cart.value.length) {
-      cart.value.splice(index, 1);
+      cart.value.splice(index, 1)
       if (currentItemIndex.value === index) {
-        clearCurrentItem();
+        clearCurrentItem()
       } else if (currentItemIndex.value > index) {
-        currentItemIndex.value--;
+        currentItemIndex.value--
       }
     }
   }
@@ -432,48 +456,48 @@ export const useCounterStore = defineStore('counter', () => {
   // 更新數量
   function updateQuantity(index, change) {
     if (index >= 0 && index < cart.value.length) {
-      const item = cart.value[index];
-      const newQuantity = item.quantity + change;
+      const item = cart.value[index]
+      const newQuantity = item.quantity + change
 
       if (newQuantity <= 0) {
-        removeFromCart(index);
+        removeFromCart(index)
       } else {
-        item.quantity = newQuantity;
-        item.subtotal = item.dishInstance.finalPrice * newQuantity;
+        item.quantity = newQuantity
+        item.subtotal = item.dishInstance.finalPrice * newQuantity
       }
     }
   }
 
   // 選擇當前編輯項目
   function selectCurrentItem(item, index) {
-    currentItem.value = { ...item };
-    currentItemIndex.value = index;
-    isEditMode.value = true;
+    currentItem.value = { ...item }
+    currentItemIndex.value = index
+    isEditMode.value = true
   }
 
   // 清空當前項目
   function clearCurrentItem() {
-    currentItem.value = null;
-    currentItemIndex.value = null;
-    isEditMode.value = false;
+    currentItem.value = null
+    currentItemIndex.value = null
+    isEditMode.value = false
   }
 
   // 即時更新購物車項目
   function updateCartItemRealtime(options, note = '') {
-    if (currentItemIndex.value === null || !currentItem.value) return;
+    if (currentItemIndex.value === null || !currentItem.value) return
 
-    const dishTemplate = getDishTemplate(currentItem.value.dishInstance.templateId);
-    if (!dishTemplate) return;
+    const dishTemplate = getDishTemplate(currentItem.value.dishInstance.templateId)
+    if (!dishTemplate) return
 
-    let finalPrice = dishTemplate.basePrice;
-    options.forEach(category => {
-      category.selections.forEach(selection => {
-        finalPrice += selection.price || 0;
-      });
-    });
+    let finalPrice = dishTemplate.basePrice
+    options.forEach((category) => {
+      category.selections.forEach((selection) => {
+        finalPrice += selection.price || 0
+      })
+    })
 
-    const newKey = generateItemKey(dishTemplate._id, options, note);
-    const currentQuantity = cart.value[currentItemIndex.value].quantity;
+    const newKey = generateItemKey(dishTemplate._id, options, note)
+    const currentQuantity = cart.value[currentItemIndex.value].quantity
 
     cart.value[currentItemIndex.value] = {
       ...cart.value[currentItemIndex.value],
@@ -483,61 +507,61 @@ export const useCounterStore = defineStore('counter', () => {
         name: dishTemplate.name,
         basePrice: dishTemplate.basePrice,
         finalPrice: finalPrice,
-        options: options
+        options: options,
       },
       quantity: currentQuantity,
       note: note || '',
-      subtotal: finalPrice * currentQuantity
-    };
+      subtotal: finalPrice * currentQuantity,
+    }
 
-    currentItem.value = { ...cart.value[currentItemIndex.value] };
+    currentItem.value = { ...cart.value[currentItemIndex.value] }
   }
 
   // 更新當前項目
   function updateCurrentItem(updatedItem) {
     if (currentItemIndex.value !== null) {
-      cart.value[currentItemIndex.value] = { ...updatedItem };
-      clearCurrentItem();
+      cart.value[currentItemIndex.value] = { ...updatedItem }
+      clearCurrentItem()
     }
   }
 
   // 設置調帳
   function setManualAdjustment(amount) {
-    manualAdjustment.value = amount;
+    manualAdjustment.value = amount
   }
 
   // 設置折扣
   function setTotalDiscount(amount) {
-    totalDiscount.value = amount;
+    totalDiscount.value = amount
   }
 
   // 清空購物車
   function clearCart() {
-    cart.value = [];
-    currentItem.value = null;
-    currentItemIndex.value = null;
-    manualAdjustment.value = 0;
-    totalDiscount.value = 0;
-    isEditMode.value = false;
+    cart.value = []
+    currentItem.value = null
+    currentItemIndex.value = null
+    manualAdjustment.value = 0
+    totalDiscount.value = 0
+    isEditMode.value = false
   }
 
   // 取消訂單
   function cancelOrder() {
     if (confirm('確定要取消當前訂單嗎？')) {
-      clearCart();
+      clearCart()
     }
   }
 
   // 合併相同配置的購物車項目
   function mergeCartItems(cartItems) {
-    const mergedItems = {};
+    const mergedItems = {}
 
-    cartItems.forEach(item => {
-      const key = item.key;
+    cartItems.forEach((item) => {
+      const key = item.key
 
       if (mergedItems[key]) {
-        mergedItems[key].quantity += item.quantity;
-        mergedItems[key].subtotal += item.subtotal;
+        mergedItems[key].quantity += item.quantity
+        mergedItems[key].subtotal += item.subtotal
       } else {
         // 判斷是餐點還是套餐
         if (item.dishInstance) {
@@ -551,8 +575,8 @@ export const useCounterStore = defineStore('counter', () => {
             options: item.dishInstance.options,
             quantity: item.quantity,
             subtotal: item.subtotal,
-            note: item.note || ''
-          };
+            note: item.note || '',
+          }
         } else if (item.bundleInstance) {
           // 套餐項目
           mergedItems[key] = {
@@ -566,24 +590,24 @@ export const useCounterStore = defineStore('counter', () => {
             bundleItems: item.bundleInstance.bundleItems,
             quantity: item.quantity,
             subtotal: item.subtotal,
-            note: item.note || ''
-          };
+            note: item.note || '',
+          }
         }
       }
-    });
-    return Object.values(mergedItems);
+    })
+    return Object.values(mergedItems)
   }
 
   // 提交訂單
   async function checkout(orderType, customerInfo = {}) {
     if (cart.value.length === 0) {
-      throw new Error('購物車是空的');
+      throw new Error('購物車是空的')
     }
 
-    isCheckingOut.value = true;
+    isCheckingOut.value = true
 
     try {
-      const mergedItems = mergeCartItems(cart.value);
+      const mergedItems = mergeCartItems(cart.value)
 
       const orderData = {
         orderType: orderType,
@@ -593,89 +617,89 @@ export const useCounterStore = defineStore('counter', () => {
         customerInfo: customerInfo,
         notes: '',
         manualAdjustment: manualAdjustment.value,
-        discounts: totalDiscount.value > 0 ? [{ amount: totalDiscount.value }] : []
-      };
+        discounts: totalDiscount.value > 0 ? [{ amount: totalDiscount.value }] : [],
+      }
 
       if (orderType === 'dine_in' && customerInfo.tableNumber) {
         orderData.dineInInfo = {
-          tableNumber: customerInfo.tableNumber
-        };
+          tableNumber: customerInfo.tableNumber,
+        }
       }
-      console.log('提交訂單數據:', orderData);
+      console.log('提交訂單數據:', orderData)
       const response = await api.orderCustomer.createOrder({
         brandId: currentBrand.value,
         storeId: currentStore.value,
-        orderData
-      });
+        orderData,
+      })
 
       if (response.success) {
-        clearCart();
-        await fetchTodayOrders(currentBrand.value, currentStore.value);
-        console.log('訂單提交成功:', response.order);
-        return response.order;
+        clearCart()
+        await fetchTodayOrders(currentBrand.value, currentStore.value)
+        console.log('訂單提交成功:', response.order)
+        return response.order
       } else {
-        console.error('訂單提交失敗:', response);
-        throw new Error(response.message || '訂單提交失敗');
+        console.error('訂單提交失敗:', response)
+        throw new Error(response.message || '訂單提交失敗')
       }
     } catch (error) {
-      console.error('提交訂單失敗:', error);
-      throw error;
+      console.error('提交訂單失敗:', error)
+      throw error
     } finally {
-      isCheckingOut.value = false;
+      isCheckingOut.value = false
     }
   }
 
   // 選擇訂單
   function selectOrder(order) {
-    selectedOrder.value = order;
+    selectedOrder.value = order
   }
 
   // 格式化時間
   function formatTime(dateTime) {
-    const date = new Date(dateTime);
+    const date = new Date(dateTime)
     return date.toLocaleTimeString('zh-TW', {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Taipei'
-    });
+      timeZone: 'Asia/Taipei',
+    })
   }
 
   // 格式化日期時間
   function formatDateTime(dateTime) {
-    const date = new Date(dateTime);
+    const date = new Date(dateTime)
     return date.toLocaleString('zh-TW', {
-      timeZone: 'Asia/Taipei'
-    });
+      timeZone: 'Asia/Taipei',
+    })
   }
 
   // 獲取取餐方式樣式
   function getPickupMethodClass(method) {
     const classMap = {
-      '內用': 'badge bg-primary',
-      '外帶': 'badge bg-success',
-      '外送': 'badge bg-warning text-dark'
-    };
-    return classMap[method] || 'badge bg-secondary';
+      內用: 'badge bg-primary',
+      外帶: 'badge bg-success',
+      外送: 'badge bg-warning text-dark',
+    }
+    return classMap[method] || 'badge bg-secondary'
   }
 
   // 獲取訂單狀態樣式
   function getStatusClass(status) {
     const classMap = {
-      'unpaid': 'badge bg-warning text-dark',
-      'paid': 'badge bg-success',
-      'cancelled': 'badge bg-danger'
-    };
-    return classMap[status] || 'badge bg-secondary';
+      unpaid: 'badge bg-warning text-dark',
+      paid: 'badge bg-success',
+      cancelled: 'badge bg-danger',
+    }
+    return classMap[status] || 'badge bg-secondary'
   }
 
   // 格式化訂單狀態
   function formatStatus(status) {
     const statusMap = {
-      'unpaid': '未結帳',
-      'paid': '已完成',
-      'cancelled': '已取消'
-    };
-    return statusMap[status] || status;
+      unpaid: '未結帳',
+      paid: '已完成',
+      cancelled: '已取消',
+    }
+    return statusMap[status] || status
   }
 
   // 刷新資料
@@ -684,18 +708,18 @@ export const useCounterStore = defineStore('counter', () => {
       await Promise.all([
         fetchStoreData(brandId, storeId),
         fetchMenuData(brandId, storeId),
-        fetchTodayOrders(brandId, storeId)
-      ]);
+        fetchTodayOrders(brandId, storeId),
+      ])
     } catch (error) {
-      console.error('刷新資料失敗:', error);
+      console.error('刷新資料失敗:', error)
     }
   }
 
   // 添加套餐到購物車
   function addBundleToCart(bundle, note = '') {
-    const finalPrice = bundle.sellingPrice || 0;
-    const uniqueId = generateUniqueItemId();
-    const itemKey = generateBundleKey(bundle._id, note);
+    const finalPrice = bundle.sellingPrice || 0
+    const uniqueId = generateUniqueItemId()
+    const itemKey = generateBundleKey(bundle._id, note)
 
     const cartItem = {
       id: uniqueId,
@@ -707,20 +731,20 @@ export const useCounterStore = defineStore('counter', () => {
         originalPrice: bundle.originalPrice || 0,
         sellingPoint: bundle.sellingPoint || 0,
         originalPoint: bundle.originalPoint || 0,
-        bundleItems: bundle.bundleItems || []
+        bundleItems: bundle.bundleItems || [],
       },
       quantity: 1,
       note: note || '',
-      subtotal: finalPrice
-    };
+      subtotal: finalPrice,
+    }
 
-    cart.value.push(cartItem);
+    cart.value.push(cartItem)
   }
 
   // 生成套餐項目的唯一鍵值
   function generateBundleKey(bundleId, note = '') {
-    const noteKey = note ? `:${note}` : '';
-    return `bundle:${bundleId}${noteKey}`;
+    const noteKey = note ? `:${note}` : ''
+    return `bundle:${bundleId}${noteKey}`
   }
 
   return {
@@ -800,5 +824,5 @@ export const useCounterStore = defineStore('counter', () => {
     refreshData,
     addBundleToCart,
     generateItemKey,
-  };
-});
+  }
+})

@@ -3,10 +3,18 @@
     <div class="container-wrapper">
       <!-- 店鋪標題區 -->
       <Transition name="fade-slide" appear>
-        <MenuHeader v-if="!isLoadingStore || store.name" :store-name="store.name" :store-image="store.image"
-          :announcements="store.announcements" :business-hours="store.businessHours"
-          :is-logged-in="authStore.isLoggedIn" :customer-name="authStore.userName" :store-address="store.address"
-          @login="handleLogin" @logout="handleLogout" />
+        <MenuHeader
+          v-if="!isLoadingStore || store.name"
+          :store-name="store.name"
+          :store-image="store.image"
+          :announcements="store.announcements"
+          :business-hours="store.businessHours"
+          :is-logged-in="authStore.isLoggedIn"
+          :customer-name="authStore.userName"
+          :store-address="store.address"
+          @login="handleLogin"
+          @logout="handleLogout"
+        />
       </Transition>
 
       <!-- 骨架載入動畫 -->
@@ -20,21 +28,30 @@
       <div class="menu-type-selector bg-white border-bottom">
         <div class="container px-3 py-2">
           <div class="btn-group w-100" role="group">
-            <button type="button" class="btn menu-type-btn"
+            <button
+              type="button"
+              class="btn menu-type-btn"
               :class="currentMenuType === 'food' ? 'btn-primary' : 'btn-outline-primary'"
-              @click="switchMenuType('food')">
+              @click="switchMenuType('food')"
+            >
               <i class="bi bi-cup-hot me-2"></i>
               餐點菜單
             </button>
-            <button type="button" class="btn menu-type-btn"
+            <button
+              type="button"
+              class="btn menu-type-btn"
               :class="currentMenuType === 'cash_coupon' ? 'btn-primary' : 'btn-outline-primary'"
-              @click="switchMenuType('cash_coupon')">
+              @click="switchMenuType('cash_coupon')"
+            >
               <i class="bi bi-ticket-perforated me-2"></i>
               預購券
             </button>
-            <button type="button" class="btn menu-type-btn"
+            <button
+              type="button"
+              class="btn menu-type-btn"
               :class="currentMenuType === 'point_exchange' ? 'btn-primary' : 'btn-outline-primary'"
-              @click="switchMenuType('point_exchange')">
+              @click="switchMenuType('point_exchange')"
+            >
               <i class="bi bi-gift me-2"></i>
               點數兌換
             </button>
@@ -77,17 +94,22 @@
         <div class="alert alert-danger mx-3">
           <i class="bi bi-exclamation-triangle me-2"></i>
           {{ menuError }}
-          <button class="btn btn-outline-danger btn-sm ms-3" @click="loadMenuData">
-            重新載入
-          </button>
+          <button class="btn btn-outline-danger btn-sm ms-3" @click="loadMenuData">重新載入</button>
         </div>
       </div>
 
       <!-- 菜單列表 -->
       <TransitionGroup name="stagger-fade" tag="div" appear>
-        <MenuCategoryList v-if="!isLoadingMenu && !menuError && hasMenuCategories" key="menu-list"
-          :categories="currentMenu.categories" :brand-id="brandId" :store-id="storeId" :menu-type="currentMenuType"
-          @select-item="handleItemSelect" class="menu-content" />
+        <MenuCategoryList
+          v-if="!isLoadingMenu && !menuError && hasMenuCategories"
+          key="menu-list"
+          :categories="currentMenu.categories"
+          :brand-id="brandId"
+          :store-id="storeId"
+          :menu-type="currentMenuType"
+          @select-item="handleItemSelect"
+          class="menu-content"
+        />
       </TransitionGroup>
 
       <!-- 空狀態 -->
@@ -99,10 +121,16 @@
 
       <!-- 購物車按鈕 -->
       <Transition name="slide-up" appear>
-        <div v-if="hasCartItems" class="position-fixed bottom-0 start-50 translate-middle-x mb-4"
-          style="z-index: 1030; width: 100%; max-width: 540px;">
+        <div
+          v-if="hasCartItems"
+          class="position-fixed bottom-0 start-50 translate-middle-x mb-4"
+          style="z-index: 1030; width: 100%; max-width: 540px"
+        >
           <div class="container-fluid px-3">
-            <button class="btn btn-primary rounded-pill shadow-lg px-4 py-2 w-100 cart-button" @click="goToCart">
+            <button
+              class="btn btn-primary rounded-pill shadow-lg px-4 py-2 w-100 cart-button"
+              @click="goToCart"
+            >
               <i class="bi bi-cart-fill me-2"></i>
               {{ cartItemCount }} 項商品 - ${{ cartTotal }}
             </button>
@@ -121,25 +149,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import api from '@/api';
-import MenuHeader from '@/components/customer/menu/MenuHeader.vue';
-import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue';
-import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue';
-import { useCartStore } from '@/stores/cart';
-import { useAuthStore } from '@/stores/customerAuth';
-import { useMenuStore } from '@/stores/menu'; // 新增
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
+import MenuHeader from '@/components/customer/menu/MenuHeader.vue'
+import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue'
+import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue'
+import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/customerAuth'
+import { useMenuStore } from '@/stores/menu' // 新增
 
-const route = useRoute();
-const router = useRouter();
-const cartStore = useCartStore();
-const authStore = useAuthStore();
-const menuStore = useMenuStore(); // 新增
+const route = useRoute()
+const router = useRouter()
+const cartStore = useCartStore()
+const authStore = useAuthStore()
+const menuStore = useMenuStore() // 新增
 
 // 路由參數
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.params.storeId);
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.params.storeId)
 
 // 響應式資料
 const store = ref({
@@ -147,91 +175,93 @@ const store = ref({
   image: null,
   announcements: [],
   businessHours: null,
-  address: ''
-});
+  address: '',
+})
 
 // 使用 menuStore 的狀態，而不是本地狀態
 const currentMenuType = computed({
   get: () => menuStore.currentMenuType,
-  set: (value) => menuStore.setMenuType(value)
-});
+  set: (value) => menuStore.setMenuType(value),
+})
 
-const currentMenu = ref({ categories: [] });
-const isLoadingStore = ref(true);
-const isLoadingMenu = ref(false);
-const menuError = ref(null);
+const currentMenu = ref({ categories: [] })
+const isLoadingStore = ref(true)
+const isLoadingMenu = ref(false)
+const menuError = ref(null)
 
 // 計算屬性
 const hasMenuCategories = computed(() => {
-  return currentMenu.value.categories && currentMenu.value.categories.length > 0;
-});
+  return currentMenu.value.categories && currentMenu.value.categories.length > 0
+})
 
 const navigationCategories = computed(() => {
-  if (!hasMenuCategories.value) return [];
+  if (!hasMenuCategories.value) return []
 
-  return currentMenu.value.categories.map(category => ({
-    categoryName: category.name,
-    categoryId: category._id,
-    description: category.description,
-    order: category.order || 0
-  })).sort((a, b) => a.order - b.order);
-});
+  return currentMenu.value.categories
+    .map((category) => ({
+      categoryName: category.name,
+      categoryId: category._id,
+      description: category.description,
+      order: category.order || 0,
+    }))
+    .sort((a, b) => a.order - b.order)
+})
 
 const hasCartItems = computed(() => {
-  return cartStore.itemCount > 0;
-});
+  return cartStore.itemCount > 0
+})
 
 const cartItemCount = computed(() => {
-  return cartStore.itemCount;
-});
+  return cartStore.itemCount
+})
 
 const cartTotal = computed(() => {
-  return cartStore.total;
-});
+  return cartStore.total
+})
 
 // 方法
 const getMenuTypeText = (type) => {
   const typeMap = {
-    'food': '餐點菜單',
-    'cash_coupon': '預購券',
-    'point_exchange': '點數兌換'
-  };
-  return typeMap[type] || type;
-};
+    food: '餐點菜單',
+    cash_coupon: '預購券',
+    point_exchange: '點數兌換',
+  }
+  return typeMap[type] || type
+}
 
 const switchMenuType = async (type) => {
-  if (currentMenuType.value === type || isLoadingMenu.value) return;
+  if (currentMenuType.value === type || isLoadingMenu.value) return
 
-  currentMenuType.value = type; // 這會自動調用 menuStore.setMenuType
-  await loadMenuData();
-};
+  currentMenuType.value = type // 這會自動調用 menuStore.setMenuType
+  await loadMenuData()
+}
 
 const loadStoreData = async () => {
   try {
     const storeData = await api.store.getStoreById({
       brandId: brandId.value,
-      id: storeId.value
-    });
+      id: storeId.value,
+    })
 
     if (storeData && storeData.success) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      store.value = storeData.store;
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      store.value = storeData.store
     } else {
-      console.error('無效的店鋪數據或 API 呼叫失敗:', storeData);
+      console.error('無效的店鋪數據或 API 呼叫失敗:', storeData)
     }
   } catch (error) {
-    console.error('無法載入店鋪數據:', error);
+    console.error('無法載入店鋪數據:', error)
   }
-};
+}
 
 const loadMenuData = async () => {
   if (!brandId.value || !storeId.value) {
-    menuError.value = '缺少必要的店鋪資訊';
-    return;
+    menuError.value = '缺少必要的店鋪資訊'
+    return
   }
 
-  isLoadingMenu.value = true;
-  menuError.value = null;
+  isLoadingMenu.value = true
+  menuError.value = null
 
   try {
     // 獲取指定類型的啟用菜單
@@ -240,36 +270,36 @@ const loadMenuData = async () => {
       storeId: storeId.value,
       includeUnpublished: false,
       activeOnly: true,
-      menuType: currentMenuType.value
-    });
+      menuType: currentMenuType.value,
+    })
 
     if (response.success && response.menus && response.menus.length > 0) {
       // 取第一個啟用的菜單（同類型應該只有一個啟用）
-      currentMenu.value = response.menus[0];
+      currentMenu.value = response.menus[0]
 
       // 確保分類按順序排列
       if (currentMenu.value.categories) {
-        currentMenu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+        currentMenu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0))
 
         // 確保每個分類的商品按順序排列
-        currentMenu.value.categories.forEach(category => {
+        currentMenu.value.categories.forEach((category) => {
           if (category.items) {
-            category.items.sort((a, b) => (a.order || 0) - (b.order || 0));
+            category.items.sort((a, b) => (a.order || 0) - (b.order || 0))
           }
-        });
+        })
       }
     } else {
-      currentMenu.value = { categories: [] };
-      console.warn(`沒有找到啟用的${getMenuTypeText(currentMenuType.value)}`);
+      currentMenu.value = { categories: [] }
+      console.warn(`沒有找到啟用的${getMenuTypeText(currentMenuType.value)}`)
     }
   } catch (err) {
-    console.error('載入菜單資料失敗:', err);
-    menuError.value = err.response?.data?.message || err.message || '載入菜單失敗，請稍後再試';
-    currentMenu.value = { categories: [] };
+    console.error('載入菜單資料失敗:', err)
+    menuError.value = err.response?.data?.message || err.message || '載入菜單失敗，請稍後再試'
+    currentMenu.value = { categories: [] }
   } finally {
-    isLoadingMenu.value = false;
+    isLoadingMenu.value = false
   }
-};
+}
 
 // 處理項目選擇 - 修改為傳遞菜單類型
 const handleItemSelect = (item) => {
@@ -280,83 +310,87 @@ const handleItemSelect = (item) => {
       params: {
         brandId: brandId.value,
         storeId: storeId.value,
-        dishId: item.dishTemplate._id
+        dishId: item.dishTemplate._id,
       },
       query: {
-        menuType: menuStore.currentMenuType // 新增菜單類型參數
-      }
-    });
+        menuType: menuStore.currentMenuType, // 新增菜單類型參數
+      },
+    })
   } else if (item.itemType === 'bundle' && item.bundle) {
     router.push({
       name: 'bundle-detail',
       params: {
         brandId: brandId.value,
         storeId: storeId.value,
-        bundleId: item.bundle._id
+        bundleId: item.bundle._id,
       },
       query: {
-        menuType: menuStore.currentMenuType // 新增菜單類型參數
-      }
-    });
+        menuType: menuStore.currentMenuType, // 新增菜單類型參數
+      },
+    })
   } else {
-    console.error('無效的項目類型或缺少必要資料:', item);
+    console.error('無效的項目類型或缺少必要資料:', item)
   }
-};
+}
 
 // 登入相關方法
 const handleLogin = () => {
-  router.push({ name: 'customer-login' });
-};
+  router.push({ name: 'customer-login' })
+}
 
 const handleLogout = async () => {
   try {
-    await authStore.logout();
+    await authStore.logout()
   } catch (error) {
-    console.error('登出失敗:', error);
-    alert('登出失敗: ' + error.message);
+    console.error('登出失敗:', error)
+    alert('登出失敗: ' + error.message)
   }
-};
+}
 
 // 購物車相關方法
 const goToCart = () => {
-  router.push({ name: 'cart' });
-};
+  router.push({ name: 'cart' })
+}
 
 // 監聽 brandId 變化
-watch(() => brandId.value, (newBrandId) => {
-  if (newBrandId) {
-    authStore.setBrandId(newBrandId);
-  }
-}, { immediate: true });
+watch(
+  () => brandId.value,
+  (newBrandId) => {
+    if (newBrandId) {
+      authStore.setBrandId(newBrandId)
+    }
+  },
+  { immediate: true },
+)
 
 // 生命周期
 onMounted(async () => {
   // 設置菜單狀態 - 新增
-  menuStore.setBrandAndStore(brandId.value, storeId.value);
+  menuStore.setBrandAndStore(brandId.value, storeId.value)
 
   // 恢復菜單狀態 - 新增
-  menuStore.restoreState();
+  menuStore.restoreState()
 
   // 設置購物車的品牌和店鋪ID
-  cartStore.setBrandAndStore(brandId.value, storeId.value);
+  cartStore.setBrandAndStore(brandId.value, storeId.value)
 
   // 設置 authStore 的 brandId 並檢查登入狀態
   if (brandId.value) {
-    authStore.setBrandId(brandId.value);
+    authStore.setBrandId(brandId.value)
 
     // 檢查並更新登入狀態
     try {
-      await authStore.checkAuthStatus();
+      await authStore.checkAuthStatus()
     } catch (error) {
-      console.error('檢查登入狀態失敗:', error);
+      console.error('檢查登入狀態失敗:', error)
     }
   }
 
   // 載入數據
-  await loadStoreData();
-  isLoadingStore.value = false;
-  await loadMenuData();
-});
+  await loadStoreData()
+  isLoadingStore.value = false
+  await loadMenuData()
+})
 </script>
 
 <style scoped>

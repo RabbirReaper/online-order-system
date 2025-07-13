@@ -24,7 +24,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createOrder({ brandId, storeId, orderData }) {
-      return apiClient.post(`/order-customer/brands/${brandId}/stores/${storeId}/create`, orderData);
+      return apiClient.post(`/order-customer/brands/${brandId}/stores/${storeId}/create`, orderData)
     },
 
     /**
@@ -39,8 +39,8 @@ export default function (apiClient) {
      */
     getUserOrders({ brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' }) {
       return apiClient.get(`/order-customer/brands/${brandId}/my-orders`, {
-        params: { page, limit, sortBy, sortOrder }
-      });
+        params: { page, limit, sortBy, sortOrder },
+      })
     },
 
     /**
@@ -51,7 +51,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserOrderById({ brandId, orderId }) {
-      return apiClient.get(`/order-customer/brands/${brandId}/order/${orderId}`);
+      return apiClient.get(`/order-customer/brands/${brandId}/order/${orderId}`)
     },
 
     /**
@@ -65,7 +65,10 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     processPayment({ brandId, orderId, paymentData }) {
-      return apiClient.post(`/order-customer/brands/${brandId}/orders/${orderId}/payment`, paymentData);
+      return apiClient.post(
+        `/order-customer/brands/${brandId}/orders/${orderId}/payment`,
+        paymentData,
+      )
     },
 
     /**
@@ -77,7 +80,10 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     paymentCallback({ brandId, orderId, callbackData }) {
-      return apiClient.post(`/order-customer/brands/${brandId}/orders/${orderId}/payment/callback`, callbackData);
-    }
-  };
+      return apiClient.post(
+        `/order-customer/brands/${brandId}/orders/${orderId}/payment/callback`,
+        callbackData,
+      )
+    },
+  }
 }

@@ -18,7 +18,10 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">{{ category.name }}</h4>
         <div class="d-flex">
-          <router-link :to="`/admin/${brandId}/option-categories/edit/${category._id}`" class="btn btn-primary me-2">
+          <router-link
+            :to="`/admin/${brandId}/option-categories/edit/${category._id}`"
+            class="btn btn-primary me-2"
+          >
             <i class="bi bi-pencil me-1"></i>編輯類別
           </router-link>
           <router-link :to="`/admin/${brandId}/option-categories`" class="btn btn-secondary">
@@ -43,7 +46,10 @@
               <div class="mb-3">
                 <h6 class="text-muted mb-1">輸入類型</h6>
                 <p>
-                  <span class="badge" :class="category.inputType === 'single' ? 'bg-info' : 'bg-warning'">
+                  <span
+                    class="badge"
+                    :class="category.inputType === 'single' ? 'bg-info' : 'bg-warning'"
+                  >
                     {{ category.inputType === 'single' ? '單選' : '多選' }}
                   </span>
                 </p>
@@ -68,8 +74,12 @@
             <div class="card-footer bg-transparent">
               <div class="d-flex justify-content-between">
                 <!-- 刪除按鈕 -->
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
-                  data-bs-target="#deleteCategoryModal">
+                <button
+                  type="button"
+                  class="btn btn-outline-danger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteCategoryModal"
+                >
                   <i class="bi bi-trash me-1"></i>刪除類別
                 </button>
               </div>
@@ -84,11 +94,16 @@
               <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
                 <span>選項列表</span>
                 <div>
-                  <router-link :to="`/admin/${brandId}/option-categories/edit/${category._id}`"
-                    class="btn btn-sm btn-outline-primary me-1">
+                  <router-link
+                    :to="`/admin/${brandId}/option-categories/edit/${category._id}`"
+                    class="btn btn-sm btn-outline-primary me-1"
+                  >
                     <i class="bi bi-pencil me-1"></i>管理選項
                   </router-link>
-                  <router-link :to="`/admin/${brandId}/options/create`" class="btn btn-sm btn-outline-primary">
+                  <router-link
+                    :to="`/admin/${brandId}/options/create`"
+                    class="btn btn-sm btn-outline-primary"
+                  >
                     <i class="bi bi-plus-lg me-1"></i>新增選項
                   </router-link>
                 </div>
@@ -112,25 +127,37 @@
                         <td>{{ index + 1 }}</td>
                         <td>{{ option.name }}</td>
                         <td>
-                          <span v-if="option.price > 0" class="text-success">+${{ formatPrice(option.price) }}</span>
+                          <span v-if="option.price > 0" class="text-success"
+                            >+${{ formatPrice(option.price) }}</span
+                          >
                           <span v-else>免費</span>
                         </td>
                         <td>
-                          <span v-if="option.refDishTemplate">{{ option.refDishTemplate.name }}</span>
+                          <span v-if="option.refDishTemplate">{{
+                            option.refDishTemplate.name
+                          }}</span>
                           <span v-else class="text-muted">無</span>
                         </td>
                         <td>
                           <div class="d-flex flex-wrap gap-1">
-                            <span v-for="(tag, tagIndex) in option.tags" :key="tagIndex" class="badge bg-info">
+                            <span
+                              v-for="(tag, tagIndex) in option.tags"
+                              :key="tagIndex"
+                              class="badge bg-info"
+                            >
                               {{ tag }}
                             </span>
-                            <span v-if="!option.tags || option.tags.length === 0" class="text-muted">無標籤</span>
+                            <span v-if="!option.tags || option.tags.length === 0" class="text-muted"
+                              >無標籤</span
+                            >
                           </div>
                         </td>
                         <td>
                           <div class="btn-group">
-                            <router-link :to="`/admin/${brandId}/options/edit/${option._id}`"
-                              class="btn btn-sm btn-outline-primary">
+                            <router-link
+                              :to="`/admin/${brandId}/options/edit/${option._id}`"
+                              class="btn btn-sm btn-outline-primary"
+                            >
                               <i class="bi bi-pencil me-1"></i>編輯
                             </router-link>
                           </div>
@@ -141,11 +168,15 @@
                 </div>
               </div>
 
-              <div v-else-if="!isLoadingOptions && optionDetails.length === 0"
-                class="alert alert-light text-center py-3">
+              <div
+                v-else-if="!isLoadingOptions && optionDetails.length === 0"
+                class="alert alert-light text-center py-3"
+              >
                 <div class="text-muted">此類別下沒有任何選項</div>
-                <router-link :to="`/admin/${brandId}/option-categories/edit/${category._id}`"
-                  class="btn btn-sm btn-primary mt-2">
+                <router-link
+                  :to="`/admin/${brandId}/option-categories/edit/${category._id}`"
+                  class="btn btn-sm btn-primary mt-2"
+                >
                   <i class="bi bi-plus-circle me-1"></i>添加選項
                 </router-link>
               </div>
@@ -165,12 +196,19 @@
 
               <div v-if="optionTags.length > 0">
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                  <div v-for="tag in optionTags" :key="tag.name" class="badge bg-info p-2" style="font-size: 1rem;">
+                  <div
+                    v-for="tag in optionTags"
+                    :key="tag.name"
+                    class="badge bg-info p-2"
+                    style="font-size: 1rem"
+                  >
                     {{ tag.name }}
                     <span class="badge bg-light text-dark ms-1">{{ tag.count }}</span>
                   </div>
                 </div>
-                <p class="small text-muted mb-0">此類別中的選項共使用了 {{ optionTags.length }} 個不同的標籤</p>
+                <p class="small text-muted mb-0">
+                  此類別中的選項共使用了 {{ optionTags.length }} 個不同的標籤
+                </p>
               </div>
 
               <div v-else class="alert alert-light text-center">
@@ -181,7 +219,6 @@
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -192,11 +229,18 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
 
           <div class="modal-body" v-if="category">
-            <p>您確定要刪除選項類別 <strong>{{ category.name }}</strong> 嗎？</p>
+            <p>
+              您確定要刪除選項類別 <strong>{{ category.name }}</strong> 嗎？
+            </p>
             <div class="alert alert-danger">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               此操作無法撤銷，選項類別相關的所有資料都將被永久刪除。
@@ -205,9 +249,18 @@
 
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
+            <button
+              type="button"
+              class="btn btn-danger"
+              @click="handleDelete"
+              :disabled="isDeleting"
+            >
+              <span
+                v-if="isDeleting"
+                class="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>
               {{ isDeleting ? '處理中...' : '確認刪除' }}
             </button>
           </div>
@@ -218,209 +271,215 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { Modal } from 'bootstrap';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Modal } from 'bootstrap'
+import api from '@/api'
 
 // 路由
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 // 從路由中獲取品牌ID和類別ID
-const brandId = computed(() => route.params.brandId);
-const categoryId = computed(() => route.params.id);
+const brandId = computed(() => route.params.brandId)
+const categoryId = computed(() => route.params.id)
 
 // 狀態
-const category = ref(null);
-const isLoading = ref(true);
-const isLoadingOptions = ref(true);
-const error = ref('');
-const isDeleting = ref(false);
-const optionDetails = ref([]);
+const category = ref(null)
+const isLoading = ref(true)
+const isLoadingOptions = ref(true)
+const error = ref('')
+const isDeleting = ref(false)
+const optionDetails = ref([])
 
 // 計算選項的標籤統計
 const optionTags = computed(() => {
-  const tagCounts = {};
+  const tagCounts = {}
 
-  optionDetails.value.forEach(option => {
+  optionDetails.value.forEach((option) => {
     if (option.tags && Array.isArray(option.tags)) {
-      option.tags.forEach(tag => {
+      option.tags.forEach((tag) => {
         if (tagCounts[tag]) {
-          tagCounts[tag]++;
+          tagCounts[tag]++
         } else {
-          tagCounts[tag] = 1;
+          tagCounts[tag] = 1
         }
-      });
+      })
     }
-  });
+  })
 
   // 轉換為數組並排序
-  const tagArray = Object.keys(tagCounts).map(name => ({
+  const tagArray = Object.keys(tagCounts).map((name) => ({
     name,
-    count: tagCounts[name]
-  }));
+    count: tagCounts[name],
+  }))
 
-  return tagArray.sort((a, b) => b.count - a.count);
-});
+  return tagArray.sort((a, b) => b.count - a.count)
+})
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
+  if (!dateString) return '無資料'
 
-  const date = new Date(dateString);
+  const date = new Date(dateString)
   return date.toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price.toLocaleString('zh-TW');
-};
+  return price.toLocaleString('zh-TW')
+}
 
 // 獲取類別資料
 const fetchCategoryData = async () => {
-  if (!categoryId.value) return;
+  if (!categoryId.value) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
-    const response = await api.dish.getOptionCategoryById({ id: categoryId.value, brandId: brandId.value, includeOptions: true });
+    const response = await api.dish.getOptionCategoryById({
+      id: categoryId.value,
+      brandId: brandId.value,
+      includeOptions: true,
+    })
 
     if (response && response.category) {
-      category.value = response.category;
+      category.value = response.category
 
       // 獲取選項詳情
-      fetchOptionDetails();
+      fetchOptionDetails()
     } else {
-      error.value = '獲取選項類別資料失敗';
+      error.value = '獲取選項類別資料失敗'
     }
   } catch (err) {
-    console.error('獲取選項類別資料時發生錯誤:', err);
-    error.value = '獲取選項類別資料時發生錯誤，請稍後再試';
+    console.error('獲取選項類別資料時發生錯誤:', err)
+    error.value = '獲取選項類別資料時發生錯誤，請稍後再試'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 修正 fetchOptionDetails 函數
 const fetchOptionDetails = async () => {
   if (!category.value || !category.value.options || category.value.options.length === 0) {
-    isLoadingOptions.value = false;
-    return;
+    isLoadingOptions.value = false
+    return
   }
 
-  isLoadingOptions.value = true;
+  isLoadingOptions.value = true
 
   try {
     // 獲取選項IDs - 修正這裡，確保 ID 是字串
-    const optionIds = category.value.options.map(opt => {
+    const optionIds = category.value.options.map((opt) => {
       // 檢查 refOption 的類型，確保返回字串 ID
       if (typeof opt.refOption === 'object' && opt.refOption !== null) {
-        return opt.refOption._id; // 如果是物件，取其 _id 屬性
+        return opt.refOption._id // 如果是物件，取其 _id 屬性
       }
-      return opt.refOption; // 如果已經是字串則直接返回
-    });
+      return opt.refOption // 如果已經是字串則直接返回
+    })
 
     // 過濾掉無效的 ID
-    const validOptionIds = optionIds.filter(id => id && typeof id === 'string');
+    const validOptionIds = optionIds.filter((id) => id && typeof id === 'string')
 
     // 單個獲取每個選項詳情
-    const promises = validOptionIds.map(id => api.dish.getOptionById({ id: id, brandId: brandId.value }));
-    const responses = await Promise.all(promises);
+    const promises = validOptionIds.map((id) =>
+      api.dish.getOptionById({ id: id, brandId: brandId.value }),
+    )
+    const responses = await Promise.all(promises)
 
     // 整理選項詳情
-    const details = [];
+    const details = []
     for (const response of responses) {
       if (response && response.option) {
-        details.push(response.option);
+        details.push(response.option)
       }
     }
 
     // 按照類別中的順序排序 - 也需要修正比較邏輯
     details.sort((a, b) => {
-      const aId = a._id.toString();
-      const bId = b._id.toString();
+      const aId = a._id.toString()
+      const bId = b._id.toString()
 
-      const aIndex = category.value.options.findIndex(opt => {
-        const optId = typeof opt.refOption === 'object' ? opt.refOption._id : opt.refOption;
-        return optId && optId.toString() === aId;
-      });
+      const aIndex = category.value.options.findIndex((opt) => {
+        const optId = typeof opt.refOption === 'object' ? opt.refOption._id : opt.refOption
+        return optId && optId.toString() === aId
+      })
 
-      const bIndex = category.value.options.findIndex(opt => {
-        const optId = typeof opt.refOption === 'object' ? opt.refOption._id : opt.refOption;
-        return optId && optId.toString() === bId;
-      });
+      const bIndex = category.value.options.findIndex((opt) => {
+        const optId = typeof opt.refOption === 'object' ? opt.refOption._id : opt.refOption
+        return optId && optId.toString() === bId
+      })
 
-      return aIndex - bIndex;
-    });
+      return aIndex - bIndex
+    })
 
-    optionDetails.value = details;
+    optionDetails.value = details
   } catch (err) {
-    console.error('獲取選項詳情時發生錯誤:', err);
+    console.error('獲取選項詳情時發生錯誤:', err)
   } finally {
-    isLoadingOptions.value = false;
+    isLoadingOptions.value = false
   }
-};
+}
 
 // 處理刪除確認
 const handleDelete = async () => {
-  if (!category.value) return;
+  if (!category.value) return
 
-  isDeleting.value = true;
+  isDeleting.value = true
 
   try {
     await api.dish.deleteOptionCategory({
       brandId: brandId.value,
-      id: category.value._id
-    });
+      id: category.value._id,
+    })
 
     // 關閉模態對話框
-    const modalElement = document.getElementById('deleteCategoryModal');
-    const modal = Modal.getInstance(modalElement);
+    const modalElement = document.getElementById('deleteCategoryModal')
+    const modal = Modal.getInstance(modalElement)
     if (modal) {
-      modal.hide();
+      modal.hide()
     }
 
     // 確保模態背景被移除後再導航
     setTimeout(() => {
       // 手動移除可能殘留的 backdrop
-      const backdrop = document.querySelector('.modal-backdrop');
+      const backdrop = document.querySelector('.modal-backdrop')
       if (backdrop) {
-        backdrop.remove();
-        document.body.classList.remove('modal-open');
+        backdrop.remove()
+        document.body.classList.remove('modal-open')
       }
 
       // 返回選項類別列表
-      router.push(`/admin/${brandId.value}/option-categories`);
+      router.push(`/admin/${brandId.value}/option-categories`)
 
       // 觸發刷新列表事件
-      window.dispatchEvent(new CustomEvent('refresh-category-list'));
-    }, 300);
+      window.dispatchEvent(new CustomEvent('refresh-category-list'))
+    }, 300)
   } catch (err) {
-    console.error('刪除選項類別失敗:', err);
+    console.error('刪除選項類別失敗:', err)
 
     if (err.response && err.response.data && err.response.data.message) {
-      alert(`刪除失敗: ${err.response.data.message}`);
+      alert(`刪除失敗: ${err.response.data.message}`)
     } else {
-      alert('刪除選項類別時發生錯誤');
+      alert('刪除選項類別時發生錯誤')
     }
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 獲取選項類別資料
-  fetchCategoryData();
-});
+  fetchCategoryData()
+})
 </script>
 
 <style scoped>

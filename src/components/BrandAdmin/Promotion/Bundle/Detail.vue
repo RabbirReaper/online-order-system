@@ -18,7 +18,10 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">{{ bundle.name }}</h4>
         <div class="d-flex">
-          <router-link :to="`/admin/${brandId}/bundles/edit/${bundle._id}`" class="btn btn-primary me-2">
+          <router-link
+            :to="`/admin/${brandId}/bundles/edit/${bundle._id}`"
+            class="btn btn-primary me-2"
+          >
             <i class="bi bi-pencil me-1"></i>編輯商品
           </router-link>
           <router-link :to="`/admin/${brandId}/bundles`" class="btn btn-secondary">
@@ -58,15 +61,13 @@
                   <span class="badge" :class="getStatusBadgeClass(bundle)">
                     {{ getStatusText(bundle) }}
                   </span>
-                  <span v-if="bundle.autoStatusControl" class="badge bg-info ms-2">
-                    自動控制
-                  </span>
+                  <span v-if="bundle.autoStatusControl" class="badge bg-info ms-2"> 自動控制 </span>
                 </p>
               </div>
 
               <div class="mb-3" v-if="bundle.image">
                 <h6 class="text-muted mb-1">商品圖片</h6>
-                <img :src="bundle.image.url" class="img-fluid rounded" style="max-width: 300px;">
+                <img :src="bundle.image.url" class="img-fluid rounded" style="max-width: 300px" />
               </div>
 
               <div class="mb-3">
@@ -94,12 +95,22 @@
                   <p class="fs-4 text-success mb-0">
                     ${{ formatPrice(bundle.cashPrice.selling || bundle.cashPrice.original) }}
                   </p>
-                  <small v-if="bundle.cashPrice.selling && bundle.cashPrice.selling < bundle.cashPrice.original"
-                    class="text-muted text-decoration-line-through">
+                  <small
+                    v-if="
+                      bundle.cashPrice.selling &&
+                      bundle.cashPrice.selling < bundle.cashPrice.original
+                    "
+                    class="text-muted text-decoration-line-through"
+                  >
                     原價 ${{ formatPrice(bundle.cashPrice.original) }}
                   </small>
-                  <div v-if="bundle.cashPrice.selling && bundle.cashPrice.selling < bundle.cashPrice.original"
-                    class="mt-1">
+                  <div
+                    v-if="
+                      bundle.cashPrice.selling &&
+                      bundle.cashPrice.selling < bundle.cashPrice.original
+                    "
+                    class="mt-1"
+                  >
                     <span class="badge bg-danger">
                       省 ${{ formatPrice(bundle.cashPrice.original - bundle.cashPrice.selling) }}
                     </span>
@@ -113,12 +124,22 @@
                   <p class="fs-4 text-primary mb-0">
                     {{ bundle.pointPrice.selling || bundle.pointPrice.original }} 點
                   </p>
-                  <small v-if="bundle.pointPrice.selling && bundle.pointPrice.selling < bundle.pointPrice.original"
-                    class="text-muted text-decoration-line-through">
+                  <small
+                    v-if="
+                      bundle.pointPrice.selling &&
+                      bundle.pointPrice.selling < bundle.pointPrice.original
+                    "
+                    class="text-muted text-decoration-line-through"
+                  >
                     原價 {{ bundle.pointPrice.original }} 點
                   </small>
-                  <div v-if="bundle.pointPrice.selling && bundle.pointPrice.selling < bundle.pointPrice.original"
-                    class="mt-1">
+                  <div
+                    v-if="
+                      bundle.pointPrice.selling &&
+                      bundle.pointPrice.selling < bundle.pointPrice.original
+                    "
+                    class="mt-1"
+                  >
                     <span class="badge bg-primary">
                       省 {{ bundle.pointPrice.original - bundle.pointPrice.selling }} 點
                     </span>
@@ -129,8 +150,8 @@
               <div class="mb-3" v-if="bundle.validFrom && bundle.validTo">
                 <h6 class="text-muted mb-1">販售期間</h6>
                 <p>
-                  {{ formatDateTime(bundle.validFrom) }}<br>
-                  <span class="text-muted">至</span><br>
+                  {{ formatDateTime(bundle.validFrom) }}<br />
+                  <span class="text-muted">至</span><br />
                   {{ formatDateTime(bundle.validTo) }}
                 </p>
                 <div class="mt-2">
@@ -154,8 +175,11 @@
               <div class="mb-3">
                 <h6 class="text-muted mb-1">購買限制</h6>
                 <p>
-                  {{ bundle.purchaseLimitPerUser ?
-                    `每人限購 ${bundle.purchaseLimitPerUser} 個` : '無限制' }}
+                  {{
+                    bundle.purchaseLimitPerUser
+                      ? `每人限購 ${bundle.purchaseLimitPerUser} 個`
+                      : '無限制'
+                  }}
                 </p>
               </div>
 
@@ -195,12 +219,18 @@
               <h5 class="card-title mb-3">包裝內容</h5>
               <div v-if="bundle.bundleItems && bundle.bundleItems.length > 0">
                 <div class="row">
-                  <div v-for="(item, index) in bundle.bundleItems" :key="index" class="col-md-6 col-lg-4 mb-3">
+                  <div
+                    v-for="(item, index) in bundle.bundleItems"
+                    :key="index"
+                    class="col-md-6 col-lg-4 mb-3"
+                  >
                     <div class="card border-light">
                       <div class="card-body">
                         <div class="d-flex align-items-start">
                           <div class="me-3">
-                            <span class="badge bg-primary rounded-pill fs-6">{{ item.quantity }}x</span>
+                            <span class="badge bg-primary rounded-pill fs-6"
+                              >{{ item.quantity }}x</span
+                            >
                           </div>
                           <div class="flex-grow-1">
                             <h6 class="mb-1">{{ item.voucherName || '兌換券' }}</h6>
@@ -212,15 +242,26 @@
                                 <div class="border rounded p-2 bg-light">
                                   <div class="row">
                                     <div class="col-8">
-                                      <div class="fw-bold small">{{ item.voucherTemplate.exchangeDishTemplate.name }}
+                                      <div class="fw-bold small">
+                                        {{ item.voucherTemplate.exchangeDishTemplate.name }}
                                       </div>
                                       <div class="text-success small">
-                                        ${{ formatPrice(item.voucherTemplate.exchangeDishTemplate.basePrice) }}
+                                        ${{
+                                          formatPrice(
+                                            item.voucherTemplate.exchangeDishTemplate.basePrice,
+                                          )
+                                        }}
                                       </div>
                                     </div>
-                                    <div class="col-4" v-if="item.voucherTemplate.exchangeDishTemplate.image">
-                                      <img :src="item.voucherTemplate.exchangeDishTemplate.image.url"
-                                        class="img-fluid rounded" style="max-height: 40px; object-fit: cover;">
+                                    <div
+                                      class="col-4"
+                                      v-if="item.voucherTemplate.exchangeDishTemplate.image"
+                                    >
+                                      <img
+                                        :src="item.voucherTemplate.exchangeDishTemplate.image.url"
+                                        class="img-fluid rounded"
+                                        style="max-height: 40px; object-fit: cover"
+                                      />
                                     </div>
                                   </div>
                                 </div>
@@ -284,166 +325,168 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
 
 // 路由
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
 // 從路由中獲取品牌ID和商品ID
-const brandId = computed(() => route.params.brandId);
-const bundleId = computed(() => route.params.id);
+const brandId = computed(() => route.params.brandId)
+const bundleId = computed(() => route.params.id)
 
 // 狀態
-const isLoading = ref(false);
-const error = ref('');
+const isLoading = ref(false)
+const error = ref('')
 
 // 包裝商品資料
-const bundle = ref(null);
+const bundle = ref(null)
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price?.toLocaleString('zh-TW') || '0';
-};
+  return price?.toLocaleString('zh-TW') || '0'
+}
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
+  if (!dateString) return ''
+  const date = new Date(dateString)
   return date.toLocaleString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 獲取狀態徽章樣式
 const getStatusBadgeClass = (bundle) => {
-  if (!bundle.isActive) return 'bg-secondary';
+  if (!bundle.isActive) return 'bg-secondary'
 
-  const now = new Date();
+  const now = new Date()
   if (bundle.autoStatusControl && bundle.validTo && new Date(bundle.validTo) < now) {
-    return 'bg-warning';
+    return 'bg-warning'
   }
 
-  return 'bg-success';
-};
+  return 'bg-success'
+}
 
 // 獲取狀態文字
 const getStatusText = (bundle) => {
-  if (!bundle.isActive) return '停用';
+  if (!bundle.isActive) return '停用'
 
-  const now = new Date();
+  const now = new Date()
   if (bundle.autoStatusControl && bundle.validTo && new Date(bundle.validTo) < now) {
-    return '已過期';
+    return '已過期'
   }
 
-  return '啟用';
-};
+  return '啟用'
+}
 
 // 檢查是否在有效期內
 const isInValidPeriod = computed(() => {
-  if (!bundle.value || !bundle.value.validFrom || !bundle.value.validTo) return false;
-  const now = new Date();
-  return now >= new Date(bundle.value.validFrom) && now <= new Date(bundle.value.validTo);
-});
+  if (!bundle.value || !bundle.value.validFrom || !bundle.value.validTo) return false
+  const now = new Date()
+  return now >= new Date(bundle.value.validFrom) && now <= new Date(bundle.value.validTo)
+})
 
 // 檢查是否在有效期前
 const isBeforeValidPeriod = computed(() => {
-  if (!bundle.value || !bundle.value.validFrom) return false;
-  const now = new Date();
-  return now < new Date(bundle.value.validFrom);
-});
+  if (!bundle.value || !bundle.value.validFrom) return false
+  const now = new Date()
+  return now < new Date(bundle.value.validFrom)
+})
 
 // 計算包裝價值
 const bundleValue = computed(() => {
   if (!bundle.value || !bundle.value.bundleItems) {
-    return { totalValue: 0, savings: 0, savingsPercentage: 0 };
+    return { totalValue: 0, savings: 0, savingsPercentage: 0 }
   }
 
-  let totalValue = 0;
-  bundle.value.bundleItems.forEach(item => {
+  let totalValue = 0
+  bundle.value.bundleItems.forEach((item) => {
     if (item.voucherTemplate?.exchangeDishTemplate?.basePrice) {
-      totalValue += item.voucherTemplate.exchangeDishTemplate.basePrice * item.quantity;
+      totalValue += item.voucherTemplate.exchangeDishTemplate.basePrice * item.quantity
     }
-  });
+  })
 
-  const sellingPrice = bundle.value.cashPrice?.selling || bundle.value.cashPrice?.original || 0;
-  const savings = Math.max(0, totalValue - sellingPrice);
-  const savingsPercentage = totalValue > 0 ? Math.round((savings / totalValue) * 100) : 0;
+  const sellingPrice = bundle.value.cashPrice?.selling || bundle.value.cashPrice?.original || 0
+  const savings = Math.max(0, totalValue - sellingPrice)
+  const savingsPercentage = totalValue > 0 ? Math.round((savings / totalValue) * 100) : 0
 
-  return { totalValue, savings, savingsPercentage };
-});
+  return { totalValue, savings, savingsPercentage }
+})
 
 // 計算總收益
 const totalRevenue = computed(() => {
-  if (!bundle.value || !bundle.value.totalSold) return 0;
+  if (!bundle.value || !bundle.value.totalSold) return 0
 
-  const price = bundle.value.cashPrice?.selling || bundle.value.cashPrice?.original || 0;
-  return price * bundle.value.totalSold;
-});
+  const price = bundle.value.cashPrice?.selling || bundle.value.cashPrice?.original || 0
+  return price * bundle.value.totalSold
+})
 
 // 計算平均售價
 const averagePrice = computed(() => {
-  if (!bundle.value || !bundle.value.totalSold) return '$0';
+  if (!bundle.value || !bundle.value.totalSold) return '$0'
 
-  const avgCash = bundle.value.cashPrice ?
-    (bundle.value.cashPrice.selling || bundle.value.cashPrice.original) : 0;
-  const avgPoint = bundle.value.pointPrice ?
-    (bundle.value.pointPrice.selling || bundle.value.pointPrice.original) : 0;
+  const avgCash = bundle.value.cashPrice
+    ? bundle.value.cashPrice.selling || bundle.value.cashPrice.original
+    : 0
+  const avgPoint = bundle.value.pointPrice
+    ? bundle.value.pointPrice.selling || bundle.value.pointPrice.original
+    : 0
 
   if (avgCash && avgPoint) {
-    return `$${formatPrice(avgCash)} / ${avgPoint}點`;
+    return `$${formatPrice(avgCash)} / ${avgPoint}點`
   } else if (avgCash) {
-    return `$${formatPrice(avgCash)}`;
+    return `$${formatPrice(avgCash)}`
   } else if (avgPoint) {
-    return `${avgPoint} 點`;
+    return `${avgPoint} 點`
   }
-  return '$0';
-});
+  return '$0'
+})
 
 // 計算轉換率 (這裡是模擬數據，實際需要從後端獲取)
 const conversionRate = computed(() => {
   // 模擬轉換率計算，實際應該是 (購買數 / 瀏覽數) * 100
-  return Math.min(Math.round((bundle.value?.totalSold || 0) / 10), 100);
-});
+  return Math.min(Math.round((bundle.value?.totalSold || 0) / 10), 100)
+})
 
 // 修正 fetchBundleData 函數
 const fetchBundleData = async () => {
-  if (!bundleId.value || !brandId.value) return;
+  if (!bundleId.value || !brandId.value) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     // 🔧 修正：參數名從 bundleId 改為 id
     const response = await api.bundle.getBundleById({
       brandId: brandId.value,
-      id: bundleId.value
-    });
+      id: bundleId.value,
+    })
 
     if (response && response.bundle) {
-      bundle.value = response.bundle;
+      bundle.value = response.bundle
     } else {
-      error.value = '獲取包裝商品資料失敗';
+      error.value = '獲取包裝商品資料失敗'
     }
   } catch (err) {
-    console.error('獲取包裝商品資料時發生錯誤:', err);
-    error.value = '獲取包裝商品資料時發生錯誤，請稍後再試';
+    console.error('獲取包裝商品資料時發生錯誤:', err)
+    error.value = '獲取包裝商品資料時發生錯誤，請稍後再試'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 獲取包裝商品資料
-  fetchBundleData();
-});
+  fetchBundleData()
+})
 </script>
 
 <style scoped>

@@ -3,7 +3,7 @@
     <!-- 頁面標題及操作按鈕 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="d-flex">
-        <div class="bg-primary rounded me-3" style="width: 6px; height: 26px;"></div>
+        <div class="bg-primary rounded me-3" style="width: 6px; height: 26px"></div>
         <h4>{{ storeName }} 的菜單管理</h4>
       </div>
       <div class="d-flex">
@@ -30,8 +30,13 @@
           </div>
           <div class="col-md-6">
             <label class="form-label">搜尋</label>
-            <input type="text" v-model="filters.search" @input="applyFilters" class="form-control"
-              placeholder="搜尋菜單名稱...">
+            <input
+              type="text"
+              v-model="filters.search"
+              @input="applyFilters"
+              class="form-control"
+              placeholder="搜尋菜單名稱..."
+            />
           </div>
           <div class="col-md-2">
             <button @click="resetFilters" class="btn btn-outline-secondary w-100">
@@ -145,13 +150,16 @@
                         <div class="flex-grow-1">
                           <div class="d-flex align-items-center mb-1">
                             <h6 class="mb-0 me-2">{{ menu.name || '未命名菜單' }}</h6>
-                            <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
+                            <span
+                              class="badge rounded-pill"
+                              :class="menu.isActive ? 'bg-success' : 'bg-secondary'"
+                            >
                               {{ menu.isActive ? '啟用中' : '已停用' }}
                             </span>
                           </div>
                           <small class="text-muted">
-                            分類: {{ menu.categories ? menu.categories.length : 0 }} |
-                            商品: {{ countTotalItems(menu) }}
+                            分類: {{ menu.categories ? menu.categories.length : 0 }} | 商品:
+                            {{ countTotalItems(menu) }}
                           </small>
                         </div>
 
@@ -159,22 +167,38 @@
                         <div class="d-flex align-items-center">
                           <!-- 狀態切換 -->
                           <div class="form-check form-switch me-2">
-                            <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
-                              v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              :id="`menu-active-${menu._id}`"
+                              v-model="menu.isActive"
+                              @change="toggleMenuActive(menu)"
+                              :disabled="isToggling"
+                            />
                           </div>
 
                           <!-- 操作按鈕 -->
                           <div class="btn-group btn-group-sm">
-                            <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
-                              class="btn btn-outline-primary btn-sm" title="查看詳情">
+                            <router-link
+                              :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
+                              class="btn btn-outline-primary btn-sm"
+                              title="查看詳情"
+                            >
                               <i class="bi bi-eye"></i>
                             </router-link>
-                            <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
-                              class="btn btn-outline-warning btn-sm" title="編輯菜單">
+                            <router-link
+                              :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+                              class="btn btn-outline-warning btn-sm"
+                              title="編輯菜單"
+                            >
                               <i class="bi bi-pencil"></i>
                             </router-link>
-                            <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteMenu(menu)"
-                              title="刪除菜單">
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              @click="confirmDeleteMenu(menu)"
+                              title="刪除菜單"
+                            >
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
@@ -210,13 +234,16 @@
                         <div class="flex-grow-1">
                           <div class="d-flex align-items-center mb-1">
                             <h6 class="mb-0 me-2">{{ menu.name }}</h6>
-                            <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
+                            <span
+                              class="badge rounded-pill"
+                              :class="menu.isActive ? 'bg-success' : 'bg-secondary'"
+                            >
                               {{ menu.isActive ? '啟用中' : '已停用' }}
                             </span>
                           </div>
                           <small class="text-muted">
-                            分類: {{ menu.categories ? menu.categories.length : 0 }} |
-                            商品: {{ countTotalItems(menu) }}
+                            分類: {{ menu.categories ? menu.categories.length : 0 }} | 商品:
+                            {{ countTotalItems(menu) }}
                           </small>
                         </div>
 
@@ -224,22 +251,38 @@
                         <div class="d-flex align-items-center">
                           <!-- 狀態切換 -->
                           <div class="form-check form-switch me-2">
-                            <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
-                              v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              :id="`menu-active-${menu._id}`"
+                              v-model="menu.isActive"
+                              @change="toggleMenuActive(menu)"
+                              :disabled="isToggling"
+                            />
                           </div>
 
                           <!-- 操作按鈕 -->
                           <div class="btn-group btn-group-sm">
-                            <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
-                              class="btn btn-outline-primary btn-sm" title="查看詳情">
+                            <router-link
+                              :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
+                              class="btn btn-outline-primary btn-sm"
+                              title="查看詳情"
+                            >
                               <i class="bi bi-eye"></i>
                             </router-link>
-                            <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
-                              class="btn btn-outline-warning btn-sm" title="編輯菜單">
+                            <router-link
+                              :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+                              class="btn btn-outline-warning btn-sm"
+                              title="編輯菜單"
+                            >
                               <i class="bi bi-pencil"></i>
                             </router-link>
-                            <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteMenu(menu)"
-                              title="刪除菜單">
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              @click="confirmDeleteMenu(menu)"
+                              title="刪除菜單"
+                            >
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
@@ -275,13 +318,16 @@
                         <div class="flex-grow-1">
                           <div class="d-flex align-items-center mb-1">
                             <h6 class="mb-0 me-2">{{ menu.name || '點數兌換' }}</h6>
-                            <span class="badge rounded-pill" :class="menu.isActive ? 'bg-success' : 'bg-secondary'">
+                            <span
+                              class="badge rounded-pill"
+                              :class="menu.isActive ? 'bg-success' : 'bg-secondary'"
+                            >
                               {{ menu.isActive ? '啟用中' : '已停用' }}
                             </span>
                           </div>
                           <small class="text-muted">
-                            分類: {{ menu.categories ? menu.categories.length : 0 }} |
-                            商品: {{ countTotalItems(menu) }}
+                            分類: {{ menu.categories ? menu.categories.length : 0 }} | 商品:
+                            {{ countTotalItems(menu) }}
                           </small>
                         </div>
 
@@ -289,22 +335,38 @@
                         <div class="d-flex align-items-center">
                           <!-- 狀態切換 -->
                           <div class="form-check form-switch me-2">
-                            <input class="form-check-input" type="checkbox" :id="`menu-active-${menu._id}`"
-                              v-model="menu.isActive" @change="toggleMenuActive(menu)" :disabled="isToggling">
+                            <input
+                              class="form-check-input"
+                              type="checkbox"
+                              :id="`menu-active-${menu._id}`"
+                              v-model="menu.isActive"
+                              @change="toggleMenuActive(menu)"
+                              :disabled="isToggling"
+                            />
                           </div>
 
                           <!-- 操作按鈕 -->
                           <div class="btn-group btn-group-sm">
-                            <router-link :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
-                              class="btn btn-outline-primary btn-sm" title="查看詳情">
+                            <router-link
+                              :to="`/admin/${brandId}/menus/detail/${storeId}/${menu._id}`"
+                              class="btn btn-outline-primary btn-sm"
+                              title="查看詳情"
+                            >
                               <i class="bi bi-eye"></i>
                             </router-link>
-                            <router-link :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
-                              class="btn btn-outline-warning btn-sm" title="編輯菜單">
+                            <router-link
+                              :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+                              class="btn btn-outline-warning btn-sm"
+                              title="編輯菜單"
+                            >
                               <i class="bi bi-pencil"></i>
                             </router-link>
-                            <button type="button" class="btn btn-outline-danger btn-sm" @click="confirmDeleteMenu(menu)"
-                              title="刪除菜單">
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger btn-sm"
+                              @click="confirmDeleteMenu(menu)"
+                              title="刪除菜單"
+                            >
                               <i class="bi bi-trash"></i>
                             </button>
                           </div>
@@ -331,8 +393,16 @@
     </div>
 
     <!-- 確認刪除對話框 -->
-    <b-modal id="deleteModal" v-model:show="showDeleteModal" :title="`刪除菜單 - ${selectedMenu?.name}`" @ok="deleteMenu"
-      :ok-disabled="isDeleting" ok-title="確認刪除" ok-variant="danger" cancel-title="取消">
+    <b-modal
+      id="deleteModal"
+      v-model:show="showDeleteModal"
+      :title="`刪除菜單 - ${selectedMenu?.name}`"
+      @ok="deleteMenu"
+      :ok-disabled="isDeleting"
+      ok-title="確認刪除"
+      ok-variant="danger"
+      cancel-title="取消"
+    >
       <p v-if="selectedMenu">確定要刪除菜單「{{ selectedMenu.name }}」嗎？</p>
       <div class="alert alert-danger">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -355,134 +425,126 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { BModal } from 'bootstrap-vue-next';
-import api from '@/api';
-import {
-  getMenuTypeText,
-  formatDate,
-  countTotalItems,
-  countActiveItems
-} from './menuUtils';
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { BModal } from 'bootstrap-vue-next'
+import api from '@/api'
+import { getMenuTypeText, formatDate, countTotalItems, countActiveItems } from './menuUtils'
 
 // 路由相關
-const route = useRoute();
-const router = useRouter();
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.params.storeId);
+const route = useRoute()
+const router = useRouter()
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.params.storeId)
 
 // 狀態變數
-const store = ref(null);
-const allMenus = ref([]);
-const isLoading = ref(true);
-const isDeleting = ref(false);
-const isToggling = ref(false);
-const storeName = ref('載入中...');
-const showDeleteModal = ref(false);
-const selectedMenu = ref(null);
-const error = ref('');
+const store = ref(null)
+const allMenus = ref([])
+const isLoading = ref(true)
+const isDeleting = ref(false)
+const isToggling = ref(false)
+const storeName = ref('載入中...')
+const showDeleteModal = ref(false)
+const selectedMenu = ref(null)
+const error = ref('')
 
 // 篩選器
 const filters = reactive({
   activeOnly: '',
-  search: ''
-});
+  search: '',
+})
 
 // 按類型分組的計算屬性
 const foodMenus = computed(() => {
-  return filteredMenusByType('food');
-});
+  return filteredMenusByType('food')
+})
 
 const cashCouponMenus = computed(() => {
-  return filteredMenusByType('cash_coupon');
-});
+  return filteredMenusByType('cash_coupon')
+})
 
 const pointExchangeMenus = computed(() => {
-  return filteredMenusByType('point_exchange');
-});
+  return filteredMenusByType('point_exchange')
+})
 
 // 按類型篩選菜單的函數
 const filteredMenusByType = (menuType) => {
-  let filtered = allMenus.value.filter(menu => menu.menuType === menuType);
+  let filtered = allMenus.value.filter((menu) => menu.menuType === menuType)
 
   // 狀態篩選
   if (filters.activeOnly !== '') {
-    const isActive = filters.activeOnly === 'true';
-    filtered = filtered.filter(menu => menu.isActive === isActive);
+    const isActive = filters.activeOnly === 'true'
+    filtered = filtered.filter((menu) => menu.isActive === isActive)
   }
 
   // 搜尋篩選
   if (filters.search.trim()) {
-    const searchQuery = filters.search.toLowerCase().trim();
-    filtered = filtered.filter(menu =>
-      menu.name && menu.name.toLowerCase().includes(searchQuery)
-    );
+    const searchQuery = filters.search.toLowerCase().trim()
+    filtered = filtered.filter((menu) => menu.name && menu.name.toLowerCase().includes(searchQuery))
   }
 
-  return filtered;
-};
+  return filtered
+}
 
 // 獲取店鋪和菜單資料
 const fetchData = async () => {
-  if (!storeId.value || !brandId.value) return;
+  if (!storeId.value || !brandId.value) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     // 1. 獲取店鋪資料
     const storeResponse = await api.store.getStoreById({
       brandId: brandId.value,
-      id: storeId.value
-    });
+      id: storeId.value,
+    })
 
     if (storeResponse && storeResponse.store) {
-      store.value = storeResponse.store;
-      storeName.value = storeResponse.store.name;
+      store.value = storeResponse.store
+      storeName.value = storeResponse.store.name
     } else {
-      error.value = '無法獲取店鋪資訊';
-      return;
+      error.value = '無法獲取店鋪資訊'
+      return
     }
 
     // 2. 獲取所有菜單資料
     const menusResponse = await api.menu.getAllStoreMenus({
       brandId: brandId.value,
       storeId: storeId.value,
-      includeUnpublished: true // 管理界面顯示所有菜單
-    });
+      includeUnpublished: true, // 管理界面顯示所有菜單
+    })
 
     if (menusResponse && menusResponse.menus) {
-      allMenus.value = menusResponse.menus;
+      allMenus.value = menusResponse.menus
     } else {
-      allMenus.value = [];
+      allMenus.value = []
     }
-
   } catch (err) {
-    console.error('獲取資料失敗:', err);
-    error.value = '獲取資料時發生錯誤，請稍後再試';
+    console.error('獲取資料失敗:', err)
+    error.value = '獲取資料時發生錯誤，請稍後再試'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 應用篩選器
 const applyFilters = () => {
   // 篩選會自動通過計算屬性處理
-};
+}
 
 // 重置篩選器
 const resetFilters = () => {
-  filters.activeOnly = '';
-  filters.search = '';
-};
+  filters.activeOnly = ''
+  filters.search = ''
+}
 
 // 切換菜單啟用狀態
 const toggleMenuActive = async (menu) => {
-  if (isToggling.value) return;
+  if (isToggling.value) return
 
-  isToggling.value = true;
-  const originalStatus = !menu.isActive; // 記錄原始狀態
+  isToggling.value = true
+  const originalStatus = !menu.isActive // 記錄原始狀態
 
   try {
     // 發送API請求更新狀態
@@ -490,30 +552,30 @@ const toggleMenuActive = async (menu) => {
       brandId: brandId.value,
       storeId: storeId.value,
       menuId: menu._id,
-      data: { isActive: menu.isActive }
-    });
+      data: { isActive: menu.isActive },
+    })
 
     if (response && response.menu) {
       // 重新獲取所有菜單資料以確保同步
       // 因為後台可能會自動停用同類型的其他菜單
-      await refreshMenuData();
+      await refreshMenuData()
     }
   } catch (err) {
-    console.error('切換菜單狀態失敗:', err);
+    console.error('切換菜單狀態失敗:', err)
 
     // 恢復原狀態
-    menu.isActive = originalStatus;
+    menu.isActive = originalStatus
 
     // 顯示錯誤訊息
-    let errorMessage = '切換菜單狀態時發生錯誤';
+    let errorMessage = '切換菜單狀態時發生錯誤'
     if (err.response && err.response.data && err.response.data.message) {
-      errorMessage = err.response.data.message;
+      errorMessage = err.response.data.message
     }
-    alert(errorMessage);
+    alert(errorMessage)
   } finally {
-    isToggling.value = false;
+    isToggling.value = false
   }
-};
+}
 
 // 刷新菜單資料的輔助函數
 const refreshMenuData = async () => {
@@ -521,71 +583,70 @@ const refreshMenuData = async () => {
     const menusResponse = await api.menu.getAllStoreMenus({
       brandId: brandId.value,
       storeId: storeId.value,
-      includeUnpublished: true
-    });
+      includeUnpublished: true,
+    })
 
     if (menusResponse && menusResponse.menus) {
-      allMenus.value = menusResponse.menus;
+      allMenus.value = menusResponse.menus
     }
   } catch (err) {
-    console.error('刷新菜單資料失敗:', err);
+    console.error('刷新菜單資料失敗:', err)
   }
-};
+}
 
 // 顯示刪除確認對話框
 const confirmDeleteMenu = (menu) => {
-  selectedMenu.value = menu;
-  showDeleteModal.value = true;
-};
+  selectedMenu.value = menu
+  showDeleteModal.value = true
+}
 
 // 刪除菜單
 const deleteMenu = async () => {
-  if (!selectedMenu.value) return;
+  if (!selectedMenu.value) return
 
-  isDeleting.value = true;
+  isDeleting.value = true
 
   try {
     // 發送API請求刪除菜單
     await api.menu.deleteMenu({
       brandId: brandId.value,
       storeId: storeId.value,
-      menuId: selectedMenu.value._id
-    });
+      menuId: selectedMenu.value._id,
+    })
 
     // 從本地陣列中移除
-    const menuIndex = allMenus.value.findIndex(m => m._id === selectedMenu.value._id);
+    const menuIndex = allMenus.value.findIndex((m) => m._id === selectedMenu.value._id)
     if (menuIndex !== -1) {
-      allMenus.value.splice(menuIndex, 1);
+      allMenus.value.splice(menuIndex, 1)
     }
 
     // 隱藏對話框
-    showDeleteModal.value = false;
-    selectedMenu.value = null;
-
+    showDeleteModal.value = false
+    selectedMenu.value = null
   } catch (err) {
-    console.error('刪除菜單失敗:', err);
+    console.error('刪除菜單失敗:', err)
 
-    let errorMessage = '刪除菜單時發生錯誤，請稍後再試';
+    let errorMessage = '刪除菜單時發生錯誤，請稍後再試'
     if (err.response && err.response.data && err.response.data.message) {
-      errorMessage = err.response.data.message;
+      errorMessage = err.response.data.message
     }
-    alert(errorMessage);
+    alert(errorMessage)
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 // 監聽ID變化
 watch([storeId, brandId], ([newStoreId, newBrandId]) => {
   if (newStoreId && newBrandId) {
-    fetchData();
+    fetchData()
   }
-});
+})
 
 // 生命週期鉤子
 onMounted(() => {
-  fetchData();
-});
+  fetchData()
+})
 </script>
 
 <style scoped>
@@ -650,7 +711,7 @@ onMounted(() => {
 
 /* 響應式調整 */
 @media (max-width: 991.98px) {
-  .row>.col-lg-4 {
+  .row > .col-lg-4 {
     margin-bottom: 1rem;
   }
 }

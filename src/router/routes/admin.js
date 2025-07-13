@@ -4,5 +4,5 @@ export const adminRoutes = [
     path: '/admin/login',
     name: 'login',
     component: () => import('@/views/auth/LoginView.vue'),
-  }
+  },
 ]

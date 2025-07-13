@@ -13,7 +13,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllDishTemplates({ brandId, ...queryParams }) {
-      return apiClient.get(`/dish/brands/${brandId}/templates`, { params: queryParams });
+      return apiClient.get(`/dish/brands/${brandId}/templates`, { params: queryParams })
     },
 
     /**
@@ -24,7 +24,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getDishTemplateById({ brandId, id }) {
-      return apiClient.get(`/dish/brands/${brandId}/templates/${id}`);
+      return apiClient.get(`/dish/brands/${brandId}/templates/${id}`)
     },
 
     /**
@@ -42,7 +42,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createDishTemplate({ brandId, data }) {
-      return apiClient.post(`/dish/brands/${brandId}/templates`, data);
+      return apiClient.post(`/dish/brands/${brandId}/templates`, data)
     },
 
     /**
@@ -55,7 +55,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateDishTemplate({ brandId, id, data }) {
-      return apiClient.put(`/dish/brands/${brandId}/templates/${id}`, data);
+      return apiClient.put(`/dish/brands/${brandId}/templates/${id}`, data)
     },
 
     /**
@@ -66,7 +66,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteDishTemplate({ brandId, id }) {
-      return apiClient.delete(`/dish/brands/${brandId}/templates/${id}`);
+      return apiClient.delete(`/dish/brands/${brandId}/templates/${id}`)
     },
 
     /**
@@ -77,7 +77,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getTemplateOptions({ brandId, id }) {
-      return apiClient.get(`/dish/brands/${brandId}/templates/${id}/options`);
+      return apiClient.get(`/dish/brands/${brandId}/templates/${id}/options`)
     },
 
     /**
@@ -86,7 +86,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllOptionCategories(brandId) {
-      return apiClient.get(`/dish/brands/${brandId}/option-categories`);
+      return apiClient.get(`/dish/brands/${brandId}/option-categories`)
     },
 
     /**
@@ -99,8 +99,8 @@ export default function (apiClient) {
      */
     getOptionCategoryById({ brandId, id, includeOptions = false }) {
       return apiClient.get(`/dish/brands/${brandId}/option-categories/${id}`, {
-        params: { includeOptions }
-      });
+        params: { includeOptions },
+      })
     },
 
     /**
@@ -113,7 +113,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createOptionCategory({ brandId, data }) {
-      return apiClient.post(`/dish/brands/${brandId}/option-categories`, data);
+      return apiClient.post(`/dish/brands/${brandId}/option-categories`, data)
     },
 
     /**
@@ -126,7 +126,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateOptionCategory({ brandId, id, data }) {
-      return apiClient.put(`/dish/brands/${brandId}/option-categories/${id}`, data);
+      return apiClient.put(`/dish/brands/${brandId}/option-categories/${id}`, data)
     },
 
     /**
@@ -137,7 +137,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteOptionCategory({ brandId, id }) {
-      return apiClient.delete(`/dish/brands/${brandId}/option-categories/${id}`);
+      return apiClient.delete(`/dish/brands/${brandId}/option-categories/${id}`)
     },
 
     /**
@@ -149,7 +149,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllOptions({ brandId, ...queryParams }) {
-      return apiClient.get(`/dish/brands/${brandId}/options`, { params: queryParams });
+      return apiClient.get(`/dish/brands/${brandId}/options`, { params: queryParams })
     },
 
     /**
@@ -160,7 +160,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getOptionById({ brandId, id }) {
-      return apiClient.get(`/dish/brands/${brandId}/options/${id}`);
+      return apiClient.get(`/dish/brands/${brandId}/options/${id}`)
     },
 
     /**
@@ -175,7 +175,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createOption({ brandId, data }) {
-      return apiClient.post(`/dish/brands/${brandId}/options`, data);
+      return apiClient.post(`/dish/brands/${brandId}/options`, data)
     },
 
     /**
@@ -191,7 +191,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateOption({ brandId, id, data }) {
-      return apiClient.put(`/dish/brands/${brandId}/options/${id}`, data);
+      return apiClient.put(`/dish/brands/${brandId}/options/${id}`, data)
     },
 
     /**
@@ -202,7 +202,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteOption({ brandId, id }) {
-      return apiClient.delete(`/dish/brands/${brandId}/options/${id}`);
+      return apiClient.delete(`/dish/brands/${brandId}/options/${id}`)
     },
 
     /**
@@ -213,7 +213,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getOptionsByCategory({ brandId, categoryId }) {
-      return apiClient.get(`/dish/brands/${brandId}/category/${categoryId}/options`);
-    }
-  };
+      return apiClient.get(`/dish/brands/${brandId}/category/${categoryId}/options`)
+    },
+  }
 }

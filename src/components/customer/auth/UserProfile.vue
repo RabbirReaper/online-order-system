@@ -41,15 +41,33 @@
             <form v-if="isEditingProfile" @submit.prevent="updateProfile">
               <div class="mb-3">
                 <label for="name" class="form-label">姓名</label>
-                <input type="text" class="form-control" id="name" v-model="editForm.name" required>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="name"
+                  v-model="editForm.name"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="email" class="form-label">電子郵件</label>
-                <input type="email" class="form-control" id="email" v-model="editForm.email" required>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  v-model="editForm.email"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="phone" class="form-label">手機號碼</label>
-                <input type="tel" class="form-control" id="phone" v-model="editForm.phone" required>
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="phone"
+                  v-model="editForm.phone"
+                  required
+                />
               </div>
               <div class="mb-3">
                 <label for="gender" class="form-label">性別</label>
@@ -62,12 +80,21 @@
               </div>
               <div class="mb-3">
                 <label for="dateOfBirth" class="form-label">生日</label>
-                <input type="date" class="form-control" id="dateOfBirth" v-model="editForm.dateOfBirth">
+                <input
+                  type="date"
+                  class="form-control"
+                  id="dateOfBirth"
+                  v-model="editForm.dateOfBirth"
+                />
               </div>
               <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary" :disabled="isUpdating">
-                  <span v-if="isUpdating" class="spinner-border spinner-border-sm me-2" role="status"
-                    aria-hidden="true"></span>
+                  <span
+                    v-if="isUpdating"
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                   儲存變更
                 </button>
                 <button type="button" class="btn btn-outline-secondary" @click="cancelEdit">
@@ -119,17 +146,31 @@
                   <p class="mb-1">{{ address.address }}</p>
                 </div>
                 <div class="address-actions">
-                  <button v-if="!address.isDefault" class="btn btn-sm btn-outline-success me-2"
-                    @click="setDefaultAddress(address._id)" :disabled="isUpdatingAddress">
+                  <button
+                    v-if="!address.isDefault"
+                    class="btn btn-sm btn-outline-success me-2"
+                    @click="setDefaultAddress(address._id)"
+                    :disabled="isUpdatingAddress"
+                  >
                     設為預設
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary me-2" @click="editAddress(address)">
+                  <button
+                    class="btn btn-sm btn-outline-secondary me-2"
+                    @click="editAddress(address)"
+                  >
                     編輯
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" @click="confirmDeleteAddress(address)"
-                    :disabled="isUpdatingAddress">
-                    <span v-if="isUpdatingAddress && deletingAddressId === address._id"
-                      class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    @click="confirmDeleteAddress(address)"
+                    :disabled="isUpdatingAddress"
+                  >
+                    <span
+                      v-if="isUpdatingAddress && deletingAddressId === address._id"
+                      class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                     刪除
                   </button>
                 </div>
@@ -143,25 +184,50 @@
               <form @submit.prevent="saveAddress">
                 <div class="mb-3">
                   <label for="addressName" class="form-label">地址名稱</label>
-                  <input type="text" class="form-control" id="addressName" v-model="addressForm.name"
-                    placeholder="例如：家、公司" required>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="addressName"
+                    v-model="addressForm.name"
+                    placeholder="例如：家、公司"
+                    required
+                  />
                 </div>
                 <div class="mb-3">
                   <label for="addressDetail" class="form-label">詳細地址</label>
-                  <textarea class="form-control" id="addressDetail" v-model="addressForm.address" rows="3"
-                    placeholder="請輸入完整地址" required></textarea>
+                  <textarea
+                    class="form-control"
+                    id="addressDetail"
+                    v-model="addressForm.address"
+                    rows="3"
+                    placeholder="請輸入完整地址"
+                    required
+                  ></textarea>
                 </div>
                 <div class="mb-3 form-check">
-                  <input type="checkbox" class="form-check-input" id="isDefault" v-model="addressForm.isDefault">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    id="isDefault"
+                    v-model="addressForm.isDefault"
+                  />
                   <label class="form-check-label" for="isDefault">設為預設地址</label>
                 </div>
                 <div class="d-flex gap-2">
                   <button type="submit" class="btn btn-primary" :disabled="isUpdatingAddress">
-                    <span v-if="isUpdatingAddress" class="spinner-border spinner-border-sm me-2" role="status"
-                      aria-hidden="true"></span>
+                    <span
+                      v-if="isUpdatingAddress"
+                      class="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                     儲存
                   </button>
-                  <button type="button" class="btn btn-outline-secondary" @click="cancelAddressForm">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    @click="cancelAddressForm"
+                  >
                     取消
                   </button>
                 </div>
@@ -187,10 +253,18 @@
                 <div class="mb-3">
                   <label for="currentPassword" class="form-label">當前密碼</label>
                   <div class="input-group">
-                    <input :type="showCurrentPassword ? 'text' : 'password'" class="form-control" id="currentPassword"
-                      v-model="passwordForm.currentPassword" required>
-                    <button class="btn btn-outline-secondary" type="button"
-                      @click="showCurrentPassword = !showCurrentPassword">
+                    <input
+                      :type="showCurrentPassword ? 'text' : 'password'"
+                      class="form-control"
+                      id="currentPassword"
+                      v-model="passwordForm.currentPassword"
+                      required
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      @click="showCurrentPassword = !showCurrentPassword"
+                    >
                       <i :class="showCurrentPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                   </div>
@@ -198,9 +272,19 @@
                 <div class="mb-3">
                   <label for="newPassword" class="form-label">新密碼</label>
                   <div class="input-group">
-                    <input :type="showNewPassword ? 'text' : 'password'" class="form-control" id="newPassword"
-                      v-model="passwordForm.newPassword" required minlength="8">
-                    <button class="btn btn-outline-secondary" type="button" @click="showNewPassword = !showNewPassword">
+                    <input
+                      :type="showNewPassword ? 'text' : 'password'"
+                      class="form-control"
+                      id="newPassword"
+                      v-model="passwordForm.newPassword"
+                      required
+                      minlength="8"
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      @click="showNewPassword = !showNewPassword"
+                    >
                       <i :class="showNewPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                   </div>
@@ -209,21 +293,37 @@
                 <div class="mb-3">
                   <label for="confirmPassword" class="form-label">確認新密碼</label>
                   <div class="input-group">
-                    <input :type="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword"
-                      v-model="passwordForm.confirmPassword" required>
-                    <button class="btn btn-outline-secondary" type="button"
-                      @click="showConfirmPassword = !showConfirmPassword">
+                    <input
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      class="form-control"
+                      id="confirmPassword"
+                      v-model="passwordForm.confirmPassword"
+                      required
+                    />
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      @click="showConfirmPassword = !showConfirmPassword"
+                    >
                       <i :class="showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     </button>
                   </div>
                 </div>
                 <div class="d-flex gap-2">
                   <button type="submit" class="btn btn-primary" :disabled="isUpdatingPassword">
-                    <span v-if="isUpdatingPassword" class="spinner-border spinner-border-sm me-2" role="status"
-                      aria-hidden="true"></span>
+                    <span
+                      v-if="isUpdatingPassword"
+                      class="spinner-border spinner-border-sm me-2"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                     更新密碼
                   </button>
-                  <button type="button" class="btn btn-outline-secondary" @click="cancelChangePassword">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    @click="cancelChangePassword"
+                  >
                     取消
                   </button>
                 </div>
@@ -236,9 +336,16 @@
   </div>
 
   <!-- 通知模態框 -->
-  <BModal id="successModal" title="操作成功" ok-title="確認" ok-variant="success" :hide-footer="false" ref="successModal">
+  <BModal
+    id="successModal"
+    title="操作成功"
+    ok-title="確認"
+    ok-variant="success"
+    :hide-footer="false"
+    ref="successModal"
+  >
     <div class="text-center mb-3">
-      <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+      <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem"></i>
     </div>
     <p class="text-center">{{ successMessage }}</p>
     <div class="alert alert-success">
@@ -248,8 +355,15 @@
   </BModal>
 
   <!-- 刪除地址確認模態框 -->
-  <BModal id="deleteAddressModal" title="確認刪除地址" ok-title="確認刪除" ok-variant="danger" cancel-title="取消"
-    @ok="proceedDeleteAddress" ref="deleteAddressModal">
+  <BModal
+    id="deleteAddressModal"
+    title="確認刪除地址"
+    ok-title="確認刪除"
+    ok-variant="danger"
+    cancel-title="取消"
+    @ok="proceedDeleteAddress"
+    ref="deleteAddressModal"
+  >
     <p v-if="addressToDelete">確定要刪除地址「{{ addressToDelete.name }}」嗎？</p>
     <div class="alert alert-danger">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -263,7 +377,14 @@
   </BModal>
 
   <!-- 錯誤模態框 -->
-  <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" :hide-footer="false" ref="errorModal">
+  <BModal
+    id="errorModal"
+    title="操作失敗"
+    ok-title="確認"
+    ok-variant="danger"
+    :hide-footer="false"
+    ref="errorModal"
+  >
     <div class="alert alert-danger">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
       {{ errorMessage }}
@@ -272,77 +393,77 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import api from '@/api';
-import { BModal } from 'bootstrap-vue-next';
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/api'
+import { BModal } from 'bootstrap-vue-next'
 
 // 路由相關
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 // 模態框參考
-const successModal = ref(null);
-const deleteAddressModal = ref(null);
-const errorModal = ref(null);
+const successModal = ref(null)
+const deleteAddressModal = ref(null)
+const errorModal = ref(null)
 
 // 返回上一頁
 const goBack = () => {
-  router.push(`/stores/${brandId.value}/${storeId.value}`);
-};
+  router.push(`/stores/${brandId.value}/${storeId.value}`)
+}
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId');
-});
+  return sessionStorage.getItem('currentBrandId')
+})
 
 const storeId = computed(() => {
-  return sessionStorage.getItem('currentStoreId');
-});
+  return sessionStorage.getItem('currentStoreId')
+})
 
 // 狀態管理
-const isLoading = ref(true);
-const errorMessage = ref('');
-const successMessage = ref('');
-const profile = ref({});
+const isLoading = ref(true)
+const errorMessage = ref('')
+const successMessage = ref('')
+const profile = ref({})
 
 // 編輯個人資料相關
-const isEditingProfile = ref(false);
-const isUpdating = ref(false);
+const isEditingProfile = ref(false)
+const isUpdating = ref(false)
 const editForm = reactive({
   name: '',
   email: '',
   phone: '',
   gender: '',
-  dateOfBirth: ''
-});
+  dateOfBirth: '',
+})
 
 // 地址管理相關
-const isAddingAddress = ref(false);
-const isEditingAddress = ref(false);
-const isUpdatingAddress = ref(false);
-const deletingAddressId = ref(null);
-const currentEditAddressId = ref(null);
+const isAddingAddress = ref(false)
+const isEditingAddress = ref(false)
+const isUpdatingAddress = ref(false)
+const deletingAddressId = ref(null)
+const currentEditAddressId = ref(null)
 const addressForm = reactive({
   name: '',
   address: '',
-  isDefault: false
-});
+  isDefault: false,
+})
 
 // 地址刪除
-const addressToDelete = ref(null);
+const addressToDelete = ref(null)
 
 // 密碼管理相關
-const isChangingPassword = ref(false);
-const isUpdatingPassword = ref(false);
-const showCurrentPassword = ref(false);
-const showNewPassword = ref(false);
-const showConfirmPassword = ref(false);
+const isChangingPassword = ref(false)
+const isUpdatingPassword = ref(false)
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
-  confirmPassword: ''
-});
+  confirmPassword: '',
+})
 
 // 格式化性別顯示
 const formatGender = (gender) => {
@@ -350,102 +471,101 @@ const formatGender = (gender) => {
     male: '男性',
     female: '女性',
     other: '其他',
-    prefer_not_to_say: '不願透露'
-  };
+    prefer_not_to_say: '不願透露',
+  }
 
-  return gender ? genderMap[gender] || gender : '未設定';
-};
+  return gender ? genderMap[gender] || gender : '未設定'
+}
 
 // 格式化日期顯示
 const formatDate = (dateString) => {
-  if (!dateString) return '未設定';
+  if (!dateString) return '未設定'
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '無效日期';
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '無效日期'
 
-  return date.toLocaleDateString('zh-TW');
-};
+  return date.toLocaleDateString('zh-TW')
+}
 
 // 載入用戶資料
 const loadUserProfile = async () => {
   try {
-    isLoading.value = true;
-    errorMessage.value = '';
+    isLoading.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 調用獲取用戶資料 API
-    const response = await api.user.getUserProfile(currentBrandId);
-    console.log('用戶資料:', response);
-    profile.value = response.profile;
+    const response = await api.user.getUserProfile(currentBrandId)
+    console.log('用戶資料:', response)
+    profile.value = response.profile
 
     // 初始化編輯表單
-    initEditForm();
-
+    initEditForm()
   } catch (error) {
-    console.error('載入用戶資料失敗:', error);
+    console.error('載入用戶資料失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '無法載入用戶資料';
+      errorMessage.value = error.response.data.message || '無法載入用戶資料'
     } else {
-      errorMessage.value = '無法載入用戶資料，請稍後再試';
+      errorMessage.value = '無法載入用戶資料，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 初始化編輯表單
 const initEditForm = () => {
-  editForm.name = profile.value.name || '';
-  editForm.email = profile.value.email || '';
-  editForm.phone = profile.value.phone || '';
-  editForm.gender = profile.value.gender || '';
+  editForm.name = profile.value.name || ''
+  editForm.email = profile.value.email || ''
+  editForm.phone = profile.value.phone || ''
+  editForm.gender = profile.value.gender || ''
 
   if (profile.value.dateOfBirth) {
     // 將日期轉換為 YYYY-MM-DD 格式
-    const date = new Date(profile.value.dateOfBirth);
+    const date = new Date(profile.value.dateOfBirth)
     if (!isNaN(date.getTime())) {
-      editForm.dateOfBirth = date.toISOString().substring(0, 10);
+      editForm.dateOfBirth = date.toISOString().substring(0, 10)
     } else {
-      editForm.dateOfBirth = '';
+      editForm.dateOfBirth = ''
     }
   } else {
-    editForm.dateOfBirth = '';
+    editForm.dateOfBirth = ''
   }
-};
+}
 
 // 切換編輯個人資料
 const toggleEditProfile = () => {
   if (!isEditingProfile.value) {
-    initEditForm();
+    initEditForm()
   }
-  isEditingProfile.value = !isEditingProfile.value;
-};
+  isEditingProfile.value = !isEditingProfile.value
+}
 
 // 取消編輯
 const cancelEdit = () => {
-  isEditingProfile.value = false;
-};
+  isEditingProfile.value = false
+}
 
 // 更新個人資料
 const updateProfile = async () => {
   try {
-    isUpdating.value = true;
-    errorMessage.value = '';
+    isUpdating.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 調用更新用戶資料 API
@@ -456,76 +576,76 @@ const updateProfile = async () => {
         email: editForm.email,
         phone: editForm.phone,
         gender: editForm.gender,
-        dateOfBirth: editForm.dateOfBirth
-      }
-    });
+        dateOfBirth: editForm.dateOfBirth,
+      },
+    })
 
-    profile.value = response;
-    isEditingProfile.value = false;
+    profile.value = response
+    isEditingProfile.value = false
 
     // 顯示成功訊息模態框
-    successMessage.value = '個人資料已成功更新';
+    successMessage.value = '個人資料已成功更新'
     if (successModal.value) {
-      successModal.value.show();
+      successModal.value.show()
     }
 
-    loadUserProfile();
+    loadUserProfile()
   } catch (error) {
-    console.error('更新用戶資料失敗:', error);
+    console.error('更新用戶資料失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '更新個人資料失敗';
+      errorMessage.value = error.response.data.message || '更新個人資料失敗'
     } else {
-      errorMessage.value = '更新個人資料失敗，請稍後再試';
+      errorMessage.value = '更新個人資料失敗，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isUpdating.value = false;
+    isUpdating.value = false
   }
-};
+}
 
 // 顯示新增地址表單
 const showAddAddressForm = () => {
-  addressForm.name = '';
-  addressForm.address = '';
-  addressForm.isDefault = !profile.value.addresses || profile.value.addresses.length === 0;
-  isAddingAddress.value = true;
-  isEditingAddress.value = false;
-  currentEditAddressId.value = null;
-};
+  addressForm.name = ''
+  addressForm.address = ''
+  addressForm.isDefault = !profile.value.addresses || profile.value.addresses.length === 0
+  isAddingAddress.value = true
+  isEditingAddress.value = false
+  currentEditAddressId.value = null
+}
 
 // 編輯地址
 const editAddress = (address) => {
-  addressForm.name = address.name;
-  addressForm.address = address.address;
-  addressForm.isDefault = address.isDefault;
-  isEditingAddress.value = true;
-  isAddingAddress.value = false;
-  currentEditAddressId.value = address._id;
-};
+  addressForm.name = address.name
+  addressForm.address = address.address
+  addressForm.isDefault = address.isDefault
+  isEditingAddress.value = true
+  isAddingAddress.value = false
+  currentEditAddressId.value = address._id
+}
 
 // 取消地址表單
 const cancelAddressForm = () => {
-  isAddingAddress.value = false;
-  isEditingAddress.value = false;
-};
+  isAddingAddress.value = false
+  isEditingAddress.value = false
+}
 
 // 保存地址
 const saveAddress = async () => {
   try {
-    isUpdatingAddress.value = true;
-    errorMessage.value = '';
+    isUpdatingAddress.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
-    let response;
+    let response
 
     if (isEditingAddress.value) {
       // 調用更新地址 API
@@ -535,9 +655,9 @@ const saveAddress = async () => {
         data: {
           name: addressForm.name,
           address: addressForm.address,
-          isDefault: addressForm.isDefault
-        }
-      });
+          isDefault: addressForm.isDefault,
+        },
+      })
     } else {
       // 調用新增地址 API
       response = await api.user.addAddress({
@@ -545,48 +665,48 @@ const saveAddress = async () => {
         addressData: {
           name: addressForm.name,
           address: addressForm.address,
-          isDefault: addressForm.isDefault
-        }
-      });
+          isDefault: addressForm.isDefault,
+        },
+      })
     }
 
-    profile.value = response;
-    isAddingAddress.value = false;
-    isEditingAddress.value = false;
+    profile.value = response
+    isAddingAddress.value = false
+    isEditingAddress.value = false
 
     // 顯示成功訊息模態框
-    successMessage.value = isEditingAddress.value ? '地址已成功更新' : '地址已成功新增';
+    successMessage.value = isEditingAddress.value ? '地址已成功更新' : '地址已成功新增'
     if (successModal.value) {
-      successModal.value.show();
+      successModal.value.show()
     }
-    loadUserProfile();
+    loadUserProfile()
   } catch (error) {
-    console.error('保存地址失敗:', error);
+    console.error('保存地址失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '保存地址失敗';
+      errorMessage.value = error.response.data.message || '保存地址失敗'
     } else {
-      errorMessage.value = '保存地址失敗，請稍後再試';
+      errorMessage.value = '保存地址失敗，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isUpdatingAddress.value = false;
+    isUpdatingAddress.value = false
   }
-};
+}
 
 // 設置默認地址
 const setDefaultAddress = async (addressId) => {
   try {
-    isUpdatingAddress.value = true;
-    errorMessage.value = '';
+    isUpdatingAddress.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 調用設置默認地址 API
@@ -594,170 +714,169 @@ const setDefaultAddress = async (addressId) => {
       brandId: currentBrandId,
       addressId,
       data: {
-        isDefault: true
-      }
-    });
+        isDefault: true,
+      },
+    })
 
-    profile.value = response;
+    profile.value = response
 
     // 顯示成功訊息
-    successMessage.value = '已設為預設地址';
+    successMessage.value = '已設為預設地址'
     if (successModal.value) {
-      successModal.value.show();
+      successModal.value.show()
     }
 
-    loadUserProfile();
+    loadUserProfile()
   } catch (error) {
-    console.error('設置默認地址失敗:', error);
+    console.error('設置默認地址失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '設置默認地址失敗';
+      errorMessage.value = error.response.data.message || '設置默認地址失敗'
     } else {
-      errorMessage.value = '設置默認地址失敗，請稍後再試';
+      errorMessage.value = '設置默認地址失敗，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isUpdatingAddress.value = false;
+    isUpdatingAddress.value = false
   }
-};
+}
 
 // 確認刪除地址
 const confirmDeleteAddress = (address) => {
-  addressToDelete.value = address;
+  addressToDelete.value = address
   if (deleteAddressModal.value) {
-    deleteAddressModal.value.show();
+    deleteAddressModal.value.show()
   }
-};
+}
 
 // 執行地址刪除
 const proceedDeleteAddress = async () => {
-  if (!addressToDelete.value) return;
+  if (!addressToDelete.value) return
 
   try {
-    isUpdatingAddress.value = true;
-    deletingAddressId.value = addressToDelete.value._id;
-    errorMessage.value = '';
+    isUpdatingAddress.value = true
+    deletingAddressId.value = addressToDelete.value._id
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 調用刪除地址 API
     const response = await api.user.deleteAddress({
       brandId: currentBrandId,
-      addressId: addressToDelete.value._id
-    });
+      addressId: addressToDelete.value._id,
+    })
 
-    profile.value = response;
+    profile.value = response
 
     // 顯示成功訊息模態框
-    successMessage.value = '地址已成功刪除';
+    successMessage.value = '地址已成功刪除'
     if (successModal.value) {
-      successModal.value.show();
+      successModal.value.show()
     }
-    loadUserProfile();
+    loadUserProfile()
   } catch (error) {
-    console.error('刪除地址失敗:', error);
+    console.error('刪除地址失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '刪除地址失敗';
+      errorMessage.value = error.response.data.message || '刪除地址失敗'
     } else {
-      errorMessage.value = '刪除地址失敗，請稍後再試';
+      errorMessage.value = '刪除地址失敗，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isUpdatingAddress.value = false;
-    deletingAddressId.value = null;
-    addressToDelete.value = null;
+    isUpdatingAddress.value = false
+    deletingAddressId.value = null
+    addressToDelete.value = null
   }
-};
+}
 
 // 顯示修改密碼表單
 const showChangePasswordForm = () => {
-  passwordForm.currentPassword = '';
-  passwordForm.newPassword = '';
-  passwordForm.confirmPassword = '';
-  isChangingPassword.value = true;
-};
+  passwordForm.currentPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+  isChangingPassword.value = true
+}
 
 // 取消修改密碼
 const cancelChangePassword = () => {
-  isChangingPassword.value = false;
-};
+  isChangingPassword.value = false
+}
 
 // 修改密碼
 const changePassword = async () => {
   // 驗證密碼
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    errorMessage.value = '兩次輸入的密碼不一致';
+    errorMessage.value = '兩次輸入的密碼不一致'
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
-    return;
+    return
   }
 
   if (passwordForm.newPassword.length < 8) {
-    errorMessage.value = '密碼長度至少需要8個字元';
+    errorMessage.value = '密碼長度至少需要8個字元'
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
-    return;
+    return
   }
 
   try {
-    isUpdatingPassword.value = true;
-    errorMessage.value = '';
+    isUpdatingPassword.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 調用修改密碼 API
     await api.userAuth.changePassword({
       brandId: currentBrandId,
       currentPassword: passwordForm.currentPassword,
-      newPassword: passwordForm.newPassword
-    });
+      newPassword: passwordForm.newPassword,
+    })
 
-    isChangingPassword.value = false;
+    isChangingPassword.value = false
 
     // 顯示成功訊息模態框
-    successMessage.value = '密碼已成功修改';
+    successMessage.value = '密碼已成功修改'
     if (successModal.value) {
-      successModal.value.show();
+      successModal.value.show()
     }
-
   } catch (error) {
-    console.error('修改密碼失敗:', error);
+    console.error('修改密碼失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '修改密碼失敗';
+      errorMessage.value = error.response.data.message || '修改密碼失敗'
     } else {
-      errorMessage.value = '修改密碼失敗，請稍後再試';
+      errorMessage.value = '修改密碼失敗，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isUpdatingPassword.value = false;
+    isUpdatingPassword.value = false
   }
-};
+}
 
 // 組件掛載後載入用戶資料
 onMounted(() => {
-  loadUserProfile();
-});
+  loadUserProfile()
+})
 </script>
 
 <style scoped>

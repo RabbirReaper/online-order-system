@@ -3,8 +3,14 @@
     <!-- 頁面頂部工具列 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex">
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="搜尋管理員..." v-model="searchQuery" @input="handleSearch">
+        <div class="input-group" style="width: 300px">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="搜尋管理員..."
+            v-model="searchQuery"
+            @input="handleSearch"
+          />
           <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
             <i class="bi bi-search"></i>
           </button>
@@ -123,17 +129,26 @@
                 </td>
                 <td>
                   <div class="btn-group">
-                    <router-link :to="{ name: 'boss-admin-edit', params: { id: admin._id } }"
-                      class="btn btn-sm btn-outline-primary">
+                    <router-link
+                      :to="{ name: 'boss-admin-edit', params: { id: admin._id } }"
+                      class="btn btn-sm btn-outline-primary"
+                    >
                       <i class="bi bi-pencil me-1"></i>編輯
                     </router-link>
-                    <button type="button" class="btn btn-sm"
+                    <button
+                      type="button"
+                      class="btn btn-sm"
                       :class="admin.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
-                      @click="toggleStatus(admin)">
+                      @click="toggleStatus(admin)"
+                    >
                       <i class="bi bi-power me-1"></i>{{ admin.isActive ? '停用' : '啟用' }}
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" @click="confirmDelete(admin)"
-                      v-if="canDeleteAdmin(admin)">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      @click="confirmDelete(admin)"
+                      v-if="canDeleteAdmin(admin)"
+                    >
                       <i class="bi bi-trash me-1"></i>刪除
                     </button>
                   </div>
@@ -148,7 +163,13 @@
     <!-- 無資料提示 -->
     <div class="alert alert-info text-center py-4" v-if="admins.length === 0 && !isLoading">
       <i class="bi bi-info-circle me-2 fs-4"></i>
-      <p class="mb-0">{{ searchQuery || filterRole || filterStatus ? '沒有符合搜尋條件的管理員' : '尚未創建任何管理員' }}</p>
+      <p class="mb-0">
+        {{
+          searchQuery || filterRole || filterStatus
+            ? '沒有符合搜尋條件的管理員'
+            : '尚未創建任何管理員'
+        }}
+      </p>
       <div class="mt-3" v-if="!searchQuery && !filterRole && !filterStatus">
         <router-link :to="{ name: 'boss-admin-create' }" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增第一個管理員
@@ -169,13 +190,20 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body" v-if="adminToDelete">
-            <p>確定要刪除管理員 <strong>{{ adminToDelete.name }}</strong> 嗎？</p>
+            <p>
+              確定要刪除管理員 <strong>{{ adminToDelete.name }}</strong> 嗎？
+            </p>
             <div class="alert alert-warning mt-3">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
-              <strong>角色：</strong>{{ getRoleLabel(adminToDelete.role) }}<br>
+              <strong>角色：</strong>{{ getRoleLabel(adminToDelete.role) }}<br />
               <strong>權限範圍：</strong>{{ getRoleScopeLabel(getRoleScope(adminToDelete.role)) }}
             </div>
             <div class="alert alert-danger mt-3">
@@ -185,9 +213,18 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="deleteAdmin" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
+            <button
+              type="button"
+              class="btn btn-danger"
+              @click="deleteAdmin"
+              :disabled="isDeleting"
+            >
+              <span
+                v-if="isDeleting"
+                class="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>
               {{ isDeleting ? '刪除中...' : '確認刪除' }}
             </button>
           </div>
@@ -201,12 +238,17 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">確認變更狀態</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body" v-if="adminToToggle">
             <p>
-              確定要將「<strong>{{ adminToToggle.name }}</strong>」
-              ({{ getRoleLabel(adminToToggle.role) }})
+              確定要將「<strong>{{ adminToToggle.name }}</strong
+              >」 ({{ getRoleLabel(adminToToggle.role) }})
               {{ adminToToggle.isActive ? '停用' : '啟用' }}嗎？
             </p>
 
@@ -232,9 +274,12 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn"
+            <button
+              type="button"
+              class="btn"
               :class="adminToToggle && adminToToggle.isActive ? 'btn-warning' : 'btn-success'"
-              @click="confirmToggleStatus">
+              @click="confirmToggleStatus"
+            >
               確認{{ adminToToggle && adminToToggle.isActive ? '停用' : '啟用' }}
             </button>
           </div>
@@ -245,283 +290,284 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { Modal } from 'bootstrap';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { Modal } from 'bootstrap'
+import api from '@/api'
 
 // 狀態變數
-const admins = ref([]);
-const isLoading = ref(true);
-const searchQuery = ref('');
-const filterRole = ref('');
-const filterStatus = ref('');
-const filterScope = ref('system'); // 預設顯示系統級管理員
-const errorMessage = ref('');
-const deleteModal = ref(null);
-const adminToDelete = ref(null);
-const isDeleting = ref(false);
-const statusModal = ref(null);
-const adminToToggle = ref(null);
+const admins = ref([])
+const isLoading = ref(true)
+const searchQuery = ref('')
+const filterRole = ref('')
+const filterStatus = ref('')
+const filterScope = ref('system') // 預設顯示系統級管理員
+const errorMessage = ref('')
+const deleteModal = ref(null)
+const adminToDelete = ref(null)
+const isDeleting = ref(false)
+const statusModal = ref(null)
+const adminToToggle = ref(null)
 
 // 角色定義
 const roleDefinitions = {
-  'primary_system_admin': { label: '系統主管理員', scope: 'system' },
-  'system_admin': { label: '系統管理員', scope: 'system' },
-  'primary_brand_admin': { label: '品牌主管理員', scope: 'brand' },
-  'brand_admin': { label: '品牌管理員', scope: 'brand' },
-  'primary_store_admin': { label: '店鋪主管理員', scope: 'store' },
-  'store_admin': { label: '店鋪管理員', scope: 'store' },
-  'employee': { label: '員工', scope: 'store' }
-};
+  primary_system_admin: { label: '系統主管理員', scope: 'system' },
+  system_admin: { label: '系統管理員', scope: 'system' },
+  primary_brand_admin: { label: '品牌主管理員', scope: 'brand' },
+  brand_admin: { label: '品牌管理員', scope: 'brand' },
+  primary_store_admin: { label: '店鋪主管理員', scope: 'store' },
+  store_admin: { label: '店鋪管理員', scope: 'store' },
+  employee: { label: '員工', scope: 'store' },
+}
 
 // 角色標籤對應
 const getRoleLabel = (role) => {
-  return roleDefinitions[role]?.label || role;
-};
+  return roleDefinitions[role]?.label || role
+}
 
 // 獲取角色權限範圍
 const getRoleScope = (role) => {
-  return roleDefinitions[role]?.scope || '';
-};
+  return roleDefinitions[role]?.scope || ''
+}
 
 // 權限範圍標籤
 const getRoleScopeLabel = (scope) => {
   const labels = {
-    'system': '系統級',
-    'brand': '品牌級',
-    'store': '店鋪級'
-  };
-  return labels[scope] || scope;
-};
+    system: '系統級',
+    brand: '品牌級',
+    store: '店鋪級',
+  }
+  return labels[scope] || scope
+}
 
 // 角色徽章樣式
 const getRoleBadgeClass = (role) => {
   const classes = {
-    'primary_system_admin': 'bg-danger',
-    'system_admin': 'bg-warning text-dark',
-    'primary_brand_admin': 'bg-primary',
-    'brand_admin': 'bg-info',
-    'primary_store_admin': 'bg-success',
-    'store_admin': 'bg-secondary',
-    'employee': 'bg-light text-dark'
-  };
-  return classes[role] || 'bg-secondary';
-};
+    primary_system_admin: 'bg-danger',
+    system_admin: 'bg-warning text-dark',
+    primary_brand_admin: 'bg-primary',
+    brand_admin: 'bg-info',
+    primary_store_admin: 'bg-success',
+    store_admin: 'bg-secondary',
+    employee: 'bg-light text-dark',
+  }
+  return classes[role] || 'bg-secondary'
+}
 
 // 權限範圍徽章樣式
 const getScopeBadgeClass = (scope) => {
   const classes = {
-    'system': 'bg-danger',
-    'brand': 'bg-primary',
-    'store': 'bg-success'
-  };
-  return classes[scope] || 'bg-secondary';
-};
+    system: 'bg-danger',
+    brand: 'bg-primary',
+    store: 'bg-success',
+  }
+  return classes[scope] || 'bg-secondary'
+}
 
 // 計算過濾後的管理員列表
 const filteredAdmins = computed(() => {
-  let filtered = admins.value;
+  let filtered = admins.value
 
   // 搜尋過濾
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(admin =>
-      admin.name.toLowerCase().includes(query) ||
-      getRoleLabel(admin.role).toLowerCase().includes(query) ||
-      (admin.brand?.name && admin.brand.name.toLowerCase().includes(query)) ||
-      (admin.store?.name && admin.store.name.toLowerCase().includes(query))
-    );
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(
+      (admin) =>
+        admin.name.toLowerCase().includes(query) ||
+        getRoleLabel(admin.role).toLowerCase().includes(query) ||
+        (admin.brand?.name && admin.brand.name.toLowerCase().includes(query)) ||
+        (admin.store?.name && admin.store.name.toLowerCase().includes(query)),
+    )
   }
 
   // 角色過濾
   if (filterRole.value) {
-    filtered = filtered.filter(admin => admin.role === filterRole.value);
+    filtered = filtered.filter((admin) => admin.role === filterRole.value)
   }
 
   // 狀態過濾
   if (filterStatus.value) {
-    const isActive = filterStatus.value === 'active';
-    filtered = filtered.filter(admin => admin.isActive === isActive);
+    const isActive = filterStatus.value === 'active'
+    filtered = filtered.filter((admin) => admin.isActive === isActive)
   }
 
   // 權限範圍過濾
   if (filterScope.value) {
-    filtered = filtered.filter(admin => getRoleScope(admin.role) === filterScope.value);
+    filtered = filtered.filter((admin) => getRoleScope(admin.role) === filterScope.value)
   }
 
-  return filtered;
-});
+  return filtered
+})
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
+  if (!dateString) return '無資料'
 
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffTime = Math.abs(now - date)
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
   if (diffDays < 1) {
-    return date.toLocaleTimeString('zh-TW', {
-      hour: '2-digit',
-      minute: '2-digit'
-    }) + ' 今天';
+    return (
+      date.toLocaleTimeString('zh-TW', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }) + ' 今天'
+    )
   } else if (diffDays < 7) {
-    return `${diffDays} 天前`;
+    return `${diffDays} 天前`
   } else {
     return date.toLocaleDateString('zh-TW', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
-    });
+      day: '2-digit',
+    })
   }
-};
+}
 
 // 檢查是否可以刪除管理員
 const canDeleteAdmin = (admin) => {
   // 不能刪除最後一個系統主管理員
   if (admin.role === 'primary_system_admin') {
-    const primarySystemAdmins = admins.value.filter(a => a.role === 'primary_system_admin');
-    return primarySystemAdmins.length > 1;
+    const primarySystemAdmins = admins.value.filter((a) => a.role === 'primary_system_admin')
+    return primarySystemAdmins.length > 1
   }
-  return true;
-};
+  return true
+}
 
 // 處理搜尋
 const handleSearch = () => {
   // 實時過濾，無需額外操作
-};
+}
 
 // 處理過濾
 const handleFilter = () => {
   // 實時過濾，無需額外操作
-};
+}
 
 // 獲取管理員列表
 const fetchAdmins = async () => {
-  isLoading.value = true;
-  errorMessage.value = '';
+  isLoading.value = true
+  errorMessage.value = ''
 
   try {
     // Boss 頁面查詢所有管理員，不指定brandId
-    const response = await api.admin.getAllAdmins({});
+    const response = await api.admin.getAllAdmins({})
     if (response && response.admins) {
-      admins.value = response.admins;
+      admins.value = response.admins
     }
   } catch (error) {
-    console.error('獲取管理員列表失敗:', error);
+    console.error('獲取管理員列表失敗:', error)
     if (error.response && error.response.data && error.response.data.message) {
-      errorMessage.value = error.response.data.message;
+      errorMessage.value = error.response.data.message
     } else if (error.message) {
-      errorMessage.value = error.message;
+      errorMessage.value = error.message
     } else {
-      errorMessage.value = '無法連接到伺服器，請檢查網路連線';
+      errorMessage.value = '無法連接到伺服器，請檢查網路連線'
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 顯示狀態切換確認對話框
 const toggleStatus = (admin) => {
-  adminToToggle.value = admin;
-  statusModal.value.show();
-};
+  adminToToggle.value = admin
+  statusModal.value.show()
+}
 
 // 確認切換狀態
 const confirmToggleStatus = async () => {
-  if (!adminToToggle.value) return;
+  if (!adminToToggle.value) return
 
   try {
-    const newStatus = !adminToToggle.value.isActive;
+    const newStatus = !adminToToggle.value.isActive
 
     // 檢查是否為最後一個系統主管理員
     if (adminToToggle.value.role === 'primary_system_admin' && !newStatus) {
-      const activePrimaryAdmins = admins.value.filter(a =>
-        a.role === 'primary_system_admin' && a.isActive && a._id !== adminToToggle.value._id
-      );
+      const activePrimaryAdmins = admins.value.filter(
+        (a) => a.role === 'primary_system_admin' && a.isActive && a._id !== adminToToggle.value._id,
+      )
       if (activePrimaryAdmins.length === 0) {
-        alert('無法停用最後一個系統主管理員');
-        statusModal.value.hide();
-        return;
+        alert('無法停用最後一個系統主管理員')
+        statusModal.value.hide()
+        return
       }
     }
 
     await api.admin.toggleAdminStatus({
       id: adminToToggle.value._id,
-      isActive: newStatus
-    });
+      isActive: newStatus,
+    })
 
     // 更新本地狀態
-    adminToToggle.value.isActive = newStatus;
+    adminToToggle.value.isActive = newStatus
 
     // 關閉對話框
-    statusModal.value.hide();
+    statusModal.value.hide()
   } catch (error) {
-    console.error('切換狀態失敗:', error);
-    const errorMsg = error.response?.data?.message || '切換狀態失敗，請稍後再試';
-    alert(errorMsg);
+    console.error('切換狀態失敗:', error)
+    const errorMsg = error.response?.data?.message || '切換狀態失敗，請稍後再試'
+    alert(errorMsg)
   }
-};
+}
 
 // 顯示刪除確認對話框
 const confirmDelete = (admin) => {
-  adminToDelete.value = admin;
-  deleteModal.value.show();
-};
+  adminToDelete.value = admin
+  deleteModal.value.show()
+}
 
 // 刪除管理員
 const deleteAdmin = async () => {
-  if (!adminToDelete.value) return;
+  if (!adminToDelete.value) return
 
-  isDeleting.value = true;
+  isDeleting.value = true
 
   try {
-    await api.admin.deleteAdmin(adminToDelete.value._id);
+    await api.admin.deleteAdmin(adminToDelete.value._id)
 
     // 關閉對話框
-    deleteModal.value.hide();
+    deleteModal.value.hide()
 
     // 從列表中移除已刪除的管理員
-    admins.value = admins.value.filter(
-      admin => admin._id !== adminToDelete.value._id
-    );
+    admins.value = admins.value.filter((admin) => admin._id !== adminToDelete.value._id)
   } catch (error) {
-    console.error('刪除管理員失敗:', error);
-    const errorMsg = error.response?.data?.message || '刪除管理員時發生錯誤';
-    alert(errorMsg);
+    console.error('刪除管理員失敗:', error)
+    const errorMsg = error.response?.data?.message || '刪除管理員時發生錯誤'
+    alert(errorMsg)
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 初始化刪除確認對話框
-  const modalElement = document.getElementById('deleteConfirmModal');
+  const modalElement = document.getElementById('deleteConfirmModal')
   if (modalElement) {
-    deleteModal.value = new Modal(modalElement);
+    deleteModal.value = new Modal(modalElement)
 
     // 監聽對話框關閉事件
     modalElement.addEventListener('hidden.bs.modal', () => {
-      adminToDelete.value = null;
-    });
+      adminToDelete.value = null
+    })
   }
 
   // 初始化狀態切換對話框
-  const statusModalElement = document.getElementById('statusToggleModal');
+  const statusModalElement = document.getElementById('statusToggleModal')
   if (statusModalElement) {
-    statusModal.value = new Modal(statusModalElement);
+    statusModal.value = new Modal(statusModalElement)
 
     // 監聽對話框關閉事件
     statusModalElement.addEventListener('hidden.bs.modal', () => {
-      adminToToggle.value = null;
-    });
+      adminToToggle.value = null
+    })
   }
 
   // 載入資料
-  fetchAdmins();
-});
+  fetchAdmins()
+})
 </script>
 
 <style scoped>

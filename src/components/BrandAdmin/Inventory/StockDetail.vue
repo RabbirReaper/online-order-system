@@ -2,9 +2,7 @@
   <div>
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="mb-0" v-if="inventoryItem">
-        {{ inventoryItem.itemName }} - 庫存詳情
-      </h4>
+      <h4 class="mb-0" v-if="inventoryItem">{{ inventoryItem.itemName }} - 庫存詳情</h4>
       <div>
         <router-link :to="`/admin/${brandId}/inventory/store/${storeId}`" class="btn btn-secondary">
           <i class="bi bi-arrow-left me-1"></i>返回列表
@@ -36,8 +34,12 @@
             <div class="mb-3">
               <label class="text-muted small">項目類型</label>
               <p class="mb-0">
-                <span class="badge"
-                  :class="inventoryItem.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
+                <span
+                  class="badge"
+                  :class="
+                    inventoryItem.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'
+                  "
+                >
                   {{ inventoryItem.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                 </span>
               </p>
@@ -49,7 +51,10 @@
             <div class="mb-3">
               <label class="text-muted small">是否追蹤庫存</label>
               <p class="mb-0">
-                <span class="badge" :class="inventoryItem.isInventoryTracked ? 'bg-success' : 'bg-secondary'">
+                <span
+                  class="badge"
+                  :class="inventoryItem.isInventoryTracked ? 'bg-success' : 'bg-secondary'"
+                >
                   {{ inventoryItem.isInventoryTracked ? '追蹤' : '不追蹤' }}
                 </span>
               </p>
@@ -57,7 +62,10 @@
             <div class="mb-3">
               <label class="text-muted small">可販售庫存功能</label>
               <p class="mb-0">
-                <span class="badge" :class="inventoryItem.enableAvailableStock ? 'bg-success' : 'bg-secondary'">
+                <span
+                  class="badge"
+                  :class="inventoryItem.enableAvailableStock ? 'bg-success' : 'bg-secondary'"
+                >
                   {{ inventoryItem.enableAvailableStock ? '啟用' : '關閉' }}
                 </span>
               </p>
@@ -105,23 +113,31 @@
                 <div class="p-3 border rounded text-center">
                   <h6 class="text-muted mb-2">可販售庫存</h6>
                   <h2 class="mb-0 text-success">{{ inventoryItem.availableStock }}</h2>
-                  <small class="text-muted" v-if="!inventoryItem.enableAvailableStock">（未啟用）</small>
+                  <small class="text-muted" v-if="!inventoryItem.enableAvailableStock"
+                    >（未啟用）</small
+                  >
                 </div>
               </div>
             </div>
 
             <!-- 庫存狀態指示器 -->
             <div class="mt-4">
-              <div class="progress" style="height: 25px;">
-                <div class="progress-bar" :class="getProgressBarClass()" role="progressbar"
-                  :style="{ width: getStockPercentage() + '%' }">
+              <div class="progress" style="height: 25px">
+                <div
+                  class="progress-bar"
+                  :class="getProgressBarClass()"
+                  role="progressbar"
+                  :style="{ width: getStockPercentage() + '%' }"
+                >
                   {{ getStatusText() }}
                 </div>
               </div>
               <div class="d-flex justify-content-between text-muted small mt-1">
                 <span>0</span>
                 <span>低庫存警告值: {{ inventoryItem.minStockAlert }}</span>
-                <span v-if="inventoryItem.targetStockLevel">補貨目標: {{ inventoryItem.targetStockLevel }}</span>
+                <span v-if="inventoryItem.targetStockLevel"
+                  >補貨目標: {{ inventoryItem.targetStockLevel }}</span
+                >
               </div>
             </div>
           </div>
@@ -168,8 +184,10 @@
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">最近變更記錄</h5>
-            <router-link :to="`/admin/${brandId}/inventory/logs?storeId=${storeId}&itemId=${inventoryItem._id}`"
-              class="btn btn-sm btn-outline-primary">
+            <router-link
+              :to="`/admin/${brandId}/inventory/logs?storeId=${storeId}&itemId=${inventoryItem._id}`"
+              class="btn btn-sm btn-outline-primary"
+            >
               查看全部
             </router-link>
           </div>
@@ -206,9 +224,7 @@
                     <td>{{ log.reason || '-' }}</td>
                   </tr>
                   <tr v-if="recentLogs.length === 0">
-                    <td colspan="7" class="text-center py-3 text-muted">
-                      暫無變更記錄
-                    </td>
+                    <td colspan="7" class="text-center py-3 text-muted">暫無變更記錄</td>
                   </tr>
                 </tbody>
               </table>
@@ -221,144 +237,150 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 路由
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.params.storeId);
-const itemId = computed(() => route.params.id);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.params.storeId)
+const itemId = computed(() => route.params.id)
 
 // 狀態
-const isLoading = ref(true);
-const error = ref('');
-const inventoryItem = ref(null);
-const recentLogs = ref([]);
-const stats = ref(null);
+const isLoading = ref(true)
+const error = ref('')
+const inventoryItem = ref(null)
+const recentLogs = ref([])
+const stats = ref(null)
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
+  if (!dateString) return '-'
+  const date = new Date(dateString)
   return date.toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 獲取庫存百分比
 const getStockPercentage = () => {
   if (!inventoryItem.value || !inventoryItem.value.targetStockLevel) {
-    return 100;
+    return 100
   }
-  return Math.min(100, (inventoryItem.value.totalStock / inventoryItem.value.targetStockLevel) * 100);
-};
+  return Math.min(
+    100,
+    (inventoryItem.value.totalStock / inventoryItem.value.targetStockLevel) * 100,
+  )
+}
 
 // 獲取進度條樣式
 const getProgressBarClass = () => {
-  if (!inventoryItem.value) return 'bg-secondary';
+  if (!inventoryItem.value) return 'bg-secondary'
 
-  if (inventoryItem.value.isSoldOut) return 'bg-danger';
-  if (inventoryItem.value.totalStock === 0) return 'bg-danger';
-  if (inventoryItem.value.needsRestock) return 'bg-warning text-dark';
-  if (inventoryItem.value.totalStock <= inventoryItem.value.minStockAlert) return 'bg-warning text-dark';
-  return 'bg-success';
-};
+  if (inventoryItem.value.isSoldOut) return 'bg-danger'
+  if (inventoryItem.value.totalStock === 0) return 'bg-danger'
+  if (inventoryItem.value.needsRestock) return 'bg-warning text-dark'
+  if (inventoryItem.value.totalStock <= inventoryItem.value.minStockAlert)
+    return 'bg-warning text-dark'
+  return 'bg-success'
+}
 
 // 獲取狀態文字
 const getStatusText = () => {
-  if (!inventoryItem.value) return '';
+  if (!inventoryItem.value) return ''
 
-  if (inventoryItem.value.isSoldOut) return '售完';
-  if (inventoryItem.value.totalStock === 0) return '缺貨';
-  if (inventoryItem.value.needsRestock) return '需要補貨';
-  if (inventoryItem.value.totalStock <= inventoryItem.value.minStockAlert) return '低庫存';
-  return '正常';
-};
+  if (inventoryItem.value.isSoldOut) return '售完'
+  if (inventoryItem.value.totalStock === 0) return '缺貨'
+  if (inventoryItem.value.needsRestock) return '需要補貨'
+  if (inventoryItem.value.totalStock <= inventoryItem.value.minStockAlert) return '低庫存'
+  return '正常'
+}
 
 // 獲取變更類型文字
 const getChangeTypeText = (type) => {
   const types = {
-    'manual_add': '手動新增',
-    'manual_subtract': '手動減少',
-    'order': '訂單消耗',
-    'system_adjustment': '系統調整',
-    'initial_stock': '初始庫存',
-    'restock': '進貨',
-    'damage': '損耗'
-  };
-  return types[type] || type;
-};
+    manual_add: '手動新增',
+    manual_subtract: '手動減少',
+    order: '訂單消耗',
+    system_adjustment: '系統調整',
+    initial_stock: '初始庫存',
+    restock: '進貨',
+    damage: '損耗',
+  }
+  return types[type] || type
+}
 
 // 獲取變更類型徽章樣式
 const getChangeTypeBadgeClass = (type) => {
   const classes = {
-    'manual_add': 'bg-success',
-    'manual_subtract': 'bg-warning',
-    'order': 'bg-info',
-    'system_adjustment': 'bg-secondary',
-    'initial_stock': 'bg-primary',
-    'restock': 'bg-success',
-    'damage': 'bg-danger'
-  };
-  return classes[type] || 'bg-secondary';
-};
+    manual_add: 'bg-success',
+    manual_subtract: 'bg-warning',
+    order: 'bg-info',
+    system_adjustment: 'bg-secondary',
+    initial_stock: 'bg-primary',
+    restock: 'bg-success',
+    damage: 'bg-danger',
+  }
+  return classes[type] || 'bg-secondary'
+}
 
 // 獲取剩餘天數
 const getDaysRemaining = () => {
   if (!inventoryItem.value || !stats.value || stats.value.consumptionRate === 0) {
-    return '無法計算';
+    return '無法計算'
   }
-  const effectiveStock = inventoryItem.value.enableAvailableStock ?
-    inventoryItem.value.availableStock : inventoryItem.value.totalStock;
-  const days = Math.floor(effectiveStock / stats.value.consumptionRate);
-  return days > 0 ? `${days} 天` : '即將耗盡';
-};
+  const effectiveStock = inventoryItem.value.enableAvailableStock
+    ? inventoryItem.value.availableStock
+    : inventoryItem.value.totalStock
+  const days = Math.floor(effectiveStock / stats.value.consumptionRate)
+  return days > 0 ? `${days} 天` : '即將耗盡'
+}
 
 // 獲取剩餘天數樣式
 const getDaysRemainingClass = () => {
   if (!inventoryItem.value || !stats.value || stats.value.consumptionRate === 0) {
-    return '';
+    return ''
   }
-  const effectiveStock = inventoryItem.value.enableAvailableStock ?
-    inventoryItem.value.availableStock : inventoryItem.value.totalStock;
-  const days = Math.floor(effectiveStock / stats.value.consumptionRate);
-  if (days <= 3) return 'text-danger';
-  if (days <= 7) return 'text-warning';
-  return 'text-success';
-};
+  const effectiveStock = inventoryItem.value.enableAvailableStock
+    ? inventoryItem.value.availableStock
+    : inventoryItem.value.totalStock
+  const days = Math.floor(effectiveStock / stats.value.consumptionRate)
+  if (days <= 3) return 'text-danger'
+  if (days <= 7) return 'text-warning'
+  return 'text-success'
+}
 
 // 獲取庫存詳情
 const fetchInventoryDetail = async () => {
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     // 獲取庫存詳情
     const response = await api.inventory.getInventoryItem({
       storeId: storeId.value,
-      inventoryId: itemId.value
-    });
+      inventoryId: itemId.value,
+    })
 
-    inventoryItem.value = response.inventoryItem;
+    inventoryItem.value = response.inventoryItem
 
     // 獲取統計數據
-    await fetchStats();
+    await fetchStats()
 
     // 獲取最近變更記錄
-    await fetchRecentLogs();
+    await fetchRecentLogs()
   } catch (err) {
-    console.error('獲取庫存詳情失敗:', err);
-    error.value = err.response?.data?.message || '獲取庫存詳情時發生錯誤';
+    console.error('獲取庫存詳情失敗:', err)
+    error.value = err.response?.data?.message || '獲取庫存詳情時發生錯誤'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 獲取統計數據
 const fetchStats = async () => {
@@ -366,13 +388,13 @@ const fetchStats = async () => {
     const response = await api.inventory.getItemInventoryStats({
       storeId: storeId.value,
       inventoryId: itemId.value,
-      inventoryType: inventoryItem.value.inventoryType
-    });
-    stats.value = response.stats;
+      inventoryType: inventoryItem.value.inventoryType,
+    })
+    stats.value = response.stats
   } catch (err) {
-    console.error('獲取統計數據失敗:', err);
+    console.error('獲取統計數據失敗:', err)
   }
-};
+}
 
 // 獲取最近變更記錄
 const fetchRecentLogs = async () => {
@@ -381,18 +403,18 @@ const fetchRecentLogs = async () => {
       storeId: storeId.value,
       inventoryId: itemId.value,
       inventoryType: inventoryItem.value.inventoryType,
-      limit: 10
-    });
-    recentLogs.value = response.logs;
+      limit: 10,
+    })
+    recentLogs.value = response.logs
   } catch (err) {
-    console.error('獲取變更記錄失敗:', err);
+    console.error('獲取變更記錄失敗:', err)
   }
-};
+}
 
 // 生命週期
 onMounted(() => {
-  fetchInventoryDetail();
-});
+  fetchInventoryDetail()
+})
 </script>
 
 <style scoped>

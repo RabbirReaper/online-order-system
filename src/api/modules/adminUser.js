@@ -16,7 +16,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllUsers({ brandId, ...queryParams }) {
-      return apiClient.get(`/admin-user/brands/${brandId}/users`, { params: queryParams });
+      return apiClient.get(`/admin-user/brands/${brandId}/users`, { params: queryParams })
     },
 
     /**
@@ -34,9 +34,9 @@ export default function (apiClient) {
         params: {
           startDate,
           endDate,
-          ...queryParams
-        }
-      });
+          ...queryParams,
+        },
+      })
     },
 
     /**
@@ -47,7 +47,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserById({ brandId, id }) {
-      return apiClient.get(`/admin-user/brands/${brandId}/users/${id}`);
+      return apiClient.get(`/admin-user/brands/${brandId}/users/${id}`)
     },
 
     /**
@@ -59,7 +59,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleUserStatus({ brandId, id, isActive }) {
-      return apiClient.patch(`/admin-user/brands/${brandId}/users/${id}/status`, { isActive });
-    }
-  };
+      return apiClient.patch(`/admin-user/brands/${brandId}/users/${id}/status`, { isActive })
+    },
+  }
 }

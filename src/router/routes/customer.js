@@ -6,23 +6,23 @@ export const customerRoutes = [
     component: () => import('@/views/counter/index.vue'),
     meta: {
       requiresAdminAuth: true,
-      title: '櫃檯點餐系統'
+      title: '櫃檯點餐系統',
     },
-    props: true
+    props: true,
   },
 
   // 菜單頁面
   {
     path: '/stores/:brandId/:storeId',
     name: 'menu',
-    component: () => import('@/views/customer/MenuView.vue')
+    component: () => import('@/views/customer/MenuView.vue'),
   },
 
   // 餐點詳情頁面
   {
     path: '/stores/:brandId/:storeId/dish/:dishId',
     name: 'dish-detail',
-    component: () => import('@/views/customer/DishDetailView.vue')
+    component: () => import('@/views/customer/DishDetailView.vue'),
   },
 
   // 套餐詳情頁面路由
@@ -32,21 +32,21 @@ export const customerRoutes = [
     component: () => import('@/views/customer/BundleDetailView.vue'),
     meta: {
       title: '套餐詳情',
-      requiresAuth: false
-    }
+      requiresAuth: false,
+    },
   },
 
   // 購物車頁面
   {
     path: '/cart',
     name: 'cart',
-    component: () => import('@/views/customer/CartView.vue')
+    component: () => import('@/views/customer/CartView.vue'),
   },
 
   // 訂單確認頁面
   {
     path: '/stores/:brandId/:storeId/order-confirm/:orderId',
     name: 'order-confirm',
-    component: () => import('@/views/customer/OrderConfirmView.vue')
-  }
+    component: () => import('@/views/customer/OrderConfirmView.vue'),
+  },
 ]

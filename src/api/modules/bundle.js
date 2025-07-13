@@ -18,8 +18,8 @@ export default function (apiClient) {
      */
     getAllBundles({ brandId, includeInactive = false, page = 1, limit = 20 }) {
       return apiClient.get(`/bundle/brands/${brandId}/bundles`, {
-        params: { includeInactive, page, limit }
-      });
+        params: { includeInactive, page, limit },
+      })
     },
 
     /**
@@ -30,7 +30,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getBundleById({ brandId, id }) {
-      return apiClient.get(`/bundle/brands/${brandId}/bundles/${id}`);
+      return apiClient.get(`/bundle/brands/${brandId}/bundles/${id}`)
     },
 
     /**
@@ -52,7 +52,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createBundle({ brandId, data }) {
-      return apiClient.post(`/bundle/brands/${brandId}/bundles`, data);
+      return apiClient.post(`/bundle/brands/${brandId}/bundles`, data)
     },
 
     /**
@@ -64,7 +64,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateBundle({ brandId, id, data }) {
-      return apiClient.put(`/bundle/brands/${brandId}/bundles/${id}`, data);
+      return apiClient.put(`/bundle/brands/${brandId}/bundles/${id}`, data)
     },
 
     /**
@@ -75,7 +75,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteBundle({ brandId, id }) {
-      return apiClient.delete(`/bundle/brands/${brandId}/bundles/${id}`);
+      return apiClient.delete(`/bundle/brands/${brandId}/bundles/${id}`)
     },
 
     // ========== 客戶端功能 ==========
@@ -88,7 +88,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應，包含是否可購買和剩餘限制
      */
     checkPurchaseLimit({ brandId, bundleId }) {
-      return apiClient.get(`/bundle/brands/${brandId}/bundles/${bundleId}/purchase-limit`);
+      return apiClient.get(`/bundle/brands/${brandId}/bundles/${bundleId}/purchase-limit`)
     },
 
     // ========== Bundle 實例相關 ==========
@@ -101,7 +101,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getBundleInstanceById({ brandId, instanceId }) {
-      return apiClient.get(`/bundle/brands/${brandId}/bundles/instances/${instanceId}`);
+      return apiClient.get(`/bundle/brands/${brandId}/bundles/instances/${instanceId}`)
     },
 
     /**
@@ -115,7 +115,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createBundleInstance({ brandId, data }) {
-      return apiClient.post(`/bundle/brands/${brandId}/bundles/instances`, data);
+      return apiClient.post(`/bundle/brands/${brandId}/bundles/instances`, data)
     },
 
     /**
@@ -125,7 +125,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應，包含創建統計和詳情
      */
     autoCreateBundlesForVouchers({ brandId }) {
-      return apiClient.post(`/bundle/brands/${brandId}/bundles/auto-create`);
+      return apiClient.post(`/bundle/brands/${brandId}/bundles/auto-create`)
     },
-  };
+  }
 }

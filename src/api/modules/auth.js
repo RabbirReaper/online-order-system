@@ -14,7 +14,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     login({ name, password }) {
-      return apiClient.post('/admin-auth/login', { name, password });
+      return apiClient.post('/admin-auth/login', { name, password })
     },
 
     /**
@@ -22,7 +22,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     logout() {
-      return apiClient.post('/admin-auth/logout');
+      return apiClient.post('/admin-auth/logout')
     },
 
     /**
@@ -35,8 +35,8 @@ export default function (apiClient) {
     changePassword({ currentPassword, newPassword }) {
       return apiClient.post('/admin-auth/change-password', {
         currentPassword,
-        newPassword
-      });
+        newPassword,
+      })
     },
 
     /**
@@ -46,15 +46,15 @@ export default function (apiClient) {
      */
     async checkUserStatus(brandId) {
       try {
-        const res = await apiClient.get(`/user-auth/brands/${brandId}/check-status`);
+        const res = await apiClient.get(`/user-auth/brands/${brandId}/check-status`)
         return {
           loggedIn: res.loggedIn,
           role: res.role,
-          brandId: res.brandId
-        };
+          brandId: res.brandId,
+        }
       } catch (error) {
-        return { loggedIn: false, role: null, brandId: null };
+        return { loggedIn: false, role: null, brandId: null }
       }
-    }
-  };
+    },
+  }
 }

@@ -3,19 +3,28 @@
     <template v-if="isOrdersActive && selectedOrder">
       <!-- 訂單管理模式下的按鈕 -->
       <div class="d-flex justify-content-between mb-3">
-        <button class="btn btn-danger btn-lg" style="width: 48%"
+        <button
+          class="btn btn-danger btn-lg"
+          style="width: 48%"
           @click="$emit('updateOrderStatus', selectedOrder._id, 'cancelled')"
-          :disabled="selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'">
+          :disabled="selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'"
+        >
           <i class="bi bi-x-circle me-1"></i> 取消訂單
         </button>
-        <button class="btn btn-secondary btn-lg" style="width: 48%" @click="$emit('printOrder')"
-          :disabled="!selectedOrder">
+        <button
+          class="btn btn-secondary btn-lg"
+          style="width: 48%"
+          @click="$emit('printOrder')"
+          :disabled="!selectedOrder"
+        >
           <i class="bi bi-printer me-1"></i> 列印訂單
         </button>
       </div>
-      <button class="btn btn-success btn-lg w-100 py-3"
+      <button
+        class="btn btn-success btn-lg w-100 py-3"
         @click="$emit('updateOrderStatus', selectedOrder._id, 'paid')"
-        :disabled="selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'">
+        :disabled="selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'"
+      >
         <i class="bi bi-credit-card me-1"></i> 結帳
       </button>
     </template>
@@ -23,23 +32,32 @@
     <template v-else>
       <!-- 購物車模式下的按鈕 -->
       <div class="d-flex justify-content-between mb-3">
-        <button class="btn btn-danger btn-lg" style="width: 48%" :disabled="cartLength === 0"
-          @click="$emit('cancelOrder')">
+        <button
+          class="btn btn-danger btn-lg"
+          style="width: 48%"
+          :disabled="cartLength === 0"
+          @click="$emit('cancelOrder')"
+        >
           <i class="bi bi-x-circle me-1"></i> 取消訂單
         </button>
         <button class="btn btn-secondary btn-lg" style="width: 48%" disabled>
           <i class="bi bi-printer me-1"></i> 重印訂單
         </button>
       </div>
-      <button class="btn btn-success btn-lg w-100 py-3" :disabled="cartLength === 0 || isCheckingOut"
-        @click="handleSubmit">
+      <button
+        class="btn btn-success btn-lg w-100 py-3"
+        :disabled="cartLength === 0 || isCheckingOut"
+        @click="handleSubmit"
+      >
         <template v-if="isCheckingOut">
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          <span
+            class="spinner-border spinner-border-sm me-2"
+            role="status"
+            aria-hidden="true"
+          ></span>
           處理中...
         </template>
-        <template v-else>
-          <i class="bi bi-check-circle me-1"></i> 提交訂單
-        </template>
+        <template v-else> <i class="bi bi-check-circle me-1"></i> 提交訂單 </template>
       </button>
     </template>
   </div>
@@ -49,29 +67,29 @@
 const props = defineProps({
   isOrdersActive: {
     type: Boolean,
-    required: true
+    required: true,
   },
   selectedOrder: {
     type: Object,
-    default: null
+    default: null,
   },
   cartLength: {
     type: Number,
-    default: 0
+    default: 0,
   },
   isCheckingOut: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
-const emit = defineEmits(['updateOrderStatus', 'printOrder', 'cancelOrder', 'submitOrder']);
+const emit = defineEmits(['updateOrderStatus', 'printOrder', 'cancelOrder', 'submitOrder'])
 
 // 處理提交按鈕點擊
 const handleSubmit = () => {
-  if (props.isCheckingOut) return; // 防止重複點擊
-  emit('submitOrder');
-};
+  if (props.isCheckingOut) return // 防止重複點擊
+  emit('submitOrder')
+}
 </script>
 
 <style scoped>

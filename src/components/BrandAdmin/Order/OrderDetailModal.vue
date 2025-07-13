@@ -4,9 +4,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
-            訂單詳情 #{{ getOrderNumber(order) }}
-          </h5>
+          <h5 class="modal-title">訂單詳情 #{{ getOrderNumber(order) }}</h5>
           <button type="button" class="btn-close" @click="$emit('close')"></button>
         </div>
         <div class="modal-body">
@@ -25,7 +23,9 @@
                 <div class="row g-3">
                   <div class="col-md-6">
                     <p class="mb-1"><strong>訂單編號:</strong> {{ getOrderNumber(order) }}</p>
-                    <p class="mb-1"><strong>訂單時間:</strong> {{ formatDateTime(order.createdAt) }}</p>
+                    <p class="mb-1">
+                      <strong>訂單時間:</strong> {{ formatDateTime(order.createdAt) }}
+                    </p>
                     <p class="mb-1"><strong>店家:</strong> {{ props.storeName }}</p>
                     <p class="mb-1" v-if="order.deliveryPlatform">
                       <strong>外送平台:</strong> {{ order.deliveryPlatform }}
@@ -99,7 +99,10 @@
               </div>
             </div>
 
-            <div class="card mb-3" v-if="order.orderType === 'dine_in' && order.dineInInfo?.tableNumber">
+            <div
+              class="card mb-3"
+              v-if="order.orderType === 'dine_in' && order.dineInInfo?.tableNumber"
+            >
               <div class="card-header bg-light">
                 <h6 class="mb-0">內用信息</h6>
               </div>
@@ -108,12 +111,17 @@
               </div>
             </div>
 
-            <div class="card mb-3" v-if="order.orderType === 'takeout' && order.estimatedPickupTime">
+            <div
+              class="card mb-3"
+              v-if="order.orderType === 'takeout' && order.estimatedPickupTime"
+            >
               <div class="card-header bg-light">
                 <h6 class="mb-0">外帶信息</h6>
               </div>
               <div class="card-body">
-                <p class="mb-1"><strong>預計取餐時間:</strong> {{ formatDateTime(order.estimatedPickupTime) }}</p>
+                <p class="mb-1">
+                  <strong>預計取餐時間:</strong> {{ formatDateTime(order.estimatedPickupTime) }}
+                </p>
               </div>
             </div>
 
@@ -139,10 +147,21 @@
                         <td>{{ getDishName(item) }}</td>
                         <td>
                           <div v-if="getDishOptions(item).length > 0">
-                            <div v-for="option in getDishOptions(item)" :key="option.optionCategoryName" class="mb-1">
-                              <small><strong>{{ option.optionCategoryName }}:</strong></small>
-                              <div v-for="selection in option.selections" :key="selection.name" class="ms-2">
-                                <small>{{ selection.name }}
+                            <div
+                              v-for="option in getDishOptions(item)"
+                              :key="option.optionCategoryName"
+                              class="mb-1"
+                            >
+                              <small
+                                ><strong>{{ option.optionCategoryName }}:</strong></small
+                              >
+                              <div
+                                v-for="selection in option.selections"
+                                :key="selection.name"
+                                class="ms-2"
+                              >
+                                <small
+                                  >{{ selection.name }}
                                   <span v-if="selection.price > 0">(+${{ selection.price }})</span>
                                 </small>
                               </div>
@@ -175,7 +194,10 @@
                     <span>服務費:</span>
                     <span>${{ order.serviceCharge }}</span>
                   </div>
-                  <div class="d-flex justify-content-between mb-2" v-if="order.deliveryInfo?.deliveryFee">
+                  <div
+                    class="d-flex justify-content-between mb-2"
+                    v-if="order.deliveryInfo?.deliveryFee"
+                  >
                     <span>配送費:</span>
                     <span>${{ order.deliveryInfo.deliveryFee }}</span>
                   </div>
@@ -183,7 +205,10 @@
                     <span>優惠折扣:</span>
                     <span class="text-success">-${{ order.totalDiscount }}</span>
                   </div>
-                  <div class="d-flex justify-content-between mb-2" v-if="order.manualAdjustment !== 0">
+                  <div
+                    class="d-flex justify-content-between mb-2"
+                    v-if="order.manualAdjustment !== 0"
+                  >
                     <span>手動調整:</span>
                     <span :class="order.manualAdjustment > 0 ? 'text-danger' : 'text-success'">
                       {{ order.manualAdjustment > 0 ? '+' : '' }}${{ order.manualAdjustment }}
@@ -247,125 +272,125 @@
 const props = defineProps({
   order: {
     type: Object,
-    default: () => ({})
+    default: () => ({}),
   },
   storeName: {
     type: String,
-    default: '未知店家'
+    default: '未知店家',
   },
   visible: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
-defineEmits(['close']);
+defineEmits(['close'])
 
 // 獲取訂單編號
 const getOrderNumber = (order) => {
-  if (!order) return '';
-  if (order.platformOrderId) return order.platformOrderId;
+  if (!order) return ''
+  if (order.platformOrderId) return order.platformOrderId
   if (order.orderDateCode && order.sequence) {
-    return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`;
+    return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`
   }
-  return order._id || '';
-};
+  return order._id || ''
+}
 
 // 獲取餐點名稱
 const getDishName = (item) => {
-  if (!item || !item.dishInstance) return '未知餐點';
+  if (!item || !item.dishInstance) return '未知餐點'
 
   if (typeof item.dishInstance === 'object') {
-    return item.dishInstance.name || '未知餐點';
+    return item.dishInstance.name || '未知餐點'
   }
 
-  return '未知餐點';
-};
+  return '未知餐點'
+}
 
 // 獲取餐點選項
 const getDishOptions = (item) => {
-  if (!item || !item.dishInstance) return [];
+  if (!item || !item.dishInstance) return []
 
   if (typeof item.dishInstance === 'object' && item.dishInstance.options) {
-    return item.dishInstance.options || [];
+    return item.dishInstance.options || []
   }
 
-  return [];
-};
+  return []
+}
 
 // 格式化日期時間
 const formatDateTime = (dateStr) => {
-  if (!dateStr) return '';
+  if (!dateStr) return ''
 
-  const date = new Date(dateStr);
+  const date = new Date(dateStr)
   return date.toLocaleString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 格式化訂單類型
 const formatOrderType = (type) => {
   const typeMap = {
-    'dine_in': '內用',
-    'takeout': '外帶',
-    'delivery': '外送'
-  };
-  return typeMap[type] || type;
-};
+    dine_in: '內用',
+    takeout: '外帶',
+    delivery: '外送',
+  }
+  return typeMap[type] || type
+}
 
 // 格式化訂單狀態
 const formatOrderStatus = (status) => {
   const statusMap = {
-    'unpaid': '未付款',
-    'paid': '已付款',
-    'cancelled': '已取消'
-  };
-  return statusMap[status] || status;
-};
+    unpaid: '未付款',
+    paid: '已付款',
+    cancelled: '已取消',
+  }
+  return statusMap[status] || status
+}
 
 // 格式化付款類型
 const formatPaymentType = (type) => {
   const typeMap = {
     'On-site': '現場付款',
-    'Online': '線上付款'
-  };
-  return typeMap[type] || type || '未設定';
-};
+    Online: '線上付款',
+  }
+  return typeMap[type] || type || '未設定'
+}
 
 // 格式化付款方式
 const formatPaymentMethod = (method) => {
   const methodMap = {
-    'cash': '現金',
-    'credit_card': '信用卡',
-    'line_pay': 'LINE Pay',
-    'other': '其他'
-  };
-  return methodMap[method] || method || '未設定';
-};
+    cash: '現金',
+    credit_card: '信用卡',
+    line_pay: 'LINE Pay',
+    other: '其他',
+  }
+  return methodMap[method] || method || '未設定'
+}
 
 // 獲取訂單類型的樣式類別
 const getOrderTypeClass = (type) => {
   const classes = {
-    'dine_in': 'badge bg-primary',
-    'takeout': 'badge bg-success',
-    'delivery': 'badge bg-warning'
-  };
-  return classes[type] || 'badge bg-secondary';
-};
+    dine_in: 'badge bg-primary',
+    takeout: 'badge bg-success',
+    delivery: 'badge bg-warning',
+  }
+  return classes[type] || 'badge bg-secondary'
+}
 
 // 獲取訂單狀態的樣式類別
 const getOrderStatusClass = (status) => {
   const classes = {
-    'unpaid': 'badge bg-warning',
-    'paid': 'badge bg-success',
-    'cancelled': 'badge bg-danger'
-  };
-  return classes[status] || 'badge bg-secondary';
-};
+    unpaid: 'badge bg-warning',
+    paid: 'badge bg-success',
+    cancelled: 'badge bg-danger',
+  }
+  return classes[status] || 'badge bg-secondary'
+}
 </script>
 
 <style scoped>

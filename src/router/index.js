@@ -19,7 +19,7 @@ const router = createRouter({
     ...customerRoutes,
     ...authRoutes,
     ...memberRoutes,
-    ...commonRoutes
+    ...commonRoutes,
   ],
   // 添加滾動行為配置
   scrollBehavior(to, from, savedPosition) {
@@ -30,7 +30,9 @@ const router = createRouter({
 
     // 如果是從詳情頁返回菜單頁，恢復之前的滾動位置
     if (from.name?.includes('detail') && to.name === 'menu') {
-      const savedScrollPosition = sessionStorage.getItem(`scroll_${to.name}_${to.params.brandId}_${to.params.storeId}`)
+      const savedScrollPosition = sessionStorage.getItem(
+        `scroll_${to.name}_${to.params.brandId}_${to.params.storeId}`,
+      )
       if (savedScrollPosition) {
         return { top: parseInt(savedScrollPosition), behavior: 'instant' }
       }
@@ -43,7 +45,7 @@ const router = createRouter({
 
     // 其他情況滾動到頂部
     return { top: 0 }
-  }
+  },
 })
 
 // 全局前置守衛

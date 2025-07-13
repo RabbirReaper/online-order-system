@@ -22,8 +22,13 @@
       <!-- 左側類別導航欄 -->
       <div class="category-sidebar">
         <div class="category-nav">
-          <div v-for="category in menuCategories" :key="category._id" class="category-nav-item"
-            :class="{ 'active': selectedCategoryId === category._id }" @click="selectCategory(category._id)">
+          <div
+            v-for="category in menuCategories"
+            :key="category._id"
+            class="category-nav-item"
+            :class="{ active: selectedCategoryId === category._id }"
+            @click="selectCategory(category._id)"
+          >
             <div class="category-nav-content">
               <div class="category-name">{{ category.name }}</div>
               <div class="category-count">{{ category.items?.length || 0 }}</div>
@@ -44,24 +49,41 @@
                   {{ selectedCategory.name }}
                 </h5>
                 <div class="menu-items-grid">
-                  <div v-for="item in selectedCategory.items" :key="item._id" class="menu-item-card" :class="{
-                    'selected-dish': isItemSelected(item),
-                    'sold-out': isItemSoldOut(item)
-                  }" @click="handleItemClick(item)">
+                  <div
+                    v-for="item in selectedCategory.items"
+                    :key="item._id"
+                    class="menu-item-card"
+                    :class="{
+                      'selected-dish': isItemSelected(item),
+                      'sold-out': isItemSoldOut(item),
+                    }"
+                    @click="handleItemClick(item)"
+                  >
                     <div class="card h-100">
                       <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                           <h6 class="card-title mb-0">{{ getItemName(item) }}</h6>
                           <!-- 庫存狀態顯示 (只對餐點顯示) -->
                           <div
-                            v-if="item.itemType === 'dish' && getInventoryInfo(getItemId(item))
-                              && (getInventoryInfo(getItemId(item)).enableAvailableStock || getInventoryInfo(getItemId(item)).isSoldOut)"
-                            class="inventory-badge">
-                            <span v-if="getInventoryInfo(getItemId(item)).isSoldOut" class="badge bg-danger text-white">
+                            v-if="
+                              item.itemType === 'dish' &&
+                              getInventoryInfo(getItemId(item)) &&
+                              (getInventoryInfo(getItemId(item)).enableAvailableStock ||
+                                getInventoryInfo(getItemId(item)).isSoldOut)
+                            "
+                            class="inventory-badge"
+                          >
+                            <span
+                              v-if="getInventoryInfo(getItemId(item)).isSoldOut"
+                              class="badge bg-danger text-white"
+                            >
                               暫停供應
                             </span>
-                            <span v-else-if="getInventoryInfo(getItemId(item)).enableAvailableStock" class="badge"
-                              :class="getStockBadgeClass(getItemId(item))">
+                            <span
+                              v-else-if="getInventoryInfo(getItemId(item)).enableAvailableStock"
+                              class="badge"
+                              :class="getStockBadgeClass(getItemId(item))"
+                            >
                               {{ getInventoryInfo(getItemId(item)).availableStock }}
                             </span>
                           </div>
@@ -69,9 +91,19 @@
                         <p class="card-text price">${{ getItemPrice(item) }}</p>
                         <!-- 售完遮罩 -->
                         <div v-if="isItemSoldOut(item)" class="sold-out-overlay">
-                          <span class="sold-out-text"
-                            :class="{ 'suspended': item.itemType === 'dish' && getInventoryInfo(getItemId(item))?.isSoldOut }">
-                            {{ item.itemType === 'dish' && getInventoryInfo(getItemId(item))?.isSoldOut ? '暫停供應' : '售完'
+                          <span
+                            class="sold-out-text"
+                            :class="{
+                              suspended:
+                                item.itemType === 'dish' &&
+                                getInventoryInfo(getItemId(item))?.isSoldOut,
+                            }"
+                          >
+                            {{
+                              item.itemType === 'dish' &&
+                              getInventoryInfo(getItemId(item))?.isSoldOut
+                                ? '暫停供應'
+                                : '售完'
                             }}
                           </span>
                         </div>
@@ -97,18 +129,27 @@
             </div>
 
             <!-- 選項類別 -->
-            <div v-for="optionCategory in dishOptionCategories" :key="optionCategory._id" class="mb-3">
-              <h6 class="option-category-title mb-3" :style="{ borderLeftColor: themeColor }">{{ optionCategory.name }}
+            <div
+              v-for="optionCategory in dishOptionCategories"
+              :key="optionCategory._id"
+              class="mb-3"
+            >
+              <h6 class="option-category-title mb-3" :style="{ borderLeftColor: themeColor }">
+                {{ optionCategory.name }}
               </h6>
 
               <!-- 單選類型 -->
               <div v-if="optionCategory.inputType === 'single'" class="row g-2">
                 <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div class="card p-2 text-center option-card"
-                    :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
-                    @click="selectOption(optionCategory, option, 'single')">
+                  <div
+                    class="card p-2 text-center option-card"
+                    :class="{ selected: isOptionSelected(optionCategory._id, getOptionId(option)) }"
+                    @click="selectOption(optionCategory, option, 'single')"
+                  >
                     <div class="option-name">{{ getOptionName(option) }}</div>
-                    <div v-if="getOptionPrice(option) > 0" class="option-price">+${{ getOptionPrice(option) }}</div>
+                    <div v-if="getOptionPrice(option) > 0" class="option-price">
+                      +${{ getOptionPrice(option) }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -116,11 +157,15 @@
               <!-- 複選類型 -->
               <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
                 <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div class="card p-2 text-center option-card"
-                    :class="{ 'selected': isOptionSelected(optionCategory._id, getOptionId(option)) }"
-                    @click="selectOption(optionCategory, option, 'multiple')">
+                  <div
+                    class="card p-2 text-center option-card"
+                    :class="{ selected: isOptionSelected(optionCategory._id, getOptionId(option)) }"
+                    @click="selectOption(optionCategory, option, 'multiple')"
+                  >
                     <div class="option-name">{{ getOptionName(option) }}</div>
-                    <div v-if="getOptionPrice(option) > 0" class="option-price">+${{ getOptionPrice(option) }}</div>
+                    <div v-if="getOptionPrice(option) > 0" class="option-price">
+                      +${{ getOptionPrice(option) }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -129,8 +174,13 @@
             <!-- 備註輸入 -->
             <div class="mb-3">
               <label class="form-label fw-semibold">備註</label>
-              <textarea class="form-control" rows="2" placeholder="特殊要求..." v-model="itemNote"
-                @input="updateOptions"></textarea>
+              <textarea
+                class="form-control"
+                rows="2"
+                placeholder="特殊要求..."
+                v-model="itemNote"
+                @input="updateOptions"
+              ></textarea>
             </div>
           </div>
         </div>
@@ -140,250 +190,248 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { useCounterStore } from '@/stores/counter';
-import api from '@/api';
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useCounterStore } from '@/stores/counter'
+import api from '@/api'
 
 const props = defineProps({
   brandId: {
     type: String,
-    required: true
+    required: true,
   },
   storeId: {
     type: String,
-    required: true
+    required: true,
   },
   orderType: {
     type: String,
-    required: true
+    required: true,
   },
   title: {
     type: String,
-    required: true
+    required: true,
   },
   themeColor: {
     type: String,
-    default: '#007bff'
+    default: '#007bff',
   },
   themeClass: {
     type: String,
-    default: 'primary'
-  }
-});
+    default: 'primary',
+  },
+})
 
-const counterStore = useCounterStore();
+const counterStore = useCounterStore()
 
 // 響應式資料
-const isLoading = ref(false);
-const isLoadingInventory = ref(false);
-const errorMessage = ref('');
-const selectedCategoryId = ref(null);
-const selectedDish = ref(null);
-const selectedOptions = ref({});
-const itemNote = ref('');
-const inventoryData = ref({});
+const isLoading = ref(false)
+const isLoadingInventory = ref(false)
+const errorMessage = ref('')
+const selectedCategoryId = ref(null)
+const selectedDish = ref(null)
+const selectedOptions = ref({})
+const itemNote = ref('')
+const inventoryData = ref({})
 
 // 計算屬性
 const headerClass = computed(() => {
-  return `bg-${props.themeClass}`;
-});
+  return `bg-${props.themeClass}`
+})
 
 const spinnerClass = computed(() => {
-  return `text-${props.themeClass}`;
-});
+  return `text-${props.themeClass}`
+})
 
 const menuSectionClass = computed(() => {
-  return counterStore.isEditMode ? 'menu-section-edit' : 'menu-section-full';
-});
+  return counterStore.isEditMode ? 'menu-section-edit' : 'menu-section-full'
+})
 
 const menuCategories = computed(() => {
-  return counterStore.menuData?.categories || [];
-});
+  return counterStore.menuData?.categories || []
+})
 
 const selectedCategory = computed(() => {
-  if (!selectedCategoryId.value) return null;
-  return menuCategories.value.find(cat => cat._id === selectedCategoryId.value);
-});
+  if (!selectedCategoryId.value) return null
+  return menuCategories.value.find((cat) => cat._id === selectedCategoryId.value)
+})
 
 const dishOptionCategories = computed(() => {
-  if (!selectedDish.value) return [];
+  if (!selectedDish.value) return []
 
-  const categories = [];
-  selectedDish.value.optionCategories.forEach(categoryRef => {
-    const category = counterStore.optionCategories.find(cat =>
-      cat._id === categoryRef.categoryId
-    );
+  const categories = []
+  selectedDish.value.optionCategories.forEach((categoryRef) => {
+    const category = counterStore.optionCategories.find((cat) => cat._id === categoryRef.categoryId)
     if (category) {
       categories.push({
         ...category,
-        order: categoryRef.order
-      });
+        order: categoryRef.order,
+      })
     }
-  });
+  })
 
-  return categories.sort((a, b) => a.order - b.order);
-});
+  return categories.sort((a, b) => a.order - b.order)
+})
 
 const currentPrice = computed(() => {
-  if (!selectedDish.value) return 0;
+  if (!selectedDish.value) return 0
 
-  let price = selectedDish.value.basePrice;
+  let price = selectedDish.value.basePrice
 
   // 加上選項價格
-  Object.values(selectedOptions.value).forEach(optionIds => {
+  Object.values(selectedOptions.value).forEach((optionIds) => {
     if (Array.isArray(optionIds)) {
-      optionIds.forEach(optionId => {
-        const option = findOptionById(optionId);
+      optionIds.forEach((optionId) => {
+        const option = findOptionById(optionId)
         if (option) {
-          price += getOptionPrice(option);
+          price += getOptionPrice(option)
         }
-      });
+      })
     }
-  });
+  })
 
-  return price;
-});
+  return price
+})
 
 // 項目處理方法
 const getItemName = (item) => {
   if (item.itemType === 'dish') {
-    return item.dishTemplate?.name || '未命名餐點';
+    return item.dishTemplate?.name || '未命名餐點'
   } else if (item.itemType === 'bundle') {
-    return item.bundle?.name || '未命名套餐';
+    return item.bundle?.name || '未命名套餐'
   }
-  return '未知商品';
-};
+  return '未知商品'
+}
 
 const getItemId = (item) => {
   if (item.itemType === 'dish') {
-    return item.dishTemplate?._id;
+    return item.dishTemplate?._id
   } else if (item.itemType === 'bundle') {
-    return item.bundle?._id;
+    return item.bundle?._id
   }
-  return null;
-};
+  return null
+}
 
 const getItemPrice = (item) => {
   if (item.itemType === 'dish') {
-    return item.priceOverride || item.dishTemplate?.basePrice || 0;
+    return item.priceOverride || item.dishTemplate?.basePrice || 0
   } else if (item.itemType === 'bundle') {
-    return item.priceOverride || item.bundle?.sellingPrice || 0;
+    return item.priceOverride || item.bundle?.sellingPrice || 0
   }
-  return 0;
-};
+  return 0
+}
 
 const isItemSelected = (item) => {
   if (item.itemType === 'dish') {
-    return selectedDish.value && selectedDish.value._id === item.dishTemplate?._id;
+    return selectedDish.value && selectedDish.value._id === item.dishTemplate?._id
   }
   // 套餐目前不支援選項編輯，所以不會被選中
-  return false;
-};
+  return false
+}
 
 const isItemSoldOut = (item) => {
   // 套餐不檢查庫存
   if (item.itemType === 'bundle') {
-    return false;
+    return false
   }
 
   // 餐點庫存檢查
   if (item.itemType === 'dish') {
-    return isDishSoldOut(getItemId(item));
+    return isDishSoldOut(getItemId(item))
   }
 
-  return false;
-};
+  return false
+}
 
 const handleItemClick = (item) => {
   // 檢查項目是否售完
   if (isItemSoldOut(item)) {
-    return;
+    return
   }
 
   if (item.itemType === 'dish') {
     // 處理餐點選擇
-    handleDishClick(item.dishTemplate);
+    handleDishClick(item.dishTemplate)
   } else if (item.itemType === 'bundle') {
     // 處理套餐選擇 - 直接加入購物車
-    quickSelectBundle(item.bundle);
+    quickSelectBundle(item.bundle)
   }
-};
+}
 
 // 統一的選項資料存取方法
 const getOptionId = (option) => {
-  return option.refOption ? option.refOption._id : option._id;
-};
+  return option.refOption ? option.refOption._id : option._id
+}
 
 const getOptionName = (option) => {
-  return option.refOption ? option.refOption.name : option.name;
-};
+  return option.refOption ? option.refOption.name : option.name
+}
 
 const getOptionPrice = (option) => {
-  return option.refOption ? (option.refOption.price || 0) : (option.price || 0);
-};
+  return option.refOption ? option.refOption.price || 0 : option.price || 0
+}
 
 // 庫存相關方法
 const getInventoryInfo = (dishTemplateId) => {
-  return inventoryData.value[dishTemplateId] || null;
-};
+  return inventoryData.value[dishTemplateId] || null
+}
 
 const isDishSoldOut = (dishTemplateId) => {
-  const inventory = getInventoryInfo(dishTemplateId);
-  if (!inventory) return false;
+  const inventory = getInventoryInfo(dishTemplateId)
+  if (!inventory) return false
 
   // 最高優先級：手動設為售完
   if (inventory.isSoldOut) {
-    return true;
+    return true
   }
 
   // 次級：如果啟用了可用庫存機制，檢查可用庫存是否為 0
   if (inventory.enableAvailableStock) {
-    return inventory.availableStock <= 0;
+    return inventory.availableStock <= 0
   }
 
-  return false;
-};
+  return false
+}
 
 const getStockBadgeClass = (dishTemplateId) => {
-  const inventory = getInventoryInfo(dishTemplateId);
-  if (!inventory) return '';
+  const inventory = getInventoryInfo(dishTemplateId)
+  if (!inventory) return ''
 
   // 如果手動售完，直接返回紅色
   if (inventory.isSoldOut) {
-    return 'bg-danger text-white';
+    return 'bg-danger text-white'
   }
 
   // 如果沒有啟用可用庫存，不顯示badge
-  if (!inventory.enableAvailableStock) return '';
+  if (!inventory.enableAvailableStock) return ''
 
   if (inventory.availableStock <= 0) {
-    return 'bg-danger text-white';
+    return 'bg-danger text-white'
   } else if (inventory.availableStock <= 5) {
-    return 'bg-warning text-dark';
+    return 'bg-warning text-dark'
   } else {
-    return 'bg-success text-white';
+    return 'bg-success text-white'
   }
-};
+}
 
 // 載入庫存資料
 const loadInventoryData = async () => {
-  if (!props.brandId || !props.storeId || !menuCategories.value.length) return;
+  if (!props.brandId || !props.storeId || !menuCategories.value.length) return
 
-  isLoadingInventory.value = true;
+  isLoadingInventory.value = true
 
   try {
     // 獲取店鋪所有餐點庫存
     const response = await api.inventory.getStoreInventory({
       brandId: props.brandId,
       storeId: props.storeId,
-      inventoryType: 'DishTemplate'
-    });
+      inventoryType: 'DishTemplate',
+    })
 
     if (response.success) {
-      const inventoryMap = {};
+      const inventoryMap = {}
 
       // 將庫存資料按餐點模板 ID 建立對應關係
-      response.inventory.forEach(item => {
+      response.inventory.forEach((item) => {
         if (item.dish && item.dish._id) {
           inventoryMap[item.dish._id] = {
             inventoryId: item._id,
@@ -391,245 +439,248 @@ const loadInventoryData = async () => {
             availableStock: item.availableStock,
             totalStock: item.totalStock,
             isSoldOut: item.isSoldOut,
-            isInventoryTracked: item.isInventoryTracked
-          };
+            isInventoryTracked: item.isInventoryTracked,
+          }
         }
-      });
+      })
 
-      inventoryData.value = inventoryMap;
+      inventoryData.value = inventoryMap
     }
   } catch (error) {
-    console.error('載入庫存資料失敗:', error);
+    console.error('載入庫存資料失敗:', error)
   } finally {
-    isLoadingInventory.value = false;
+    isLoadingInventory.value = false
   }
-};
+}
 
 // 方法
 const loadMenuData = async () => {
-  isLoading.value = true;
-  errorMessage.value = '';
+  isLoading.value = true
+  errorMessage.value = ''
 
   try {
-    await counterStore.fetchMenuData(props.brandId, props.storeId);
+    await counterStore.fetchMenuData(props.brandId, props.storeId)
     // 載入完成後自動選擇第一個類別
     if (menuCategories.value.length > 0) {
-      selectedCategoryId.value = menuCategories.value[0]._id;
+      selectedCategoryId.value = menuCategories.value[0]._id
     }
     // 載入庫存資料
-    await loadInventoryData();
+    await loadInventoryData()
   } catch (error) {
-    console.error('載入菜單資料失敗:', error);
-    errorMessage.value = error.message || '載入菜單資料失敗';
+    console.error('載入菜單資料失敗:', error)
+    errorMessage.value = error.message || '載入菜單資料失敗'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 選擇類別
 const selectCategory = (categoryId) => {
-  selectedCategoryId.value = categoryId;
-};
+  selectedCategoryId.value = categoryId
+}
 
 // 處理餐點點擊
 const handleDishClick = (dishTemplate) => {
   // 檢查餐點是否售完
   if (isDishSoldOut(dishTemplate._id)) {
-    return;
+    return
   }
 
   // 原來的快速選擇邏輯
-  quickSelectDish(dishTemplate);
-};
+  quickSelectDish(dishTemplate)
+}
 
 // 快速選擇餐點（加入購物車並進入編輯模式）
 const quickSelectDish = (dishTemplate) => {
   // 先加入購物車
-  counterStore.quickAddDishToCart(dishTemplate);
+  counterStore.quickAddDishToCart(dishTemplate)
 
   // 找到剛加入的項目（最後一個）
-  const lastIndex = counterStore.cart.length - 1;
-  const lastItem = counterStore.cart[lastIndex];
+  const lastIndex = counterStore.cart.length - 1
+  const lastItem = counterStore.cart[lastIndex]
 
   // 立即進入編輯模式
-  counterStore.selectCurrentItem(lastItem, lastIndex);
-};
+  counterStore.selectCurrentItem(lastItem, lastIndex)
+}
 
 // 快速選擇套餐（直接加入購物車）
 const quickSelectBundle = (bundle) => {
   // 套餐直接加入購物車，不進入編輯模式
-  counterStore.addBundleToCart(bundle);
-};
+  counterStore.addBundleToCart(bundle)
+}
 
 // 選擇選項
 const selectOption = (category, option, inputType) => {
-  const categoryId = category._id;
-  const optionId = getOptionId(option);
+  const categoryId = category._id
+  const optionId = getOptionId(option)
 
   if (inputType === 'single') {
     // 單選：替換當前選項
-    selectedOptions.value[categoryId] = [optionId];
+    selectedOptions.value[categoryId] = [optionId]
   } else if (inputType === 'multiple') {
     // 複選：切換選項
     if (!selectedOptions.value[categoryId]) {
-      selectedOptions.value[categoryId] = [];
+      selectedOptions.value[categoryId] = []
     }
 
-    const currentOptions = selectedOptions.value[categoryId];
-    const index = currentOptions.indexOf(optionId);
+    const currentOptions = selectedOptions.value[categoryId]
+    const index = currentOptions.indexOf(optionId)
 
     if (index > -1) {
       // 移除選項
-      currentOptions.splice(index, 1);
+      currentOptions.splice(index, 1)
     } else {
       // 添加選項
-      currentOptions.push(optionId);
+      currentOptions.push(optionId)
     }
   }
 
   // 更新選項
-  updateOptions();
-};
+  updateOptions()
+}
 
 // 檢查選項是否被選中
 const isOptionSelected = (categoryId, optionId) => {
-  const selectedOptionsForCategory = selectedOptions.value[categoryId];
-  return selectedOptionsForCategory && selectedOptionsForCategory.includes(optionId);
-};
+  const selectedOptionsForCategory = selectedOptions.value[categoryId]
+  return selectedOptionsForCategory && selectedOptionsForCategory.includes(optionId)
+}
 
 // 根據ID查找選項
 const findOptionById = (optionId) => {
   for (const category of counterStore.optionCategories) {
     for (const option of category.options) {
       if (getOptionId(option) === optionId) {
-        return option;
+        return option
       }
     }
   }
-  return null;
-};
+  return null
+}
 
 // 更新選項
 const updateOptions = () => {
-  const options = [];
+  const options = []
 
   // 遍歷所有選項類別
   Object.entries(selectedOptions.value).forEach(([categoryId, optionIds]) => {
     if (optionIds && optionIds.length > 0) {
-      const category = counterStore.optionCategories.find(cat => cat._id === categoryId);
+      const category = counterStore.optionCategories.find((cat) => cat._id === categoryId)
       if (category) {
-        const selections = optionIds.map(optionId => {
-          const option = findOptionById(optionId);
-          return option ? {
-            optionId: getOptionId(option),
-            name: getOptionName(option),
-            price: getOptionPrice(option)
-          } : null;
-        }).filter(Boolean);
+        const selections = optionIds
+          .map((optionId) => {
+            const option = findOptionById(optionId)
+            return option
+              ? {
+                  optionId: getOptionId(option),
+                  name: getOptionName(option),
+                  price: getOptionPrice(option),
+                }
+              : null
+          })
+          .filter(Boolean)
 
         if (selections.length > 0) {
           options.push({
             optionCategoryId: categoryId,
             optionCategoryName: category.name,
-            selections: selections
-          });
+            selections: selections,
+          })
         }
       }
     }
-  });
+  })
 
   // 即時更新購物車
-  counterStore.updateCartItemRealtime(options, itemNote.value);
-};
+  counterStore.updateCartItemRealtime(options, itemNote.value)
+}
 
 // 設置編輯模式的選項
 const setupEditMode = async (currentItem) => {
-  if (!currentItem || !currentItem.dishInstance) return;
+  if (!currentItem || !currentItem.dishInstance) return
 
   // 找到對應的餐點模板
-  const template = counterStore.getDishTemplate(currentItem.dishInstance.templateId);
+  const template = counterStore.getDishTemplate(currentItem.dishInstance.templateId)
 
   if (!template) {
-    console.error('找不到餐點模板:', currentItem.dishInstance.templateId);
-    return;
+    console.error('找不到餐點模板:', currentItem.dishInstance.templateId)
+    return
   }
 
   // 設置選中的餐點
-  selectedDish.value = template;
+  selectedDish.value = template
 
   // 設置備註
-  itemNote.value = currentItem.note || '';
+  itemNote.value = currentItem.note || ''
 
   // 等待下一個 tick 確保響應式系統準備好
-  await nextTick();
+  await nextTick()
 
   // 重建選項狀態
-  const newSelectedOptions = {};
+  const newSelectedOptions = {}
 
   if (currentItem.dishInstance.options) {
-    currentItem.dishInstance.options.forEach(optionCategory => {
+    currentItem.dishInstance.options.forEach((optionCategory) => {
+      const optionIds = optionCategory.selections.map((selection) => {
+        return selection.optionId
+      })
 
-      const optionIds = optionCategory.selections.map(selection => {
-        return selection.optionId;
-      });
-
-      newSelectedOptions[optionCategory.optionCategoryId] = optionIds;
-    });
+      newSelectedOptions[optionCategory.optionCategoryId] = optionIds
+    })
   }
 
   // 設置選項狀態
-  selectedOptions.value = newSelectedOptions;
-
-};
+  selectedOptions.value = newSelectedOptions
+}
 
 // 生命周期
 onMounted(async () => {
   if (!counterStore.menuData) {
-    await loadMenuData();
+    await loadMenuData()
   } else if (menuCategories.value.length > 0) {
     // 如果菜單資料已存在，自動選擇第一個類別
-    selectedCategoryId.value = menuCategories.value[0]._id;
+    selectedCategoryId.value = menuCategories.value[0]._id
     // 載入庫存資料
-    await loadInventoryData();
+    await loadInventoryData()
   }
-});
+})
 
 // 監聽編輯模式
 watch(
-  [() => counterStore.currentItem, () => counterStore.isEditMode, () => counterStore.optionCategories],
+  [
+    () => counterStore.currentItem,
+    () => counterStore.isEditMode,
+    () => counterStore.optionCategories,
+  ],
   async ([currentItem, isEditMode, optionCategories]) => {
     if (isEditMode && currentItem && currentItem.dishInstance && optionCategories.length > 0) {
-      await setupEditMode(currentItem);
+      await setupEditMode(currentItem)
     } else if (!isEditMode) {
       // 退出編輯模式時清空狀態
-      selectedDish.value = null;
-      selectedOptions.value = {};
-      itemNote.value = '';
+      selectedDish.value = null
+      selectedOptions.value = {}
+      itemNote.value = ''
     }
   },
-  { immediate: true }
-);
+  { immediate: true },
+)
 
 // 監聽菜單類別變化，自動選擇第一個類別
 watch(
   menuCategories,
   (newCategories) => {
     if (newCategories.length > 0 && !selectedCategoryId.value) {
-      selectedCategoryId.value = newCategories[0]._id;
+      selectedCategoryId.value = newCategories[0]._id
     }
   },
-  { immediate: true }
-);
+  { immediate: true },
+)
 
 // 監聽菜單變化，載入庫存資料
-watch(
-  menuCategories,
-  async (newCategories) => {
-    if (newCategories.length > 0) {
-      await loadInventoryData();
-    }
+watch(menuCategories, async (newCategories) => {
+  if (newCategories.length > 0) {
+    await loadInventoryData()
   }
-);
+})
 </script>
 
 <style scoped>
@@ -745,7 +796,9 @@ watch(
 
 .menu-item-card {
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   position: relative;
 }
 

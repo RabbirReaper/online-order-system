@@ -19,15 +19,15 @@ export default function (apiClient) {
       // 根據參數構建路徑
       if (params.brandId && params.storeId) {
         // 店鋪級別的管理員查詢
-        const { brandId, storeId, ...queryParams } = params;
-        return apiClient.get(`/admin/brands/${brandId}/stores/${storeId}`, { params: queryParams });
+        const { brandId, storeId, ...queryParams } = params
+        return apiClient.get(`/admin/brands/${brandId}/stores/${storeId}`, { params: queryParams })
       } else if (params.brandId) {
         // 品牌級別的管理員查詢 - 只顯示品牌相關的管理員，不包括系統管理員
-        const { brandId, ...queryParams } = params;
-        return apiClient.get(`/admin/brands/${brandId}`, { params: queryParams });
+        const { brandId, ...queryParams } = params
+        return apiClient.get(`/admin/brands/${brandId}`, { params: queryParams })
       } else {
         // 系統級別的管理員查詢 - 顯示所有管理員
-        return apiClient.get('/admin', { params });
+        return apiClient.get('/admin', { params })
       }
     },
 
@@ -37,7 +37,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAdminById(id) {
-      return apiClient.get(`/admin/${id}`);
+      return apiClient.get(`/admin/${id}`)
     },
 
     /**
@@ -58,13 +58,13 @@ export default function (apiClient) {
       // 根據參數構建路徑
       if (brandId && storeId) {
         // 在店鋪級別創建管理員
-        return apiClient.post(`/admin/brands/${brandId}/stores/${storeId}`, data);
+        return apiClient.post(`/admin/brands/${brandId}/stores/${storeId}`, data)
       } else if (brandId) {
         // 在品牌級別創建管理員
-        return apiClient.post(`/admin/brands/${brandId}`, data);
+        return apiClient.post(`/admin/brands/${brandId}`, data)
       } else {
         // 在系統級別創建管理員
-        return apiClient.post('/admin', data);
+        return apiClient.post('/admin', data)
       }
     },
 
@@ -80,7 +80,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateAdmin({ id, data }) {
-      return apiClient.put(`/admin/${id}`, data);
+      return apiClient.put(`/admin/${id}`, data)
     },
 
     /**
@@ -89,7 +89,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteAdmin(id) {
-      return apiClient.delete(`/admin/${id}`);
+      return apiClient.delete(`/admin/${id}`)
     },
 
     /**
@@ -100,7 +100,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleAdminStatus({ id, isActive }) {
-      return apiClient.patch(`/admin/${id}/status`, { isActive });
-    }
-  };
+      return apiClient.patch(`/admin/${id}/status`, { isActive })
+    },
+  }
 }

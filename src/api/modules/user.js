@@ -11,7 +11,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserProfile(brandId) {
-      return apiClient.get(`/user/brands/${brandId}/profile`);
+      return apiClient.get(`/user/brands/${brandId}/profile`)
     },
 
     /**
@@ -22,7 +22,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateUserProfile({ brandId, profileData }) {
-      return apiClient.put(`/user/brands/${brandId}/profile`, profileData);
+      return apiClient.put(`/user/brands/${brandId}/profile`, profileData)
     },
 
     /**
@@ -33,7 +33,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     addAddress({ brandId, addressData }) {
-      return apiClient.post(`/user/brands/${brandId}/addresses`, addressData);
+      return apiClient.post(`/user/brands/${brandId}/addresses`, addressData)
     },
 
     /**
@@ -45,7 +45,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateAddress({ brandId, addressId, data }) {
-      return apiClient.put(`/user/brands/${brandId}/addresses/${addressId}`, data);
+      return apiClient.put(`/user/brands/${brandId}/addresses/${addressId}`, data)
     },
 
     /**
@@ -56,7 +56,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteAddress({ brandId, addressId }) {
-      return apiClient.delete(`/user/brands/${brandId}/addresses/${addressId}`);
+      return apiClient.delete(`/user/brands/${brandId}/addresses/${addressId}`)
     },
-  };
+  }
 }

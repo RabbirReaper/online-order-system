@@ -1,5 +1,13 @@
 <template>
-  <BModal ref="modalRef" v-model="isVisible" title="選擇付款方式" size="lg" centered hide-footer @hide="handleClose">
+  <BModal
+    ref="modalRef"
+    v-model="isVisible"
+    title="選擇付款方式"
+    size="lg"
+    centered
+    hide-footer
+    @hide="handleClose"
+  >
     <div class="text-center">
       <div class="mb-4">
         <h3>應付金額：${{ total }}</h3>
@@ -16,7 +24,10 @@
 
         <!-- 信用卡付款 -->
         <div class="col-4">
-          <button class="btn btn-primary btn-lg w-100 py-4" @click="handlePaymentMethod('credit_card')">
+          <button
+            class="btn btn-primary btn-lg w-100 py-4"
+            @click="handlePaymentMethod('credit_card')"
+          >
             <i class="bi bi-credit-card fs-1 d-block mb-2"></i>
             信用卡
           </button>
@@ -24,7 +35,10 @@
 
         <!-- LINE Pay -->
         <div class="col-4">
-          <button class="btn btn-warning btn-lg w-100 py-4" @click="handlePaymentMethod('line_pay')">
+          <button
+            class="btn btn-warning btn-lg w-100 py-4"
+            @click="handlePaymentMethod('line_pay')"
+          >
             <i class="bi bi-line fs-1 d-block mb-2"></i>
             LINE Pay
           </button>
@@ -35,60 +49,63 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { BModal } from 'bootstrap-vue-next';
+import { ref, watch } from 'vue'
+import { BModal } from 'bootstrap-vue-next'
 
 const props = defineProps({
   total: {
     type: Number,
-    required: true
+    required: true,
   },
   modelValue: {
     type: Boolean,
-    default: false
-  }
-});
+    default: false,
+  },
+})
 
-const emit = defineEmits(['update:modelValue', 'close', 'paymentSelected']);
+const emit = defineEmits(['update:modelValue', 'close', 'paymentSelected'])
 
 // Modal 顯示狀態
-const modalRef = ref();
-const isVisible = ref(props.modelValue);
+const modalRef = ref()
+const isVisible = ref(props.modelValue)
 
 // 監聽 modelValue 變化
-watch(() => props.modelValue, (newValue) => {
-  isVisible.value = newValue;
-});
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    isVisible.value = newValue
+  },
+)
 
 // 監聽 isVisible 變化，同步到父組件
 watch(isVisible, (newValue) => {
-  emit('update:modelValue', newValue);
-});
+  emit('update:modelValue', newValue)
+})
 
 // 處理付款方式選擇
 const handlePaymentMethod = (paymentMethod) => {
   emit('paymentSelected', {
     paymentMethod,
-    paymentType: 'On-site'
-  });
-  handleClose();
-};
+    paymentType: 'On-site',
+  })
+  handleClose()
+}
 
 // 處理關閉
 const handleClose = () => {
-  isVisible.value = false;
-  emit('close');
-};
+  isVisible.value = false
+  emit('close')
+}
 
 // 暴露方法給父組件
 defineExpose({
   show: () => {
-    isVisible.value = true;
+    isVisible.value = true
   },
   hide: () => {
-    isVisible.value = false;
-  }
-});
+    isVisible.value = false
+  },
+})
 </script>
 
 <style scoped>

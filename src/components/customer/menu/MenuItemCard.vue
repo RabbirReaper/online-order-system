@@ -1,7 +1,7 @@
 <template>
   <div class="menu-item-card" :class="{ 'sold-out': isItemSoldOut }" @click="handleClick">
     <div class="item-img-container">
-      <img :src="itemImage" :alt="itemName" class="item-img">
+      <img :src="itemImage" :alt="itemName" class="item-img" />
       <div class="item-img-overlay"></div>
 
       <!-- 商品類型標籤 -->
@@ -21,10 +21,12 @@
 
         <!-- 庫存狀態顯示（僅餐點） -->
         <div v-if="showInventoryBadge" class="inventory-badge">
-          <span v-if="inventoryInfo.isSoldOut" class="badge bg-danger text-white">
-            售完
-          </span>
-          <span v-else-if="inventoryInfo.enableAvailableStock" class="badge" :class="stockBadgeClass">
+          <span v-if="inventoryInfo.isSoldOut" class="badge bg-danger text-white"> 售完 </span>
+          <span
+            v-else-if="inventoryInfo.enableAvailableStock"
+            class="badge"
+            :class="stockBadgeClass"
+          >
             庫存{{ inventoryInfo.availableStock }}
           </span>
         </div>
@@ -65,79 +67,79 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed } from 'vue'
 
 const props = defineProps({
   item: {
     type: Object,
-    required: true
+    required: true,
   },
   inventoryInfo: {
     type: Object,
-    default: null
+    default: null,
   },
   menuType: {
     type: String,
-    default: 'food' // 'food', 'cash_coupon', 'point_exchange'
-  }
-});
+    default: 'food', // 'food', 'cash_coupon', 'point_exchange'
+  },
+})
 
-const emit = defineEmits(['select-item']);
+const emit = defineEmits(['select-item'])
 
 // 計算屬性 - 商品基本資訊
 const itemName = computed(() => {
   if (props.item.itemType === 'dish') {
-    return props.item.dishTemplate?.name || '未命名餐點';
+    return props.item.dishTemplate?.name || '未命名餐點'
   } else if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.name || '未命名套餐';
+    return props.item.bundle?.name || '未命名套餐'
   }
-  return '未知商品';
-});
+  return '未知商品'
+})
 
 const itemDescription = computed(() => {
   if (props.item.itemType === 'dish') {
-    return props.item.dishTemplate?.description || '';
+    return props.item.dishTemplate?.description || ''
   } else if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.description || '';
+    return props.item.bundle?.description || ''
   }
-  return '';
-});
+  return ''
+})
 
 const truncatedDescription = computed(() => {
-  const text = itemDescription.value;
-  const maxLength = 30;
-  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-});
+  const text = itemDescription.value
+  const maxLength = 30
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
+})
 
 const itemImage = computed(() => {
-  let imageUrl = '';
+  let imageUrl = ''
 
   if (props.item.itemType === 'dish') {
-    imageUrl = props.item.dishTemplate?.image?.url;
+    imageUrl = props.item.dishTemplate?.image?.url
   } else if (props.item.itemType === 'bundle') {
-    imageUrl = props.item.bundle?.image?.url;
+    imageUrl = props.item.bundle?.image?.url
 
     // 如果套餐沒有圖片，嘗試使用第一個餐點的圖片
     if (!imageUrl && props.item.bundle?.bundleItems?.length > 0) {
-      const firstDishItem = props.item.bundle.bundleItems.find(bundleItem =>
-        bundleItem.itemType === 'dish' && bundleItem.dishTemplate?.image?.url
-      );
+      const firstDishItem = props.item.bundle.bundleItems.find(
+        (bundleItem) => bundleItem.itemType === 'dish' && bundleItem.dishTemplate?.image?.url,
+      )
       if (firstDishItem) {
-        imageUrl = firstDishItem.dishTemplate.image.url;
+        imageUrl = firstDishItem.dishTemplate.image.url
       }
     }
   }
 
-  return imageUrl || '/placeholder.jpg';
-});
+  return imageUrl || '/placeholder.jpg'
+})
 
 // 計算屬性 - 餐點價格
 const dishPrice = computed(() => {
   if (props.item.itemType === 'dish') {
-    return props.item.priceOverride || props.item.dishTemplate?.basePrice || 0;
+    return props.item.priceOverride || props.item.dishTemplate?.basePrice || 0
   }
-  return 0;
-});
+  return 0
+})
 
 // 計算屬性 - 套餐價格
 const bundleCashPrice = computed(() => {
@@ -145,104 +147,106 @@ const bundleCashPrice = computed(() => {
     // 根據菜單類型決定顯示的價格
     if (props.menuType === 'cash_coupon') {
       // 現金購買預購券菜單，顯示現金價格
-      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0;
+      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0
     } else {
       // 其他菜單類型，顯示一般現金價格
-      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0;
+      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0
     }
   }
-  return 0;
-});
+  return 0
+})
 
 const bundleOriginalCashPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.originalPrice || 0;
+    return props.item.bundle?.originalPrice || 0
   }
-  return 0;
-});
+  return 0
+})
 
 const hasOriginalCashPrice = computed(() => {
-  return bundleOriginalCashPrice.value > bundleCashPrice.value;
-});
+  return bundleOriginalCashPrice.value > bundleCashPrice.value
+})
 
 const bundlePointPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
     return props.item.pointOverride !== undefined
       ? props.item.pointOverride
-      : (props.item.bundle?.sellingPoint || 0);
+      : props.item.bundle?.sellingPoint || 0
   }
-  return 0;
-});
+  return 0
+})
 
 const bundleOriginalPointPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.originalPoint || 0;
+    return props.item.bundle?.originalPoint || 0
   }
-  return 0;
-});
+  return 0
+})
 
 const hasOriginalPointPrice = computed(() => {
-  return bundleOriginalPointPrice.value > bundlePointPrice.value;
-});
+  return bundleOriginalPointPrice.value > bundlePointPrice.value
+})
 
 // 計算屬性 - 庫存狀態
 const showInventoryBadge = computed(() => {
-  return props.item.itemType === 'dish' &&
+  return (
+    props.item.itemType === 'dish' &&
     props.inventoryInfo &&
-    (props.inventoryInfo.enableAvailableStock || props.inventoryInfo.isSoldOut);
-});
+    (props.inventoryInfo.enableAvailableStock || props.inventoryInfo.isSoldOut)
+  )
+})
 
 const isItemSoldOut = computed(() => {
   // 套餐不檢查庫存
   if (props.item.itemType === 'bundle') {
-    return false;
+    return false
   }
 
   // 餐點庫存檢查
   if (props.item.itemType === 'dish' && props.inventoryInfo) {
     // 手動設為售完
     if (props.inventoryInfo.isSoldOut) {
-      return true;
+      return true
     }
     // 啟用庫存且庫存為0
     if (props.inventoryInfo.enableAvailableStock && props.inventoryInfo.availableStock <= 0) {
-      return true;
+      return true
     }
   }
 
-  return false;
-});
+  return false
+})
 
 const stockBadgeClass = computed(() => {
-  if (!props.inventoryInfo || props.inventoryInfo.isSoldOut) return '';
-  if (!props.inventoryInfo.enableAvailableStock) return '';
+  if (!props.inventoryInfo || props.inventoryInfo.isSoldOut) return ''
+  if (!props.inventoryInfo.enableAvailableStock) return ''
 
-  const stock = props.inventoryInfo.availableStock;
+  const stock = props.inventoryInfo.availableStock
   if (stock <= 0) {
-    return 'bg-danger text-white';
+    return 'bg-danger text-white'
   } else if (stock <= 5) {
-    return 'bg-warning text-dark';
+    return 'bg-warning text-dark'
   } else {
-    return 'bg-success text-white';
+    return 'bg-success text-white'
   }
-});
+})
 
 const soldOutText = computed(() => {
   if (props.inventoryInfo?.isSoldOut) {
-    return '暫停供應';
+    return '暫停供應'
   }
-  return '售完';
-});
+  return '售完'
+})
 
 // 方法
 const handleClick = () => {
   if (isItemSoldOut.value) {
-    return;
+    return
   }
 
   // console.log('MenuItemCard: 點擊項目', props.item);
-  emit('select-item', props.item);
-};
+  emit('select-item', props.item)
+}
 </script>
 
 <style scoped>

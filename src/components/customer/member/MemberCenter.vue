@@ -144,16 +144,30 @@
   </div>
 
   <!-- 登出確認模態框 -->
-  <BModal id="logoutModal" title="確認登出" ok-title="確認登出" ok-variant="danger" cancel-title="取消" @ok="confirmLogout"
-    ref="logoutModal">
+  <BModal
+    id="logoutModal"
+    title="確認登出"
+    ok-title="確認登出"
+    ok-variant="danger"
+    cancel-title="取消"
+    @ok="confirmLogout"
+    ref="logoutModal"
+  >
     <div class="text-center">
-      <i class="bi bi-question-circle-fill text-warning mb-3" style="font-size: 3rem;"></i>
+      <i class="bi bi-question-circle-fill text-warning mb-3" style="font-size: 3rem"></i>
       <p>確定要登出嗎？</p>
     </div>
   </BModal>
 
   <!-- 錯誤模態框 -->
-  <BModal id="errorModal" title="操作失敗" ok-title="確認" ok-variant="danger" :hide-footer="false" ref="errorModal">
+  <BModal
+    id="errorModal"
+    title="操作失敗"
+    ok-title="確認"
+    ok-variant="danger"
+    :hide-footer="false"
+    ref="errorModal"
+  >
     <div class="alert alert-danger">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
       {{ errorMessage }}
@@ -162,100 +176,100 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/customerAuth';
-import api from '@/api';
-import { BModal } from 'bootstrap-vue-next';
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/customerAuth'
+import api from '@/api'
+import { BModal } from 'bootstrap-vue-next'
 
 // 路由與狀態
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
 // 模態框參考
-const logoutModal = ref(null);
-const errorModal = ref(null);
+const logoutModal = ref(null)
+const errorModal = ref(null)
 
 // 狀態管理
-const isLoading = ref(true);
-const errorMessage = ref('');
-const userProfile = ref({});
+const isLoading = ref(true)
+const errorMessage = ref('')
+const userProfile = ref({})
 
 // 假資料 (後續會被 API 替換)
-const pointsBalance = ref(0);
-const availableCoupons = ref(0);
-const totalOrders = ref(0);
+const pointsBalance = ref(0)
+const availableCoupons = ref(0)
+const totalOrders = ref(0)
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId');
-});
+  return sessionStorage.getItem('currentBrandId')
+})
 
 const storeId = computed(() => {
-  return sessionStorage.getItem('currentStoreId');
-});
+  return sessionStorage.getItem('currentStoreId')
+})
 
 // 返回上一頁
 const goBack = () => {
   if (brandId.value && storeId.value) {
-    router.push(`/stores/${brandId.value}/${storeId.value}`);
+    router.push(`/stores/${brandId.value}/${storeId.value}`)
   } else {
-    router.back();
+    router.back()
   }
-};
+}
 
 // 導航方法
 const goToProfile = () => {
-  router.push('/member/profile');
-};
+  router.push('/member/profile')
+}
 
 const goToPoints = () => {
-  router.push('/member/points');
-};
+  router.push('/member/points')
+}
 
 const goToCoupons = () => {
-  router.push('/member/coupons');
-};
+  router.push('/member/coupons')
+}
 
 const goToOrderHistory = () => {
-  router.push('/member/order-history');
-};
+  router.push('/member/order-history')
+}
 
 // 登出方法
 const logout = () => {
   if (logoutModal.value) {
-    logoutModal.value.show();
+    logoutModal.value.show()
   }
-};
+}
 
 const confirmLogout = async () => {
   try {
-    await authStore.logout();
-    router.push(`/stores/${brandId.value}/${storeId.value}`);
+    await authStore.logout()
+    router.push(`/stores/${brandId.value}/${storeId.value}`)
   } catch (error) {
-    console.error('登出失敗:', error);
-    errorMessage.value = '登出失敗，請稍後再試';
+    console.error('登出失敗:', error)
+    errorMessage.value = '登出失敗，請稍後再試'
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   }
-};
+}
 
 // 載入用戶資料
 const loadUserData = async () => {
   try {
-    isLoading.value = true;
-    errorMessage.value = '';
+    isLoading.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 載入用戶基本資料
-    const profileResponse = await authStore.getUserProfile();
-    userProfile.value = profileResponse;
+    const profileResponse = await authStore.getUserProfile()
+    userProfile.value = profileResponse
 
     // TODO: 後續加入這些 API 調用
     // 載入點數餘額
@@ -271,31 +285,30 @@ const loadUserData = async () => {
     // totalOrders.value = ordersResponse.total || 0;
 
     // 暫時使用假資料
-    pointsBalance.value = 1250;
-    availableCoupons.value = 3;
-    totalOrders.value = 18;
-
+    pointsBalance.value = 1250
+    availableCoupons.value = 3
+    totalOrders.value = 18
   } catch (error) {
-    console.error('載入用戶資料失敗:', error);
+    console.error('載入用戶資料失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '無法載入用戶資料';
+      errorMessage.value = error.response.data.message || '無法載入用戶資料'
     } else {
-      errorMessage.value = '無法載入用戶資料，請稍後再試';
+      errorMessage.value = '無法載入用戶資料，請稍後再試'
     }
 
     if (errorModal.value) {
-      errorModal.value.show();
+      errorModal.value.show()
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 組件掛載後載入資料
 onMounted(() => {
-  loadUserData();
-});
+  loadUserData()
+})
 </script>
 
 <style scoped>

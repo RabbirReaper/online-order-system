@@ -11,9 +11,7 @@
       <div class="d-flex gap-2">
         <!-- 新增按鈕組 -->
         <BDropdown variant="primary" text="新增庫存" class="btn-group">
-          <template #button-content>
-            <i class="bi bi-plus-lg me-1"></i>新增庫存
-          </template>
+          <template #button-content> <i class="bi bi-plus-lg me-1"></i>新增庫存 </template>
           <BDropdownItem @click="openInitializeModal">
             <i class="bi bi-box-seam me-2"></i>初始化餐點庫存
           </BDropdownItem>
@@ -24,11 +22,9 @@
 
         <!-- 原有的篩選和搜尋按鈕 -->
         <BDropdown variant="outline-secondary" text="篩選" auto-close="outside">
-          <template #button-content>
-            <i class="bi bi-filter me-1"></i>篩選
-          </template>
+          <template #button-content> <i class="bi bi-filter me-1"></i>篩選 </template>
           <template #default>
-            <div class="dropdown-menu-form p-3" style="min-width: 300px;">
+            <div class="dropdown-menu-form p-3" style="min-width: 300px">
               <!-- 庫存類型篩選 -->
               <div class="mb-3">
                 <label class="form-label">庫存類型</label>
@@ -54,11 +50,14 @@
               <!-- 追蹤狀態篩選 -->
               <div class="mb-3">
                 <div class="form-check">
-                  <input class="form-check-input" type="checkbox" v-model="filters.onlyTracked" id="onlyTracked"
-                    @change="applyFilters">
-                  <label class="form-check-label" for="onlyTracked">
-                    只顯示追蹤庫存的項目
-                  </label>
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    v-model="filters.onlyTracked"
+                    id="onlyTracked"
+                    @change="applyFilters"
+                  />
+                  <label class="form-check-label" for="onlyTracked"> 只顯示追蹤庫存的項目 </label>
                 </div>
               </div>
 
@@ -67,8 +66,14 @@
           </template>
         </BDropdown>
 
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="搜尋項目名稱..." v-model="searchQuery" @input="handleSearch">
+        <div class="input-group" style="width: 300px">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="搜尋項目名稱..."
+            v-model="searchQuery"
+            @input="handleSearch"
+          />
           <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
             <i class="bi bi-search"></i>
           </button>
@@ -148,7 +153,10 @@
             <tbody>
               <tr v-for="item in inventories" :key="item._id" :class="getRowClass(item)">
                 <td>
-                  <span class="badge" :class="item.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
+                  <span
+                    class="badge"
+                    :class="item.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'"
+                  >
                     {{ item.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                   </span>
                 </td>
@@ -169,20 +177,35 @@
                 <td>{{ item.targetStockLevel || '-' }}</td>
                 <td>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" :checked="item.isInventoryTracked" disabled>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      :checked="item.isInventoryTracked"
+                      disabled
+                    />
                   </div>
                 </td>
                 <td>
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" :checked="item.enableAvailableStock" disabled>
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      :checked="item.enableAvailableStock"
+                      disabled
+                    />
                   </div>
                 </td>
                 <td>
                   <div class="form-check form-switch">
-                    <input v-if="item.inventoryType === 'DishTemplate'" class="form-check-input" type="checkbox"
-                      v-model="item.isSoldOut" @change="toggleSoldOut(item)"
-                      :disabled="pendingSoldOutItem && pendingSoldOutItem._id === item._id">
-                    <input v-else class="form-check-input" type="checkbox" disabled>
+                    <input
+                      v-if="item.inventoryType === 'DishTemplate'"
+                      class="form-check-input"
+                      type="checkbox"
+                      v-model="item.isSoldOut"
+                      @change="toggleSoldOut(item)"
+                      :disabled="pendingSoldOutItem && pendingSoldOutItem._id === item._id"
+                    />
+                    <input v-else class="form-check-input" type="checkbox" disabled />
                   </div>
                 </td>
                 <td>
@@ -193,8 +216,10 @@
                     <BButton variant="outline-secondary" @click="openShowSettingModal(item)">
                       <i class="bi bi-gear me-1"></i> 設定
                     </BButton>
-                    <BButton variant="outline-secondary"
-                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`">
+                    <BButton
+                      variant="outline-secondary"
+                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`"
+                    >
                       <i class="bi bi-eye"></i> 詳情
                     </BButton>
                   </BButtonGroup>
@@ -221,7 +246,12 @@
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
           <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
         </li>
-        <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: currentPage === page }">
+        <li
+          class="page-item"
+          v-for="page in visiblePages"
+          :key="page"
+          :class="{ active: currentPage === page }"
+        >
           <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
         </li>
         <li class="page-item" :class="{ disabled: currentPage === pagination.totalPages }">
@@ -231,77 +261,106 @@
     </nav>
 
     <!-- 初始化餐點庫存 Modal -->
-    <InitializeDishInventoryModal v-if="showInitializeModal" :store-id="storeId" :brand-id="brandId"
-      @close="showInitializeModal = false" @success="handleInitializeSuccess" />
+    <InitializeDishInventoryModal
+      v-if="showInitializeModal"
+      :store-id="storeId"
+      :brand-id="brandId"
+      @close="showInitializeModal = false"
+      @success="handleInitializeSuccess"
+    />
 
     <!-- 新增自訂義庫存 Modal -->
-    <CreateInventoryModal v-if="showCreateModal" :store-id="storeId" :brand-id="brandId"
-      @close="showCreateModal = false" @success="handleCreateSuccess" />
+    <CreateInventoryModal
+      v-if="showCreateModal"
+      :store-id="storeId"
+      :brand-id="brandId"
+      @close="showCreateModal = false"
+      @success="handleCreateSuccess"
+    />
 
     <!-- 庫存調整 Modal -->
-    <StockAdjustModal v-if="showAdjustModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
-      @close="showAdjustModal = false" @success="handleAdjustSuccess" />
+    <StockAdjustModal
+      v-if="showAdjustModal"
+      :item="selectedItem"
+      :store-id="storeId"
+      :brand-id="brandId"
+      @close="showAdjustModal = false"
+      @success="handleAdjustSuccess"
+    />
 
     <!-- 庫存設定 -->
-    <StockSettingModal v-if="showSettingModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
-      @close="showSettingModal = false" @success="handleSettingSuccess" />
+    <StockSettingModal
+      v-if="showSettingModal"
+      :item="selectedItem"
+      :store-id="storeId"
+      :brand-id="brandId"
+      @close="showSettingModal = false"
+      @success="handleSettingSuccess"
+    />
   </div>
   <!-- 確認售完狀態變更 Modal -->
-  <BModal v-model="showSoldOutConfirm" title="確認變更售完狀態" @ok="confirmSoldOutChange" @cancel="cancelSoldOutChange">
+  <BModal
+    v-model="showSoldOutConfirm"
+    title="確認變更售完狀態"
+    @ok="confirmSoldOutChange"
+    @cancel="cancelSoldOutChange"
+  >
     <p v-if="pendingSoldOutItem?.isSoldOut">
       確定要將「{{ pendingSoldOutItem?.itemName }}」設為售完嗎？設為售完後，顧客將無法點餐此項目。
     </p>
     <p v-else>
-      確定要將「{{ pendingSoldOutItem?.itemName }}」恢復為正常狀態嗎？恢復後，顧客將可以正常點餐此項目。
+      確定要將「{{
+        pendingSoldOutItem?.itemName
+      }}」恢復為正常狀態嗎？恢復後，顧客將可以正常點餐此項目。
     </p>
   </BModal>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { BDropdown, BDropdownItem, BButton, BButtonGroup, BModal } from 'bootstrap-vue-next';
-import api from '@/api';
-import InitializeDishInventoryModal from './InitializeDishInventoryModal.vue';
-import CreateInventoryModal from './CreateInventoryModal.vue';
-import StockAdjustModal from './StockAdjustModal.vue';
-import StockSettingModal from './StockSettingModal.vue';
+import { ref, computed, reactive, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { BDropdown, BDropdownItem, BButton, BButtonGroup, BModal } from 'bootstrap-vue-next'
+import api from '@/api'
+import InitializeDishInventoryModal from './InitializeDishInventoryModal.vue'
+import CreateInventoryModal from './CreateInventoryModal.vue'
+import StockAdjustModal from './StockAdjustModal.vue'
+import StockSettingModal from './StockSettingModal.vue'
 
 // 路由
-const route = useRoute();
-const router = useRouter();
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.params.storeId);
+const route = useRoute()
+const router = useRouter()
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.params.storeId)
 
 // 狀態
-const isLoading = ref(true);
-const error = ref('');
-const inventories = ref([]);
-const searchQuery = ref('');
-const currentPage = ref(1);
-const storeName = ref('');
-const showSoldOutConfirm = ref(false);
-const pendingSoldOutItem = ref(null);
+const isLoading = ref(true)
+const error = ref('')
+const inventories = ref([])
+const searchQuery = ref('')
+const currentPage = ref(1)
+const storeName = ref('')
+const showSoldOutConfirm = ref(false)
+const pendingSoldOutItem = ref(null)
 
 // Modal 狀態
-const showInitializeModal = ref(false);
-const showCreateModal = ref(false);
-const showAdjustModal = ref(false);
-const selectedItem = ref(null);
-const showSettingModal = ref(false);
+const showInitializeModal = ref(false)
+const showCreateModal = ref(false)
+const showAdjustModal = ref(false)
+const selectedItem = ref(null)
+const showSettingModal = ref(false)
 // 篩選條件
 const filters = reactive({
   inventoryType: '',
   status: '',
-  onlyTracked: false
-});
+  onlyTracked: false,
+})
 
 // 分頁
 const pagination = reactive({
   total: 0,
   totalPages: 0,
-  limit: 20
-});
+  limit: 20,
+})
 
 // 統計數據
 const stats = ref({
@@ -309,233 +368,244 @@ const stats = ref({
   lowStock: 0,
   outOfStock: 0,
   soldOut: 0,
-  needsRestock: 0
-});
+  needsRestock: 0,
+})
 
 // 計算可見頁碼
 const visiblePages = computed(() => {
-  const total = pagination.totalPages;
-  const current = currentPage.value;
-  const pages = [];
+  const total = pagination.totalPages
+  const current = currentPage.value
+  const pages = []
 
   if (total <= 7) {
     for (let i = 1; i <= total; i++) {
-      pages.push(i);
+      pages.push(i)
     }
   } else {
     if (current <= 3) {
-      for (let i = 1; i <= 5; i++) pages.push(i);
-      pages.push('...');
-      pages.push(total);
+      for (let i = 1; i <= 5; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
     } else if (current >= total - 2) {
-      pages.push(1);
-      pages.push('...');
-      for (let i = total - 4; i <= total; i++) pages.push(i);
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) pages.push(i)
     } else {
-      pages.push(1);
-      pages.push('...');
-      for (let i = current - 1; i <= current + 1; i++) pages.push(i);
-      pages.push('...');
-      pages.push(total);
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
     }
   }
 
-  return pages;
-});
+  return pages
+})
 
 // Modal 操作方法
 const openInitializeModal = () => {
-  showInitializeModal.value = true;
-};
+  showInitializeModal.value = true
+}
 
 const openCreateModal = () => {
-  showCreateModal.value = true;
-};
+  showCreateModal.value = true
+}
 
 const openAdjustModal = (item) => {
-  selectedItem.value = item;
-  showAdjustModal.value = true;
-};
+  selectedItem.value = item
+  showAdjustModal.value = true
+}
 
 const openShowSettingModal = (item) => {
-  selectedItem.value = item;
-  showSettingModal.value = true;
-};
+  selectedItem.value = item
+  showSettingModal.value = true
+}
 
 const handleInitializeSuccess = () => {
-  showInitializeModal.value = false;
-  fetchInventory();
-};
+  showInitializeModal.value = false
+  fetchInventory()
+}
 
 const handleCreateSuccess = () => {
-  showCreateModal.value = false;
-  fetchInventory();
-};
+  showCreateModal.value = false
+  fetchInventory()
+}
 
 const handleAdjustSuccess = () => {
-  showAdjustModal.value = false;
-  selectedItem.value = null;
-  fetchInventory();
-};
+  showAdjustModal.value = false
+  selectedItem.value = null
+  fetchInventory()
+}
 
 // 處理設定成功
 const handleSettingSuccess = () => {
-  showSettingModal.value = false;
-  selectedItem.value = null;
-  fetchInventory();
-};
+  showSettingModal.value = false
+  selectedItem.value = null
+  fetchInventory()
+}
 
 const toggleSoldOut = (item) => {
   // 立即恢復原始狀態，等待用戶確認
-  pendingSoldOutItem.value = { ...item };
-  showSoldOutConfirm.value = true;
-};
+  pendingSoldOutItem.value = { ...item }
+  showSoldOutConfirm.value = true
+}
 
 const confirmSoldOutChange = async () => {
-  if (!pendingSoldOutItem.value) return;
+  if (!pendingSoldOutItem.value) return
 
   try {
     await api.inventory.toggleSoldOut({
       storeId: storeId.value,
       inventoryId: pendingSoldOutItem.value._id,
-      isSoldOut: pendingSoldOutItem.value.isSoldOut
-    });
+      isSoldOut: pendingSoldOutItem.value.isSoldOut,
+    })
 
     // API 成功，更新統計
-    updateStats();
+    updateStats()
   } catch (err) {
-    console.error('切換售完狀態失敗:', err);
-    error.value = err.response?.data?.message || '切換售完狀態時發生錯誤';
+    console.error('切換售完狀態失敗:', err)
+    error.value = err.response?.data?.message || '切換售完狀態時發生錯誤'
 
     // 失敗時恢復原始狀態
-    const index = inventories.value.findIndex(item => item._id === pendingSoldOutItem.value._id);
+    const index = inventories.value.findIndex((item) => item._id === pendingSoldOutItem.value._id)
     if (index !== -1) {
-      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut;
+      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut
     }
   } finally {
-    showSoldOutConfirm.value = false;
-    pendingSoldOutItem.value = null;
+    showSoldOutConfirm.value = false
+    pendingSoldOutItem.value = null
   }
-};
+}
 
 const cancelSoldOutChange = () => {
   // 取消時恢復原始狀態
   if (pendingSoldOutItem.value) {
-    const index = inventories.value.findIndex(item => item._id === pendingSoldOutItem.value._id);
+    const index = inventories.value.findIndex((item) => item._id === pendingSoldOutItem.value._id)
     if (index !== -1) {
-      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut;
+      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut
     }
   }
 
-  showSoldOutConfirm.value = false;
-  pendingSoldOutItem.value = null;
-};
+  showSoldOutConfirm.value = false
+  pendingSoldOutItem.value = null
+}
 
 // 庫存狀態相關方法
 const getStatusText = (item) => {
-  if (item.isSoldOut) return '售完';
-  if (!item.isInventoryTracked) return '不追蹤';
-  if (item.totalStock === 0) return '缺貨';
-  if (item.needsRestock) return '需補貨';
-  if (item.totalStock <= item.minStockAlert) return '低庫存';
-  return '正常';
-};
+  if (item.isSoldOut) return '售完'
+  if (!item.isInventoryTracked) return '不追蹤'
+  if (item.totalStock === 0) return '缺貨'
+  if (item.needsRestock) return '需補貨'
+  if (item.totalStock <= item.minStockAlert) return '低庫存'
+  return '正常'
+}
 
 const getStatusBadgeClass = (item) => {
-  const status = getStatusText(item);
+  const status = getStatusText(item)
   switch (status) {
-    case '售完': return 'bg-danger';
-    case '缺貨': return 'bg-danger';
-    case '需補貨': return 'bg-warning text-dark';
-    case '低庫存': return 'bg-warning text-dark';
-    case '不追蹤': return 'bg-secondary';
-    default: return 'bg-success';
+    case '售完':
+      return 'bg-danger'
+    case '缺貨':
+      return 'bg-danger'
+    case '需補貨':
+      return 'bg-warning text-dark'
+    case '低庫存':
+      return 'bg-warning text-dark'
+    case '不追蹤':
+      return 'bg-secondary'
+    default:
+      return 'bg-success'
   }
-};
+}
 
 const getRowClass = (item) => {
-  const status = getStatusText(item);
-  if (status === '售完' || status === '缺貨') return 'table-danger';
-  if (status === '低庫存' || status === '需補貨') return 'table-warning';
-  return '';
-};
+  const status = getStatusText(item)
+  if (status === '售完' || status === '缺貨') return 'table-danger'
+  if (status === '低庫存' || status === '需補貨') return 'table-warning'
+  return ''
+}
 
 // 獲取庫存列表
 const fetchInventory = async () => {
   if (!storeId.value) {
-    error.value = '請選擇店鋪';
-    return;
+    error.value = '請選擇店鋪'
+    return
   }
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     const params = {
       storeId: storeId.value,
       search: searchQuery.value,
       page: currentPage.value,
-      limit: pagination.limit
-    };
+      limit: pagination.limit,
+    }
 
     if (filters.inventoryType) {
-      params.inventoryType = filters.inventoryType;
+      params.inventoryType = filters.inventoryType
     }
 
     if (filters.onlyTracked) {
-      params.onlyTracked = true;
+      params.onlyTracked = true
     }
 
-    const response = await api.inventory.getStoreInventory(params);
+    const response = await api.inventory.getStoreInventory(params)
 
     if (response && response.inventory) {
-      inventories.value = response.inventory;
-      pagination.total = response.total || response.inventory.length;
-      pagination.totalPages = response.totalPages || Math.ceil(pagination.total / pagination.limit);
+      inventories.value = response.inventory
+      pagination.total = response.total || response.inventory.length
+      pagination.totalPages = response.totalPages || Math.ceil(pagination.total / pagination.limit)
 
       if (filters.status) {
-        inventories.value = inventories.value.filter(item => {
-          const status = getStatusText(item);
+        inventories.value = inventories.value.filter((item) => {
+          const status = getStatusText(item)
           switch (filters.status) {
-            case 'normal': return status === '正常';
-            case 'low': return status === '低庫存' || status === '需補貨';
-            case 'out': return status === '缺貨';
-            case 'soldOut': return status === '售完';
-            default: return true;
+            case 'normal':
+              return status === '正常'
+            case 'low':
+              return status === '低庫存' || status === '需補貨'
+            case 'out':
+              return status === '缺貨'
+            case 'soldOut':
+              return status === '售完'
+            default:
+              return true
           }
-        });
+        })
       }
 
-      updateStats();
+      updateStats()
     } else {
-      inventories.value = [];
-      pagination.total = 0;
-      pagination.totalPages = 1;
+      inventories.value = []
+      pagination.total = 0
+      pagination.totalPages = 1
       stats.value = {
         totalItems: 0,
         lowStock: 0,
         outOfStock: 0,
         soldOut: 0,
-        needsRestock: 0
-      };
+        needsRestock: 0,
+      }
     }
   } catch (err) {
-    console.error('獲取庫存列表失敗:', err);
-    error.value = err.response?.data?.message || '獲取庫存列表時發生錯誤';
-    inventories.value = [];
-    pagination.total = 0;
-    pagination.totalPages = 1;
+    console.error('獲取庫存列表失敗:', err)
+    error.value = err.response?.data?.message || '獲取庫存列表時發生錯誤'
+    inventories.value = []
+    pagination.total = 0
+    pagination.totalPages = 1
     stats.value = {
       totalItems: 0,
       lowStock: 0,
       outOfStock: 0,
       soldOut: 0,
-      needsRestock: 0
-    };
+      needsRestock: 0,
+    }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 更新統計數據
 const updateStats = () => {
@@ -545,72 +615,72 @@ const updateStats = () => {
       lowStock: 0,
       outOfStock: 0,
       soldOut: 0,
-      needsRestock: 0
-    };
-    return;
+      needsRestock: 0,
+    }
+    return
   }
 
   stats.value = {
     totalItems: inventories.value.length,
-    lowStock: inventories.value.filter(item => {
-      const status = getStatusText(item);
-      return status === '低庫存';
+    lowStock: inventories.value.filter((item) => {
+      const status = getStatusText(item)
+      return status === '低庫存'
     }).length,
-    outOfStock: inventories.value.filter(item => {
-      const status = getStatusText(item);
-      return status === '缺貨';
+    outOfStock: inventories.value.filter((item) => {
+      const status = getStatusText(item)
+      return status === '缺貨'
     }).length,
-    soldOut: inventories.value.filter(item => item.isSoldOut).length,
-    needsRestock: inventories.value.filter(item => item.needsRestock).length
-  };
-};
+    soldOut: inventories.value.filter((item) => item.isSoldOut).length,
+    needsRestock: inventories.value.filter((item) => item.needsRestock).length,
+  }
+}
 
 // 搜尋處理
 const handleSearch = () => {
-  currentPage.value = 1;
-  fetchInventory();
-};
+  currentPage.value = 1
+  fetchInventory()
+}
 
 // 篩選操作
 const applyFilters = () => {
-  currentPage.value = 1;
-  fetchInventory();
-};
+  currentPage.value = 1
+  fetchInventory()
+}
 
 const resetFilters = () => {
-  filters.inventoryType = '';
-  filters.status = '';
-  filters.onlyTracked = false;
-  currentPage.value = 1;
-  fetchInventory();
-};
+  filters.inventoryType = ''
+  filters.status = ''
+  filters.onlyTracked = false
+  currentPage.value = 1
+  fetchInventory()
+}
 
 // 換頁
 const changePage = (page) => {
-  if (page < 1 || page > pagination.totalPages || page === '...') return;
-  currentPage.value = page;
-  fetchInventory();
-};
+  if (page < 1 || page > pagination.totalPages || page === '...') return
+  currentPage.value = page
+  fetchInventory()
+}
 
 // 獲取店鋪資訊
 const fetchStoreInfo = async () => {
-  if (!storeId.value) return;
+  if (!storeId.value) return
 
   try {
-    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value })
     if (response && response.store) {
-      storeName.value = response.store.name;
+      storeName.value = response.store.name
     }
   } catch (err) {
-    console.error('獲取店鋪資訊失敗:', err);
+    console.error('獲取店鋪資訊失敗:', err)
   }
-};
+}
 
 // 生命週期
 onMounted(() => {
-  fetchStoreInfo();
-  fetchInventory();
-});
+  fetchStoreInfo()
+  fetchInventory()
+})
 </script>
 
 <style scoped>
@@ -631,7 +701,7 @@ onMounted(() => {
   background-color: rgba(255, 193, 7, 0.1);
 }
 
-.btn-group-sm>.btn {
+.btn-group-sm > .btn {
   padding: 0.25rem 0.5rem;
 }
 

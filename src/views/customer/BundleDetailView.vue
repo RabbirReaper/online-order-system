@@ -1,27 +1,47 @@
 <template>
   <div class="bundle-detail-view">
     <div class="container-wrapper">
-      <div v-if="isLoading" class="loading-container d-flex justify-content-center align-items-center">
+      <div
+        v-if="isLoading"
+        class="loading-container d-flex justify-content-center align-items-center"
+      >
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
       <div v-else class="detail-container">
-        <div class="header d-flex align-items-center p-3 position-absolute top-0 start-0 w-100 bg-transparent"
-          style="z-index: 10;">
-          <button class="btn btn-sm rounded-circle shadow" @click="goBack"
-            style="background-color: rgba(255, 255, 255, 0.8); width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;">
+        <div
+          class="header d-flex align-items-center p-3 position-absolute top-0 start-0 w-100 bg-transparent"
+          style="z-index: 10"
+        >
+          <button
+            class="btn btn-sm rounded-circle shadow"
+            @click="goBack"
+            style="
+              background-color: rgba(255, 255, 255, 0.8);
+              width: 46px;
+              height: 46px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            "
+          >
             <i class="bi bi-arrow-left fs-3"></i>
           </button>
-          <h5 class="ms-3 mb-0 text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+          <h5 class="ms-3 mb-0 text-white" style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5)">
             {{ menuTypeText }}
           </h5>
         </div>
 
         <!-- Bundle Image -->
-        <div class="image-container" style="height: 240px; overflow: hidden; position: relative;">
-          <img :src="bundleImage" :alt="bundle.name" class="w-100 h-100" style="object-fit: cover;">
+        <div class="image-container" style="height: 240px; overflow: hidden; position: relative">
+          <img
+            :src="bundleImage"
+            :alt="bundle.name"
+            class="w-100 h-100"
+            style="object-fit: cover"
+          />
         </div>
 
         <!-- Bundle Info -->
@@ -32,13 +52,20 @@
           <div class="price-section mb-3">
             <!-- 現金價格 - 只在現金購買菜單顯示 -->
             <div v-if="shouldShowCashPrice && bundle.cashPrice?.original" class="price-item">
-              <div class="price-current text-danger fw-bold fs-4">${{ bundle.cashPrice.original }}</div>
+              <div class="price-current text-danger fw-bold fs-4">
+                ${{ bundle.cashPrice.original }}
+              </div>
               <small class="text-muted">現金購買價格</small>
             </div>
 
             <!-- 點數價格 - 只在點數兌換菜單顯示 -->
-            <div v-if="shouldShowPointPrice && bundle.pointPrice?.original !== undefined" class="price-item mt-2">
-              <div class="point-price text-primary fw-bold fs-5">{{ bundle.pointPrice.original }} 點數</div>
+            <div
+              v-if="shouldShowPointPrice && bundle.pointPrice?.original !== undefined"
+              class="price-item mt-2"
+            >
+              <div class="point-price text-primary fw-bold fs-5">
+                {{ bundle.pointPrice.original }} 點數
+              </div>
               <small class="text-muted">點數兌換價格</small>
             </div>
           </div>
@@ -48,7 +75,9 @@
           <!-- 有效期限 -->
           <div v-if="bundle.voucherValidityDays" class="validity-section mt-3 p-2 bg-light rounded">
             <i class="bi bi-calendar-check text-success me-2"></i>
-            <span class="text-success fw-bold">有效期限：購買後 {{ bundle.voucherValidityDays }} 天內使用</span>
+            <span class="text-success fw-bold"
+              >有效期限：購買後 {{ bundle.voucherValidityDays }} 天內使用</span
+            >
           </div>
         </div>
 
@@ -57,7 +86,11 @@
           <h5 class="mb-3 fw-bold">購買內容</h5>
 
           <div v-if="bundle.bundleItems && bundle.bundleItems.length > 0" class="items-list">
-            <div v-for="(bundleItem, index) in bundle.bundleItems" :key="index" class="bundle-item-card mb-3">
+            <div
+              v-for="(bundleItem, index) in bundle.bundleItems"
+              :key="index"
+              class="bundle-item-card mb-3"
+            >
               <div class="d-flex align-items-center">
                 <div class="item-icon me-3">
                   <i class="bi bi-ticket-perforated-fill text-warning fs-4"></i>
@@ -66,23 +99,29 @@
                 <div class="item-info flex-grow-1">
                   <h6 class="mb-1 fw-bold">{{ bundleItem.voucherName }}</h6>
                   <div class="item-meta">
-                    <span class="badge bg-warning text-dark">
-                      兌換券
-                    </span>
+                    <span class="badge bg-warning text-dark"> 兌換券 </span>
                     <span class="ms-2 text-muted">x{{ bundleItem.quantity }}</span>
                   </div>
 
                   <!-- 兌換商品資訊 -->
-                  <div v-if="bundleItem.voucherTemplate?.exchangeDishTemplate"
-                    class="exchange-info mt-2 p-2 bg-light rounded">
+                  <div
+                    v-if="bundleItem.voucherTemplate?.exchangeDishTemplate"
+                    class="exchange-info mt-2 p-2 bg-light rounded"
+                  >
                     <small class="text-muted">可兌換：</small>
                     <div class="d-flex align-items-center mt-1">
-                      <img v-if="bundleItem.voucherTemplate.exchangeDishTemplate.image?.url"
+                      <img
+                        v-if="bundleItem.voucherTemplate.exchangeDishTemplate.image?.url"
                         :src="bundleItem.voucherTemplate.exchangeDishTemplate.image.url"
-                        :alt="bundleItem.voucherTemplate.exchangeDishTemplate.name" class="exchange-dish-image me-2">
+                        :alt="bundleItem.voucherTemplate.exchangeDishTemplate.name"
+                        class="exchange-dish-image me-2"
+                      />
                       <div>
-                        <div class="fw-bold">{{ bundleItem.voucherTemplate.exchangeDishTemplate.name }}</div>
-                        <small class="text-muted">{{ bundleItem.voucherTemplate.exchangeDishTemplate.description
+                        <div class="fw-bold">
+                          {{ bundleItem.voucherTemplate.exchangeDishTemplate.name }}
+                        </div>
+                        <small class="text-muted">{{
+                          bundleItem.voucherTemplate.exchangeDishTemplate.description
                         }}</small>
                       </div>
                     </div>
@@ -101,8 +140,10 @@
         <!-- Action Buttons - 根據菜單類型和登入狀態動態顯示 -->
         <div class="action-section p-3 bg-light">
           <!-- 未登入且需要登入的提示 -->
-          <div v-if="needsAuthButNotLoggedIn"
-            class="auth-required-notice p-3 bg-warning bg-opacity-10 border border-warning rounded">
+          <div
+            v-if="needsAuthButNotLoggedIn"
+            class="auth-required-notice p-3 bg-warning bg-opacity-10 border border-warning rounded"
+          >
             <div class="text-center">
               <i class="bi bi-person-lock text-warning fs-1 mb-2"></i>
               <h6 class="mb-2">需要登入才能購買</h6>
@@ -119,8 +160,11 @@
           <div v-else class="row g-2">
             <!-- 現金購買按鈕 - 只在現金購買菜單顯示 -->
             <div v-if="shouldShowCashPrice" class="col">
-              <button class="btn btn-outline-primary w-100" @click="addToCartCash"
-                :disabled="!bundle.cashPrice?.original || isAddingToCart">
+              <button
+                class="btn btn-outline-primary w-100"
+                @click="addToCartCash"
+                :disabled="!bundle.cashPrice?.original || isAddingToCart"
+              >
                 <i class="bi bi-cash-stack me-2"></i>
                 現金購買 ${{ bundle.cashPrice?.original }}
               </button>
@@ -128,8 +172,11 @@
 
             <!-- 點數兌換按鈕 - 只在點數兌換菜單顯示 -->
             <div v-if="shouldShowPointPrice" class="col">
-              <button class="btn btn-primary w-100" @click="addToCartPoints"
-                :disabled="bundle.pointPrice?.original === undefined || isAddingToCart">
+              <button
+                class="btn btn-primary w-100"
+                @click="addToCartPoints"
+                :disabled="bundle.pointPrice?.original === undefined || isAddingToCart"
+              >
                 <i class="bi bi-star-fill me-2"></i>
                 點數兌換 {{ bundle.pointPrice?.original }}點
               </button>
@@ -142,131 +189,130 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import api from '@/api';
-import { useCartStore } from '@/stores/cart';
-import { useAuthStore } from '@/stores/customerAuth';
-import { useMenuStore } from '@/stores/menu';
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
+import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/customerAuth'
+import { useMenuStore } from '@/stores/menu'
 
-const route = useRoute();
-const router = useRouter();
-const cartStore = useCartStore();
-const authStore = useAuthStore();
-const menuStore = useMenuStore();
+const route = useRoute()
+const router = useRouter()
+const cartStore = useCartStore()
+const authStore = useAuthStore()
+const menuStore = useMenuStore()
 
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.params.storeId);
-const bundleId = computed(() => route.params.bundleId);
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.params.storeId)
+const bundleId = computed(() => route.params.bundleId)
 
 // 從 route query 獲取菜單類型，如果沒有則使用 menuStore 的狀態
 const menuType = computed(() => {
-  return route.query.menuType || menuStore.currentMenuType || 'food';
-});
+  return route.query.menuType || menuStore.currentMenuType || 'food'
+})
 
-const bundle = ref({});
-const isLoading = ref(true);
-const isAddingToCart = ref(false);
+const bundle = ref({})
+const isLoading = ref(true)
+const isAddingToCart = ref(false)
 
 // 計算屬性 - 根據菜單類型決定顯示什麼
 const shouldShowCashPrice = computed(() => {
-  return menuType.value === 'cash_coupon' || menuType.value === 'food';
-});
+  return menuType.value === 'cash_coupon' || menuType.value === 'food'
+})
 
 const shouldShowPointPrice = computed(() => {
-  return menuType.value === 'point_exchange';
-});
+  return menuType.value === 'point_exchange'
+})
 
 const menuTypeText = computed(() => {
   const typeMap = {
-    'food': '商品詳情',
-    'cash_coupon': '預購券詳情',
-    'point_exchange': '點數兌換詳情'
-  };
-  return typeMap[menuType.value] || '商品詳情';
-});
+    food: '商品詳情',
+    cash_coupon: '預購券詳情',
+    point_exchange: '點數兌換詳情',
+  }
+  return typeMap[menuType.value] || '商品詳情'
+})
 
 // 登入狀態相關計算屬性
 const isLoggedIn = computed(() => {
-  return authStore.isLoggedIn;
-});
+  return authStore.isLoggedIn
+})
 
 // 檢查當前菜單類型是否需要登入
 const needsAuth = computed(() => {
-  return menuType.value === 'point_exchange' || menuType.value === 'cash_coupon';
-});
+  return menuType.value === 'point_exchange' || menuType.value === 'cash_coupon'
+})
 
 // 需要登入但未登入
 const needsAuthButNotLoggedIn = computed(() => {
-  return needsAuth.value && !isLoggedIn.value;
-});
+  return needsAuth.value && !isLoggedIn.value
+})
 
 // 登入要求提示訊息
 const authRequiredMessage = computed(() => {
   if (menuType.value === 'point_exchange') {
-    return '點數兌換需要會員身份，請先登入您的帳號';
+    return '點數兌換需要會員身份，請先登入您的帳號'
   } else if (menuType.value === 'cash_coupon') {
-    return '購買預購券需要會員身份，以便管理您的票券';
+    return '購買預購券需要會員身份，以便管理您的票券'
   }
-  return '此功能需要登入會員';
-});
+  return '此功能需要登入會員'
+})
 
 const bundleImage = computed(() => {
-  return bundle.value?.image?.url || '/placeholder.jpg';
-});
+  return bundle.value?.image?.url || '/placeholder.jpg'
+})
 
 const loadBundleData = async () => {
   try {
-    console.log('載入商品詳情:', bundleId.value);
+    console.log('載入商品詳情:', bundleId.value)
 
     // 使用真實 API 調用
     const response = await api.bundle.getBundleById({
       brandId: brandId.value,
-      id: bundleId.value
-    });
+      id: bundleId.value,
+    })
 
     if (response.success) {
-      bundle.value = response.bundle;
+      bundle.value = response.bundle
     } else {
-      throw new Error('無法載入商品詳情');
+      throw new Error('無法載入商品詳情')
     }
-
   } catch (error) {
-    console.error('無法載入商品詳情:', error);
-    alert('載入商品詳情失敗，請稍後再試');
+    console.error('無法載入商品詳情:', error)
+    alert('載入商品詳情失敗，請稍後再試')
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 const goBack = () => {
   // 返回時確保菜單類型狀態正確
   if (menuType.value !== menuStore.currentMenuType) {
-    menuStore.setMenuType(menuType.value);
+    menuStore.setMenuType(menuType.value)
   }
-  router.go(-1);
-};
+  router.go(-1)
+}
 
 // 跳轉到登入頁面
 const goToLogin = () => {
   // 保存當前頁面路徑，登入後可以回來
-  const currentPath = route.fullPath;
+  const currentPath = route.fullPath
   router.push({
     name: 'customer-login',
-    query: { redirect: currentPath }
-  });
-};
+    query: { redirect: currentPath },
+  })
+}
 
 const addToCartCash = async () => {
   // 檢查登入狀態
   if (needsAuth.value && !isLoggedIn.value) {
-    goToLogin();
-    return;
+    goToLogin()
+    return
   }
 
-  if (isAddingToCart.value || !bundle.value.cashPrice?.original) return;
+  if (isAddingToCart.value || !bundle.value.cashPrice?.original) return
 
-  isAddingToCart.value = true;
+  isAddingToCart.value = true
 
   try {
     // 創建符合 cartStore.addItem 期望格式的套餐購物車項目
@@ -277,46 +323,45 @@ const addToCartCash = async () => {
         basePrice: bundle.value.cashPrice.original,
         finalPrice: bundle.value.cashPrice.original,
         options: [], // 套餐沒有選項
-        bundleType: 'cash' // 標記為現金購買套餐
+        bundleType: 'cash', // 標記為現金購買套餐
       },
       quantity: 1,
       note: '',
-      subtotal: bundle.value.cashPrice.original
-    };
+      subtotal: bundle.value.cashPrice.original,
+    }
 
-    cartStore.addItem(bundleCartItem);
+    cartStore.addItem(bundleCartItem)
 
     // 返回菜單頁面，確保菜單類型正確
     if (menuType.value !== menuStore.currentMenuType) {
-      menuStore.setMenuType(menuType.value);
+      menuStore.setMenuType(menuType.value)
     }
 
     router.push({
       name: 'menu',
       params: {
         brandId: brandId.value,
-        storeId: storeId.value
-      }
-    });
-
+        storeId: storeId.value,
+      },
+    })
   } catch (error) {
-    console.error('加入購物車失敗:', error);
-    alert('加入購物車失敗，請稍後再試');
+    console.error('加入購物車失敗:', error)
+    alert('加入購物車失敗，請稍後再試')
   } finally {
-    isAddingToCart.value = false;
+    isAddingToCart.value = false
   }
-};
+}
 
 const addToCartPoints = async () => {
   // 檢查登入狀態
   if (needsAuth.value && !isLoggedIn.value) {
-    goToLogin();
-    return;
+    goToLogin()
+    return
   }
 
-  if (isAddingToCart.value) return;
+  if (isAddingToCart.value) return
 
-  isAddingToCart.value = true;
+  isAddingToCart.value = true
 
   try {
     // 創建點數兌換套餐購物車項目
@@ -328,51 +373,50 @@ const addToCartPoints = async () => {
         finalPrice: 0,
         options: [],
         bundleType: 'points', // 標記為點數兌換套餐
-        pointCost: bundle.value.pointPrice.original
+        pointCost: bundle.value.pointPrice.original,
       },
       quantity: 1,
       note: '點數兌換商品',
-      subtotal: 0 // 點數兌換不計入現金小計
-    };
+      subtotal: 0, // 點數兌換不計入現金小計
+    }
 
-    cartStore.addItem(bundleCartItem);
+    cartStore.addItem(bundleCartItem)
 
     // 返回菜單頁面，確保菜單類型正確
     if (menuType.value !== menuStore.currentMenuType) {
-      menuStore.setMenuType(menuType.value);
+      menuStore.setMenuType(menuType.value)
     }
 
     router.push({
       name: 'menu',
       params: {
         brandId: brandId.value,
-        storeId: storeId.value
-      }
-    });
-
+        storeId: storeId.value,
+      },
+    })
   } catch (error) {
-    console.error('加入購物車失敗:', error);
-    alert('加入購物車失敗，請稍後再試');
+    console.error('加入購物車失敗:', error)
+    alert('加入購物車失敗，請稍後再試')
   } finally {
-    isAddingToCart.value = false;
+    isAddingToCart.value = false
   }
-};
+}
 
 onMounted(async () => {
   // 設置 authStore 的 brandId（如果需要的話）
   if (brandId.value) {
-    authStore.setBrandId(brandId.value);
+    authStore.setBrandId(brandId.value)
 
     // 檢查並更新登入狀態
     try {
-      await authStore.checkAuthStatus();
+      await authStore.checkAuthStatus()
     } catch (error) {
-      console.error('檢查登入狀態失敗:', error);
+      console.error('檢查登入狀態失敗:', error)
     }
   }
 
-  await loadBundleData();
-});
+  await loadBundleData()
+})
 </script>
 
 <style scoped>

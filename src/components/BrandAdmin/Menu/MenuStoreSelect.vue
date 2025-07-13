@@ -3,7 +3,7 @@
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="d-flex">
-        <div class="bg-primary rounded me-3" style="width: 6px; height: 26px;"></div>
+        <div class="bg-primary rounded me-3" style="width: 6px; height: 26px"></div>
         <h4 class="mb-0">菜單管理 - 選擇店鋪</h4>
       </div>
     </div>
@@ -15,8 +15,13 @@
           <div class="col-md-4">
             <label class="form-label">搜尋店鋪</label>
             <div class="input-group">
-              <input type="text" class="form-control" placeholder="搜尋店鋪名稱..." v-model="searchQuery"
-                @input="handleSearch">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="搜尋店鋪名稱..."
+                v-model="searchQuery"
+                @input="handleSearch"
+              />
               <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
                 <i class="bi bi-search"></i>
               </button>
@@ -128,9 +133,12 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
       <div v-for="store in filteredStores" :key="store._id" class="col">
         <div class="card h-100 store-card hover-shadow">
-          <div class="card-img-top position-relative overflow-hidden" style="height: 180px;">
-            <img :src="store.image?.url || '/placeholder.jpg'" class="img-fluid w-100 h-100 object-fit-cover"
-              :alt="store.name">
+          <div class="card-img-top position-relative overflow-hidden" style="height: 180px">
+            <img
+              :src="store.image?.url || '/placeholder.jpg'"
+              class="img-fluid w-100 h-100 object-fit-cover"
+              :alt="store.name"
+            />
             <div class="store-status" :class="store.isActive ? 'bg-success' : 'bg-secondary'">
               {{ store.isActive ? '啟用中' : '已停用' }}
             </div>
@@ -153,14 +161,20 @@
             <!-- 菜單狀態資訊 -->
             <div class="mb-3">
               <div class="d-flex flex-wrap">
-                <span class="badge bg-info me-1 mb-1" v-if="store.menuStats && store.menuStats.total > 0">
+                <span
+                  class="badge bg-info me-1 mb-1"
+                  v-if="store.menuStats && store.menuStats.total > 0"
+                >
                   <i class="bi bi-menu-button me-1"></i>{{ store.menuStats.total }} 個菜單
                 </span>
                 <span class="badge bg-warning me-1 mb-1" v-else>
                   <i class="bi bi-exclamation-triangle me-1"></i>尚未設定菜單
                 </span>
 
-                <span class="badge bg-success me-1 mb-1" v-if="store.menuStats && store.menuStats.active > 0">
+                <span
+                  class="badge bg-success me-1 mb-1"
+                  v-if="store.menuStats && store.menuStats.active > 0"
+                >
                   <i class="bi bi-check-circle me-1"></i>{{ store.menuStats.active }} 個啟用
                 </span>
               </div>
@@ -181,7 +195,10 @@
           </div>
 
           <div class="card-footer bg-transparent border-top-0">
-            <router-link :to="`/admin/${brandId}/menus/store/${store._id}`" class="btn btn-primary w-100">
+            <router-link
+              :to="`/admin/${brandId}/menus/store/${store._id}`"
+              class="btn btn-primary w-100"
+            >
               <i class="bi bi-menu-button-wide me-1"></i>管理菜單
             </router-link>
           </div>
@@ -209,7 +226,12 @@
           <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
         </li>
 
-        <li class="page-item" v-for="page in getPageNumbers()" :key="page" :class="{ active: currentPage === page }">
+        <li
+          class="page-item"
+          v-for="page in getPageNumbers()"
+          :key="page"
+          :class="{ active: currentPage === page }"
+        >
           <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
         </li>
 
@@ -222,131 +244,131 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 從路由中獲取品牌ID
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
 
 // 狀態變數
-const allStores = ref([]);
-const filteredStores = ref([]);
-const isLoading = ref(true);
-const searchQuery = ref('');
-const filterActive = ref('all');
-const filterMenuStatus = ref('all');
-const currentPage = ref(1);
-const networkError = ref('');
+const allStores = ref([])
+const filteredStores = ref([])
+const isLoading = ref(true)
+const searchQuery = ref('')
+const filterActive = ref('all')
+const filterMenuStatus = ref('all')
+const currentPage = ref(1)
+const networkError = ref('')
 const pagination = reactive({
   total: 0,
   totalPages: 0,
-  limit: 12 // 每頁顯示12個店鋪
-});
+  limit: 12, // 每頁顯示12個店鋪
+})
 
 // 計算屬性
 const activeStoresCount = computed(() => {
-  return allStores.value.filter(store => store.isActive).length;
-});
+  return allStores.value.filter((store) => store.isActive).length
+})
 
 const storesWithMenuCount = computed(() => {
-  return allStores.value.filter(store =>
-    store.menuStats && store.menuStats.total > 0
-  ).length;
-});
+  return allStores.value.filter((store) => store.menuStats && store.menuStats.total > 0).length
+})
 
 const totalMenusCount = computed(() => {
   return allStores.value.reduce((total, store) => {
-    return total + (store.menuStats ? store.menuStats.total : 0);
-  }, 0);
-});
+    return total + (store.menuStats ? store.menuStats.total : 0)
+  }, 0)
+})
 
 // 獲取當天星期幾 (0-6，0代表星期日)
 const getTodayDayOfWeek = () => {
-  return new Date().getDay();
-};
+  return new Date().getDay()
+}
 
 // 獲取當天的營業時間
 const getTodayBusinessHours = (store) => {
   if (!store.businessHours || store.businessHours.length === 0) {
-    return null;
+    return null
   }
 
-  const today = getTodayDayOfWeek();
-  const todayHours = store.businessHours.find(h => h.day === today);
+  const today = getTodayDayOfWeek()
+  const todayHours = store.businessHours.find((h) => h.day === today)
 
-  return todayHours;
-};
+  return todayHours
+}
 
 // 檢查今天是否營業
 const isTodayOpen = (store) => {
-  const todayHours = getTodayBusinessHours(store);
-  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0;
-};
+  const todayHours = getTodayBusinessHours(store)
+  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0
+}
 
 // 格式化營業時間
 const formatBusinessHours = (businessHours) => {
   if (!businessHours || !businessHours.periods || businessHours.periods.length === 0) {
-    return '無資料';
+    return '無資料'
   }
 
-  return businessHours.periods.map(period => {
-    return `${period.open}-${period.close}`;
-  }).join(', ');
-};
+  return businessHours.periods
+    .map((period) => {
+      return `${period.open}-${period.close}`
+    })
+    .join(', ')
+}
 
 // 獲取無資料提示訊息
 const getNoDataMessage = () => {
   if (allStores.value.length === 0) {
-    return '尚未創建任何店鋪';
+    return '尚未創建任何店鋪'
   }
 
   if (searchQuery.value) {
-    return '沒有符合搜尋條件的店鋪';
+    return '沒有符合搜尋條件的店鋪'
   }
 
   if (filterActive.value !== 'all' || filterMenuStatus.value !== 'all') {
-    return '沒有符合篩選條件的店鋪';
+    return '沒有符合篩選條件的店鋪'
   }
 
-  return '沒有店鋪資料';
-};
+  return '沒有店鋪資料'
+}
 
 // 頁碼生成
 const getPageNumbers = () => {
-  const totalPages = pagination.totalPages;
-  const currentPageNum = currentPage.value;
-  const pageNumbers = [];
+  const totalPages = pagination.totalPages
+  const currentPageNum = currentPage.value
+  const pageNumbers = []
 
   // 顯示最多 5 個頁碼
   if (totalPages <= 5) {
     // 若總頁數少於 5，顯示全部頁碼
     for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
+      pageNumbers.push(i)
     }
   } else {
     // 若總頁數大於 5，顯示當前頁附近的頁碼
     if (currentPageNum <= 3) {
       // 當前頁在前 3 頁，顯示前 5 頁
       for (let i = 1; i <= 5; i++) {
-        pageNumbers.push(i);
+        pageNumbers.push(i)
       }
     } else if (currentPageNum >= totalPages - 2) {
       // 當前頁在後 3 頁，顯示後 5 頁
       for (let i = totalPages - 4; i <= totalPages; i++) {
-        pageNumbers.push(i);
+        pageNumbers.push(i)
       }
     } else {
       // 當前頁在中間，顯示當前頁及其前後 2 頁
       for (let i = currentPageNum - 2; i <= currentPageNum + 2; i++) {
-        pageNumbers.push(i);
+        pageNumbers.push(i)
       }
     }
   }
 
-  return pageNumbers;
-};
+  return pageNumbers
+}
 
 // 獲取店鋪菜單統計
 const getStoreMenuStats = async (storeId) => {
@@ -354,158 +376,154 @@ const getStoreMenuStats = async (storeId) => {
     const response = await api.menu.getAllStoreMenus({
       brandId: brandId.value,
       storeId: storeId,
-      includeUnpublished: true
-    });
+      includeUnpublished: true,
+    })
 
     if (response && response.menus) {
-      const menus = response.menus;
+      const menus = response.menus
       const stats = {
         total: menus.length,
-        active: menus.filter(m => m.isActive).length,
+        active: menus.filter((m) => m.isActive).length,
         byType: {
-          food: menus.filter(m => m.menuType === 'food').length,
-          cash_coupon: menus.filter(m => m.menuType === 'cash_coupon').length,
-          point_exchange: menus.filter(m => m.menuType === 'point_exchange').length
-        }
-      };
-      return stats;
+          food: menus.filter((m) => m.menuType === 'food').length,
+          cash_coupon: menus.filter((m) => m.menuType === 'cash_coupon').length,
+          point_exchange: menus.filter((m) => m.menuType === 'point_exchange').length,
+        },
+      }
+      return stats
     }
   } catch (error) {
-    console.warn('獲取店鋪菜單統計失敗:', error);
+    console.warn('獲取店鋪菜單統計失敗:', error)
   }
 
   return {
     total: 0,
     active: 0,
-    byType: { food: 0, cash_coupon: 0, point_exchange: 0 }
-  };
-};
+    byType: { food: 0, cash_coupon: 0, point_exchange: 0 },
+  }
+}
 
 // 加載店鋪列表
 const fetchStores = async () => {
-  if (!brandId.value) return;
+  if (!brandId.value) return
 
-  isLoading.value = true;
-  networkError.value = '';
+  isLoading.value = true
+  networkError.value = ''
 
   try {
     // 獲取店鋪列表
     const response = await api.store.getAllStores({
-      brandId: brandId.value
-    });
+      brandId: brandId.value,
+    })
 
     if (response && response.stores) {
-      allStores.value = response.stores;
+      allStores.value = response.stores
 
       // 為每個店鋪獲取菜單統計
       const storesWithStats = await Promise.all(
         allStores.value.map(async (store) => {
-          const menuStats = await getStoreMenuStats(store._id);
+          const menuStats = await getStoreMenuStats(store._id)
           return {
             ...store,
-            menuStats
-          };
-        })
-      );
+            menuStats,
+          }
+        }),
+      )
 
-      allStores.value = storesWithStats;
+      allStores.value = storesWithStats
 
       // 應用篩選
-      applyFilters();
-
+      applyFilters()
     } else {
-      allStores.value = [];
-      filteredStores.value = [];
+      allStores.value = []
+      filteredStores.value = []
     }
   } catch (error) {
-    console.error('獲取店鋪列表失敗:', error);
-    networkError.value = '網路連線有問題，無法獲取店鋪資料';
+    console.error('獲取店鋪列表失敗:', error)
+    networkError.value = '網路連線有問題，無法獲取店鋪資料'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 應用篩選邏輯
 const applyFilters = () => {
-  let filtered = [...allStores.value];
+  let filtered = [...allStores.value]
 
   // 搜尋篩選
   if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase().trim();
-    filtered = filtered.filter(store =>
-      store.name.toLowerCase().includes(query)
-    );
+    const query = searchQuery.value.toLowerCase().trim()
+    filtered = filtered.filter((store) => store.name.toLowerCase().includes(query))
   }
 
   // 店鋪狀態篩選
   if (filterActive.value === 'active') {
-    filtered = filtered.filter(store => store.isActive);
+    filtered = filtered.filter((store) => store.isActive)
   } else if (filterActive.value === 'inactive') {
-    filtered = filtered.filter(store => !store.isActive);
+    filtered = filtered.filter((store) => !store.isActive)
   }
 
   // 菜單狀態篩選
   if (filterMenuStatus.value === 'has_menu') {
-    filtered = filtered.filter(store =>
-      store.menuStats && store.menuStats.total > 0
-    );
+    filtered = filtered.filter((store) => store.menuStats && store.menuStats.total > 0)
   } else if (filterMenuStatus.value === 'no_menu') {
-    filtered = filtered.filter(store =>
-      !store.menuStats || store.menuStats.total === 0
-    );
+    filtered = filtered.filter((store) => !store.menuStats || store.menuStats.total === 0)
   }
 
   // 分頁處理
-  pagination.total = filtered.length;
-  pagination.totalPages = Math.ceil(pagination.total / pagination.limit);
+  pagination.total = filtered.length
+  pagination.totalPages = Math.ceil(pagination.total / pagination.limit)
 
   // 確保當前頁在有效範圍內
   if (currentPage.value > pagination.totalPages && pagination.totalPages > 0) {
-    currentPage.value = pagination.totalPages;
+    currentPage.value = pagination.totalPages
   }
 
-  const start = (currentPage.value - 1) * pagination.limit;
-  const end = start + pagination.limit;
-  filteredStores.value = filtered.slice(start, end);
-};
+  const start = (currentPage.value - 1) * pagination.limit
+  const end = start + pagination.limit
+  filteredStores.value = filtered.slice(start, end)
+}
 
 // 切換頁碼
 const changePage = (page) => {
   if (page < 1 || page > pagination.totalPages) {
-    return;
+    return
   }
 
-  currentPage.value = page;
-  applyFilters();
-};
+  currentPage.value = page
+  applyFilters()
+}
 
 // 處理搜尋
 const handleSearch = () => {
-  currentPage.value = 1; // 重置頁碼
-  applyFilters();
-};
+  currentPage.value = 1 // 重置頁碼
+  applyFilters()
+}
 
 // 重置篩選器
 const resetFilters = () => {
-  searchQuery.value = '';
-  filterActive.value = 'all';
-  filterMenuStatus.value = 'all';
-  currentPage.value = 1;
-  applyFilters();
-};
+  searchQuery.value = ''
+  filterActive.value = 'all'
+  filterMenuStatus.value = 'all'
+  currentPage.value = 1
+  applyFilters()
+}
 
 // 監聽品牌ID變化
-watch(() => brandId.value, (newId, oldId) => {
-  if (newId !== oldId) {
-    fetchStores();
-  }
-});
+watch(
+  () => brandId.value,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      fetchStores()
+    }
+  },
+)
 
 // 生命週期鉤子
 onMounted(() => {
   // 載入店鋪列表
-  fetchStores();
-});
+  fetchStores()
+})
 </script>
 
 <style scoped>
@@ -515,7 +533,9 @@ onMounted(() => {
 
 /* 店鋪卡片樣式 */
 .store-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }

@@ -20,7 +20,9 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getStoreOrders({ brandId, storeId, ...queryParams }) {
-      return apiClient.get(`/order-admin/brands/${brandId}/stores/${storeId}/orders`, { params: queryParams });
+      return apiClient.get(`/order-admin/brands/${brandId}/stores/${storeId}/orders`, {
+        params: queryParams,
+      })
     },
 
     /**
@@ -32,7 +34,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getOrderById({ brandId, storeId, orderId }) {
-      return apiClient.get(`/order-admin/brands/${brandId}/stores/${storeId}/orders/${orderId}`);
+      return apiClient.get(`/order-admin/brands/${brandId}/stores/${storeId}/orders/${orderId}`)
     },
 
     /**
@@ -51,7 +53,10 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateOrder({ brandId, storeId, orderId, updateData }) {
-      return apiClient.put(`/order-admin/brands/${brandId}/stores/${storeId}/orders/${orderId}`, updateData);
+      return apiClient.put(
+        `/order-admin/brands/${brandId}/stores/${storeId}/orders/${orderId}`,
+        updateData,
+      )
     },
 
     /**
@@ -64,7 +69,10 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     cancelOrder({ brandId, storeId, orderId, reason }) {
-      return apiClient.post(`/order-admin/brands/${brandId}/stores/${storeId}/orders/${orderId}/cancel`, { reason });
+      return apiClient.post(
+        `/order-admin/brands/${brandId}/stores/${storeId}/orders/${orderId}/cancel`,
+        { reason },
+      )
     },
-  };
+  }
 }

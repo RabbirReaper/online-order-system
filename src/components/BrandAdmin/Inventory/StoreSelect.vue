@@ -22,9 +22,12 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4" v-if="!isLoading">
       <div class="col" v-for="store in stores" :key="store._id">
         <div class="card h-100 store-card" @mouseenter="fetchStoreStats(store)">
-          <div class="card-img-top position-relative overflow-hidden" style="height: 180px;">
-            <img :src="store.image?.url || '/placeholder.jpg'" class="img-fluid w-100 h-100 object-fit-cover"
-              :alt="store.name">
+          <div class="card-img-top position-relative overflow-hidden" style="height: 180px">
+            <img
+              :src="store.image?.url || '/placeholder.jpg'"
+              class="img-fluid w-100 h-100 object-fit-cover"
+              :alt="store.name"
+            />
             <div class="store-status" :class="store.isActive ? 'bg-success' : 'bg-secondary'">
               {{ store.isActive ? '營業中' : '已停用' }}
             </div>
@@ -34,7 +37,7 @@
             <h5 class="card-title mb-2">{{ store.name }}</h5>
 
             <!-- 庫存快速統計 -->
-            <div class="mb-3" style="min-height: 48px;">
+            <div class="mb-3" style="min-height: 48px">
               <div v-if="storeStats[store._id]">
                 <div class="d-flex justify-content-between text-muted small">
                   <span>
@@ -63,19 +66,22 @@
                 </div>
                 載入統計中...
               </div>
-              <div v-else class="text-center text-muted small">
-                將滑鼠移到卡片上查看統計
-              </div>
+              <div v-else class="text-center text-muted small">將滑鼠移到卡片上查看統計</div>
             </div>
           </div>
 
           <div class="card-footer bg-transparent">
             <div class="d-flex gap-2">
-              <router-link :to="`/admin/${brandId}/inventory/store/${store._id}`" class="btn btn-primary flex-grow-1">
+              <router-link
+                :to="`/admin/${brandId}/inventory/store/${store._id}`"
+                class="btn btn-primary flex-grow-1"
+              >
                 <i class="bi bi-box-seam me-1"></i>管理庫存
               </router-link>
-              <router-link :to="`/admin/${brandId}/inventory/logs?storeId=${store._id}`"
-                class="btn btn-outline-secondary">
+              <router-link
+                :to="`/admin/${brandId}/inventory/logs?storeId=${store._id}`"
+                class="btn btn-outline-secondary"
+              >
                 <i class="bi bi-clock-history"></i>
               </router-link>
             </div>
@@ -100,111 +106,111 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 路由
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
 
 // 狀態
-const isLoading = ref(true);
-const error = ref('');
-const stores = ref([]);
-const storeStats = ref({});
-const loadingStats = ref({}); // 記錄哪些店鋪正在載入統計
+const isLoading = ref(true)
+const error = ref('')
+const stores = ref([])
+const storeStats = ref({})
+const loadingStats = ref({}) // 記錄哪些店鋪正在載入統計
 
 // 獲取店鋪列表
 const fetchStores = async () => {
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     // 獲取店鋪列表
     const response = await api.store.getAllStores({
       brandId: brandId.value,
-      activeOnly: false
-    });
+      activeOnly: false,
+    })
 
     if (response && response.stores) {
-      stores.value = response.stores;
+      stores.value = response.stores
     } else {
-      stores.value = [];
+      stores.value = []
     }
   } catch (err) {
-    console.error('獲取店鋪列表失敗:', err);
-    error.value = err.response?.data?.message || '獲取店鋪列表時發生錯誤';
+    console.error('獲取店鋪列表失敗:', err)
+    error.value = err.response?.data?.message || '獲取店鋪列表時發生錯誤'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 獲取單個店鋪的庫存統計
 const fetchStoreStats = async (store) => {
   // 如果已經在載入或已經有資料，則不重複載入
   if (loadingStats.value[store._id] || storeStats.value[store._id]) {
-    return;
+    return
   }
-  loadingStats.value[store._id] = true;
+  loadingStats.value[store._id] = true
 
   try {
     // 使用獲取店鋪庫存列表的 API 來計算統計
     const response = await api.inventory.getStoreInventory({
       storeId: store._id,
       inventoryType: 'dish',
-      onlyTracked: true
-    });
+      onlyTracked: true,
+    })
 
     if (response && response.inventory) {
       // 手動計算統計數據
-      const items = response.inventory;
+      const items = response.inventory
       const stats = {
         totalItems: items.length,
         lowStock: 0,
         outOfStock: 0,
-        normal: 0
-      };
+        normal: 0,
+      }
 
       // 計算各種狀態的數量
-      items.forEach(item => {
+      items.forEach((item) => {
         if (!item.isInventoryTracked) {
-          stats.normal++;
+          stats.normal++
         } else if (item.availableStock === 0) {
-          stats.outOfStock++;
+          stats.outOfStock++
         } else if (item.availableStock <= item.minStockAlert) {
-          stats.lowStock++;
+          stats.lowStock++
         } else {
-          stats.normal++;
+          stats.normal++
         }
-      });
+      })
 
-      storeStats.value[store._id] = stats;
+      storeStats.value[store._id] = stats
     } else {
       storeStats.value[store._id] = {
         totalItems: 0,
         lowStock: 0,
         outOfStock: 0,
-        normal: 0
-      };
+        normal: 0,
+      }
     }
   } catch (err) {
-    console.error(`獲取店鋪 ${store.name} 的庫存統計失敗:`, err);
+    console.error(`獲取店鋪 ${store.name} 的庫存統計失敗:`, err)
     storeStats.value[store._id] = {
       totalItems: 0,
       lowStock: 0,
       outOfStock: 0,
-      normal: 0
-    };
+      normal: 0,
+    }
   } finally {
-    loadingStats.value[store._id] = false;
+    loadingStats.value[store._id] = false
   }
-};
+}
 
 // 生命週期
 onMounted(() => {
-  fetchStores();
-});
+  fetchStores()
+})
 </script>
 
 <style scoped>
@@ -213,7 +219,9 @@ onMounted(() => {
 }
 
 .store-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }

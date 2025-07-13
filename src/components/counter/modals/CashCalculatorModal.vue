@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5)">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -54,13 +54,17 @@
           <div class="number-keypad">
             <div class="row g-2">
               <div class="col-4" v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9]" :key="num">
-                <button class="btn btn-outline-secondary w-100" @click="appendToInput(num)">{{ num }}</button>
+                <button class="btn btn-outline-secondary w-100" @click="appendToInput(num)">
+                  {{ num }}
+                </button>
               </div>
               <div class="col-4">
                 <button class="btn btn-outline-secondary w-100" @click="appendToInput(0)">0</button>
               </div>
               <div class="col-4">
-                <button class="btn btn-outline-secondary w-100" @click="appendToInput('00')">00</button>
+                <button class="btn btn-outline-secondary w-100" @click="appendToInput('00')">
+                  00
+                </button>
               </div>
               <div class="col-4">
                 <button class="btn btn-outline-danger w-100" @click="clearInput">清除</button>
@@ -71,7 +75,9 @@
                 </button>
               </div>
               <div class="col-4">
-                <button class="btn btn-outline-primary w-100" @click="addInputAmount(total)"> 剛好 </button>
+                <button class="btn btn-outline-primary w-100" @click="addInputAmount(total)">
+                  剛好
+                </button>
               </div>
             </div>
           </div>
@@ -93,75 +99,75 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   total: {
     type: Number,
-    required: true
-  }
-});
+    required: true,
+  },
+})
 
-defineEmits(['close', 'complete']);
+defineEmits(['close', 'complete'])
 
 // 快速金額按鈕
-const quickAmounts = [100, 500, 1000];
+const quickAmounts = [100, 500, 1000]
 
 // 輸入金額
-const inputAmount = ref(0);
+const inputAmount = ref(0)
 
 // 計算找零金額
 const changeAmount = computed(() => {
-  return inputAmount.value - props.total;
-});
+  return inputAmount.value - props.total
+})
 
 // 計算需要補的零錢金額
 const changeToAdd = computed(() => {
-  if (inputAmount.value <= props.total) return 0;
+  if (inputAmount.value <= props.total) return 0
 
   // 找出應付金額的個位數
-  const unitDigit = props.total % 10;
+  const unitDigit = props.total % 10
   // 找出應付金額的十位數
-  const tenthDigit = props.total % 100;
+  const tenthDigit = props.total % 100
 
   // 如果個位數不是0，補到整十
   if (unitDigit !== 0) {
-    return unitDigit;
+    return unitDigit
   }
   // 如果十位數不是0，補到整百
   else if (tenthDigit !== 0) {
-    return tenthDigit;
+    return tenthDigit
   }
 
   // 已經是整百了，不需要補零錢
-  return 0;
-});
+  return 0
+})
 
 // 設置輸入金額
 const addInputAmount = (amount) => {
-  inputAmount.value += amount;
-};
+  inputAmount.value += amount
+}
 
 // 加入數字到輸入金額
 const appendToInput = (num) => {
   if (inputAmount.value === 0 && num !== '00') {
-    inputAmount.value = parseInt(num);
+    inputAmount.value = parseInt(num)
   } else {
-    inputAmount.value = parseInt(`${inputAmount.value}${num}`);
+    inputAmount.value = parseInt(`${inputAmount.value}${num}`)
   }
-};
+}
 
 // 清除輸入金額
 const clearInput = () => {
-  inputAmount.value = 0;
-};
+  inputAmount.value = 0
+}
 
 // 補零錢功能
 const addSmallChange = () => {
   if (changeToAdd.value > 0) {
-    inputAmount.value += changeToAdd.value;
+    inputAmount.value += changeToAdd.value
   }
-};
+}
 </script>
 
 <style scoped>

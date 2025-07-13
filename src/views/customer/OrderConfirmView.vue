@@ -14,7 +14,8 @@
         <!-- 訂單成功卡片 -->
         <div class="order-success-card bg-white rounded-3 shadow-sm p-4 mb-4 text-center">
           <div
-            class="success-icon rounded-circle bg-success d-inline-flex align-items-center justify-content-center mb-3">
+            class="success-icon rounded-circle bg-success d-inline-flex align-items-center justify-content-center mb-3"
+          >
             <i class="bi bi-check-lg text-white fs-4"></i>
           </div>
           <h4 class="mb-3">訂單已成功送出！</h4>
@@ -22,7 +23,10 @@
           <!-- 優化的訂單編號顯示 -->
           <div class="order-number-section mb-2">
             <p class="text-muted mb-2 fs-6">您的訂單編號</p>
-            <div class="order-number-display bg-light border rounded-3 p-3 mx-auto" style="max-width: 300px;">
+            <div
+              class="order-number-display bg-light border rounded-3 p-3 mx-auto"
+              style="max-width: 300px"
+            >
               <span class="badge bg-primary fs-1 px-3 py-2">
                 {{ orderDetails.sequence || 'TEMP' }}
               </span>
@@ -42,14 +46,21 @@
           <div class="progress-steps">
             <!-- 進度線 -->
             <div class="progress-line">
-              <div class="progress-fill" :style="{
-                width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`
-              }"></div>
+              <div
+                class="progress-fill"
+                :style="{
+                  width: `${((currentStep - 1) / (steps.length - 1)) * 100}%`,
+                }"
+              ></div>
             </div>
 
             <!-- 步驟項目 -->
             <div class="steps-wrapper">
-              <div v-for="step in steps" :key="step.id" :class="['step-item', getStepStatus(step.id)]">
+              <div
+                v-for="step in steps"
+                :key="step.id"
+                :class="['step-item', getStepStatus(step.id)]"
+              >
                 <div class="step-circle">
                   <span class="step-icon">
                     {{ getStepStatus(step.id) === 'completed' ? '✓' : step.icon }}
@@ -78,17 +89,26 @@
               <div class="col-7">{{ formatOrderType(orderDetails.orderType) }}</div>
             </div>
 
-            <div class="row mb-2" v-if="orderDetails.orderType === 'dine_in' && orderDetails.dineInInfo?.tableNumber">
+            <div
+              class="row mb-2"
+              v-if="orderDetails.orderType === 'dine_in' && orderDetails.dineInInfo?.tableNumber"
+            >
               <div class="col-5 text-muted">桌號：</div>
               <div class="col-7">{{ orderDetails.dineInInfo.tableNumber }}</div>
             </div>
 
-            <div class="row mb-2" v-if="orderDetails.orderType === 'delivery' && orderDetails.deliveryInfo?.address">
+            <div
+              class="row mb-2"
+              v-if="orderDetails.orderType === 'delivery' && orderDetails.deliveryInfo?.address"
+            >
               <div class="col-5 text-muted">外送地址：</div>
               <div class="col-7">{{ orderDetails.deliveryInfo.address }}</div>
             </div>
 
-            <div class="row mb-2" v-if="orderDetails.orderType === 'takeout' && orderDetails.estimatedPickupTime">
+            <div
+              class="row mb-2"
+              v-if="orderDetails.orderType === 'takeout' && orderDetails.estimatedPickupTime"
+            >
               <div class="col-5 text-muted">預計取餐時間：</div>
               <div class="col-7">{{ formatPickupTime(orderDetails.estimatedPickupTime) }}</div>
             </div>
@@ -119,34 +139,48 @@
         <div class="order-items-card bg-white rounded-3 shadow-sm p-4 mb-4">
           <h5 class="mb-3 border-bottom pb-2">訂購項目</h5>
 
-          <div v-for="(item, index) in orderDetails.items" :key="index" class="order-item mb-3 pb-3">
+          <div
+            v-for="(item, index) in orderDetails.items"
+            :key="index"
+            class="order-item mb-3 pb-3"
+          >
             <div class="d-flex justify-content-between mb-2">
               <div class="flex-grow-1">
                 <!-- 餐點名稱 -->
                 <h6 class="mb-1">{{ getItemName(item) }}</h6>
 
                 <!-- 餐點選項 - 只對餐點顯示 -->
-                <div v-if="item.itemType === 'dish' && item.dishInstance?.options?.length"
-                  class="text-muted small mb-1">
+                <div
+                  v-if="item.itemType === 'dish' && item.dishInstance?.options?.length"
+                  class="text-muted small mb-1"
+                >
                   <div v-for="(option, optIdx) in item.dishInstance.options" :key="optIdx">
                     {{ option.optionCategoryName }}:
-                    {{option.selections.map(s => s.name + (s.price > 0 ? ` (+$${s.price})` : '')).join(', ')}}
+                    {{
+                      option.selections
+                        .map((s) => s.name + (s.price > 0 ? ` (+$${s.price})` : ''))
+                        .join(', ')
+                    }}
                   </div>
                 </div>
 
                 <!-- Bundle 內容 - 只對Bundle顯示 -->
-                <div v-if="item.itemType === 'bundle' && item.bundleInstance?.bundleItems?.length"
-                  class="text-muted small mb-1">
+                <div
+                  v-if="item.itemType === 'bundle' && item.bundleInstance?.bundleItems?.length"
+                  class="text-muted small mb-1"
+                >
                   <div class="fw-semibold mb-1">套餐內容：</div>
-                  <div v-for="(bundleItem, bundleIdx) in item.bundleInstance.bundleItems" :key="bundleIdx" class="ms-2">
+                  <div
+                    v-for="(bundleItem, bundleIdx) in item.bundleInstance.bundleItems"
+                    :key="bundleIdx"
+                    class="ms-2"
+                  >
                     • {{ bundleItem.quantity }}x {{ getBundleItemName(bundleItem) }}
                   </div>
                 </div>
 
                 <!-- 餐點備註 -->
-                <div v-if="item.note" class="text-muted small">
-                  備註: {{ item.note }}
-                </div>
+                <div v-if="item.note" class="text-muted small">備註: {{ item.note }}</div>
               </div>
 
               <div class="text-end ms-3">
@@ -155,7 +189,7 @@
               </div>
             </div>
 
-            <hr v-if="index < orderDetails.items.length - 1" class="my-3">
+            <hr v-if="index < orderDetails.items.length - 1" class="my-3" />
           </div>
 
           <!-- 金額明細 -->
@@ -170,8 +204,12 @@
               <span>${{ orderDetails.serviceCharge }}</span>
             </div>
 
-            <div class="d-flex justify-content-between mb-2"
-              v-if="orderDetails.orderType === 'delivery' && orderDetails.deliveryInfo?.deliveryFee > 0">
+            <div
+              class="d-flex justify-content-between mb-2"
+              v-if="
+                orderDetails.orderType === 'delivery' && orderDetails.deliveryInfo?.deliveryFee > 0
+              "
+            >
               <span>外送費</span>
               <span>${{ orderDetails.deliveryInfo.deliveryFee }}</span>
             </div>
@@ -181,11 +219,15 @@
               <span class="text-success">-${{ totalDiscount }}</span>
             </div>
 
-            <div class="d-flex justify-content-between mb-2"
-              v-if="orderDetails.manualAdjustment && orderDetails.manualAdjustment !== 0">
+            <div
+              class="d-flex justify-content-between mb-2"
+              v-if="orderDetails.manualAdjustment && orderDetails.manualAdjustment !== 0"
+            >
               <span>{{ orderDetails.manualAdjustment > 0 ? '額外費用' : '額外優惠' }}</span>
               <span :class="orderDetails.manualAdjustment > 0 ? 'text-danger' : 'text-success'">
-                {{ orderDetails.manualAdjustment > 0 ? '+' : '-' }}${{ Math.abs(orderDetails.manualAdjustment) }}
+                {{ orderDetails.manualAdjustment > 0 ? '+' : '-' }}${{
+                  Math.abs(orderDetails.manualAdjustment)
+                }}
               </span>
             </div>
 
@@ -197,27 +239,39 @@
         </div>
 
         <!-- 點數獎勵提示 -->
-        <div v-if="pointsAwarded > 0"
-          class="points-reward-card bg-warning bg-opacity-10 border border-warning rounded-3 p-3 mb-4">
+        <div
+          v-if="pointsAwarded > 0"
+          class="points-reward-card bg-warning bg-opacity-10 border border-warning rounded-3 p-3 mb-4"
+        >
           <div class="d-flex align-items-center">
             <i class="bi bi-star-fill text-warning me-2"></i>
-            <span>恭喜您獲得 <strong>{{ pointsAwarded }}</strong> 點獎勵點數！</span>
+            <span
+              >恭喜您獲得 <strong>{{ pointsAwarded }}</strong> 點獎勵點數！</span
+            >
           </div>
         </div>
 
         <!-- 操作按鈕 -->
         <div class="d-grid gap-2">
           <button class="btn btn-primary py-2" @click="goToMenu">返回菜單</button>
-          <button class="btn btn-outline-secondary py-2" @click="checkOrderStatus" :disabled="isRefreshing">
-            <span v-if="isRefreshing" class="spinner-border spinner-border-sm me-2" role="status"
-              aria-hidden="true"></span>
+          <button
+            class="btn btn-outline-secondary py-2"
+            @click="checkOrderStatus"
+            :disabled="isRefreshing"
+          >
+            <span
+              v-if="isRefreshing"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
             {{ isRefreshing ? '更新中...' : '查詢訂單狀態' }}
           </button>
         </div>
       </div>
 
       <!-- 載入中 -->
-      <div v-else class="d-flex justify-content-center align-items-center" style="min-height: 50vh;">
+      <div v-else class="d-flex justify-content-center align-items-center" style="min-height: 50vh">
         <div class="text-center">
           <div class="spinner-border text-primary mb-3" role="status">
             <span class="visually-hidden">載入中...</span>
@@ -237,261 +291,264 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useCartStore } from '@/stores/cart';
-import { useAuthStore } from '@/stores/customerAuth';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/customerAuth'
+import api from '@/api'
 
-const route = useRoute();
-const router = useRouter();
-const cartStore = useCartStore();
-const authStore = useAuthStore();
+const route = useRoute()
+const router = useRouter()
+const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 // 訂單資訊
-const orderDetails = ref({});
-const pointsAwarded = ref(0);
-const isLoading = ref(true);
-const isRefreshing = ref(false);
-const errorMessage = ref('');
+const orderDetails = ref({})
+const pointsAwarded = ref(0)
+const isLoading = ref(true)
+const isRefreshing = ref(false)
+const errorMessage = ref('')
 
 // 進度條配置
 const steps = ref([
   { id: 1, title: '送出訂單', icon: '📄' },
   { id: 2, title: '待付款', icon: '⏳' },
-  { id: 3, title: '已完成', icon: '✓' }
-]);
+  { id: 3, title: '已完成', icon: '✓' },
+])
 
 // 計算屬性
 const currentStep = computed(() => {
-  if (!orderDetails.value.status) return 1;
+  if (!orderDetails.value.status) return 1
 
   switch (orderDetails.value.status) {
     case 'unpaid':
-      return 2;
+      return 2
     case 'paid':
     case 'completed':
-      return 3;
+      return 3
     case 'cancelled':
-      return 1;
+      return 1
     default:
-      return 1;
+      return 1
   }
-});
+})
 
 // 計算訂單小計
 const orderSubtotal = computed(() => {
-  if (!orderDetails.value.items) return 0;
-  return orderDetails.value.items.reduce((total, item) => total + (item.subtotal || 0), 0);
-});
+  if (!orderDetails.value.items) return 0
+  return orderDetails.value.items.reduce((total, item) => total + (item.subtotal || 0), 0)
+})
 
 // 計算總折扣
 const totalDiscount = computed(() => {
-  if (!orderDetails.value.discounts) return 0;
-  return orderDetails.value.discounts.reduce((total, discount) => total + (discount.amount || 0), 0);
-});
+  if (!orderDetails.value.discounts) return 0
+  return orderDetails.value.discounts.reduce((total, discount) => total + (discount.amount || 0), 0)
+})
 
 // 獲取步驟狀態
 const getStepStatus = (stepId) => {
   if (orderDetails.value.status === 'cancelled') {
-    return stepId === 1 ? 'current' : 'pending';
+    return stepId === 1 ? 'current' : 'pending'
   }
 
-  if (stepId < currentStep.value || currentStep.value === 3) return 'completed';
-  if (stepId === currentStep.value) return 'current';
-  return 'pending';
-};
+  if (stepId < currentStep.value || currentStep.value === 3) return 'completed'
+  if (stepId === currentStep.value) return 'current'
+  return 'pending'
+}
 
 // 獲取項目名稱
 const getItemName = (item) => {
   if (item.itemType === 'dish') {
-    return item.dishInstance?.name || item.itemName || '未知餐點';
+    return item.dishInstance?.name || item.itemName || '未知餐點'
   } else if (item.itemType === 'bundle') {
-    return item.bundleInstance?.name || item.itemName || '未知套餐';
+    return item.bundleInstance?.name || item.itemName || '未知套餐'
   }
-  return item.itemName || '未知商品';
-};
+  return item.itemName || '未知商品'
+}
 
 // 獲取Bundle項目名稱
 const getBundleItemName = (bundleItem) => {
   if (bundleItem.itemType === 'dish') {
-    return bundleItem.dishTemplate?.name || '餐點';
+    return bundleItem.dishTemplate?.name || '餐點'
   } else if (bundleItem.itemType === 'voucher') {
-    return bundleItem.voucherTemplate?.name || '兌換券';
+    return bundleItem.voucherTemplate?.name || '兌換券'
   }
-  return '未知項目';
-};
+  return '未知項目'
+}
 
 // 格式化訂單類型
 const formatOrderType = (type) => {
   const types = {
-    'dine_in': '內用',
-    'takeout': '外帶',
-    'delivery': '外送'
-  };
-  return types[type] || type;
-};
+    dine_in: '內用',
+    takeout: '外帶',
+    delivery: '外送',
+  }
+  return types[type] || type
+}
 
 // 格式化付款方式
 const formatPaymentMethod = (method) => {
   const methods = {
-    'cash': '現金',
-    'credit_card': '信用卡',
-    'line_pay': 'LINE Pay',
-    'other': '其他'
-  };
-  return methods[method] || method;
-};
+    cash: '現金',
+    credit_card: '信用卡',
+    line_pay: 'LINE Pay',
+    other: '其他',
+  }
+  return methods[method] || method
+}
 
 // 格式化日期時間
 const formatDateTime = (dateTime) => {
-  if (!dateTime) return '';
+  if (!dateTime) return ''
   try {
-    const date = new Date(dateTime);
+    const date = new Date(dateTime)
     return date.toLocaleString('zh-TW', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
-    });
+      minute: '2-digit',
+    })
   } catch (e) {
-    return dateTime;
+    return dateTime
   }
-};
+}
 
 // 格式化取餐時間
 const formatPickupTime = (time) => {
-  if (!time) return '盡快取餐';
-  return formatDateTime(time);
-};
+  if (!time) return '盡快取餐'
+  return formatDateTime(time)
+}
 
 // 返回菜單頁面
 const goToMenu = () => {
   // 優先使用當前品牌和店鋪ID
-  const brandId = cartStore.currentBrandId || authStore.currentBrandId || sessionStorage.getItem('currentBrandId');
-  const storeId = cartStore.currentStoreId || sessionStorage.getItem('currentStoreId');
+  const brandId =
+    cartStore.currentBrandId || authStore.currentBrandId || sessionStorage.getItem('currentBrandId')
+  const storeId = cartStore.currentStoreId || sessionStorage.getItem('currentStoreId')
 
   if (brandId && storeId) {
     router.push({
       name: 'menu',
-      params: { brandId, storeId }
-    });
+      params: { brandId, storeId },
+    })
   } else {
-    router.push('/');
+    router.push('/')
   }
 
   // 清空購物車
-  cartStore.clearCart();
-};
+  cartStore.clearCart()
+}
 
 // 查詢訂單狀態
 const checkOrderStatus = async () => {
-  isRefreshing.value = true;
+  isRefreshing.value = true
   try {
-    await fetchOrderDetails();
+    await fetchOrderDetails()
   } finally {
-    isRefreshing.value = false;
+    isRefreshing.value = false
   }
-};
+}
 
 // 重試獲取訂單
 const retryFetchOrder = () => {
-  errorMessage.value = '';
-  fetchOrderDetails();
-};
+  errorMessage.value = ''
+  fetchOrderDetails()
+}
 
 // 獲取訂單詳情
 const fetchOrderDetails = async () => {
   try {
     if (!isRefreshing.value) {
-      isLoading.value = true;
+      isLoading.value = true
     }
-    errorMessage.value = '';
+    errorMessage.value = ''
 
     // 獲取訂單ID和品牌ID
-    let orderId = route.params.orderId || sessionStorage.getItem('lastOrderId');
-    let brandId = cartStore.currentBrandId || authStore.currentBrandId || sessionStorage.getItem('currentBrandId');
+    let orderId = route.params.orderId || sessionStorage.getItem('lastOrderId')
+    let brandId =
+      cartStore.currentBrandId ||
+      authStore.currentBrandId ||
+      sessionStorage.getItem('currentBrandId')
 
-    console.log('獲取訂單詳情:', { orderId, brandId });
+    console.log('獲取訂單詳情:', { orderId, brandId })
 
     if (!orderId) {
-      throw new Error('缺少訂單ID');
+      throw new Error('缺少訂單ID')
     }
 
     if (!brandId) {
-      throw new Error('缺少品牌資訊');
+      throw new Error('缺少品牌資訊')
     }
 
     // 調用新的API獲取訂單詳情
     const response = await api.orderCustomer.getUserOrderById({
       brandId: brandId,
-      orderId: orderId
-    });
+      orderId: orderId,
+    })
 
-    console.log('API回應:', response);
+    console.log('API回應:', response)
 
     if (response && response.success !== false) {
       // 處理API回應 - 可能直接是訂單數據，也可能包裝在response中
-      const orderData = response.order || response;
-      orderDetails.value = orderData;
+      const orderData = response.order || response
+      orderDetails.value = orderData
 
       // 獲取點數獎勵資訊（如果有的話）
       if (response.pointsAwarded) {
-        pointsAwarded.value = response.pointsAwarded;
+        pointsAwarded.value = response.pointsAwarded
       }
 
-      console.log('訂單詳情載入成功:', orderDetails.value);
+      console.log('訂單詳情載入成功:', orderDetails.value)
     } else {
-      throw new Error(response?.message || '無法獲取訂單資訊');
+      throw new Error(response?.message || '無法獲取訂單資訊')
     }
-
   } catch (error) {
-    console.error('獲取訂單詳情失敗:', error);
+    console.error('獲取訂單詳情失敗:', error)
 
     // 設置錯誤訊息
     if (error.response?.status === 404) {
-      errorMessage.value = '找不到此訂單，可能已被刪除或不存在';
+      errorMessage.value = '找不到此訂單，可能已被刪除或不存在'
     } else if (error.response?.status === 403) {
-      errorMessage.value = '無權查看此訂單';
+      errorMessage.value = '無權查看此訂單'
     } else {
-      errorMessage.value = error.message || '無法載入訂單資訊，請稍後再試';
+      errorMessage.value = error.message || '無法載入訂單資訊，請稍後再試'
     }
 
     // 如果是用戶未登入且有購物車資料，使用購物車資料作為備用
     if (!authStore.isLoggedIn && cartStore.items.length > 0) {
-      console.log('使用購物車備用資料');
+      console.log('使用購物車備用資料')
       orderDetails.value = {
         sequence: 'TEMP' + Date.now().toString().slice(-6),
         orderType: cartStore.orderType,
         paymentMethod: cartStore.paymentMethod,
         status: 'unpaid',
         createdAt: new Date().toISOString(),
-        items: cartStore.items.map(item => {
+        items: cartStore.items.map((item) => {
           if (item.dishInstance) {
             return {
               itemType: 'dish',
               dishInstance: {
                 name: item.dishInstance.name,
-                options: item.dishInstance.options || []
+                options: item.dishInstance.options || [],
               },
               quantity: item.quantity,
               subtotal: item.subtotal,
-              note: item.note || ''
-            };
+              note: item.note || '',
+            }
           } else if (item.bundleInstance) {
             return {
               itemType: 'bundle',
               bundleInstance: {
                 name: item.bundleInstance.name,
-                bundleItems: item.bundleInstance.bundleItems || []
+                bundleItems: item.bundleInstance.bundleItems || [],
               },
               quantity: item.quantity,
               subtotal: item.subtotal,
-              note: item.note || ''
-            };
+              note: item.note || '',
+            }
           }
-          return item;
+          return item
         }),
         total: cartStore.total,
         serviceCharge: cartStore.serviceCharge,
@@ -500,20 +557,20 @@ const fetchOrderDetails = async () => {
         dineInInfo: cartStore.dineInInfo,
         deliveryInfo: cartStore.deliveryInfo,
         estimatedPickupTime: cartStore.estimatedPickupTime,
-        discounts: cartStore.appliedCoupons.map(coupon => ({
-          amount: coupon.amount || coupon.value || 0
-        }))
-      };
-      errorMessage.value = ''; // 清除錯誤訊息
+        discounts: cartStore.appliedCoupons.map((coupon) => ({
+          amount: coupon.amount || coupon.value || 0,
+        })),
+      }
+      errorMessage.value = '' // 清除錯誤訊息
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 onMounted(async () => {
-  await fetchOrderDetails();
-});
+  await fetchOrderDetails()
+})
 </script>
 
 <style scoped>

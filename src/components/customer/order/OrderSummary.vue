@@ -19,12 +19,8 @@
               <div class="fw-bold">{{ orderTypeLabel }}</div>
               <div class="text-muted small">
                 <!-- 根據不同訂單類型顯示不同信息 -->
-                <div v-if="orderType === 'dine_in'">
-                  桌號: {{ dineInInfo.tableNumber || '-' }}
-                </div>
-                <div v-else-if="orderType === 'takeout'">
-                  預計取餐時間: {{ formatPickupTime }}
-                </div>
+                <div v-if="orderType === 'dine_in'">桌號: {{ dineInInfo.tableNumber || '-' }}</div>
+                <div v-else-if="orderType === 'takeout'">預計取餐時間: {{ formatPickupTime }}</div>
                 <div v-else-if="orderType === 'delivery'">
                   配送地址: {{ deliveryInfo.address || '-' }}
                 </div>
@@ -50,7 +46,11 @@
         <!-- 訂單項目 -->
         <div class="order-items mb-3">
           <h6 class="mb-2">訂單項目</h6>
-          <div class="order-item d-flex justify-content-between mb-2" v-for="(item, index) in cartItems" :key="index">
+          <div
+            class="order-item d-flex justify-content-between mb-2"
+            v-for="(item, index) in cartItems"
+            :key="index"
+          >
             <div class="item-info">
               <div class="d-flex align-items-baseline">
                 <span class="item-quantity me-2">{{ item.quantity }}x</span>
@@ -72,9 +72,7 @@
                 </small>
               </div>
             </div>
-            <div class="item-price text-end">
-              ${{ item.subtotal }}
-            </div>
+            <div class="item-price text-end">${{ item.subtotal }}</div>
           </div>
         </div>
 
@@ -96,8 +94,10 @@
             <span>${{ serviceCharge }}</span>
           </div>
 
-          <div v-if="orderType === 'delivery' && deliveryInfo.deliveryFee > 0"
-            class="d-flex justify-content-between mb-2">
+          <div
+            v-if="orderType === 'delivery' && deliveryInfo.deliveryFee > 0"
+            class="d-flex justify-content-between mb-2"
+          >
             <span>外送費</span>
             <span>${{ deliveryInfo.deliveryFee }}</span>
           </div>
@@ -118,13 +118,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useCartStore } from '@/stores/cart';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useCartStore } from '@/stores/cart'
+import api from '@/api'
 
 // 購物車 store
-const cartStore = useCartStore();
+const cartStore = useCartStore()
 const {
   items: cartItems,
   subtotal,
@@ -138,65 +138,65 @@ const {
   estimatedPickupTime,
   notes,
   currentBrand: brandId,
-  currentStore: storeId
-} = storeToRefs(cartStore);
+  currentStore: storeId,
+} = storeToRefs(cartStore)
 
 // 店鋪信息
-const store = ref(null);
+const store = ref(null)
 
 // 訂單類型圖標
 const orderTypeIcon = computed(() => {
   const icons = {
-    'dine_in': 'bi bi-cup-hot',
-    'takeout': 'bi bi-bag',
-    'delivery': 'bi bi-truck'
-  };
-  return icons[orderType.value] || 'bi bi-question-circle';
-});
+    dine_in: 'bi bi-cup-hot',
+    takeout: 'bi bi-bag',
+    delivery: 'bi bi-truck',
+  }
+  return icons[orderType.value] || 'bi bi-question-circle'
+})
 
 // 訂單類型標籤
 const orderTypeLabel = computed(() => {
   const labels = {
-    'dine_in': '內用',
-    'takeout': '外帶',
-    'delivery': '外送'
-  };
-  return labels[orderType.value] || '未指定';
-});
+    dine_in: '內用',
+    takeout: '外帶',
+    delivery: '外送',
+  }
+  return labels[orderType.value] || '未指定'
+})
 
 // 格式化取餐時間
 const formatPickupTime = computed(() => {
-  if (!estimatedPickupTime.value) return '-';
+  if (!estimatedPickupTime.value) return '-'
 
-  const time = new Date(estimatedPickupTime.value);
+  const time = new Date(estimatedPickupTime.value)
   return time.toLocaleTimeString('zh-TW', {
     hour: '2-digit',
-    minute: '2-digit'
-  });
-});
+    minute: '2-digit',
+  })
+})
 
 // 載入店鋪信息
 const loadStoreData = async () => {
-  if (!brandId.value || !storeId.value) return;
+  if (!brandId.value || !storeId.value) return
 
   try {
     const response = await api.store.getStoreById({
       brandId: brandId.value,
-      id: storeId.value
-    });
+      id: storeId.value,
+    })
 
     if (response && response.store) {
-      store.value = response.store;
+      store.value = response.store
     }
   } catch (err) {
-    console.error('獲取店鋪信息失敗', err);
+    console.error('獲取店鋪信息失敗', err)
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
-  loadStoreData();
-});
+  loadStoreData()
+})
 </script>
 
 <style scoped>

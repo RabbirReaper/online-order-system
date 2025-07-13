@@ -49,13 +49,25 @@
 
         <!-- 標籤頁切換 -->
         <div class="tab-navigation">
-          <button class="tab-btn" :class="{ active: activeTab === 'available' }" @click="activeTab = 'available'">
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'available' }"
+            @click="activeTab = 'available'"
+          >
             可使用 ({{ availableCoupons.length }})
           </button>
-          <button class="tab-btn" :class="{ active: activeTab === 'used' }" @click="activeTab = 'used'">
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'used' }"
+            @click="activeTab = 'used'"
+          >
             已使用 ({{ usedCoupons.length }})
           </button>
-          <button class="tab-btn" :class="{ active: activeTab === 'expired' }" @click="activeTab = 'expired'">
+          <button
+            class="tab-btn"
+            :class="{ active: activeTab === 'expired' }"
+            @click="activeTab = 'expired'"
+          >
             已過期 ({{ expiredCoupons.length }})
           </button>
         </div>
@@ -65,7 +77,11 @@
           <!-- 可使用的優惠券 -->
           <div v-if="activeTab === 'available'">
             <div v-if="availableCoupons.length > 0">
-              <div v-for="coupon in availableCoupons" :key="coupon.id" class="coupon-card available">
+              <div
+                v-for="coupon in availableCoupons"
+                :key="coupon.id"
+                class="coupon-card available"
+              >
                 <div class="coupon-left">
                   <div class="coupon-type-icon">
                     <i :class="getCouponIcon(coupon.type)"></i>
@@ -97,7 +113,7 @@
               </div>
             </div>
             <div v-else class="empty-state">
-              <i class="bi bi-ticket-perforated text-muted" style="font-size: 4rem;"></i>
+              <i class="bi bi-ticket-perforated text-muted" style="font-size: 4rem"></i>
               <h5 class="mt-3 text-muted">沒有可用的優惠券</h5>
               <p class="text-muted">快去賺取點數兌換優惠券吧！</p>
             </div>
@@ -136,7 +152,7 @@
               </div>
             </div>
             <div v-else class="empty-state">
-              <i class="bi bi-check2-circle text-muted" style="font-size: 4rem;"></i>
+              <i class="bi bi-check2-circle text-muted" style="font-size: 4rem"></i>
               <h5 class="mt-3 text-muted">沒有使用記錄</h5>
               <p class="text-muted">您還沒有使用過任何優惠券</p>
             </div>
@@ -171,7 +187,7 @@
               </div>
             </div>
             <div v-else class="empty-state">
-              <i class="bi bi-clock-history text-muted" style="font-size: 4rem;"></i>
+              <i class="bi bi-clock-history text-muted" style="font-size: 4rem"></i>
               <h5 class="mt-3 text-muted">沒有過期的優惠券</h5>
               <p class="text-muted">很好！您沒有浪費任何優惠券</p>
             </div>
@@ -182,9 +198,7 @@
         <div class="exchange-section">
           <div class="exchange-card">
             <div class="exchange-header">
-              <h5 class="mb-0">
-                <i class="bi bi-gift me-2"></i>兌換新優惠券
-              </h5>
+              <h5 class="mb-0"><i class="bi bi-gift me-2"></i>兌換新優惠券</h5>
             </div>
             <div class="exchange-body">
               <p class="text-muted">使用您的點數兌換更多優惠券，享受更多優惠！</p>
@@ -217,12 +231,13 @@
           <span v-if="selectedCoupon.type === 'discount'">
             折抵 ${{ selectedCoupon.discount }} 元
           </span>
-          <span v-else>
-            可兌換指定餐點
-          </span>
+          <span v-else> 可兌換指定餐點 </span>
         </div>
 
-        <div class="detail-item" v-if="selectedCoupon.exchangeItems && selectedCoupon.exchangeItems.length > 0">
+        <div
+          class="detail-item"
+          v-if="selectedCoupon.exchangeItems && selectedCoupon.exchangeItems.length > 0"
+        >
           <strong>可兌換餐點：</strong>
           <ul class="exchange-items-list">
             <li v-for="item in selectedCoupon.exchangeItems" :key="item.id">
@@ -259,29 +274,27 @@
     </div>
 
     <template #footer>
-      <BButton variant="secondary" @click="$refs.couponDetailModal.hide()">
-        關閉
-      </BButton>
+      <BButton variant="secondary" @click="$refs.couponDetailModal.hide()"> 關閉 </BButton>
     </template>
   </BModal>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { BModal, BButton } from 'bootstrap-vue-next';
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { BModal, BButton } from 'bootstrap-vue-next'
 
 // 路由
-const router = useRouter();
+const router = useRouter()
 
 // 模態框參考
-const couponDetailModal = ref(null);
+const couponDetailModal = ref(null)
 
 // 狀態管理
-const isLoading = ref(true);
-const errorMessage = ref('');
-const activeTab = ref('available');
-const selectedCoupon = ref(null);
+const isLoading = ref(true)
+const errorMessage = ref('')
+const activeTab = ref('available')
+const selectedCoupon = ref(null)
 
 // 假資料 (後續會被 API 替換)
 const coupons = ref([
@@ -296,7 +309,7 @@ const coupons = ref([
     acquiredAt: '2024-11-15T10:30:00Z',
     usedAt: null,
     orderInfo: null,
-    exchangeItems: []
+    exchangeItems: [],
   },
   {
     id: 2,
@@ -311,8 +324,8 @@ const coupons = ref([
     orderInfo: null,
     exchangeItems: [
       { id: 1, name: '珍珠奶茶', quantity: 1 },
-      { id: 2, name: '紅茶', quantity: 1 }
-    ]
+      { id: 2, name: '紅茶', quantity: 1 },
+    ],
   },
   {
     id: 3,
@@ -325,9 +338,9 @@ const coupons = ref([
     acquiredAt: '2024-10-10T09:20:00Z',
     usedAt: '2024-11-25T12:30:00Z',
     orderInfo: {
-      orderNumber: 'ORD-20241125-001'
+      orderNumber: 'ORD-20241125-001',
     },
-    exchangeItems: []
+    exchangeItems: [],
   },
   {
     id: 4,
@@ -340,102 +353,98 @@ const coupons = ref([
     acquiredAt: '2024-08-15T16:45:00Z',
     usedAt: null,
     orderInfo: null,
-    exchangeItems: []
-  }
-]);
+    exchangeItems: [],
+  },
+])
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId');
-});
+  return sessionStorage.getItem('currentBrandId')
+})
 
 // 分類優惠券
 const availableCoupons = computed(() => {
-  const now = new Date();
-  return coupons.value.filter(coupon =>
-    !coupon.isUsed && new Date(coupon.expiryDate) > now
-  );
-});
+  const now = new Date()
+  return coupons.value.filter((coupon) => !coupon.isUsed && new Date(coupon.expiryDate) > now)
+})
 
 const usedCoupons = computed(() => {
-  return coupons.value.filter(coupon => coupon.isUsed);
-});
+  return coupons.value.filter((coupon) => coupon.isUsed)
+})
 
 const expiredCoupons = computed(() => {
-  const now = new Date();
-  return coupons.value.filter(coupon =>
-    !coupon.isUsed && new Date(coupon.expiryDate) <= now
-  );
-});
+  const now = new Date()
+  return coupons.value.filter((coupon) => !coupon.isUsed && new Date(coupon.expiryDate) <= now)
+})
 
 // 返回上一頁
 const goBack = () => {
-  router.push('/member');
-};
+  router.push('/member')
+}
 
 // 獲取優惠券圖標
 const getCouponIcon = (type) => {
   const iconMap = {
-    'discount': 'bi bi-percent text-success',
-    'exchange': 'bi bi-gift text-primary'
-  };
-  return iconMap[type] || 'bi bi-ticket-perforated text-secondary';
-};
+    discount: 'bi bi-percent text-success',
+    exchange: 'bi bi-gift text-primary',
+  }
+  return iconMap[type] || 'bi bi-ticket-perforated text-secondary'
+}
 
 // 獲取優惠券描述
 const getCouponDescription = (coupon) => {
   if (coupon.type === 'discount') {
-    return `可折抵 $${coupon.discount} 元`;
+    return `可折抵 $${coupon.discount} 元`
   } else {
-    const itemNames = coupon.exchangeItems.map(item => item.name).join('、');
-    return `可兌換：${itemNames}`;
+    const itemNames = coupon.exchangeItems.map((item) => item.name).join('、')
+    return `可兌換：${itemNames}`
   }
-};
+}
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '未設定';
+  if (!dateString) return '未設定'
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '無效日期';
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '無效日期'
 
-  return date.toLocaleDateString('zh-TW');
-};
+  return date.toLocaleDateString('zh-TW')
+}
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
-  if (!dateString) return '未設定';
+  if (!dateString) return '未設定'
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '無效日期';
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '無效日期'
 
-  return date.toLocaleString('zh-TW');
-};
+  return date.toLocaleString('zh-TW')
+}
 
 // 顯示優惠券詳情
 const showCouponDetail = (coupon) => {
-  selectedCoupon.value = coupon;
+  selectedCoupon.value = coupon
   if (couponDetailModal.value) {
-    couponDetailModal.value.show();
+    couponDetailModal.value.show()
   }
-};
+}
 
 // 前往兌換頁面
 const goToExchange = () => {
   // TODO: 後續實作兌換頁面路由
-  router.push('/member/points');
-};
+  router.push('/member/points')
+}
 
 // 載入優惠券資料
 const loadCouponsData = async () => {
   try {
-    isLoading.value = true;
-    errorMessage.value = '';
+    isLoading.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
 
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // TODO: 後續實作 API 調用
@@ -443,25 +452,24 @@ const loadCouponsData = async () => {
     // coupons.value = response.coupons;
 
     // 模擬載入延遲
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   } catch (error) {
-    console.error('載入優惠券資料失敗:', error);
+    console.error('載入優惠券資料失敗:', error)
 
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || '無法載入優惠券資料';
+      errorMessage.value = error.response.data.message || '無法載入優惠券資料'
     } else {
-      errorMessage.value = '無法載入優惠券資料，請稍後再試';
+      errorMessage.value = '無法載入優惠券資料，請稍後再試'
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 組件掛載後載入資料
 onMounted(() => {
-  loadCouponsData();
-});
+  loadCouponsData()
+})
 </script>
 
 <style scoped>

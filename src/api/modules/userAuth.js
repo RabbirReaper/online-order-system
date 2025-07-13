@@ -14,7 +14,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     sendVerificationCode({ brandId, phone, purpose = 'register' }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/send-verification`, { phone, purpose });
+      return apiClient.post(`/user-auth/brands/${brandId}/send-verification`, { phone, purpose })
     },
 
     /**
@@ -27,7 +27,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     verifyCode({ brandId, phone, code, purpose = 'register' }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/verify-code`, { phone, code, purpose });
+      return apiClient.post(`/user-auth/brands/${brandId}/verify-code`, { phone, code, purpose })
     },
 
     /**
@@ -43,7 +43,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     register({ brandId, userData, code }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/register`, { ...userData, code });
+      return apiClient.post(`/user-auth/brands/${brandId}/register`, { ...userData, code })
     },
 
     /**
@@ -56,7 +56,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     login({ brandId, credentials }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/login`, credentials);
+      return apiClient.post(`/user-auth/brands/${brandId}/login`, credentials)
     },
 
     /**
@@ -65,7 +65,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     logout(brandId) {
-      return apiClient.post(`/user-auth/brands/${brandId}/logout`);
+      return apiClient.post(`/user-auth/brands/${brandId}/logout`)
     },
 
     /**
@@ -76,7 +76,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     forgotPassword({ brandId, phone }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/forgot-password`, { phone });
+      return apiClient.post(`/user-auth/brands/${brandId}/forgot-password`, { phone })
     },
 
     /**
@@ -89,7 +89,11 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     resetPassword({ brandId, phone, code, newPassword }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/reset-password`, { phone, code, newPassword });
+      return apiClient.post(`/user-auth/brands/${brandId}/reset-password`, {
+        phone,
+        code,
+        newPassword,
+      })
     },
 
     /**
@@ -101,7 +105,10 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     changePassword({ brandId, currentPassword, newPassword }) {
-      return apiClient.post(`/user-auth/brands/${brandId}/change-password`, { currentPassword, newPassword });
+      return apiClient.post(`/user-auth/brands/${brandId}/change-password`, {
+        currentPassword,
+        newPassword,
+      })
     },
 
     /**
@@ -111,15 +118,15 @@ export default function (apiClient) {
      */
     async checkStatus(brandId) {
       try {
-        const res = await apiClient.get(`/user-auth/brands/${brandId}/check-status`);
+        const res = await apiClient.get(`/user-auth/brands/${brandId}/check-status`)
         return {
           loggedIn: res.loggedIn,
           role: res.role,
-          brandId: res.brandId
-        };
+          brandId: res.brandId,
+        }
       } catch (error) {
-        return { loggedIn: false, role: null, brandId: null };
+        return { loggedIn: false, role: null, brandId: null }
       }
-    }
-  };
+    },
+  }
 }

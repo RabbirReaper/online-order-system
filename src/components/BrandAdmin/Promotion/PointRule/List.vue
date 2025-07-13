@@ -3,8 +3,14 @@
     <!-- 頁面頂部工具列 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex">
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="搜尋點數規則..." v-model="searchQuery" @input="handleSearch">
+        <div class="input-group" style="width: 300px">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="搜尋點數規則..."
+            v-model="searchQuery"
+            @input="handleSearch"
+          />
           <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
             <i class="bi bi-search"></i>
           </button>
@@ -69,14 +75,16 @@
                   <template v-if="rule.type === 'purchase_amount'">
                     每消費 ${{ formatPrice(rule.conversionRate) }} = 1 點
                   </template>
-                  <template v-else>
-                    {{ rule.conversionRate }} 點
-                  </template>
+                  <template v-else> {{ rule.conversionRate }} 點 </template>
                 </td>
                 <td>${{ formatPrice(rule.minimumAmount || 0) }}</td>
                 <td>
-                  <span v-if="rule.description" class="text-truncate d-inline-block" style="max-width: 200px;"
-                    :title="rule.description">
+                  <span
+                    v-if="rule.description"
+                    class="text-truncate d-inline-block"
+                    style="max-width: 200px"
+                    :title="rule.description"
+                  >
                     {{ rule.description }}
                   </span>
                   <span v-else class="text-muted">無描述</span>
@@ -88,16 +96,25 @@
                 </td>
                 <td>
                   <div class="btn-group">
-                    <router-link :to="`/admin/${brandId}/point-rules/edit/${rule._id}`"
-                      class="btn btn-sm btn-outline-primary">
+                    <router-link
+                      :to="`/admin/${brandId}/point-rules/edit/${rule._id}`"
+                      class="btn btn-sm btn-outline-primary"
+                    >
                       <i class="bi bi-pencil me-1"></i>編輯
                     </router-link>
-                    <button type="button" class="btn btn-sm"
+                    <button
+                      type="button"
+                      class="btn btn-sm"
                       :class="rule.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
-                      @click="toggleStatus(rule)">
+                      @click="toggleStatus(rule)"
+                    >
                       <i class="bi bi-power me-1"></i>{{ rule.isActive ? '停用' : '啟用' }}
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" @click="confirmDelete(rule)">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      @click="confirmDelete(rule)"
+                    >
                       <i class="bi bi-trash me-1"></i>刪除
                     </button>
                   </div>
@@ -112,7 +129,13 @@
     <!-- 無資料提示 -->
     <div class="alert alert-info text-center py-4" v-if="rules.length === 0 && !isLoading">
       <i class="bi bi-info-circle me-2 fs-4"></i>
-      <p class="mb-0">{{ searchQuery || filterType || filterStatus ? '沒有符合搜尋條件的點數規則' : '尚未創建任何點數規則' }}</p>
+      <p class="mb-0">
+        {{
+          searchQuery || filterType || filterStatus
+            ? '沒有符合搜尋條件的點數規則'
+            : '尚未創建任何點數規則'
+        }}
+      </p>
       <div class="mt-3" v-if="!searchQuery && !filterType && !filterStatus">
         <router-link :to="`/admin/${brandId}/point-rules/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增第一個點數規則
@@ -133,10 +156,17 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">確認刪除</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body" v-if="ruleToDelete">
-            <p>確定要刪除點數規則 <strong>{{ ruleToDelete.name }}</strong> 嗎？</p>
+            <p>
+              確定要刪除點數規則 <strong>{{ ruleToDelete.name }}</strong> 嗎？
+            </p>
             <div class="alert alert-danger mt-3">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               此操作無法撤銷！刪除後將無法復原。
@@ -145,8 +175,12 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
             <button type="button" class="btn btn-danger" @click="deleteRule" :disabled="isDeleting">
-              <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
+              <span
+                v-if="isDeleting"
+                class="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>
               {{ isDeleting ? '刪除中...' : '確認刪除' }}
             </button>
           </div>
@@ -160,12 +194,17 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">確認變更狀態</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body" v-if="ruleToToggle">
             <p>
-              確定要將「<strong>{{ ruleToToggle.name }}</strong>」
-              {{ ruleToToggle.isActive ? '停用' : '啟用' }}嗎？
+              確定要將「<strong>{{ ruleToToggle.name }}</strong
+              >」 {{ ruleToToggle.isActive ? '停用' : '啟用' }}嗎？
             </p>
 
             <div v-if="ruleToToggle.isActive" class="alert alert-warning">
@@ -190,9 +229,12 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn"
+            <button
+              type="button"
+              class="btn"
               :class="ruleToToggle && ruleToToggle.isActive ? 'btn-warning' : 'btn-success'"
-              @click="confirmToggleStatus">
+              @click="confirmToggleStatus"
+            >
               確認{{ ruleToToggle && ruleToToggle.isActive ? '停用' : '啟用' }}
             </button>
           </div>
@@ -203,191 +245,190 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { Modal } from 'bootstrap';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { Modal } from 'bootstrap'
+import api from '@/api'
 
 // 從路由中獲取品牌ID
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
 
 // 狀態變數
-const rules = ref([]);
-const isLoading = ref(true);
-const searchQuery = ref('');
-const filterType = ref('');
-const filterStatus = ref('');
-const errorMessage = ref('');
-const deleteModal = ref(null);
-const ruleToDelete = ref(null);
-const isDeleting = ref(false);
-const statusModal = ref(null);
-const ruleToToggle = ref(null);
+const rules = ref([])
+const isLoading = ref(true)
+const searchQuery = ref('')
+const filterType = ref('')
+const filterStatus = ref('')
+const errorMessage = ref('')
+const deleteModal = ref(null)
+const ruleToDelete = ref(null)
+const isDeleting = ref(false)
+const statusModal = ref(null)
+const ruleToToggle = ref(null)
 
 // 類型標籤對應
 const getRuleTypeLabel = (type) => {
   const labels = {
-    'purchase_amount': '消費金額',
-    'first_purchase': '首次購買',
-    'recurring_visit': '重複訪問'
-  };
-  return labels[type] || type;
-};
+    purchase_amount: '消費金額',
+    first_purchase: '首次購買',
+    recurring_visit: '重複訪問',
+  }
+  return labels[type] || type
+}
 
 // 計算過濾後的規則列表
 const filteredRules = computed(() => {
-  let filtered = rules.value;
+  let filtered = rules.value
 
   // 搜尋過濾
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(rule =>
-      rule.name.toLowerCase().includes(query) ||
-      (rule.description && rule.description.toLowerCase().includes(query))
-    );
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(
+      (rule) =>
+        rule.name.toLowerCase().includes(query) ||
+        (rule.description && rule.description.toLowerCase().includes(query)),
+    )
   }
 
   // 類型過濾
   if (filterType.value) {
-    filtered = filtered.filter(rule => rule.type === filterType.value);
+    filtered = filtered.filter((rule) => rule.type === filterType.value)
   }
 
   // 狀態過濾
   if (filterStatus.value) {
-    const isActive = filterStatus.value === 'active';
-    filtered = filtered.filter(rule => rule.isActive === isActive);
+    const isActive = filterStatus.value === 'active'
+    filtered = filtered.filter((rule) => rule.isActive === isActive)
   }
 
-  return filtered;
-});
+  return filtered
+})
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price.toLocaleString('zh-TW');
-};
+  return price.toLocaleString('zh-TW')
+}
 
 // 處理搜尋
 const handleSearch = () => {
   // 實時過濾，無需額外操作
-};
+}
 
 // 獲取點數規則列表
 const fetchRules = async () => {
-  if (!brandId.value) return;
+  if (!brandId.value) return
 
-  isLoading.value = true;
-  errorMessage.value = '';
+  isLoading.value = true
+  errorMessage.value = ''
 
   try {
-    const response = await api.pointRules.getAllPointRules(brandId.value);
+    const response = await api.pointRules.getAllPointRules(brandId.value)
     if (response && response.rules) {
-      rules.value = response.rules;
+      rules.value = response.rules
     }
   } catch (error) {
-    console.error('獲取點數規則列表失敗:', error);
+    console.error('獲取點數規則列表失敗:', error)
     // 嘗試獲取更有意義的錯誤訊息
     if (error.response && error.response.data && error.response.data.message) {
-      errorMessage.value = error.response.data.message;
+      errorMessage.value = error.response.data.message
     } else if (error.message) {
-      errorMessage.value = error.message;
+      errorMessage.value = error.message
     } else {
-      errorMessage.value = '無法連接到伺服器，請檢查網路連線';
+      errorMessage.value = '無法連接到伺服器，請檢查網路連線'
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 顯示狀態切換確認對話框
 const toggleStatus = (rule) => {
-  ruleToToggle.value = rule;
-  statusModal.value.show();
-};
+  ruleToToggle.value = rule
+  statusModal.value.show()
+}
 
 // 確認切換狀態
 const confirmToggleStatus = async () => {
-  if (!ruleToToggle.value) return;
+  if (!ruleToToggle.value) return
 
   try {
-    const newStatus = !ruleToToggle.value.isActive;
+    const newStatus = !ruleToToggle.value.isActive
     await api.pointRules.togglePointRuleActive({
       id: ruleToToggle.value._id,
       isActive: newStatus,
-      brandId: brandId.value
-    });
+      brandId: brandId.value,
+    })
 
     // 更新本地狀態
-    ruleToToggle.value.isActive = newStatus;
+    ruleToToggle.value.isActive = newStatus
 
     // 關閉對話框
-    statusModal.value.hide();
+    statusModal.value.hide()
   } catch (error) {
-    console.error('切換狀態失敗:', error);
-    alert('切換狀態失敗，請稍後再試');
+    console.error('切換狀態失敗:', error)
+    alert('切換狀態失敗，請稍後再試')
   }
-};
+}
 
 // 顯示刪除確認對話框
 const confirmDelete = (rule) => {
-  ruleToDelete.value = rule;
-  deleteModal.value.show();
-};
+  ruleToDelete.value = rule
+  deleteModal.value.show()
+}
 
 // 刪除點數規則
 const deleteRule = async () => {
-  if (!ruleToDelete.value) return;
+  if (!ruleToDelete.value) return
 
-  isDeleting.value = true;
+  isDeleting.value = true
 
   try {
     await api.pointRules.deletePointRule({
       id: ruleToDelete.value._id,
-      brandId: brandId.value
-    });
+      brandId: brandId.value,
+    })
 
     // 關閉對話框
-    deleteModal.value.hide();
+    deleteModal.value.hide()
 
     // 從列表中移除已刪除的規則
-    rules.value = rules.value.filter(
-      rule => rule._id !== ruleToDelete.value._id
-    );
+    rules.value = rules.value.filter((rule) => rule._id !== ruleToDelete.value._id)
   } catch (error) {
-    console.error('刪除點數規則失敗:', error);
-    alert('刪除點數規則時發生錯誤');
+    console.error('刪除點數規則失敗:', error)
+    alert('刪除點數規則時發生錯誤')
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 初始化刪除確認對話框
-  const modalElement = document.getElementById('deleteConfirmModal');
+  const modalElement = document.getElementById('deleteConfirmModal')
   if (modalElement) {
-    deleteModal.value = new Modal(modalElement);
+    deleteModal.value = new Modal(modalElement)
 
     // 監聽對話框關閉事件
     modalElement.addEventListener('hidden.bs.modal', () => {
-      ruleToDelete.value = null;
-    });
+      ruleToDelete.value = null
+    })
   }
 
   // 初始化狀態切換對話框
-  const statusModalElement = document.getElementById('statusToggleModal');
+  const statusModalElement = document.getElementById('statusToggleModal')
   if (statusModalElement) {
-    statusModal.value = new Modal(statusModalElement);
+    statusModal.value = new Modal(statusModalElement)
 
     // 監聽對話框關閉事件
     statusModalElement.addEventListener('hidden.bs.modal', () => {
-      ruleToToggle.value = null;
-    });
+      ruleToToggle.value = null
+    })
   }
 
   // 載入點數規則列表
-  fetchRules();
-});
+  fetchRules()
+})
 </script>
 
 <style scoped>

@@ -18,7 +18,10 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">{{ coupon.name }}</h4>
         <div class="d-flex">
-          <router-link :to="`/admin/${brandId}/coupons/edit/${coupon._id}`" class="btn btn-primary me-2">
+          <router-link
+            :to="`/admin/${brandId}/coupons/edit/${coupon._id}`"
+            class="btn btn-primary me-2"
+          >
             <i class="bi bi-pencil me-1"></i>編輯折價券
           </router-link>
           <router-link :to="`/admin/${brandId}/coupons`" class="btn btn-secondary">
@@ -82,7 +85,11 @@
                 <h6 class="text-muted mb-1">折扣類型</h6>
                 <p>
                   <span class="badge bg-info">
-                    {{ coupon.discountInfo?.discountType === 'percentage' ? '百分比折扣' : '固定金額折抵' }}
+                    {{
+                      coupon.discountInfo?.discountType === 'percentage'
+                        ? '百分比折扣'
+                        : '固定金額折抵'
+                    }}
                   </span>
                 </p>
               </div>
@@ -99,8 +106,13 @@
                 </p>
               </div>
 
-              <div class="mb-3"
-                v-if="coupon.discountInfo?.discountType === 'percentage' && coupon.discountInfo?.maxDiscountAmount">
+              <div
+                class="mb-3"
+                v-if="
+                  coupon.discountInfo?.discountType === 'percentage' &&
+                  coupon.discountInfo?.maxDiscountAmount
+                "
+              >
                 <h6 class="text-muted mb-1">最高折扣金額</h6>
                 <p>${{ formatPrice(coupon.discountInfo.maxDiscountAmount) }}</p>
               </div>
@@ -108,8 +120,11 @@
               <div class="mb-3">
                 <h6 class="text-muted mb-1">最低消費金額</h6>
                 <p>
-                  {{ coupon.discountInfo?.minPurchaseAmount > 0 ?
-                    `$${formatPrice(coupon.discountInfo.minPurchaseAmount)}` : '無限制' }}
+                  {{
+                    coupon.discountInfo?.minPurchaseAmount > 0
+                      ? `$${formatPrice(coupon.discountInfo.minPurchaseAmount)}`
+                      : '無限制'
+                  }}
                 </p>
               </div>
 
@@ -123,7 +138,11 @@
                       需滿足最低消費金額 ${{ formatPrice(coupon.discountInfo.minPurchaseAmount) }}
                     </li>
                     <li
-                      v-if="coupon.discountInfo?.discountType === 'percentage' && coupon.discountInfo?.maxDiscountAmount">
+                      v-if="
+                        coupon.discountInfo?.discountType === 'percentage' &&
+                        coupon.discountInfo?.maxDiscountAmount
+                      "
+                    >
                       百分比折扣最高不超過 ${{ formatPrice(coupon.discountInfo.maxDiscountAmount) }}
                     </li>
                     <li>每張折價券限使用一次</li>
@@ -157,7 +176,9 @@
                 </div>
                 <div class="col-md-3">
                   <div class="border-end">
-                    <h3 class="text-warning mb-1">{{ (coupon.totalIssued || 0) - (coupon.totalUsed || 0) }}</h3>
+                    <h3 class="text-warning mb-1">
+                      {{ (coupon.totalIssued || 0) - (coupon.totalUsed || 0) }}
+                    </h3>
                     <p class="text-muted mb-0">未使用</p>
                   </div>
                 </div>
@@ -181,7 +202,11 @@
                 <button class="btn btn-outline-primary" @click="showToggleStatusModal">
                   <i class="bi bi-power me-1"></i>{{ coupon.isActive ? '停用' : '啟用' }}折價券
                 </button>
-                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCouponModal">
+                <button
+                  class="btn btn-outline-danger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteCouponModal"
+                >
                   <i class="bi bi-trash me-1"></i>刪除折價券
                 </button>
               </div>
@@ -205,12 +230,19 @@
             </p>
             <div class="alert alert-info">
               <i class="bi bi-info-circle-fill me-2"></i>
-              {{ coupon?.isActive ? '停用後顧客將無法兌換此折價券' : '啟用後顧客可以重新兌換此折價券' }}
+              {{
+                coupon?.isActive ? '停用後顧客將無法兌換此折價券' : '啟用後顧客可以重新兌換此折價券'
+              }}
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="confirmToggleStatus" :disabled="isToggling">
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="confirmToggleStatus"
+              :disabled="isToggling"
+            >
               <span v-if="isToggling" class="spinner-border spinner-border-sm me-1"></span>
               確認{{ coupon?.isActive ? '停用' : '啟用' }}
             </button>
@@ -232,16 +264,17 @@
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               <strong>警告：</strong>此操作無法復原
             </div>
-            <p v-if="coupon">
-              您確定要刪除折價券「{{ coupon.name }}」嗎？
-            </p>
-            <p class="text-muted small">
-              刪除後，所有相關的統計資料也會一併移除。
-            </p>
+            <p v-if="coupon">您確定要刪除折價券「{{ coupon.name }}」嗎？</p>
+            <p class="text-muted small">刪除後，所有相關的統計資料也會一併移除。</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-danger" @click="handleDelete" :disabled="isDeleting">
+            <button
+              type="button"
+              class="btn btn-danger"
+              @click="handleDelete"
+              :disabled="isDeleting"
+            >
               <span v-if="isDeleting" class="spinner-border spinner-border-sm me-1"></span>
               {{ isDeleting ? '刪除中...' : '確認刪除' }}
             </button>
@@ -253,170 +286,170 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { Modal } from 'bootstrap';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Modal } from 'bootstrap'
+import api from '@/api'
 
 // 路由
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
 // 從路由中獲取品牌ID和折價券ID
-const brandId = computed(() => route.params.brandId);
-const couponId = computed(() => route.params.id);
+const brandId = computed(() => route.params.brandId)
+const couponId = computed(() => route.params.id)
 
 // 狀態
-const isLoading = ref(false);
-const isToggling = ref(false);
-const isDeleting = ref(false);
-const error = ref('');
+const isLoading = ref(false)
+const isToggling = ref(false)
+const isDeleting = ref(false)
+const error = ref('')
 
 // 折價券資料
-const coupon = ref(null);
+const coupon = ref(null)
 
 // 對話框
-const statusModal = ref(null);
+const statusModal = ref(null)
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price?.toLocaleString('zh-TW') || '0';
-};
+  return price?.toLocaleString('zh-TW') || '0'
+}
 
 // 計算使用率
 const usageRate = computed(() => {
   if (!coupon.value || !coupon.value.totalIssued || coupon.value.totalIssued === 0) {
-    return 0;
+    return 0
   }
-  return Math.round(((coupon.value.totalUsed || 0) / coupon.value.totalIssued) * 100);
-});
+  return Math.round(((coupon.value.totalUsed || 0) / coupon.value.totalIssued) * 100)
+})
 
 // 獲取折價券資料
 const fetchCouponData = async () => {
-  if (!couponId.value || !brandId.value) return;
+  if (!couponId.value || !brandId.value) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     const response = await api.promotion.getCouponTemplateById({
       id: couponId.value,
-      brandId: brandId.value
-    });
+      brandId: brandId.value,
+    })
 
     if (response && response.template) {
-      const template = response.template;
+      const template = response.template
 
       // 確保只處理折價券
       if (template.couponType !== 'discount') {
-        error.value = '此項目不是折價券';
-        return;
+        error.value = '此項目不是折價券'
+        return
       }
 
-      coupon.value = template;
+      coupon.value = template
     } else {
-      error.value = '獲取折價券資料失敗';
+      error.value = '獲取折價券資料失敗'
     }
   } catch (err) {
-    console.error('獲取折價券資料時發生錯誤:', err);
-    error.value = '獲取折價券資料時發生錯誤，請稍後再試';
+    console.error('獲取折價券資料時發生錯誤:', err)
+    error.value = '獲取折價券資料時發生錯誤，請稍後再試'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 顯示狀態切換確認對話框
 const showToggleStatusModal = () => {
-  statusModal.value.show();
-};
+  statusModal.value.show()
+}
 
 // 確認切換狀態
 const confirmToggleStatus = async () => {
-  if (!coupon.value) return;
+  if (!coupon.value) return
 
-  isToggling.value = true;
+  isToggling.value = true
 
   try {
-    const newStatus = !coupon.value.isActive;
+    const newStatus = !coupon.value.isActive
     await api.promotion.updateCouponTemplate({
       id: coupon.value._id,
       data: {
         brand: brandId.value,
-        isActive: newStatus
-      }
-    });
+        isActive: newStatus,
+      },
+    })
 
     // 更新本地狀態
-    coupon.value.isActive = newStatus;
+    coupon.value.isActive = newStatus
 
     // 關閉對話框
-    statusModal.value.hide();
+    statusModal.value.hide()
   } catch (err) {
-    console.error('切換狀態失敗:', err);
-    alert('切換狀態失敗，請稍後再試');
+    console.error('切換狀態失敗:', err)
+    alert('切換狀態失敗，請稍後再試')
   } finally {
-    isToggling.value = false;
+    isToggling.value = false
   }
-};
+}
 
 // 處理刪除確認
 const handleDelete = async () => {
-  if (!coupon.value) return;
+  if (!coupon.value) return
 
-  isDeleting.value = true;
+  isDeleting.value = true
 
   try {
     await api.promotion.deleteCouponTemplate({
       id: coupon.value._id,
-      brandId: brandId.value
-    });
+      brandId: brandId.value,
+    })
 
     // 關閉模態對話框
-    const modalElement = document.getElementById('deleteCouponModal');
-    const modal = Modal.getInstance(modalElement);
+    const modalElement = document.getElementById('deleteCouponModal')
+    const modal = Modal.getInstance(modalElement)
     if (modal) {
-      modal.hide();
+      modal.hide()
     }
 
     // 確保模態背景被移除後再導航
     setTimeout(() => {
       // 手動移除可能殘留的 backdrop
-      const backdrop = document.querySelector('.modal-backdrop');
+      const backdrop = document.querySelector('.modal-backdrop')
       if (backdrop) {
-        backdrop.remove();
-        document.body.classList.remove('modal-open');
+        backdrop.remove()
+        document.body.classList.remove('modal-open')
       }
 
       // 返回折價券列表
-      router.push(`/admin/${brandId.value}/coupons`);
+      router.push(`/admin/${brandId.value}/coupons`)
 
       // 觸發刷新列表事件
-      window.dispatchEvent(new CustomEvent('refresh-coupon-list'));
-    }, 300);
+      window.dispatchEvent(new CustomEvent('refresh-coupon-list'))
+    }, 300)
   } catch (err) {
-    console.error('刪除折價券失敗:', err);
+    console.error('刪除折價券失敗:', err)
 
     if (err.response && err.response.data && err.response.data.message) {
-      alert(`刪除失敗: ${err.response.data.message}`);
+      alert(`刪除失敗: ${err.response.data.message}`)
     } else {
-      alert('刪除折價券時發生錯誤');
+      alert('刪除折價券時發生錯誤')
     }
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 初始化狀態切換對話框
-  const statusModalElement = document.getElementById('statusToggleModal');
+  const statusModalElement = document.getElementById('statusToggleModal')
   if (statusModalElement) {
-    statusModal.value = new Modal(statusModalElement);
+    statusModal.value = new Modal(statusModalElement)
   }
 
   // 獲取折價券資料
-  fetchCouponData();
-});
+  fetchCouponData()
+})
 </script>
 
 <style scoped>

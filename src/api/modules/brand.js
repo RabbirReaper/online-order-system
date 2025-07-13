@@ -10,7 +10,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllBrands() {
-      return apiClient.get('/brand');
+      return apiClient.get('/brand')
     },
 
     /**
@@ -19,7 +19,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getBrandById(id) {
-      return apiClient.get(`/brand/${id}`);
+      return apiClient.get(`/brand/${id}`)
     },
 
     /**
@@ -32,7 +32,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createBrand(data) {
-      return apiClient.post('/brand', data);
+      return apiClient.post('/brand', data)
     },
 
     /**
@@ -46,7 +46,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateBrand({ id, data }) {
-      return apiClient.put(`/brand/${id}`, data);
+      return apiClient.put(`/brand/${id}`, data)
     },
 
     /**
@@ -55,7 +55,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteBrand(id) {
-      return apiClient.delete(`/brand/${id}`);
+      return apiClient.delete(`/brand/${id}`)
     },
 
     /**
@@ -75,7 +75,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getBrandStats(id) {
-      return apiClient.get(`/brand/${id}/stats`);
+      return apiClient.get(`/brand/${id}/stats`)
     },
 
     /**
@@ -86,7 +86,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleBrandActive({ id, isActive }) {
-      return apiClient.put(`/brand/${id}/toggle`, { isActive });
-    }
-  };
+      return apiClient.put(`/brand/${id}/toggle`, { isActive })
+    },
+  }
 }

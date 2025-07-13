@@ -9,8 +9,8 @@ export const memberRoutes = [
     beforeEnter: requireAuth,
     meta: {
       title: '會員中心',
-      requiresCustomerAuth: true
-    }
+      requiresCustomerAuth: true,
+    },
   },
   {
     path: '/member/profile',
@@ -19,8 +19,8 @@ export const memberRoutes = [
     beforeEnter: requireAuth,
     meta: {
       title: '會員資料',
-      requiresCustomerAuth: true
-    }
+      requiresCustomerAuth: true,
+    },
   },
   {
     path: '/member/points',
@@ -29,8 +29,8 @@ export const memberRoutes = [
     beforeEnter: requireAuth,
     meta: {
       title: '我的點數',
-      requiresCustomerAuth: true
-    }
+      requiresCustomerAuth: true,
+    },
   },
   {
     path: '/member/coupons',
@@ -39,8 +39,8 @@ export const memberRoutes = [
     beforeEnter: requireAuth,
     meta: {
       title: '我的優惠券',
-      requiresCustomerAuth: true
-    }
+      requiresCustomerAuth: true,
+    },
   },
   {
     path: '/member/order-history',
@@ -49,7 +49,7 @@ export const memberRoutes = [
     beforeEnter: requireAuth,
     meta: {
       title: '我的訂單',
-      requiresCustomerAuth: true
-    }
-  }
+      requiresCustomerAuth: true,
+    },
+  },
 ]

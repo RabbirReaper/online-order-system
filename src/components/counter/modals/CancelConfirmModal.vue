@@ -1,6 +1,6 @@
 <template>
-  <BModal 
-    v-model="isVisible" 
+  <BModal
+    v-model="isVisible"
     :title="modalTitle"
     @hide="handleClose"
     @ok="handleConfirm"
@@ -18,10 +18,8 @@
     <div class="cancel-confirm-content">
       <!-- 警告訊息 -->
       <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2 text-warning" style="font-size: 1.2rem;"></i>
-        <div>
-          <strong>注意！</strong> 此操作將無法復原，訂單一旦取消後無法恢復。
-        </div>
+        <i class="bi bi-exclamation-triangle-fill me-2 text-warning" style="font-size: 1.2rem"></i>
+        <div><strong>注意！</strong> 此操作將無法復原，訂單一旦取消後無法恢復。</div>
       </div>
 
       <!-- 訂單資訊 -->
@@ -35,7 +33,9 @@
             </div>
             <div class="col-6">
               <small class="text-muted">訂單金額：</small>
-              <div class="fw-bold text-primary">${{ orderInfo.total?.toLocaleString('en-US') || 0 }}</div>
+              <div class="fw-bold text-primary">
+                ${{ orderInfo.total?.toLocaleString('en-US') || 0 }}
+              </div>
             </div>
           </div>
           <div class="row mt-2">
@@ -63,14 +63,14 @@
 
       <!-- 取消原因輸入 -->
       <div class="cancel-reason-section">
-        <BFormGroup 
-          label="取消原因" 
+        <BFormGroup
+          label="取消原因"
           label-for="cancel-reason"
           :invalid-feedback="reasonError"
           :state="reasonState"
         >
-          <BFormSelect 
-            id="cancel-reason" 
+          <BFormSelect
+            id="cancel-reason"
             v-model="cancelReason"
             :options="cancelReasonOptions"
             :state="reasonState"
@@ -79,7 +79,7 @@
         </BFormGroup>
 
         <!-- 自訂原因輸入框 -->
-        <BFormGroup 
+        <BFormGroup
           v-if="cancelReason === 'custom'"
           label="請輸入自訂原因"
           label-for="custom-reason"
@@ -100,57 +100,51 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { 
-  BModal, 
-  BFormGroup, 
-  BFormSelect, 
-  BFormTextarea,
-  BBadge
-} from 'bootstrap-vue-next';
+import { ref, computed, watch } from 'vue'
+import { BModal, BFormGroup, BFormSelect, BFormTextarea, BBadge } from 'bootstrap-vue-next'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    default: false
+    default: false,
   },
   orderInfo: {
     type: Object,
-    default: null
-  }
-});
+    default: null,
+  },
+})
 
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
 
 // 響應式數據
-const cancelReason = ref('');
-const customReason = ref('');
-const reasonError = ref('');
+const cancelReason = ref('')
+const customReason = ref('')
+const reasonError = ref('')
 
 // 計算屬性
 const isVisible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
+  set: (value) => emit('update:modelValue', value),
+})
 
 const modalTitle = computed(() => {
-  return props.orderInfo 
-    ? `取消訂單 #${props.orderInfo.orderNumber || props.orderInfo._id?.slice(-6)}` 
-    : '取消訂單';
-});
+  return props.orderInfo
+    ? `取消訂單 #${props.orderInfo.orderNumber || props.orderInfo._id?.slice(-6)}`
+    : '取消訂單'
+})
 
 const reasonState = computed(() => {
-  if (reasonError.value) return false;
-  if (cancelReason.value.trim()) return true;
-  return null;
-});
+  if (reasonError.value) return false
+  if (cancelReason.value.trim()) return true
+  return null
+})
 
 const customReasonState = computed(() => {
   if (cancelReason.value === 'custom') {
-    return customReason.value.trim().length >= 5 ? true : false;
+    return customReason.value.trim().length >= 5 ? true : false
   }
-  return null;
-});
+  return null
+})
 
 // 取消原因選項
 const cancelReasonOptions = [
@@ -162,105 +156,104 @@ const cancelReasonOptions = [
   { value: '重複訂單', text: '重複訂單' },
   { value: '付款問題', text: '付款問題' },
   { value: '營業時間外', text: '營業時間外' },
-  { value: 'custom', text: '其他原因（請說明）' }
-];
+  { value: 'custom', text: '其他原因（請說明）' },
+]
 
 // 監聽取消原因變化，清空自訂原因
 watch(cancelReason, (newValue) => {
   if (newValue !== 'custom') {
-    customReason.value = '';
+    customReason.value = ''
   }
-  clearError();
-});
+  clearError()
+})
 
 // 方法
 const clearError = () => {
-  reasonError.value = '';
-};
+  reasonError.value = ''
+}
 
 const validateReason = () => {
   if (!cancelReason.value.trim()) {
-    reasonError.value = '請選擇取消原因';
-    return false;
+    reasonError.value = '請選擇取消原因'
+    return false
   }
-  
+
   if (cancelReason.value === 'custom' && customReason.value.trim().length < 5) {
-    reasonError.value = '自訂原因至少需要5個字符';
-    return false;
+    reasonError.value = '自訂原因至少需要5個字符'
+    return false
   }
-  
-  return true;
-};
+
+  return true
+}
 
 const handleConfirm = (bvModalEvent) => {
   // 阻止modal關閉
-  bvModalEvent.preventDefault();
-  
+  bvModalEvent.preventDefault()
+
   if (!validateReason()) {
-    return;
+    return
   }
 
-  const finalReason = cancelReason.value === 'custom' 
-    ? customReason.value.trim() 
-    : cancelReason.value;
+  const finalReason =
+    cancelReason.value === 'custom' ? customReason.value.trim() : cancelReason.value
 
   emit('confirm', {
     orderId: props.orderInfo?._id,
-    reason: finalReason
-  });
-};
+    reason: finalReason,
+  })
+}
 
 const handleClose = () => {
-  emit('cancel');
-  resetForm();
-};
+  emit('cancel')
+  resetForm()
+}
 
 const resetForm = () => {
-  cancelReason.value = '';
-  customReason.value = '';
-  reasonError.value = '';
-};
+  cancelReason.value = ''
+  customReason.value = ''
+  reasonError.value = ''
+}
 
 // 輔助函數
 const formatOrderType = (orderType) => {
   const typeMap = {
-    'dine_in': '內用',
-    'takeout': '外帶',
-    'delivery': '外送'
-  };
-  return typeMap[orderType] || orderType;
-};
+    dine_in: '內用',
+    takeout: '外帶',
+    delivery: '外送',
+  }
+  return typeMap[orderType] || orderType
+}
 
 const formatOrderStatus = (status) => {
   const statusMap = {
-    'unpaid': '未付款',
-    'paid': '已付款',
-    'cancelled': '已取消',
-    'preparing': '製作中',
-    'ready': '已完成',
-    'completed': '已完成'
-  };
-  return statusMap[status] || status;
-};
+    unpaid: '未付款',
+    paid: '已付款',
+    cancelled: '已取消',
+    preparing: '製作中',
+    ready: '已完成',
+    completed: '已完成',
+  }
+  return statusMap[status] || status
+}
 
 const getStatusVariant = (status) => {
   const variantMap = {
-    'unpaid': 'warning',
-    'paid': 'success',
-    'cancelled': 'danger',
-    'preparing': 'info',
-    'ready': 'primary',
-    'completed': 'success'
-  };
-  return variantMap[status] || 'secondary';
-};
+    unpaid: 'warning',
+    paid: 'success',
+    cancelled: 'danger',
+    preparing: 'info',
+    ready: 'primary',
+    completed: 'success',
+  }
+  return variantMap[status] || 'secondary'
+}
 
 // 當modal關閉時重置表單
 watch(isVisible, (newValue) => {
   if (!newValue) {
-    resetForm();
+    resetForm()
   }
-});
+})
 </script>
 
 <style scoped>

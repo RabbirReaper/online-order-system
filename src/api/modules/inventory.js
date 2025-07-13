@@ -16,7 +16,9 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getStoreInventory({ brandId, storeId, ...queryParams }) {
-      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory`, { params: queryParams });
+      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory`, {
+        params: queryParams,
+      })
     },
 
     /**
@@ -28,7 +30,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getInventoryItem({ brandId, storeId, inventoryId }) {
-      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}`);
+      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}`)
     },
 
     /**
@@ -40,7 +42,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createInventory({ brandId, storeId, data }) {
-      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory`, data);
+      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory`, data)
     },
 
     /**
@@ -53,7 +55,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateInventory({ brandId, storeId, inventoryId, data }) {
-      return apiClient.put(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}`, data);
+      return apiClient.put(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}`, data)
     },
 
     /**
@@ -67,10 +69,13 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     setAvailableStock({ brandId, storeId, inventoryId, availableStock, reason }) {
-      return apiClient.put(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/available-stock`, {
-        availableStock,
-        reason
-      });
+      return apiClient.put(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/available-stock`,
+        {
+          availableStock,
+          reason,
+        },
+      )
     },
 
     /**
@@ -85,13 +90,24 @@ export default function (apiClient) {
      * @param {string} [params.inventoryType='DishTemplate'] - 庫存類型
      * @returns {Promise} - API 回應
      */
-    reduceStock({ brandId, storeId, inventoryId, quantity, reason, orderId, inventoryType = 'DishTemplate' }) {
-      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/reduce`, {
-        quantity,
-        reason,
-        orderId,
-        inventoryType
-      });
+    reduceStock({
+      brandId,
+      storeId,
+      inventoryId,
+      quantity,
+      reason,
+      orderId,
+      inventoryType = 'DishTemplate',
+    }) {
+      return apiClient.post(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/reduce`,
+        {
+          quantity,
+          reason,
+          orderId,
+          inventoryType,
+        },
+      )
     },
 
     /**
@@ -106,13 +122,24 @@ export default function (apiClient) {
      * @param {string} [params.inventoryType='DishTemplate'] - 項目類型
      * @returns {Promise} - API 回應
      */
-    addStock({ brandId, storeId, inventoryId, quantity, reason, stockType = 'totalStock', inventoryType = 'DishTemplate' }) {
-      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/add`, {
-        quantity,
-        reason,
-        stockType,
-        inventoryType
-      });
+    addStock({
+      brandId,
+      storeId,
+      inventoryId,
+      quantity,
+      reason,
+      stockType = 'totalStock',
+      inventoryType = 'DishTemplate',
+    }) {
+      return apiClient.post(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/add`,
+        {
+          quantity,
+          reason,
+          stockType,
+          inventoryType,
+        },
+      )
     },
 
     /**
@@ -127,13 +154,24 @@ export default function (apiClient) {
      * @param {string} [params.inventoryType='DishTemplate'] - 項目類型
      * @returns {Promise} - API 回應
      */
-    processDamage({ brandId, storeId, inventoryId, quantity, reason, stockType = 'totalStock', inventoryType = 'DishTemplate' }) {
-      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/damage`, {
-        quantity,
-        reason,
-        stockType,
-        inventoryType
-      });
+    processDamage({
+      brandId,
+      storeId,
+      inventoryId,
+      quantity,
+      reason,
+      stockType = 'totalStock',
+      inventoryType = 'DishTemplate',
+    }) {
+      return apiClient.post(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/damage`,
+        {
+          quantity,
+          reason,
+          stockType,
+          inventoryType,
+        },
+      )
     },
 
     /**
@@ -146,9 +184,12 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleSoldOut({ brandId, storeId, inventoryId, isSoldOut }) {
-      return apiClient.put(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/sold-out`, {
-        isSoldOut
-      });
+      return apiClient.put(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/sold-out`,
+        {
+          isSoldOut,
+        },
+      )
     },
 
     /**
@@ -159,7 +200,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     initializeDishInventory({ brandId, storeId }) {
-      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/initialize-dishes`);
+      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/initialize-dishes`)
     },
 
     /**
@@ -175,7 +216,9 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getInventoryLogs({ brandId, storeId, ...queryParams }) {
-      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/logs`, { params: queryParams });
+      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/logs`, {
+        params: queryParams,
+      })
     },
 
     /**
@@ -189,10 +232,20 @@ export default function (apiClient) {
      * @param {number} [params.days=30] - 天數
      * @returns {Promise} - API 回應
      */
-    getStockTrends({ brandId, storeId, inventoryId, inventoryType = 'DishTemplate', stockType = 'totalStock', days = 30 }) {
-      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/trends`, {
-        params: { inventoryType, stockType, days }
-      });
+    getStockTrends({
+      brandId,
+      storeId,
+      inventoryId,
+      inventoryType = 'DishTemplate',
+      stockType = 'totalStock',
+      days = 30,
+    }) {
+      return apiClient.get(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/trends`,
+        {
+          params: { inventoryType, stockType, days },
+        },
+      )
     },
 
     /**
@@ -205,9 +258,12 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getItemInventoryStats({ brandId, storeId, inventoryId, inventoryType = 'DishTemplate' }) {
-      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/stats`, {
-        params: { inventoryType }
-      });
+      return apiClient.get(
+        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/stats`,
+        {
+          params: { inventoryType },
+        },
+      )
     },
 
     /**
@@ -220,10 +276,16 @@ export default function (apiClient) {
      * @param {number} [params.overStockDaysThreshold=30] - 過量庫存天數門檻
      * @returns {Promise} - API 回應
      */
-    getInventoryHealthReport({ brandId, storeId, inventoryType, criticalDaysThreshold = 3, overStockDaysThreshold = 30 }) {
+    getInventoryHealthReport({
+      brandId,
+      storeId,
+      inventoryType,
+      criticalDaysThreshold = 3,
+      overStockDaysThreshold = 30,
+    }) {
       return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/health`, {
-        params: { inventoryType, criticalDaysThreshold, overStockDaysThreshold }
-      });
+        params: { inventoryType, criticalDaysThreshold, overStockDaysThreshold },
+      })
     },
 
     /**
@@ -235,7 +297,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     bulkUpdateInventory({ brandId, storeId, items }) {
-      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/bulk`, { items });
+      return apiClient.post(`/inventory/brands/${brandId}/${storeId}/inventory/bulk`, { items })
     },
 
     /**
@@ -249,7 +311,9 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getStockChangeSummary({ brandId, storeId, ...queryParams }) {
-      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/summary`, { params: queryParams });
-    }
-  };
+      return apiClient.get(`/inventory/brands/${brandId}/${storeId}/inventory/summary`, {
+        params: queryParams,
+      })
+    },
+  }
 }

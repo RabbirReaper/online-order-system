@@ -42,9 +42,17 @@
             <p class="points-label">可用點數</p>
           </div>
           <div class="points-actions">
-            <button class="btn btn-outline-primary btn-sm" @click="refreshData" :disabled="isRefreshing">
-              <span v-if="isRefreshing" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
+            <button
+              class="btn btn-outline-primary btn-sm"
+              @click="refreshData"
+              :disabled="isRefreshing"
+            >
+              <span
+                v-if="isRefreshing"
+                class="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>
               <i v-else class="bi bi-arrow-clockwise me-1"></i>重新整理
             </button>
           </div>
@@ -61,9 +69,7 @@
         <!-- 獲得點數明細 -->
         <div class="points-detail-card">
           <div class="card-header">
-            <h5 class="mb-0">
-              <i class="bi bi-plus-circle-fill text-success me-2"></i>獲得點數
-            </h5>
+            <h5 class="mb-0"><i class="bi bi-plus-circle-fill text-success me-2"></i>獲得點數</h5>
             <small class="text-muted">按到期時間排序（即將到期優先）</small>
           </div>
           <div class="card-body">
@@ -88,7 +94,7 @@
               </div>
             </div>
             <div v-else class="text-center py-4">
-              <i class="bi bi-star text-muted" style="font-size: 3rem;"></i>
+              <i class="bi bi-star text-muted" style="font-size: 3rem"></i>
               <p class="text-muted mt-2">目前沒有可用點數</p>
             </div>
           </div>
@@ -98,15 +104,21 @@
         <div class="points-history-card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <div>
-              <h5 class="mb-0">
-                <i class="bi bi-dash-circle-fill text-primary me-2"></i>使用記錄
-              </h5>
+              <h5 class="mb-0"><i class="bi bi-dash-circle-fill text-primary me-2"></i>使用記錄</h5>
               <small class="text-muted">按使用時間排序（最近使用優先）</small>
             </div>
-            <button class="btn btn-sm btn-outline-secondary" @click="loadMoreHistory"
-              :disabled="isLoadingHistory || !hasMoreHistory" v-if="groupedUsedPoints.length > 0">
-              <span v-if="isLoadingHistory" class="spinner-border spinner-border-sm me-1" role="status"
-                aria-hidden="true"></span>
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              @click="loadMoreHistory"
+              :disabled="isLoadingHistory || !hasMoreHistory"
+              v-if="groupedUsedPoints.length > 0"
+            >
+              <span
+                v-if="isLoadingHistory"
+                class="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>
               {{ hasMoreHistory ? '載入更多' : '沒有更多' }}
             </button>
           </div>
@@ -127,7 +139,7 @@
               </div>
             </div>
             <div v-else class="text-center py-4">
-              <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+              <i class="bi bi-clock-history text-muted" style="font-size: 3rem"></i>
               <p class="text-muted mt-2">目前沒有使用記錄</p>
             </div>
           </div>
@@ -136,14 +148,16 @@
         <!-- 過期點數記錄 -->
         <div class="points-expired-card" v-if="groupedExpiredPoints.length > 0">
           <div class="card-header">
-            <h5 class="mb-0">
-              <i class="bi bi-x-circle-fill text-danger me-2"></i>過期點數
-            </h5>
+            <h5 class="mb-0"><i class="bi bi-x-circle-fill text-danger me-2"></i>過期點數</h5>
             <small class="text-muted">按過期時間排序</small>
           </div>
           <div class="card-body">
             <div class="expired-list">
-              <div v-for="(record, index) in groupedExpiredPoints" :key="index" class="expired-item">
+              <div
+                v-for="(record, index) in groupedExpiredPoints"
+                :key="index"
+                class="expired-item"
+              >
                 <div class="expired-icon">
                   <i class="bi bi-x-circle-fill text-danger"></i>
                 </div>
@@ -187,208 +201,207 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/customerAuth';
-import api from '@/api';
+import { ref, onMounted, computed, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/customerAuth'
+import api from '@/api'
 
 // 路由
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
 // 狀態管理
-const isLoading = ref(true);
-const isRefreshing = ref(false);
-const isLoadingHistory = ref(false);
-const errorMessage = ref('');
+const isLoading = ref(true)
+const isRefreshing = ref(false)
+const isLoadingHistory = ref(false)
+const errorMessage = ref('')
 
 // 點數資料
-const pointsBalance = ref(0);
-const pointsHistory = ref([]);
+const pointsBalance = ref(0)
+const pointsHistory = ref([])
 
 // 分頁相關
-const currentHistoryPage = ref(1);
-const hasMoreHistory = ref(false);
-const historyLimit = ref(20);
+const currentHistoryPage = ref(1)
+const hasMoreHistory = ref(false)
+const historyLimit = ref(20)
 
 // 獲得點數（按到期時間排序：快到期優先）
 const groupedEarnedPoints = computed(() => {
-  const earnedPoints = pointsHistory.value.filter(point => point.status === 'active');
+  const earnedPoints = pointsHistory.value.filter((point) => point.status === 'active')
   return earnedPoints.sort((a, b) => {
-    const dateA = new Date(a.expiryDate || a.createdAt);
-    const dateB = new Date(b.expiryDate || b.createdAt);
-    return dateA - dateB; // 升序：快到期優先
-  });
-});
+    const dateA = new Date(a.expiryDate || a.createdAt)
+    const dateB = new Date(b.expiryDate || b.createdAt)
+    return dateA - dateB // 升序：快到期優先
+  })
+})
 
 // 使用點數（按使用時間排序：最近使用優先）
 const groupedUsedPoints = computed(() => {
-  const usedPoints = pointsHistory.value.filter(point => point.status === 'used');
+  const usedPoints = pointsHistory.value.filter((point) => point.status === 'used')
   return usedPoints.sort((a, b) => {
-    const dateA = new Date(a.usedAt || a.createdAt);
-    const dateB = new Date(b.usedAt || b.createdAt);
-    return dateB - dateA; // 降序：最近優先
-  });
-});
+    const dateA = new Date(a.usedAt || a.createdAt)
+    const dateB = new Date(b.usedAt || b.createdAt)
+    return dateB - dateA // 降序：最近優先
+  })
+})
 
 // 過期點數（按過期時間排序）
 const groupedExpiredPoints = computed(() => {
-  const expiredPoints = pointsHistory.value.filter(point => point.status === 'expired');
+  const expiredPoints = pointsHistory.value.filter((point) => point.status === 'expired')
   return expiredPoints.sort((a, b) => {
-    const dateA = new Date(a.expiryDate || a.createdAt);
-    const dateB = new Date(b.expiryDate || b.createdAt);
-    return dateB - dateA; // 降序
-  });
-});
+    const dateA = new Date(a.expiryDate || a.createdAt)
+    const dateB = new Date(b.expiryDate || b.createdAt)
+    return dateB - dateA // 降序
+  })
+})
 
 // 即將過期的點數 (30天內)
 const expiringPointsGroups = computed(() => {
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  const thirtyDaysFromNow = new Date()
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
 
-  return groupedEarnedPoints.value.filter(record => {
-    const expiryDate = new Date(record.expiryDate);
-    return expiryDate <= thirtyDaysFromNow;
-  });
-});
+  return groupedEarnedPoints.value.filter((record) => {
+    const expiryDate = new Date(record.expiryDate)
+    return expiryDate <= thirtyDaysFromNow
+  })
+})
 
 const expiringPointsTotal = computed(() => {
-  return expiringPointsGroups.value.reduce((total, record) => total + (record.amount || 0), 0);
-});
+  return expiringPointsGroups.value.reduce((total, record) => total + (record.amount || 0), 0)
+})
 
 // 返回上一頁
 const goBack = () => {
-  router.push('/member');
-};
+  router.push('/member')
+}
 
 // 格式化點數來源
 const formatPointSource = (source) => {
   const sourceMap = {
-    '滿額贈送': '滿額贈送',
-    'purchase_reward': '消費獎勵',
-    'sign_up_bonus': '註冊獎勵',
-    'referral_bonus': '推薦獎勵',
-    'admin_grant': '管理員給予',
-    'order_reward': '訂單獎勵',
-    'first_purchase': '首次消費獎勵',
-    'birthday_bonus': '生日獎勵'
-  };
-  return sourceMap[source] || source;
-};
+    滿額贈送: '滿額贈送',
+    purchase_reward: '消費獎勵',
+    sign_up_bonus: '註冊獎勵',
+    referral_bonus: '推薦獎勵',
+    admin_grant: '管理員給予',
+    order_reward: '訂單獎勵',
+    first_purchase: '首次消費獎勵',
+    birthday_bonus: '生日獎勵',
+  }
+  return sourceMap[source] || source
+}
 
 // 獲取到期狀態
 const getExpiryStatus = (expiryDate) => {
-  if (!expiryDate) return '永久有效';
+  if (!expiryDate) return '永久有效'
 
-  const now = new Date();
-  const expiry = new Date(expiryDate);
-  const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+  const now = new Date()
+  const expiry = new Date(expiryDate)
+  const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 0) return '已過期';
-  if (diffDays === 0) return '今日過期';
-  if (diffDays <= 3) return `${diffDays}天後過期`;
-  if (diffDays <= 7) return '一週內過期';
-  if (diffDays <= 30) return '一個月內過期';
+  if (diffDays < 0) return '已過期'
+  if (diffDays === 0) return '今日過期'
+  if (diffDays <= 3) return `${diffDays}天後過期`
+  if (diffDays <= 7) return '一週內過期'
+  if (diffDays <= 30) return '一個月內過期'
 
-  return '有效';
-};
+  return '有效'
+}
 
 // 獲取到期緊急程度樣式
 const getExpiryUrgencyClass = (expiryDate) => {
-  if (!expiryDate) return 'badge bg-info';
+  if (!expiryDate) return 'badge bg-info'
 
-  const now = new Date();
-  const expiry = new Date(expiryDate);
-  const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+  const now = new Date()
+  const expiry = new Date(expiryDate)
+  const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 0) return 'badge bg-secondary';
-  if (diffDays <= 3) return 'badge bg-danger';
-  if (diffDays <= 7) return 'badge bg-warning';
-  if (diffDays <= 30) return 'badge bg-info';
+  if (diffDays < 0) return 'badge bg-secondary'
+  if (diffDays <= 3) return 'badge bg-danger'
+  if (diffDays <= 7) return 'badge bg-warning'
+  if (diffDays <= 30) return 'badge bg-info'
 
-  return 'badge bg-success';
-};
+  return 'badge bg-success'
+}
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '未設定';
+  if (!dateString) return '未設定'
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '無效日期';
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '無效日期'
 
-  return date.toLocaleDateString('zh-TW');
-};
+  return date.toLocaleDateString('zh-TW')
+}
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
-  if (!dateString) return '未設定';
+  if (!dateString) return '未設定'
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '無效日期';
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '無效日期'
 
-  return date.toLocaleString('zh-TW');
-};
+  return date.toLocaleString('zh-TW')
+}
 
 // 重新整理資料
 const refreshData = async () => {
   try {
-    isRefreshing.value = true;
-    await loadPointsData();
+    isRefreshing.value = true
+    await loadPointsData()
   } catch (error) {
-    console.error('重新整理點數資料失敗:', error);
+    console.error('重新整理點數資料失敗:', error)
   } finally {
-    isRefreshing.value = false;
+    isRefreshing.value = false
   }
-};
+}
 
 // 載入更多歷史記錄
 const loadMoreHistory = async () => {
   if (!hasMoreHistory.value || isLoadingHistory.value) {
-    return;
+    return
   }
 
   try {
-    isLoadingHistory.value = true;
+    isLoadingHistory.value = true
 
     if (!authStore.currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
-    const nextPage = currentHistoryPage.value + 1;
+    const nextPage = currentHistoryPage.value + 1
     const response = await api.promotion.getUserPointHistory(authStore.currentBrandId, {
       page: nextPage,
-      limit: historyLimit.value
-    });
+      limit: historyLimit.value,
+    })
 
     if (response.records && response.records.length > 0) {
-      pointsHistory.value = [...pointsHistory.value, ...response.records];
-      currentHistoryPage.value = nextPage;
-      hasMoreHistory.value = response.pagination.hasNextPage;
+      pointsHistory.value = [...pointsHistory.value, ...response.records]
+      currentHistoryPage.value = nextPage
+      hasMoreHistory.value = response.pagination.hasNextPage
     } else {
-      hasMoreHistory.value = false;
+      hasMoreHistory.value = false
     }
-
   } catch (error) {
-    console.error('載入更多歷史記錄失敗:', error);
-    errorMessage.value = '載入更多記錄失敗';
+    console.error('載入更多歷史記錄失敗:', error)
+    errorMessage.value = '載入更多記錄失敗'
   } finally {
-    isLoadingHistory.value = false;
+    isLoadingHistory.value = false
   }
-};
+}
 
 // 載入點數資料
 const loadPointsData = async () => {
   try {
-    isLoading.value = true;
-    errorMessage.value = '';
+    isLoading.value = true
+    errorMessage.value = ''
 
     if (!authStore.currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 檢查用戶是否已登入
     if (!authStore.isLoggedIn) {
-      throw new Error('請先登入以查看點數資料');
+      throw new Error('請先登入以查看點數資料')
     }
 
     // 並行獲取點數餘額和歷史記錄
@@ -396,56 +409,56 @@ const loadPointsData = async () => {
       api.promotion.getUserPointsBalance(authStore.currentBrandId),
       api.promotion.getUserPointHistory(authStore.currentBrandId, {
         page: 1,
-        limit: historyLimit.value
-      })
-    ]);
+        limit: historyLimit.value,
+      }),
+    ])
 
     // 設置點數餘額
     if (balanceResponse !== undefined && balanceResponse !== null) {
-      pointsBalance.value = typeof balanceResponse === 'number' ? balanceResponse : (balanceResponse.balance || 0);
+      pointsBalance.value =
+        typeof balanceResponse === 'number' ? balanceResponse : balanceResponse.balance || 0
     }
 
     // 設置歷史記錄
     if (historyResponse) {
-      pointsHistory.value = historyResponse.records || [];
-      currentHistoryPage.value = 1;
-      hasMoreHistory.value = historyResponse.pagination?.hasNextPage || false;
+      pointsHistory.value = historyResponse.records || []
+      currentHistoryPage.value = 1
+      hasMoreHistory.value = historyResponse.pagination?.hasNextPage || false
     }
-
   } catch (error) {
-    console.error('載入點數資料失敗:', error);
+    console.error('載入點數資料失敗:', error)
 
     if (error.response) {
       if (error.response.status === 401) {
-        errorMessage.value = '請先登入以查看點數資料';
+        errorMessage.value = '請先登入以查看點數資料'
       } else if (error.response.data && error.response.data.message) {
-        errorMessage.value = error.response.data.message;
+        errorMessage.value = error.response.data.message
       } else {
-        errorMessage.value = `載入失敗：${error.response.status}`;
+        errorMessage.value = `載入失敗：${error.response.status}`
       }
     } else if (error.message) {
-      errorMessage.value = error.message;
+      errorMessage.value = error.message
     } else {
-      errorMessage.value = '無法載入點數資料，請稍後再試';
+      errorMessage.value = '無法載入點數資料，請稍後再試'
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 組件掛載後載入資料
 onMounted(async () => {
   // 確保認證狀態是最新的
   if (!authStore.isLoggedIn) {
-    await authStore.checkAuthStatus();
+    await authStore.checkAuthStatus()
   }
 
   // 等待下一個tick，確保組件完全掛載
-  await nextTick();
+  await nextTick()
 
   // 載入點數資料
-  await loadPointsData();
-});
+  await loadPointsData()
+})
 </script>
 
 <style scoped>

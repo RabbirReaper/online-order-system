@@ -5,23 +5,32 @@
       <div class="nav-wrapper autohide" ref="navWrapper">
         <nav class="navbar navbar-expand-lg navbar-light">
           <div class="container-fluid">
-            <a class="navbar-brand" href="#" style="font-weight: bold;">
+            <a class="navbar-brand" href="#" style="font-weight: bold">
               <i class="bi bi-fire brand-icon me-2"></i>{{ storeName }}
             </a>
             <div class="nav-icons">
               <template v-if="isLoggedIn">
                 <div class="dropdown">
-                  <button class="btn nav-icon dropdown-toggle" type="button" id="userMenuDropdown"
-                    data-bs-toggle="dropdown" aria-expanded="false">
+                  <button
+                    class="btn nav-icon dropdown-toggle"
+                    type="button"
+                    id="userMenuDropdown"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
                     <i class="bi bi-person-circle me-1"></i>
                     <span class="login-text">{{ customerName }}</span>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
                     <li><a class="dropdown-item" href="/member">會員專區</a></li>
                     <li>
-                      <hr class="dropdown-divider">
+                      <hr class="dropdown-divider" />
                     </li>
-                    <li><a class="dropdown-item text-danger" href="#" @click.prevent="$emit('logout')">登出</a></li>
+                    <li>
+                      <a class="dropdown-item text-danger" href="#" @click.prevent="$emit('logout')"
+                        >登出</a
+                      >
+                    </li>
                   </ul>
                 </div>
               </template>
@@ -40,12 +49,15 @@
     <div class="banner-container">
       <div class="content-wrapper p-0">
         <div class="store-banner">
-          <img :src="storeImage && storeImage.url ? storeImage.url : ''"
-            :alt="storeImage && storeImage.alt ? storeImage.alt : '店家圖片'" class="banner-img">
+          <img
+            :src="storeImage && storeImage.url ? storeImage.url : ''"
+            :alt="storeImage && storeImage.alt ? storeImage.alt : '店家圖片'"
+            class="banner-img"
+          />
           <div class="banner-overlay"></div>
           <div class="banner-content">
             <h1 class="banner-title">{{ storeName }}</h1>
-            <br>
+            <br />
           </div>
         </div>
       </div>
@@ -85,7 +97,11 @@
           <h3 class="fw-bold mb-0">最新公告</h3>
         </div>
         <div class="announcement-list">
-          <div v-for="(announcement, index) in announcements" :key="index" class="announcement-card">
+          <div
+            v-for="(announcement, index) in announcements"
+            :key="index"
+            class="announcement-card"
+          >
             <h5 class="announcement-title">{{ announcement.title }}</h5>
             <p class="announcement-content">{{ announcement.content }}</p>
           </div>
@@ -96,159 +112,161 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   storeName: {
     type: String,
     required: true,
-    default: ''
+    default: '',
   },
   storeImage: {
     type: Object,
-    default: () => null
+    default: () => null,
   },
   announcements: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   isLoggedIn: {
     type: Boolean,
-    default: false
+    default: false,
   },
   customerName: {
     type: String,
-    default: ''
+    default: '',
   },
   businessHours: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   storeAddress: {
     type: String,
-    default: ''
-  }
-});
+    default: '',
+  },
+})
 
-const emit = defineEmits(['login', 'logout', 'account']);
-const router = useRouter();
-const navWrapper = ref(null);
+const emit = defineEmits(['login', 'logout', 'account'])
+const router = useRouter()
+const navWrapper = ref(null)
 
 // 格式化營業時間為易讀格式
 const formattedBusinessHours = computed(() => {
   if (!props.businessHours || props.businessHours.length === 0) {
-    return [];
+    return []
   }
 
-  const daysOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  const daysOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
 
-  return props.businessHours.map(hours => {
-    const day = daysOfWeek[hours.day];
+  return props.businessHours.map((hours) => {
+    const day = daysOfWeek[hours.day]
 
     if (hours.isClosed) {
-      return `${day}: 公休`;
+      return `${day}: 公休`
     }
 
     // 處理多個營業時段
-    const periodsText = hours.periods.map(period => {
-      const openTime = formatTime(period.open);
-      const closeTime = formatTime(period.close);
-      return `${openTime} ~ ${closeTime}`;
-    }).join(', ');
+    const periodsText = hours.periods
+      .map((period) => {
+        const openTime = formatTime(period.open)
+        const closeTime = formatTime(period.close)
+        return `${openTime} ~ ${closeTime}`
+      })
+      .join(', ')
 
-    return `${day}: ${periodsText}`;
-  });
-});
+    return `${day}: ${periodsText}`
+  })
+})
 
 // 將時間格式化為 HH:MM
 const formatTime = (timeString) => {
   try {
-    if (!timeString) return '未設定';
+    if (!timeString) return '未設定'
 
     // 如果是完整的日期時間字符串，只取時間部分
     if (timeString.includes('T')) {
-      const date = new Date(timeString);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const date = new Date(timeString)
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
     // 如果只是時間字符串 (HH:MM:SS)
     if (timeString.includes(':')) {
-      const parts = timeString.split(':');
-      return `${parts[0]}:${parts[1]}`;
+      const parts = timeString.split(':')
+      return `${parts[0]}:${parts[1]}`
     }
 
-    return timeString;
+    return timeString
   } catch (error) {
-    console.error('時間格式化錯誤:', error);
-    return timeString;
+    console.error('時間格式化錯誤:', error)
+    return timeString
   }
-};
+}
 
 // 監聽 scroll 事件控制導航欄顯示/隱藏
 const initNavbarScrollBehavior = () => {
-  const navbar = navWrapper.value;
-  if (!navbar) return;
+  const navbar = navWrapper.value
+  if (!navbar) return
 
-  const navbarHeight = navbar.querySelector('.navbar').offsetHeight;
+  const navbarHeight = navbar.querySelector('.navbar').offsetHeight
 
   // 為內容容器添加上邊距，避免被導航欄覆蓋
-  const contentWrappers = document.querySelectorAll('.content-wrapper');
-  contentWrappers.forEach(wrapper => {
+  const contentWrappers = document.querySelectorAll('.content-wrapper')
+  contentWrappers.forEach((wrapper) => {
     if (wrapper.style.paddingTop === '') {
-      wrapper.style.paddingTop = `${navbarHeight}px`;
+      wrapper.style.paddingTop = `${navbarHeight}px`
     }
-  });
+  })
 
-  let lastScrollTop = 0;
+  let lastScrollTop = 0
 
   const handleScroll = () => {
-    const scrollTop = window.scrollY;
+    const scrollTop = window.scrollY
 
     if (scrollTop > navbarHeight) {
       if (scrollTop < lastScrollTop) {
         // 向上滾動，顯示導航欄
-        navbar.classList.remove('scrolled-down');
-        navbar.classList.add('scrolled-up');
+        navbar.classList.remove('scrolled-down')
+        navbar.classList.add('scrolled-up')
       } else {
         // 向下滾動，隱藏導航欄
-        navbar.classList.remove('scrolled-up');
-        navbar.classList.add('scrolled-down');
+        navbar.classList.remove('scrolled-up')
+        navbar.classList.add('scrolled-down')
       }
     }
 
-    lastScrollTop = scrollTop;
-  };
+    lastScrollTop = scrollTop
+  }
 
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('scroll', handleScroll)
 
   // 返回清除事件函數
   return () => {
-    window.removeEventListener('scroll', handleScroll);
-  };
-};
+    window.removeEventListener('scroll', handleScroll)
+  }
+}
 
 onMounted(() => {
   // 初始化導航欄滾動行為
-  const cleanupFunction = initNavbarScrollBehavior();
+  const cleanupFunction = initNavbarScrollBehavior()
 
   // 初始化 Bootstrap 的 dropdown 功能
-  import('bootstrap/js/dist/dropdown').then(module => {
-    const Dropdown = module.default;
+  import('bootstrap/js/dist/dropdown').then((module) => {
+    const Dropdown = module.default
     // 獲取所有的 dropdown toggler 並初始化
-    const dropdownElementList = document.querySelectorAll('.dropdown-toggle');
-    dropdownElementList.forEach(dropdownToggleEl => {
-      new Dropdown(dropdownToggleEl);
-    });
-  });
+    const dropdownElementList = document.querySelectorAll('.dropdown-toggle')
+    dropdownElementList.forEach((dropdownToggleEl) => {
+      new Dropdown(dropdownToggleEl)
+    })
+  })
 
   // 清理函數
   onUnmounted(() => {
     if (typeof cleanupFunction === 'function') {
-      cleanupFunction();
+      cleanupFunction()
     }
-  });
-});
+  })
+})
 </script>
 
 <style scoped>

@@ -9,7 +9,11 @@
       <div class="item-details mb-3">
         <!-- 顯示所有選項 -->
         <template v-if="item.dishInstance.options && item.dishInstance.options.length > 0">
-          <p class="card-text small mb-1" v-for="(category, catIndex) in item.dishInstance.options" :key="catIndex">
+          <p
+            class="card-text small mb-1"
+            v-for="(category, catIndex) in item.dishInstance.options"
+            :key="catIndex"
+          >
             {{ category.optionCategoryName }}:
             {{ formatSelections(category.selections) }}
           </p>
@@ -32,10 +36,20 @@
         </div>
 
         <div class="quantity-control d-flex align-items-center">
-          <button class="btn btn-sm btn-outline-secondary" @click="$emit('quantity-change', index, -1)"
-            :disabled="item.quantity <= 1">-</button>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            @click="$emit('quantity-change', index, -1)"
+            :disabled="item.quantity <= 1"
+          >
+            -
+          </button>
           <span class="mx-2">{{ item.quantity }}</span>
-          <button class="btn btn-sm btn-outline-secondary" @click="$emit('quantity-change', index, 1)">+</button>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            @click="$emit('quantity-change', index, 1)"
+          >
+            +
+          </button>
         </div>
       </div>
     </div>
@@ -43,50 +57,52 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-import { useCartStore } from '@/stores/cart';
+import { useRouter } from 'vue-router'
+import { useCartStore } from '@/stores/cart'
 
-const router = useRouter();
-const cartStore = useCartStore();
+const router = useRouter()
+const cartStore = useCartStore()
 
 const props = defineProps({
   item: {
     type: Object,
-    required: true
+    required: true,
   },
   index: {
     type: Number,
-    required: true
-  }
-});
+    required: true,
+  },
+})
 
-const emit = defineEmits(['remove', 'edit', 'quantity-change']);
+const emit = defineEmits(['remove', 'edit', 'quantity-change'])
 
 // 格式化選項為字符串
 const formatSelections = (selections) => {
-  if (!selections || selections.length === 0) return '';
+  if (!selections || selections.length === 0) return ''
 
-  return selections.map(selection => {
-    let text = selection.name;
-    if (selection.price > 0) {
-      text += ` (+$${selection.price})`;
-    }
-    return text;
-  }).join(', ');
-};
+  return selections
+    .map((selection) => {
+      let text = selection.name
+      if (selection.price > 0) {
+        text += ` (+$${selection.price})`
+      }
+      return text
+    })
+    .join(', ')
+}
 
 // 修正後的 editItem 函數
 const editItem = () => {
-  const item = props.item;
+  const item = props.item
 
   // 確保有品牌和店鋪ID
   if (!cartStore.currentBrand || !cartStore.currentStore) {
     console.error('缺少品牌或店鋪ID:', {
       brandId: cartStore.currentBrand,
-      storeId: cartStore.currentStore
-    });
-    alert('無法編輯商品：缺少必要資訊');
-    return;
+      storeId: cartStore.currentStore,
+    })
+    alert('無法編輯商品：缺少必要資訊')
+    return
   }
 
   // 導航到商品詳情頁面進行編輯，傳遞編輯模式參數
@@ -95,14 +111,14 @@ const editItem = () => {
     params: {
       brandId: cartStore.currentBrand,
       storeId: cartStore.currentStore,
-      dishId: item.dishInstance.templateId || item.dishInstance._id
+      dishId: item.dishInstance.templateId || item.dishInstance._id,
     },
     query: {
       edit: 'true',
-      editIndex: props.index.toString()
-    }
-  });
-};
+      editIndex: props.index.toString(),
+    },
+  })
+}
 </script>
 
 <style scoped>

@@ -13,7 +13,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     login({ name, password }) {
-      return apiClient.post('/admin-auth/login', { name, password });
+      return apiClient.post('/admin-auth/login', { name, password })
     },
 
     /**
@@ -21,7 +21,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     logout() {
-      return apiClient.post('/admin-auth/logout');
+      return apiClient.post('/admin-auth/logout')
     },
 
     /**
@@ -34,8 +34,8 @@ export default function (apiClient) {
     changePassword({ currentPassword, newPassword }) {
       return apiClient.post('/admin-auth/change-password', {
         currentPassword,
-        newPassword
-      });
+        newPassword,
+      })
     },
 
     /**
@@ -44,20 +44,20 @@ export default function (apiClient) {
      */
     async checkStatus() {
       try {
-        const res = await apiClient.get('/admin-auth/check-status');
+        const res = await apiClient.get('/admin-auth/check-status')
         return {
           loggedIn: res.loggedIn,
           role: res.role,
           brand: res.brand,
-          store: res.store
-        };
+          store: res.store,
+        }
       } catch (error) {
         return {
           loggedIn: false,
           role: null,
           brand: null,
-          store: null
-        };
+          store: null,
+        }
       }
     },
 
@@ -67,10 +67,10 @@ export default function (apiClient) {
      */
     async getProfile() {
       try {
-        const res = await apiClient.get('/admin-auth/profile');
-        return res;
+        const res = await apiClient.get('/admin-auth/profile')
+        return res
       } catch (error) {
-        throw error;
+        throw error
       }
     },
 
@@ -83,11 +83,11 @@ export default function (apiClient) {
      */
     async updateProfile(data) {
       try {
-        const res = await apiClient.put('/admin-auth/profile', data);
-        return res;
+        const res = await apiClient.put('/admin-auth/profile', data)
+        return res
       } catch (error) {
-        throw error;
+        throw error
       }
-    }
-  };
+    },
+  }
 }

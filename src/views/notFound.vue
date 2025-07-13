@@ -7,7 +7,6 @@
   </div>
 </template>
 
-
 <style scoped>
 .not-found {
   text-align: center;

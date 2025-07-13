@@ -33,23 +33,40 @@
 
             <div class="mb-3">
               <label for="name" class="form-label required">兌換券名稱</label>
-              <input type="text" class="form-control" id="name" v-model="formData.name"
-                :class="{ 'is-invalid': errors.name }" maxlength="100" placeholder="請輸入兌換券名稱">
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                v-model="formData.name"
+                :class="{ 'is-invalid': errors.name }"
+                maxlength="100"
+                placeholder="請輸入兌換券名稱"
+              />
               <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
               <div class="form-text">最多100個字元</div>
             </div>
 
             <div class="mb-3">
               <label for="description" class="form-label">描述</label>
-              <textarea class="form-control" id="description" v-model="formData.description" rows="3"
-                placeholder="請輸入兌換券描述（選填）"></textarea>
+              <textarea
+                class="form-control"
+                id="description"
+                v-model="formData.description"
+                rows="3"
+                placeholder="請輸入兌換券描述（選填）"
+              ></textarea>
               <div class="form-text">向顧客說明此兌換券的使用方式</div>
             </div>
 
             <div class="mb-3">
               <label class="form-label">狀態</label>
               <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="isActive" v-model="formData.isActive">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="isActive"
+                  v-model="formData.isActive"
+                />
                 <label class="form-check-label" for="isActive">
                   {{ formData.isActive ? '啟用' : '停用' }}
                 </label>
@@ -64,14 +81,21 @@
 
             <div class="mb-3">
               <label for="exchangeDishTemplate" class="form-label required">可兌換餐點</label>
-              <select class="form-select" id="exchangeDishTemplate" v-model="formData.exchangeDishTemplate"
-                :class="{ 'is-invalid': errors.exchangeDishTemplate }" :disabled="isEditMode">
+              <select
+                class="form-select"
+                id="exchangeDishTemplate"
+                v-model="formData.exchangeDishTemplate"
+                :class="{ 'is-invalid': errors.exchangeDishTemplate }"
+                :disabled="isEditMode"
+              >
                 <option value="">請選擇餐點</option>
                 <option v-for="dish in dishTemplates" :key="dish._id" :value="dish._id">
                   {{ dish.name }} - ${{ formatPrice(dish.basePrice) }}
                 </option>
               </select>
-              <div class="invalid-feedback" v-if="errors.exchangeDishTemplate">{{ errors.exchangeDishTemplate }}</div>
+              <div class="invalid-feedback" v-if="errors.exchangeDishTemplate">
+                {{ errors.exchangeDishTemplate }}
+              </div>
               <div class="form-text">
                 <span v-if="isEditMode" class="text-warning">
                   <i class="bi bi-info-circle me-1"></i>
@@ -94,14 +118,22 @@
                   </p>
                   <!-- 顯示標籤 -->
                   <div v-if="selectedDish.tags && selectedDish.tags.length > 0" class="mt-2">
-                    <span v-for="tag in selectedDish.tags" :key="tag" class="badge bg-secondary me-1 small">
+                    <span
+                      v-for="tag in selectedDish.tags"
+                      :key="tag"
+                      class="badge bg-secondary me-1 small"
+                    >
                       {{ tag }}
                     </span>
                   </div>
                 </div>
                 <div class="col-md-4" v-if="selectedDish.image">
-                  <img :src="selectedDish.image.url" class="img-fluid rounded"
-                    style="max-height: 120px; object-fit: cover;" :alt="selectedDish.image.alt || selectedDish.name">
+                  <img
+                    :src="selectedDish.image.url"
+                    class="img-fluid rounded"
+                    style="max-height: 120px; object-fit: cover"
+                    :alt="selectedDish.image.alt || selectedDish.name"
+                  />
                 </div>
               </div>
             </div>
@@ -114,7 +146,7 @@
             </button>
             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
               <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isSubmitting ? '處理中...' : (isEditMode ? '更新模板' : '建立模板') }}
+              {{ isSubmitting ? '處理中...' : isEditMode ? '更新模板' : '建立模板' }}
             </button>
           </div>
         </form>
@@ -124,236 +156,237 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/api'
 
 // 路由
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 // 判斷是否為編輯模式
-const isEditMode = computed(() => !!route.params.id);
+const isEditMode = computed(() => !!route.params.id)
 
 // 從路由中獲取品牌ID
-const brandId = computed(() => route.params.brandId);
+const brandId = computed(() => route.params.brandId)
 
 // 表單數據
 const formData = reactive({
   name: '',
   description: '',
   exchangeDishTemplate: '',
-  isActive: true
-});
+  isActive: true,
+})
 
 // 錯誤訊息
-const errors = reactive({});
+const errors = reactive({})
 
 // 狀態
-const isSubmitting = ref(false);
-const successMessage = ref('');
-const formErrors = ref([]);
+const isSubmitting = ref(false)
+const successMessage = ref('')
+const formErrors = ref([])
 
 // 資料
-const dishTemplates = ref([]);
+const dishTemplates = ref([])
 
 // 計算選定的餐點
 const selectedDish = computed(() => {
-  if (!formData.exchangeDishTemplate) return null;
-  return dishTemplates.value.find(dish => dish._id === formData.exchangeDishTemplate);
-});
+  if (!formData.exchangeDishTemplate) return null
+  return dishTemplates.value.find((dish) => dish._id === formData.exchangeDishTemplate)
+})
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price?.toLocaleString('zh-TW') || '0';
-};
+  return price?.toLocaleString('zh-TW') || '0'
+}
 
 // 重置表單
 const resetForm = () => {
   if (isEditMode.value) {
     // 重新獲取模板資料
-    fetchTemplateData();
+    fetchTemplateData()
   } else {
     // 清空表單
     Object.assign(formData, {
       name: '',
       description: '',
       exchangeDishTemplate: '',
-      isActive: true
-    });
+      isActive: true,
+    })
   }
 
   // 清除錯誤
-  Object.keys(errors).forEach(key => delete errors[key]);
-  formErrors.value = [];
-  successMessage.value = '';
-};
+  Object.keys(errors).forEach((key) => delete errors[key])
+  formErrors.value = []
+  successMessage.value = ''
+}
 
 // 驗證表單
 const validateForm = () => {
   // 清除先前的錯誤
-  Object.keys(errors).forEach(key => delete errors[key]);
-  formErrors.value = [];
-  let isValid = true;
+  Object.keys(errors).forEach((key) => delete errors[key])
+  formErrors.value = []
+  let isValid = true
 
   // 驗證名稱
   if (!formData.name.trim()) {
-    errors.name = '兌換券名稱為必填項';
-    formErrors.value.push('兌換券名稱為必填項');
-    isValid = false;
+    errors.name = '兌換券名稱為必填項'
+    formErrors.value.push('兌換券名稱為必填項')
+    isValid = false
   } else if (formData.name.length > 100) {
-    errors.name = '兌換券名稱不能超過 100 個字元';
-    formErrors.value.push('兌換券名稱不能超過 100 個字元');
-    isValid = false;
+    errors.name = '兌換券名稱不能超過 100 個字元'
+    formErrors.value.push('兌換券名稱不能超過 100 個字元')
+    isValid = false
   }
 
   // 驗證兌換餐點
   if (!formData.exchangeDishTemplate) {
-    errors.exchangeDishTemplate = '請選擇可兌換的餐點';
-    formErrors.value.push('請選擇可兌換的餐點');
-    isValid = false;
+    errors.exchangeDishTemplate = '請選擇可兌換的餐點'
+    formErrors.value.push('請選擇可兌換的餐點')
+    isValid = false
   }
 
-  return isValid;
-};
+  return isValid
+}
 
 // 獲取餐點模板
 const fetchDishTemplates = async () => {
-  if (!brandId.value) return;
+  if (!brandId.value) return
 
   try {
-    const response = await api.dish.getAllDishTemplates({ brandId: brandId.value });
+    const response = await api.dish.getAllDishTemplates({ brandId: brandId.value })
     if (response && response.templates) {
-      dishTemplates.value = response.templates;
+      dishTemplates.value = response.templates
     }
   } catch (error) {
-    console.error('獲取餐點模板失敗:', error);
-    formErrors.value.push('無法獲取餐點模板資料，請稍後再試');
+    console.error('獲取餐點模板失敗:', error)
+    formErrors.value.push('無法獲取餐點模板資料，請稍後再試')
   }
-};
+}
 
 // 獲取兌換券模板資料 (編輯模式)
 const fetchTemplateData = async () => {
-  if (!isEditMode.value || !route.params.id) return;
+  if (!isEditMode.value || !route.params.id) return
 
   try {
     const response = await api.promotion.getVoucherTemplateById({
       brandId: brandId.value,
-      id: route.params.id
-    });
+      id: route.params.id,
+    })
 
     if (response && response.template) {
-      const template = response.template;
+      const template = response.template
 
       // 填充表單資料
       Object.assign(formData, {
         name: template.name,
         description: template.description || '',
-        exchangeDishTemplate: template.exchangeDishTemplate?._id || template.exchangeDishTemplate || '',
-        isActive: template.isActive
-      });
+        exchangeDishTemplate:
+          template.exchangeDishTemplate?._id || template.exchangeDishTemplate || '',
+        isActive: template.isActive,
+      })
     } else {
-      formErrors.value = ['獲取兌換券模板資料失敗'];
+      formErrors.value = ['獲取兌換券模板資料失敗']
       setTimeout(() => {
-        router.push(`/admin/${brandId.value}/vouchers`);
-      }, 2000);
+        router.push(`/admin/${brandId.value}/vouchers`)
+      }, 2000)
     }
   } catch (error) {
-    console.error('獲取兌換券模板資料時發生錯誤:', error);
-    formErrors.value = ['獲取兌換券模板資料時發生錯誤，請稍後再試'];
+    console.error('獲取兌換券模板資料時發生錯誤:', error)
+    formErrors.value = ['獲取兌換券模板資料時發生錯誤，請稍後再試']
     setTimeout(() => {
-      router.push(`/admin/${brandId.value}/vouchers`);
-    }, 2000);
+      router.push(`/admin/${brandId.value}/vouchers`)
+    }, 2000)
   }
-};
+}
 
 // 提交表單
 const submitForm = async () => {
   // 清除上一次的成功訊息
-  successMessage.value = '';
+  successMessage.value = ''
 
   if (!validateForm()) {
     // 滾動到頁面頂部顯示錯誤
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
   }
 
-  isSubmitting.value = true;
+  isSubmitting.value = true
 
   try {
     // 準備提交資料
     const submitData = {
       brand: brandId.value,
-      ...formData
-    };
+      ...formData,
+    }
 
-    let response;
+    let response
 
     if (isEditMode.value) {
       // 更新兌換券模板
       response = await api.promotion.updateVoucherTemplate({
         brandId: brandId.value,
         id: route.params.id,
-        data: submitData
-      });
-      successMessage.value = '兌換券模板更新成功！';
+        data: submitData,
+      })
+      successMessage.value = '兌換券模板更新成功！'
     } else {
       // 創建新兌換券模板
       response = await api.promotion.createVoucherTemplate({
         brandId: brandId.value,
-        data: submitData
-      });
-      successMessage.value = '兌換券模板創建成功！';
+        data: submitData,
+      })
+      successMessage.value = '兌換券模板創建成功！'
     }
 
     // 延遲導航，讓用戶看到成功訊息
     setTimeout(() => {
-      router.push(`/admin/${brandId.value}/vouchers`);
-    }, 1000);
+      router.push(`/admin/${brandId.value}/vouchers`)
+    }, 1000)
   } catch (error) {
-    console.error('儲存兌換券模板時發生錯誤:', error);
+    console.error('儲存兌換券模板時發生錯誤:', error)
 
     // 處理 API 錯誤
     if (error.response && error.response.data) {
-      const { message, errors: apiErrors } = error.response.data;
+      const { message, errors: apiErrors } = error.response.data
 
       if (apiErrors) {
         // 處理特定欄位錯誤
-        Object.keys(apiErrors).forEach(key => {
-          errors[key] = apiErrors[key];
-          formErrors.value.push(apiErrors[key]);
-        });
+        Object.keys(apiErrors).forEach((key) => {
+          errors[key] = apiErrors[key]
+          formErrors.value.push(apiErrors[key])
+        })
       } else if (message) {
         // 顯示一般錯誤訊息
-        formErrors.value = [`錯誤: ${message}`];
+        formErrors.value = [`錯誤: ${message}`]
       }
     } else {
-      formErrors.value = ['儲存兌換券模板時發生未知錯誤，請稍後再試'];
+      formErrors.value = ['儲存兌換券模板時發生未知錯誤，請稍後再試']
     }
 
     // 滾動到頁面頂部顯示錯誤
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 獲取餐點模板
-  fetchDishTemplates();
+  fetchDishTemplates()
 
   // 如果是編輯模式，獲取兌換券模板資料
   if (isEditMode.value) {
-    fetchTemplateData();
+    fetchTemplateData()
   }
-});
+})
 </script>
 
 <style scoped>
 /* 必填欄位標記 */
 .required::after {
-  content: " *";
+  content: ' *';
   color: #dc3545;
 }
 

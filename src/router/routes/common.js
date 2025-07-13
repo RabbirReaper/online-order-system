@@ -3,6 +3,6 @@ export const commonRoutes = [
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('@/views/notFound.vue')
-  }
+    component: () => import('@/views/notFound.vue'),
+  },
 ]

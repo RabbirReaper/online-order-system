@@ -11,20 +11,28 @@
       <div class="d-flex gap-2">
         <!-- 篩選按鈕 -->
         <BDropdown text="篩選" variant="outline-secondary" auto-close="outside">
-          <template #button-content>
-            <i class="bi bi-filter me-1"></i>篩選
-          </template>
+          <template #button-content> <i class="bi bi-filter me-1"></i>篩選 </template>
           <template #default>
-            <div class="dropdown-menu-form p-3" style="min-width: 350px;">
+            <div class="dropdown-menu-form p-3" style="min-width: 350px">
               <!-- 日期範圍 -->
               <div class="mb-3">
                 <label class="form-label">日期範圍</label>
                 <div class="row g-2">
                   <div class="col-6">
-                    <input type="date" v-model="filters.startDate" class="form-control" @change="applyFilters">
+                    <input
+                      type="date"
+                      v-model="filters.startDate"
+                      class="form-control"
+                      @change="applyFilters"
+                    />
                   </div>
                   <div class="col-6">
-                    <input type="date" v-model="filters.endDate" class="form-control" @change="applyFilters">
+                    <input
+                      type="date"
+                      v-model="filters.endDate"
+                      class="form-control"
+                      @change="applyFilters"
+                    />
                   </div>
                 </div>
               </div>
@@ -70,8 +78,14 @@
         </BDropdown>
 
         <!-- 搜尋框 -->
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="搜尋項目名稱..." v-model="searchQuery" @input="handleSearch">
+        <div class="input-group" style="width: 300px">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="搜尋項目名稱..."
+            v-model="searchQuery"
+            @input="handleSearch"
+          />
           <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
             <i class="bi bi-search"></i>
           </button>
@@ -120,13 +134,19 @@
               <tr v-for="log in stockLogs" :key="log._id">
                 <td>{{ formatDateTime(log.createdAt) }}</td>
                 <td>
-                  <span class="badge" :class="log.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
+                  <span
+                    class="badge"
+                    :class="log.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'"
+                  >
                     {{ log.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                   </span>
                 </td>
                 <td>{{ log.itemName }}</td>
                 <td>
-                  <span class="badge" :class="log.stockType === 'warehouseStock' ? 'bg-primary' : 'bg-success'">
+                  <span
+                    class="badge"
+                    :class="log.stockType === 'warehouseStock' ? 'bg-primary' : 'bg-success'"
+                  >
                     {{ log.stockType === 'warehouseStock' ? '倉庫' : '可販售' }}
                   </span>
                 </td>
@@ -153,7 +173,9 @@
               <tr v-if="stockLogs.length === 0">
                 <td colspan="10" class="text-center py-4">
                   <div class="text-muted">
-                    {{ searchQuery || hasActiveFilters() ? '沒有符合條件的記錄' : '暫無庫存變更記錄' }}
+                    {{
+                      searchQuery || hasActiveFilters() ? '沒有符合條件的記錄' : '暫無庫存變更記錄'
+                    }}
                   </div>
                 </td>
               </tr>
@@ -169,7 +191,12 @@
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
           <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
         </li>
-        <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: currentPage === page }">
+        <li
+          class="page-item"
+          v-for="page in visiblePages"
+          :key="page"
+          :class="{ active: currentPage === page }"
+        >
           <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
         </li>
         <li class="page-item" :class="{ disabled: currentPage === pagination.totalPages }">
@@ -181,24 +208,24 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { BDropdown } from 'bootstrap-vue-next';
-import api from '@/api';
+import { ref, computed, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { BDropdown } from 'bootstrap-vue-next'
+import api from '@/api'
 
 // 路由
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.query.storeId || route.params.storeId);
-const itemId = computed(() => route.query.itemId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.query.storeId || route.params.storeId)
+const itemId = computed(() => route.query.itemId)
 
 // 狀態
-const isLoading = ref(true);
-const error = ref('');
-const stockLogs = ref([]);
-const searchQuery = ref('');
-const currentPage = ref(1);
-const storeName = ref('');
+const isLoading = ref(true)
+const error = ref('')
+const stockLogs = ref([])
+const searchQuery = ref('')
+const currentPage = ref(1)
+const storeName = ref('')
 
 // 篩選條件
 const filters = reactive({
@@ -206,231 +233,238 @@ const filters = reactive({
   endDate: '',
   inventoryType: '',
   stockType: '',
-  changeType: ''
-});
+  changeType: '',
+})
 
 // 分頁
 const pagination = reactive({
   total: 0,
   totalPages: 0,
-  limit: 20
-});
+  limit: 20,
+})
 
 // 計算可見頁碼
 const visiblePages = computed(() => {
-  const total = pagination.totalPages;
-  const current = currentPage.value;
-  const pages = [];
+  const total = pagination.totalPages
+  const current = currentPage.value
+  const pages = []
 
   if (total <= 7) {
     for (let i = 1; i <= total; i++) {
-      pages.push(i);
+      pages.push(i)
     }
   } else {
     if (current <= 3) {
-      for (let i = 1; i <= 5; i++) pages.push(i);
-      pages.push('...');
-      pages.push(total);
+      for (let i = 1; i <= 5; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
     } else if (current >= total - 2) {
-      pages.push(1);
-      pages.push('...');
-      for (let i = total - 4; i <= total; i++) pages.push(i);
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) pages.push(i)
     } else {
-      pages.push(1);
-      pages.push('...');
-      for (let i = current - 1; i <= current + 1; i++) pages.push(i);
-      pages.push('...');
-      pages.push(total);
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
     }
   }
 
-  return pages.filter((page, index, self) => self.indexOf(page) === index);
-});
+  return pages.filter((page, index, self) => self.indexOf(page) === index)
+})
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
-  if (!dateString) return '-';
-  const date = new Date(dateString);
+  if (!dateString) return '-'
+  const date = new Date(dateString)
   return date.toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
-  });
-};
+    second: '2-digit',
+  })
+}
 
 // 獲取變更類型文字
 const getChangeTypeText = (type) => {
   const types = {
-    'manual_add': '手動新增',
-    'manual_subtract': '手動減少',
-    'order': '訂單消耗',
-    'system_adjustment': '系統調整',
-    'initial_stock': '初始庫存',
-    'restock': '進貨',
-    'damage': '損耗'
-  };
-  return types[type] || type;
-};
+    manual_add: '手動新增',
+    manual_subtract: '手動減少',
+    order: '訂單消耗',
+    system_adjustment: '系統調整',
+    initial_stock: '初始庫存',
+    restock: '進貨',
+    damage: '損耗',
+  }
+  return types[type] || type
+}
 
 // 獲取變更類型徽章樣式
 const getChangeTypeBadgeClass = (type) => {
   const classes = {
-    'manual_add': 'bg-success',
-    'manual_subtract': 'bg-warning',
-    'order': 'bg-info',
-    'system_adjustment': 'bg-secondary',
-    'initial_stock': 'bg-primary',
-    'restock': 'bg-success',
-    'damage': 'bg-danger'
-  };
-  return classes[type] || 'bg-secondary';
-};
+    manual_add: 'bg-success',
+    manual_subtract: 'bg-warning',
+    order: 'bg-info',
+    system_adjustment: 'bg-secondary',
+    initial_stock: 'bg-primary',
+    restock: 'bg-success',
+    damage: 'bg-danger',
+  }
+  return classes[type] || 'bg-secondary'
+}
 
 // 檢查是否有啟用的篩選條件
 const hasActiveFilters = () => {
-  return filters.startDate || filters.endDate || filters.inventoryType ||
-    filters.stockType || filters.changeType;
-};
+  return (
+    filters.startDate ||
+    filters.endDate ||
+    filters.inventoryType ||
+    filters.stockType ||
+    filters.changeType
+  )
+}
 
 const fetchStoreInfo = async () => {
-  if (!storeId.value) return;
+  if (!storeId.value) return
 
   try {
-    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value });
+    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value })
     if (response && response.store) {
-      storeName.value = response.store.name;
+      storeName.value = response.store.name
     }
   } catch (err) {
-    console.error('獲取店鋪資訊失敗:', err);
+    console.error('獲取店鋪資訊失敗:', err)
   }
-};
+}
 
 // 獲取庫存日誌
 const fetchStockLogs = async () => {
   // 如果沒有有效的 storeId，跳過請求
   if (!storeId.value) {
-    error.value = '請選擇店鋪';
-    isLoading.value = false;
-    return;
+    error.value = '請選擇店鋪'
+    isLoading.value = false
+    return
   }
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     const params = {
       storeId: storeId.value,
       page: currentPage.value,
-      limit: pagination.limit
-    };
+      limit: pagination.limit,
+    }
 
     // 如果有指定項目ID
     if (itemId.value) {
-      params.itemId = itemId.value;
+      params.itemId = itemId.value
     }
 
     // 搜尋關鍵字
     if (searchQuery.value) {
-      params.search = searchQuery.value;
+      params.search = searchQuery.value
     }
 
     // 應用篩選條件
-    if (filters.startDate) params.startDate = filters.startDate;
-    if (filters.endDate) params.endDate = filters.endDate;
-    if (filters.inventoryType) params.inventoryType = filters.inventoryType;
-    if (filters.stockType) params.stockType = filters.stockType;
-    if (filters.changeType) params.changeType = filters.changeType;
-    console.log('篩選條件:', params);
-    const response = await api.inventory.getInventoryLogs(params);
-    console.log('獲取庫存日誌:', response);
+    if (filters.startDate) params.startDate = filters.startDate
+    if (filters.endDate) params.endDate = filters.endDate
+    if (filters.inventoryType) params.inventoryType = filters.inventoryType
+    if (filters.stockType) params.stockType = filters.stockType
+    if (filters.changeType) params.changeType = filters.changeType
+    console.log('篩選條件:', params)
+    const response = await api.inventory.getInventoryLogs(params)
+    console.log('獲取庫存日誌:', response)
     if (response) {
-      stockLogs.value = response.logs || [];
-      pagination.total = response.pagination?.total || response.total || 0;
-      pagination.totalPages = response.pagination?.totalPages || response.totalPages ||
-        Math.ceil(pagination.total / pagination.limit);
+      stockLogs.value = response.logs || []
+      pagination.total = response.pagination?.total || response.total || 0
+      pagination.totalPages =
+        response.pagination?.totalPages ||
+        response.totalPages ||
+        Math.ceil(pagination.total / pagination.limit)
     } else {
-      stockLogs.value = [];
-      pagination.total = 0;
-      pagination.totalPages = 1;
+      stockLogs.value = []
+      pagination.total = 0
+      pagination.totalPages = 1
     }
   } catch (err) {
-    console.error('獲取庫存日誌失敗:', err);
+    console.error('獲取庫存日誌失敗:', err)
 
     // 更詳細的錯誤處理
     if (err.response?.status === 500) {
-      error.value = '服務器錯誤：無法獲取庫存日誌。請確認後端 API 路由配置正確。';
+      error.value = '服務器錯誤：無法獲取庫存日誌。請確認後端 API 路由配置正確。'
     } else if (err.response?.data?.message) {
-      error.value = err.response.data.message;
+      error.value = err.response.data.message
     } else {
-      error.value = '獲取庫存日誌時發生未知錯誤';
+      error.value = '獲取庫存日誌時發生未知錯誤'
     }
 
     // 設置預設值
-    stockLogs.value = [];
-    pagination.total = 0;
-    pagination.totalPages = 1;
+    stockLogs.value = []
+    pagination.total = 0
+    pagination.totalPages = 1
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 搜尋處理
 const handleSearch = () => {
-  currentPage.value = 1;
-  fetchStockLogs();
-};
+  currentPage.value = 1
+  fetchStockLogs()
+}
 
 // 應用篩選
 const applyFilters = () => {
-  currentPage.value = 1;
-  fetchStockLogs();
-};
+  currentPage.value = 1
+  fetchStockLogs()
+}
 
 // 重置篩選
 const resetFilters = () => {
-  filters.startDate = '';
-  filters.endDate = '';
-  filters.inventoryType = '';
-  filters.stockType = '';
-  filters.changeType = '';
-  currentPage.value = 1;
-  fetchStockLogs();
-};
+  filters.startDate = ''
+  filters.endDate = ''
+  filters.inventoryType = ''
+  filters.stockType = ''
+  filters.changeType = ''
+  currentPage.value = 1
+  fetchStockLogs()
+}
 
 // 換頁
 const changePage = (page) => {
-  if (page < 1 || page > pagination.totalPages || page === '...') return;
-  currentPage.value = page;
-  fetchStockLogs();
-};
+  if (page < 1 || page > pagination.totalPages || page === '...') return
+  currentPage.value = page
+  fetchStockLogs()
+}
 
 // 匯出日誌
 const exportLogs = async () => {
   try {
     // TODO: 實作匯出功能
     // 可以將日誌數據匯出為 CSV 或 Excel 格式
-    console.log('匯出日誌功能待實作');
-    alert('匯出功能尚未實作');
+    console.log('匯出日誌功能待實作')
+    alert('匯出功能尚未實作')
   } catch (err) {
-    console.error('匯出失敗:', err);
-    alert('匯出日誌時發生錯誤');
+    console.error('匯出失敗:', err)
+    alert('匯出日誌時發生錯誤')
   }
-};
+}
 
 // 生命週期
 onMounted(() => {
   // 只有在有有效的 storeId 時才獲取日誌
   if (storeId.value) {
-    fetchStockLogs();
-    fetchStoreInfo();
+    fetchStockLogs()
+    fetchStoreInfo()
   } else {
-    isLoading.value = false;
-    error.value = '請選擇店鋪以查看庫存變更記錄';
+    isLoading.value = false
+    error.value = '請選擇店鋪以查看庫存變更記錄'
   }
-});
+})
 </script>
 
 <style scoped>

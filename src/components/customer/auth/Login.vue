@@ -21,10 +21,18 @@
         <form @submit.prevent="handleLogin" :class="{ 'was-validated': wasValidated }" novalidate>
           <div class="mb-3">
             <label for="phone" class="form-label">手機號碼</label>
-            <input type="tel" class="form-control"
-              :class="{ 'is-invalid': fieldErrors.phone, 'is-valid': isFieldValid('phone') }" id="phone"
-              v-model="credentials.phone" placeholder="請輸入您的手機號碼" pattern="^09\d{8}$" required
-              @blur="validateField('phone')" @input="clearFieldError('phone')">
+            <input
+              type="tel"
+              class="form-control"
+              :class="{ 'is-invalid': fieldErrors.phone, 'is-valid': isFieldValid('phone') }"
+              id="phone"
+              v-model="credentials.phone"
+              placeholder="請輸入您的手機號碼"
+              pattern="^09\d{8}$"
+              required
+              @blur="validateField('phone')"
+              @input="clearFieldError('phone')"
+            />
             <div class="invalid-feedback">
               {{ fieldErrors.phone }}
             </div>
@@ -33,11 +41,26 @@
           <div class="mb-4">
             <label for="password" class="form-label">密碼</label>
             <div class="input-group">
-              <input :type="showPassword ? 'text' : 'password'" class="form-control"
-                :class="{ 'is-invalid': fieldErrors.password, 'is-valid': isFieldValid('password') }" id="password"
-                v-model="credentials.password" placeholder="請輸入密碼" minlength="6" required
-                @blur="validateField('password')" @input="clearFieldError('password')">
-              <button class="btn btn-outline-secondary" type="button" @click="togglePasswordVisibility">
+              <input
+                :type="showPassword ? 'text' : 'password'"
+                class="form-control"
+                :class="{
+                  'is-invalid': fieldErrors.password,
+                  'is-valid': isFieldValid('password'),
+                }"
+                id="password"
+                v-model="credentials.password"
+                placeholder="請輸入密碼"
+                minlength="6"
+                required
+                @blur="validateField('password')"
+                @input="clearFieldError('password')"
+              />
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                @click="togglePasswordVisibility"
+              >
                 <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
               </button>
               <div class="invalid-feedback">
@@ -48,12 +71,17 @@
 
           <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="rememberMe" v-model="rememberMe">
-              <label class="form-check-label" for="rememberMe">
-                記住我
-              </label>
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="rememberMe"
+                v-model="rememberMe"
+              />
+              <label class="form-check-label" for="rememberMe"> 記住我 </label>
             </div>
-            <router-link to="/auth/forgot-password" class="text-decoration-none">忘記密碼？</router-link>
+            <router-link to="/auth/forgot-password" class="text-decoration-none"
+              >忘記密碼？</router-link
+            >
           </div>
           <!-- 使用 BAlert 顯示錯誤訊息 -->
           <BAlert :show="formErrors.length > 0" variant="danger" class="mb-3 mb-0">
@@ -64,15 +92,18 @@
 
           <div class="d-grid gap-2">
             <button type="submit" class="btn btn-primary py-2" :disabled="authStore.loadingAuth">
-              <span v-if="authStore.loadingAuth" class="spinner-border spinner-border-sm me-2" role="status"
-                aria-hidden="true"></span>
+              <span
+                v-if="authStore.loadingAuth"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
               登入
             </button>
             <button type="button" class="btn btn-outline-secondary py-2 mt-2" @click="goToRegister">
               還沒有帳號？立即註冊
             </button>
           </div>
-
         </form>
       </div>
     </div>
@@ -80,206 +111,205 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '@/stores/customerAuth';
-import { BAlert } from 'bootstrap-vue-next';
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/customerAuth'
+import { BAlert } from 'bootstrap-vue-next'
 
 // 路由相關
-const router = useRouter();
-const route = useRoute();
-const authStore = useAuthStore();
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
 
 // 表單資料
 const credentials = reactive({
   phone: '',
-  password: ''
-});
+  password: '',
+})
 
 // 狀態管理
-const formErrors = ref([]);
-const successMessage = ref('您已成功登入系統');
-const showPassword = ref(false);
-const rememberMe = ref(false);
-const wasValidated = ref(false);
-const fieldErrors = reactive({});
-const touchedFields = reactive({});
+const formErrors = ref([])
+const successMessage = ref('您已成功登入系統')
+const showPassword = ref(false)
+const rememberMe = ref(false)
+const wasValidated = ref(false)
+const fieldErrors = reactive({})
+const touchedFields = reactive({})
 
 // 驗證規則
 const validationRules = {
   phone: {
     required: true,
     pattern: /^09\d{8}$/,
-    message: '請輸入有效的手機號碼格式 (09xxxxxxxx)'
+    message: '請輸入有效的手機號碼格式 (09xxxxxxxx)',
   },
   password: {
     required: true,
     minLength: 6,
-    message: '密碼長度至少需要6個字元'
-  }
-};
+    message: '密碼長度至少需要6個字元',
+  },
+}
 
 // 驗證單一欄位
 const validateField = (fieldName) => {
-  touchedFields[fieldName] = true;
-  const value = credentials[fieldName];
-  const rules = validationRules[fieldName];
+  touchedFields[fieldName] = true
+  const value = credentials[fieldName]
+  const rules = validationRules[fieldName]
 
-  if (!rules) return true;
+  if (!rules) return true
 
   // 必填驗證
   if (rules.required && (!value || value.trim() === '')) {
-    fieldErrors[fieldName] = `${getFieldDisplayName(fieldName)}為必填欄位`;
-    return false;
+    fieldErrors[fieldName] = `${getFieldDisplayName(fieldName)}為必填欄位`
+    return false
   }
 
   // 最小長度驗證
   if (rules.minLength && value.length < rules.minLength) {
-    fieldErrors[fieldName] = rules.message;
-    return false;
+    fieldErrors[fieldName] = rules.message
+    return false
   }
 
   // 正規表達式驗證
   if (rules.pattern && !rules.pattern.test(value)) {
-    fieldErrors[fieldName] = rules.message;
-    return false;
+    fieldErrors[fieldName] = rules.message
+    return false
   }
 
   // 清除錯誤
-  delete fieldErrors[fieldName];
-  return true;
-};
+  delete fieldErrors[fieldName]
+  return true
+}
 
 // 清除欄位錯誤
 const clearFieldError = (fieldName) => {
   if (fieldErrors[fieldName]) {
-    delete fieldErrors[fieldName];
+    delete fieldErrors[fieldName]
   }
-};
+}
 
 // 檢查欄位是否有效
 const isFieldValid = (fieldName) => {
-  return touchedFields[fieldName] && !fieldErrors[fieldName] && credentials[fieldName];
-};
+  return touchedFields[fieldName] && !fieldErrors[fieldName] && credentials[fieldName]
+}
 
 // 獲取欄位顯示名稱
 const getFieldDisplayName = (fieldName) => {
   const displayNames = {
     phone: '手機號碼',
-    password: '密碼'
-  };
-  return displayNames[fieldName] || fieldName;
-};
+    password: '密碼',
+  }
+  return displayNames[fieldName] || fieldName
+}
 
 // 驗證整個表單
 const validateForm = () => {
-  let isValid = true;
+  let isValid = true
 
   // 驗證所有欄位
-  Object.keys(validationRules).forEach(fieldName => {
+  Object.keys(validationRules).forEach((fieldName) => {
     if (!validateField(fieldName)) {
-      isValid = false;
+      isValid = false
     }
-  });
+  })
 
-  wasValidated.value = true;
-  return isValid;
-};
+  wasValidated.value = true
+  return isValid
+}
 
 // 從 URL 查詢參數中恢復上次使用的手機號碼
 onMounted(async () => {
   if (route.query.phone) {
-    credentials.phone = route.query.phone;
+    credentials.phone = route.query.phone
   }
 
   // 初始化 authStore 的 brandId
-  authStore.initializeBrandId();
+  authStore.initializeBrandId()
 
   if (!authStore.currentBrandId) {
     // 如果沒有品牌ID，則跳轉到首頁或錯誤頁面
-    router.push('/');
-    return;
+    router.push('/')
+    return
   }
 
   // 清除舊的錯誤訊息
-  formErrors.value = [];
+  formErrors.value = []
 
   // 如果是從註冊頁面跳轉過來，顯示成功訊息
   if (route.query.registered === 'true') {
     // 等待組件完全掛載
-    await nextTick();
+    await nextTick()
     // 設置成功訊息
-    successMessage.value = '註冊成功，請使用您的手機號碼和密碼登入';
+    successMessage.value = '註冊成功，請使用您的手機號碼和密碼登入'
   }
-});
+})
 
 // 返回上一頁
 const goBack = () => {
-  const brandId = sessionStorage.getItem('currentBrandId');
-  const storeId = sessionStorage.getItem('currentStoreId');
+  const brandId = sessionStorage.getItem('currentBrandId')
+  const storeId = sessionStorage.getItem('currentStoreId')
 
   if (brandId && storeId) {
     router.push({
       name: 'menu',
-      params: { brandId, storeId }
-    });
+      params: { brandId, storeId },
+    })
   } else {
-    router.push('/');
+    router.push('/')
   }
-};
+}
 
 // 切換密碼可見性
 const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value;
-};
+  showPassword.value = !showPassword.value
+}
 
 // 跳轉到註冊頁面
 const goToRegister = () => {
-  router.push('/auth/register');
-};
+  router.push('/auth/register')
+}
 
 // 處理登入 - 使用統一的 authStore 方法
 const handleLogin = async () => {
   try {
     // 清除之前的錯誤
-    formErrors.value = [];
+    formErrors.value = []
 
     // 驗證表單
     if (!validateForm()) {
-      formErrors.value = ['請檢查並修正表單中的錯誤'];
-      return;
+      formErrors.value = ['請檢查並修正表單中的錯誤']
+      return
     }
 
     // 確保有品牌ID
     if (!authStore.currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 使用統一的 authStore.login 方法
-    await authStore.login(credentials);
+    await authStore.login(credentials)
 
     // 登入成功後的處理
     // console.log('登入成功!');
 
     // 顯示成功訊息
-    successMessage.value = '您已成功登入系統';
+    successMessage.value = '您已成功登入系統'
 
-    const redirectPath = route.query.redirect || '/member';
-    router.push(redirectPath);
-
+    const redirectPath = route.query.redirect || '/member'
+    router.push(redirectPath)
   } catch (error) {
-    console.error('登入失敗:', error);
+    console.error('登入失敗:', error)
 
     // 使用 authStore 的錯誤訊息，或者自定義錯誤處理
     if (authStore.error) {
-      formErrors.value = [authStore.error];
+      formErrors.value = [authStore.error]
     } else if (error.message) {
-      formErrors.value = [error.message];
+      formErrors.value = [error.message]
     } else {
-      formErrors.value = ['登入失敗，請稍後再試'];
+      formErrors.value = ['登入失敗，請稍後再試']
     }
   }
-};
+}
 </script>
 
 <style scoped>

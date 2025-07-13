@@ -8,27 +8,43 @@
 
       <!-- 載入庫存資料時的提示 -->
       <div v-if="isLoadingInventory" class="text-center py-3">
-        <div class="spinner-border text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">
+        <div
+          class="spinner-border text-primary"
+          role="status"
+          style="width: 1.5rem; height: 1.5rem"
+        >
           <span class="visually-hidden">載入庫存資料中...</span>
         </div>
         <small class="text-muted ms-2">載入庫存資料中...</small>
       </div>
 
       <!-- 菜單分類列表 -->
-      <div v-for="category in categories" :key="category._id" class="menu-category" :id="'category-' + category._id">
+      <div
+        v-for="category in categories"
+        :key="category._id"
+        class="menu-category"
+        :id="'category-' + category._id"
+      >
         <div class="category-header">
           <h4 class="fw-bold">{{ category.name }}</h4>
         </div>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
           <div v-for="item in getVisibleItems(category)" :key="getItemKey(item)" class="col">
-            <MenuItemCard :item="item" :inventory-info="getInventoryInfo(item)" :menu-type="menuType"
-              @select-item="handleItemSelect" />
+            <MenuItemCard
+              :item="item"
+              :inventory-info="getInventoryInfo(item)"
+              :menu-type="menuType"
+              @select-item="handleItemSelect"
+            />
           </div>
         </div>
       </div>
 
       <!-- 空狀態 -->
-      <div v-if="!isLoadingInventory && (!categories || categories.length === 0)" class="text-center py-5">
+      <div
+        v-if="!isLoadingInventory && (!categories || categories.length === 0)"
+        class="text-center py-5"
+      >
         <i class="bi bi-journal-x display-1 text-muted"></i>
         <p class="text-muted mt-3">目前沒有可用的菜單項目</p>
       </div>
@@ -37,97 +53,97 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import MenuItemCard from './MenuItemCard.vue';
-import api from '@/api';
+import { ref, onMounted, watch } from 'vue'
+import MenuItemCard from './MenuItemCard.vue'
+import api from '@/api'
 
 const props = defineProps({
   categories: {
     type: Array,
     required: true,
-    default: () => []
+    default: () => [],
   },
   brandId: {
     type: String,
-    required: true
+    required: true,
   },
   storeId: {
     type: String,
-    required: true
+    required: true,
   },
   menuType: {
     type: String,
-    default: 'food'
-  }
-});
+    default: 'food',
+  },
+})
 
-const emit = defineEmits(['select-item']);
+const emit = defineEmits(['select-item'])
 
 // 響應式資料
-const inventoryData = ref({});
-const isLoadingInventory = ref(false);
+const inventoryData = ref({})
+const isLoadingInventory = ref(false)
 
 // 生成項目的唯一鍵值
 const getItemKey = (item) => {
   if (item.itemType === 'dish') {
-    return `dish-${item._id || item.dishTemplate?._id}`;
+    return `dish-${item._id || item.dishTemplate?._id}`
   } else if (item.itemType === 'bundle') {
-    return `bundle-${item._id || item.bundle?._id}`;
+    return `bundle-${item._id || item.bundle?._id}`
   }
-  return `item-${item._id}`;
-};
+  return `item-${item._id}`
+}
 
 // 獲取分類中可見的項目
 const getVisibleItems = (category) => {
   if (!category.items || !Array.isArray(category.items)) {
-    return [];
+    return []
   }
 
   // 過濾並排序項目
   return category.items
-    .filter(item => item.isShowing !== false) // 只顯示啟用的項目
-    .sort((a, b) => (a.order || 0) - (b.order || 0)); // 按順序排序
-};
+    .filter((item) => item.isShowing !== false) // 只顯示啟用的項目
+    .sort((a, b) => (a.order || 0) - (b.order || 0)) // 按順序排序
+}
 
 // 獲取項目的庫存資訊
 const getInventoryInfo = (item) => {
   // 只有餐點類型才需要檢查庫存
   if (item.itemType !== 'dish' || !item.dishTemplate) {
-    return null;
+    return null
   }
 
-  const dishTemplateId = item.dishTemplate._id || item.dishTemplate;
-  return inventoryData.value[dishTemplateId] || null;
-};
+  const dishTemplateId = item.dishTemplate._id || item.dishTemplate
+  return inventoryData.value[dishTemplateId] || null
+}
 
 // 處理項目選擇
 const handleItemSelect = (item) => {
   // console.log('MenuCategoryList: 選擇項目', item);
-  emit('select-item', item);
-};
+  emit('select-item', item)
+}
 
 // 載入庫存資料
 const loadInventoryData = async () => {
   if (!props.brandId || !props.storeId) {
-    console.warn('缺少 brandId 或 storeId，無法載入庫存資料');
-    return;
+    console.warn('缺少 brandId 或 storeId，無法載入庫存資料')
+    return
   }
 
-  isLoadingInventory.value = true;
+  isLoadingInventory.value = true
 
   try {
     // 獲取店鋪所有餐點庫存
     const response = await api.inventory.getStoreInventory({
       brandId: props.brandId,
       storeId: props.storeId,
-      inventoryType: 'DishTemplate'
-    });
+      inventoryType: 'DishTemplate',
+    })
 
     if (response.success) {
-      const inventoryMap = {};
+      const inventoryMap = {}
 
       // 將庫存資料按餐點模板 ID 建立對應關係
-      response.inventory.forEach(item => {
+      response.inventory.forEach((item) => {
         if (item.dish && item.dish._id) {
           inventoryMap[item.dish._id] = {
             inventoryId: item._id,
@@ -135,49 +151,54 @@ const loadInventoryData = async () => {
             availableStock: item.availableStock,
             totalStock: item.totalStock,
             isSoldOut: item.isSoldOut,
-            isInventoryTracked: item.isInventoryTracked
-          };
+            isInventoryTracked: item.isInventoryTracked,
+          }
         }
-      });
+      })
 
-      inventoryData.value = inventoryMap;
+      inventoryData.value = inventoryMap
       // console.log('庫存資料載入成功');
     } else {
-      console.warn('庫存資料載入失敗:', response.message);
+      console.warn('庫存資料載入失敗:', response.message)
     }
   } catch (error) {
-    console.error('載入庫存資料時發生錯誤:', error);
+    console.error('載入庫存資料時發生錯誤:', error)
   } finally {
-    isLoadingInventory.value = false;
+    isLoadingInventory.value = false
   }
-};
+}
 
 // 生命周期
 onMounted(() => {
   if (props.brandId && props.storeId) {
-    loadInventoryData();
+    loadInventoryData()
   }
-});
+})
 
 // 監聽參數變化
 watch(
   [() => props.brandId, () => props.storeId],
   ([newBrandId, newStoreId], [oldBrandId, oldStoreId]) => {
     if ((newBrandId !== oldBrandId || newStoreId !== oldStoreId) && newBrandId && newStoreId) {
-      loadInventoryData();
+      loadInventoryData()
     }
-  }
-);
+  },
+)
 
 // 監聽分類變化，當菜單載入完成後載入庫存資料
 watch(
   () => props.categories,
   (newCategories) => {
-    if (newCategories.length > 0 && props.brandId && props.storeId && Object.keys(inventoryData.value).length === 0) {
-      loadInventoryData();
+    if (
+      newCategories.length > 0 &&
+      props.brandId &&
+      props.storeId &&
+      Object.keys(inventoryData.value).length === 0
+    ) {
+      loadInventoryData()
     }
-  }
-);
+  },
+)
 </script>
 
 <style scoped>
@@ -224,7 +245,8 @@ watch(
 }
 
 .category-header h4 {
-  font-family: 'Noto Sans TC', '微軟正黑體', 'Microsoft JhengHei', '蘋方-繁', 'PingFang TC', sans-serif !important;
+  font-family:
+    'Noto Sans TC', '微軟正黑體', 'Microsoft JhengHei', '蘋方-繁', 'PingFang TC', sans-serif !important;
   font-weight: 700 !important;
   color: var(--primary-color);
   margin-top: 1.5rem;

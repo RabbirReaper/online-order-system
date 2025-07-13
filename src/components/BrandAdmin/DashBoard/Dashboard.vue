@@ -19,8 +19,12 @@
         <h4 class="mb-0">{{ brandName }} 品牌儀表板</h4>
         <div class="btn-group">
           <button class="btn btn-outline-secondary" @click="refreshData" :disabled="isRefreshing">
-            <span v-if="isRefreshing" class="spinner-border spinner-border-sm me-1" role="status"
-              aria-hidden="true"></span>
+            <span
+              v-if="isRefreshing"
+              class="spinner-border spinner-border-sm me-1"
+              role="status"
+              aria-hidden="true"
+            ></span>
             <i v-else class="bi bi-arrow-clockwise me-1"></i>
             {{ isRefreshing ? '刷新中...' : '刷新數據' }}
           </button>
@@ -49,13 +53,20 @@
                 <span class="badge bg-success me-1">
                   <i class="bi bi-check-circle me-1"></i>{{ stats.activeStoreCount }} 間啟用中
                 </span>
-                <span class="badge bg-secondary" v-if="stats.storeCount - stats.activeStoreCount > 0">
-                  <i class="bi bi-dash-circle me-1"></i>{{ stats.storeCount - stats.activeStoreCount }} 間已停用
+                <span
+                  class="badge bg-secondary"
+                  v-if="stats.storeCount - stats.activeStoreCount > 0"
+                >
+                  <i class="bi bi-dash-circle me-1"></i
+                  >{{ stats.storeCount - stats.activeStoreCount }} 間已停用
                 </span>
               </div>
             </div>
             <div class="card-footer bg-white border-0">
-              <router-link :to="`/admin/${brandId}/stores`" class="btn btn-sm btn-outline-primary w-100">
+              <router-link
+                :to="`/admin/${brandId}/stores`"
+                class="btn btn-sm btn-outline-primary w-100"
+              >
                 查看店鋪列表
               </router-link>
             </div>
@@ -88,7 +99,10 @@
               </div>
             </div>
             <div class="card-footer bg-white border-0">
-              <router-link :to="`/admin/${brandId}/orders/reports`" class="btn btn-sm btn-outline-success w-100">
+              <router-link
+                :to="`/admin/${brandId}/orders/reports`"
+                class="btn btn-sm btn-outline-success w-100"
+              >
                 查看詳細報表
               </router-link>
             </div>
@@ -110,12 +124,16 @@
               <h2 class="mt-3">{{ formatNumber(stats.weeklyOrders || 0) }}</h2>
               <div class="small mt-2">
                 <span class="badge bg-info me-1">
-                  <i class="bi bi-people me-1"></i>客單價 NT$ {{ formatNumber(stats.averageOrderValue || 0) }}
+                  <i class="bi bi-people me-1"></i>客單價 NT$
+                  {{ formatNumber(stats.averageOrderValue || 0) }}
                 </span>
               </div>
             </div>
             <div class="card-footer bg-white border-0">
-              <router-link :to="`/admin/${brandId}/orders`" class="btn btn-sm btn-outline-info w-100">
+              <router-link
+                :to="`/admin/${brandId}/orders`"
+                class="btn btn-sm btn-outline-info w-100"
+              >
                 查看訂單列表
               </router-link>
             </div>
@@ -148,16 +166,25 @@
                   <td>
                     <div class="d-flex align-items-center">
                       <div class="store-img me-2">
-                        <img :src="store.image?.url || '/placeholder.jpg'" :alt="store.name" class="rounded">
+                        <img
+                          :src="store.image?.url || '/placeholder.jpg'"
+                          :alt="store.name"
+                          class="rounded"
+                        />
                       </div>
                       <div>
                         <h6 class="mb-0">{{ store.name }}</h6>
-                        <span class="small text-muted">菜單: {{ store.menuId ? '已設定' : '未設定' }}</span>
+                        <span class="small text-muted"
+                          >菜單: {{ store.menuId ? '已設定' : '未設定' }}</span
+                        >
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span class="badge rounded-pill" :class="store.isActive ? 'bg-success' : 'bg-secondary'">
+                    <span
+                      class="badge rounded-pill"
+                      :class="store.isActive ? 'bg-success' : 'bg-secondary'"
+                    >
                       {{ store.isActive ? '營業中' : '已停業' }}
                     </span>
                   </td>
@@ -179,25 +206,47 @@
                     <div class="d-flex flex-column">
                       <span>NT$ {{ formatNumber(getStoreSales(store._id)) }}</span>
                       <small
-                        :class="getStoreGrowth(store._id) > 0 ? 'text-success' : getStoreGrowth(store._id) < 0 ? 'text-danger' : 'text-muted'">
-                        <i class="bi"
-                          :class="getStoreGrowth(store._id) > 0 ? 'bi-arrow-up' : getStoreGrowth(store._id) < 0 ? 'bi-arrow-down' : 'bi-dash'"></i>
-                        {{ getStoreGrowth(store._id) > 0 ? '+' : '' }}{{ getStoreGrowth(store._id).toFixed(1) }}%
+                        :class="
+                          getStoreGrowth(store._id) > 0
+                            ? 'text-success'
+                            : getStoreGrowth(store._id) < 0
+                              ? 'text-danger'
+                              : 'text-muted'
+                        "
+                      >
+                        <i
+                          class="bi"
+                          :class="
+                            getStoreGrowth(store._id) > 0
+                              ? 'bi-arrow-up'
+                              : getStoreGrowth(store._id) < 0
+                                ? 'bi-arrow-down'
+                                : 'bi-dash'
+                          "
+                        ></i>
+                        {{ getStoreGrowth(store._id) > 0 ? '+' : ''
+                        }}{{ getStoreGrowth(store._id).toFixed(1) }}%
                       </small>
                     </div>
                   </td>
                   <td>
                     <div class="btn-group">
-                      <router-link :to="`/admin/${brandId}/stores/detail/${store._id}`"
-                        class="btn btn-sm btn-outline-primary">
+                      <router-link
+                        :to="`/admin/${brandId}/stores/detail/${store._id}`"
+                        class="btn btn-sm btn-outline-primary"
+                      >
                         <i class="bi bi-eye"></i>
                       </router-link>
-                      <router-link :to="`/admin/${brandId}/stores/edit/${store._id}`"
-                        class="btn btn-sm btn-outline-primary">
+                      <router-link
+                        :to="`/admin/${brandId}/stores/edit/${store._id}`"
+                        class="btn btn-sm btn-outline-primary"
+                      >
                         <i class="bi bi-pencil"></i>
                       </router-link>
-                      <router-link :to="`/admin/${brandId}/inventory?storeId=${store._id}`"
-                        class="btn btn-sm btn-outline-primary">
+                      <router-link
+                        :to="`/admin/${brandId}/inventory?storeId=${store._id}`"
+                        class="btn btn-sm btn-outline-primary"
+                      >
                         <i class="bi bi-box-seam"></i>
                       </router-link>
                     </div>
@@ -206,7 +255,10 @@
                 <tr v-if="stores.length === 0">
                   <td colspan="5" class="text-center py-4">
                     <div class="text-muted">尚未創建任何店鋪</div>
-                    <router-link :to="`/admin/${brandId}/stores/create`" class="btn btn-sm btn-primary mt-2">
+                    <router-link
+                      :to="`/admin/${brandId}/stores/create`"
+                      class="btn btn-sm btn-primary mt-2"
+                    >
                       <i class="bi bi-plus-circle me-1"></i>新增第一間店鋪
                     </router-link>
                   </td>
@@ -329,324 +381,346 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 從路由中獲取品牌ID
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
 
 // 狀態變數
-const isLoading = ref(true);
-const isRefreshing = ref(false);
-const error = ref('');
-const brandName = ref('');
-const stores = ref([]);
-const recentOrders = ref([]);
+const isLoading = ref(true)
+const isRefreshing = ref(false)
+const error = ref('')
+const brandName = ref('')
+const stores = ref([])
+const recentOrders = ref([])
 const stats = ref({
   storeCount: 0,
   activeStoreCount: 0,
   weeklySales: 0,
   salesGrowth: 0,
   weeklyOrders: 0,
-  averageOrderValue: 0
-});
+  averageOrderValue: 0,
+})
 const orderTypeMap = {
-  'dine_in': '內用',
-  'takeout': '外帶',
-  'delivery': '外送',
-  'foodpanda': 'Foodpanda',
-  'ubereats': 'UberEats',
-};
+  dine_in: '內用',
+  takeout: '外帶',
+  delivery: '外送',
+  foodpanda: 'Foodpanda',
+  ubereats: 'UberEats',
+}
 
 // 店鋪銷售數據
-const storeSalesData = ref({});
+const storeSalesData = ref({})
 
 // 格式化數字 (加入千位分隔符)
 const formatNumber = (num) => {
-  return new Intl.NumberFormat('zh-TW').format(num);
-};
+  return new Intl.NumberFormat('zh-TW').format(num)
+}
 
 // 獲取當天星期幾 (0-6，0代表星期日)
 const getTodayDayOfWeek = () => {
-  return new Date().getDay();
-};
+  return new Date().getDay()
+}
 
 // 獲取當天的營業時間
 const getTodayBusinessHours = (store) => {
   if (!store.businessHours || store.businessHours.length === 0) {
-    return null;
+    return null
   }
 
-  const today = getTodayDayOfWeek();
-  const todayHours = store.businessHours.find(h => h.day === today);
+  const today = getTodayDayOfWeek()
+  const todayHours = store.businessHours.find((h) => h.day === today)
 
-  return todayHours;
-};
+  return todayHours
+}
 
 // 檢查今天是否營業
 const isTodayOpen = (store) => {
-  const todayHours = getTodayBusinessHours(store);
-  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0;
-};
+  const todayHours = getTodayBusinessHours(store)
+  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0
+}
 
 // 格式化營業時間
 const formatBusinessHours = (businessHours) => {
   if (!businessHours || !businessHours.periods || businessHours.periods.length === 0) {
-    return '無資料';
+    return '無資料'
   }
 
-  return businessHours.periods.map(period => {
-    return `${period.open}-${period.close}`;
-  }).join(', ');
-};
+  return businessHours.periods
+    .map((period) => {
+      return `${period.open}-${period.close}`
+    })
+    .join(', ')
+}
 
 const formatOrderType = (orderType) => {
-  return orderTypeMap[orderType] || '其他';
-};
+  return orderTypeMap[orderType] || '其他'
+}
 
 // 獲取店鋪本週銷售額
 const getStoreSales = (storeId) => {
-  return storeSalesData.value[storeId]?.weeklySales || 0;
-};
+  return storeSalesData.value[storeId]?.weeklySales || 0
+}
 
 // 獲取店鋪銷售成長率
 const getStoreGrowth = (storeId) => {
-  return storeSalesData.value[storeId]?.salesGrowth || 0;
-};
+  return storeSalesData.value[storeId]?.salesGrowth || 0
+}
 
 // 獲取訂單編號
 const getOrderNumber = (order) => {
-  if (order.platformOrderId) return order.platformOrderId;
+  if (order.platformOrderId) return order.platformOrderId
   if (order.orderDateCode && order.sequence) {
-    return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`;
+    return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`
   }
-  return order._id || '';
-};
+  return order._id || ''
+}
 
 // 根據訂單狀態返回對應的樣式類
 const getOrderStatusClass = (status) => {
   switch (status) {
-    case 'paid': return 'bg-success';
-    case 'unpaid': return 'bg-warning';
-    case 'cancelled': return 'bg-danger';
-    default: return 'bg-secondary';
+    case 'paid':
+      return 'bg-success'
+    case 'unpaid':
+      return 'bg-warning'
+    case 'cancelled':
+      return 'bg-danger'
+    default:
+      return 'bg-secondary'
   }
-};
+}
 
 // 根據訂單狀態返回對應的文字
 const getOrderStatusText = (status) => {
   switch (status) {
-    case 'paid': return '已付款';
-    case 'unpaid': return '未付款';
-    case 'cancelled': return '已取消';
-    default: return '未知';
+    case 'paid':
+      return '已付款'
+    case 'unpaid':
+      return '未付款'
+    case 'cancelled':
+      return '已取消'
+    default:
+      return '未知'
   }
-};
+}
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
+  if (!dateString) return '無資料'
 
-  const date = new Date(dateString);
+  const date = new Date(dateString)
   return date.toLocaleDateString('zh-TW', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 日期處理函數
 const getWeekStart = (date) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day; // Sunday is 0
-  return new Date(d.setDate(diff));
-};
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day // Sunday is 0
+  return new Date(d.setDate(diff))
+}
 
 const getWeekEnd = (date) => {
-  const weekStart = getWeekStart(date);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  return weekEnd;
-};
+  const weekStart = getWeekStart(date)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  return weekEnd
+}
 
 const formatDateForAPI = (date) => {
-  return date.toISOString().split('T')[0];
-};
+  return date.toISOString().split('T')[0]
+}
 
 // 獲取店鋪列表
 const fetchStores = async () => {
   try {
-    const response = await api.store.getAllStores({ brandId: brandId.value });
+    const response = await api.store.getAllStores({ brandId: brandId.value })
     if (response && response.stores) {
-      stores.value = response.stores.slice(0, 5); // 僅顯示前5間店鋪
+      stores.value = response.stores.slice(0, 5) // 僅顯示前5間店鋪
 
       // 更新統計數據
-      stats.value.storeCount = response.stores.length;
-      stats.value.activeStoreCount = response.stores.filter(store => store.isActive).length;
+      stats.value.storeCount = response.stores.length
+      stats.value.activeStoreCount = response.stores.filter((store) => store.isActive).length
     }
   } catch (err) {
-    console.error('獲取店鋪列表失敗:', err);
-    throw err;
+    console.error('獲取店鋪列表失敗:', err)
+    throw err
   }
-};
+}
 
 // 獲取訂單數據並計算統計
 const fetchOrdersAndCalculateStats = async () => {
   try {
     // 獲取本週和上週的日期範圍
-    const today = new Date();
-    const thisWeekStart = getWeekStart(today);
-    const thisWeekEnd = getWeekEnd(today);
+    const today = new Date()
+    const thisWeekStart = getWeekStart(today)
+    const thisWeekEnd = getWeekEnd(today)
 
-    const lastWeekStart = new Date(thisWeekStart);
-    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
-    const lastWeekEnd = new Date(thisWeekEnd);
-    lastWeekEnd.setDate(thisWeekEnd.getDate() - 7);
+    const lastWeekStart = new Date(thisWeekStart)
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7)
+    const lastWeekEnd = new Date(thisWeekEnd)
+    lastWeekEnd.setDate(thisWeekEnd.getDate() - 7)
 
     // 獲取所有店鋪列表（如果還沒有的話）
     if (stores.value.length === 0) {
-      const storesResponse = await api.store.getAllStores({ brandId: brandId.value });
+      const storesResponse = await api.store.getAllStores({ brandId: brandId.value })
       if (storesResponse && storesResponse.stores) {
-        stores.value = storesResponse.stores;
+        stores.value = storesResponse.stores
       }
     }
 
     // 獲取本週訂單
-    const thisWeekOrdersPromises = stores.value.map(store =>
-      api.orderAdmin.getStoreOrders({
-        brandId: brandId.value,
-        storeId: store._id,
-        fromDate: formatDateForAPI(thisWeekStart),
-        toDate: formatDateForAPI(thisWeekEnd),
-        page: 1,
-        limit: 1000
-      }).catch(err => {
-        console.warn(`獲取店鋪 ${store._id} 本週訂單失敗:`, err);
-        return { success: false, orders: [] };
-      })
-    );
+    const thisWeekOrdersPromises = stores.value.map((store) =>
+      api.orderAdmin
+        .getStoreOrders({
+          brandId: brandId.value,
+          storeId: store._id,
+          fromDate: formatDateForAPI(thisWeekStart),
+          toDate: formatDateForAPI(thisWeekEnd),
+          page: 1,
+          limit: 1000,
+        })
+        .catch((err) => {
+          console.warn(`獲取店鋪 ${store._id} 本週訂單失敗:`, err)
+          return { success: false, orders: [] }
+        }),
+    )
 
     // 獲取上週訂單
-    const lastWeekOrdersPromises = stores.value.map(store =>
-      api.orderAdmin.getStoreOrders({
-        brandId: brandId.value,
-        storeId: store._id,
-        fromDate: formatDateForAPI(lastWeekStart),
-        toDate: formatDateForAPI(lastWeekEnd),
-        page: 1,
-        limit: 1000
-      }).catch(err => {
-        console.warn(`獲取店鋪 ${store._id} 上週訂單失敗:`, err);
-        return { success: false, orders: [] };
-      })
-    );
+    const lastWeekOrdersPromises = stores.value.map((store) =>
+      api.orderAdmin
+        .getStoreOrders({
+          brandId: brandId.value,
+          storeId: store._id,
+          fromDate: formatDateForAPI(lastWeekStart),
+          toDate: formatDateForAPI(lastWeekEnd),
+          page: 1,
+          limit: 1000,
+        })
+        .catch((err) => {
+          console.warn(`獲取店鋪 ${store._id} 上週訂單失敗:`, err)
+          return { success: false, orders: [] }
+        }),
+    )
 
     const [thisWeekResponses, lastWeekResponses] = await Promise.all([
       Promise.all(thisWeekOrdersPromises),
-      Promise.all(lastWeekOrdersPromises)
-    ]);
+      Promise.all(lastWeekOrdersPromises),
+    ])
 
     // 合併本週訂單
-    const thisWeekOrders = thisWeekResponses.flatMap(response => {
+    const thisWeekOrders = thisWeekResponses.flatMap((response) => {
       if (response.success && response.orders) {
-        return response.orders.map(order => ({
+        return response.orders.map((order) => ({
           ...order,
-          storeName: stores.value.find(s => s._id === order.store)?.name || '未知店鋪'
-        }));
+          storeName: stores.value.find((s) => s._id === order.store)?.name || '未知店鋪',
+        }))
       }
-      return [];
-    });
+      return []
+    })
 
     // 合併上週訂單
-    const lastWeekOrders = lastWeekResponses.flatMap(response => {
+    const lastWeekOrders = lastWeekResponses.flatMap((response) => {
       if (response.success && response.orders) {
-        return response.orders;
+        return response.orders
       }
-      return [];
-    });
+      return []
+    })
 
     // 計算統計數據
-    const thisWeekSales = thisWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-    const lastWeekSales = lastWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-    const thisWeekOrderCount = thisWeekOrders.length;
+    const thisWeekSales = thisWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+    const lastWeekSales = lastWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+    const thisWeekOrderCount = thisWeekOrders.length
 
-    stats.value.weeklySales = thisWeekSales;
-    stats.value.weeklyOrders = thisWeekOrderCount;
-    stats.value.averageOrderValue = thisWeekOrderCount > 0 ? (thisWeekSales / thisWeekOrderCount) : 0;
-    stats.value.salesGrowth = lastWeekSales > 0 ? ((thisWeekSales - lastWeekSales) / lastWeekSales * 100) : 0;
+    stats.value.weeklySales = thisWeekSales
+    stats.value.weeklyOrders = thisWeekOrderCount
+    stats.value.averageOrderValue = thisWeekOrderCount > 0 ? thisWeekSales / thisWeekOrderCount : 0
+    stats.value.salesGrowth =
+      lastWeekSales > 0 ? ((thisWeekSales - lastWeekSales) / lastWeekSales) * 100 : 0
 
     // 計算每個店鋪的銷售數據
-    stores.value.forEach(store => {
-      const storeThisWeekOrders = thisWeekOrders.filter(order => order.store === store._id);
-      const storeLastWeekOrders = lastWeekOrders.filter(order => order.store === store._id);
+    stores.value.forEach((store) => {
+      const storeThisWeekOrders = thisWeekOrders.filter((order) => order.store === store._id)
+      const storeLastWeekOrders = lastWeekOrders.filter((order) => order.store === store._id)
 
-      const storeThisWeekSales = storeThisWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-      const storeLastWeekSales = storeLastWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const storeThisWeekSales = storeThisWeekOrders.reduce(
+        (sum, order) => sum + (order.total || 0),
+        0,
+      )
+      const storeLastWeekSales = storeLastWeekOrders.reduce(
+        (sum, order) => sum + (order.total || 0),
+        0,
+      )
 
       storeSalesData.value[store._id] = {
         weeklySales: storeThisWeekSales,
-        salesGrowth: storeLastWeekSales > 0 ? ((storeThisWeekSales - storeLastWeekSales) / storeLastWeekSales * 100) : 0
-      };
-    });
+        salesGrowth:
+          storeLastWeekSales > 0
+            ? ((storeThisWeekSales - storeLastWeekSales) / storeLastWeekSales) * 100
+            : 0,
+      }
+    })
 
     // 設置最近訂單（按時間排序，取前5筆）
     recentOrders.value = thisWeekOrders
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 5);
-
+      .slice(0, 5)
   } catch (err) {
-    console.error('獲取訂單數據失敗:', err);
-    throw err;
+    console.error('獲取訂單數據失敗:', err)
+    throw err
   }
-};
+}
 
 // 加載數據
 const loadData = async (isRefresh = false) => {
-  if (!brandId.value) return;
+  if (!brandId.value) return
 
   if (isRefresh) {
-    isRefreshing.value = true;
+    isRefreshing.value = true
   } else {
-    isLoading.value = true;
+    isLoading.value = true
   }
 
-  error.value = '';
+  error.value = ''
 
   try {
     // 獲取品牌信息
-    const brandResponse = await api.brand.getBrandById(brandId.value);
+    const brandResponse = await api.brand.getBrandById(brandId.value)
     if (brandResponse && brandResponse.brand) {
-      brandName.value = brandResponse.brand.name;
+      brandName.value = brandResponse.brand.name
     }
 
     // 獲取店鋪列表
-    await fetchStores();
+    await fetchStores()
 
     // 獲取訂單數據並計算統計
-    await fetchOrdersAndCalculateStats();
-
+    await fetchOrdersAndCalculateStats()
   } catch (err) {
-    console.error('獲取數據失敗:', err);
-    error.value = '無法載入數據，請稍後再試';
+    console.error('獲取數據失敗:', err)
+    error.value = '無法載入數據，請稍後再試'
   } finally {
-    isLoading.value = false;
-    isRefreshing.value = false;
+    isLoading.value = false
+    isRefreshing.value = false
   }
-};
+}
 
 // 刷新數據
 const refreshData = () => {
-  loadData(true);
-};
+  loadData(true)
+}
 
 // 生命週期鉤子
 onMounted(() => {
-  loadData();
-});
+  loadData()
+})
 </script>
 
 <style scoped>

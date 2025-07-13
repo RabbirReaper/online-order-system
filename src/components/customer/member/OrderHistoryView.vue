@@ -53,18 +53,32 @@
 
         <!-- 狀態篩選 -->
         <div class="status-filter">
-          <button class="filter-btn" :class="{ active: selectedStatus === 'all' }" @click="selectedStatus = 'all'">
+          <button
+            class="filter-btn"
+            :class="{ active: selectedStatus === 'all' }"
+            @click="selectedStatus = 'all'"
+          >
             全部 ({{ orders.length }})
           </button>
-          <button class="filter-btn" :class="{ active: selectedStatus === 'unpaid' }"
-            @click="selectedStatus = 'unpaid'">
+          <button
+            class="filter-btn"
+            :class="{ active: selectedStatus === 'unpaid' }"
+            @click="selectedStatus = 'unpaid'"
+          >
             待付款 ({{ unpaidOrders.length }})
           </button>
-          <button class="filter-btn" :class="{ active: selectedStatus === 'paid' }" @click="selectedStatus = 'paid'">
+          <button
+            class="filter-btn"
+            :class="{ active: selectedStatus === 'paid' }"
+            @click="selectedStatus = 'paid'"
+          >
             已付款 ({{ paidOrders.length }})
           </button>
-          <button class="filter-btn" :class="{ active: selectedStatus === 'cancelled' }"
-            @click="selectedStatus = 'cancelled'">
+          <button
+            class="filter-btn"
+            :class="{ active: selectedStatus === 'cancelled' }"
+            @click="selectedStatus = 'cancelled'"
+          >
             已取消 ({{ cancelledOrders.length }})
           </button>
         </div>
@@ -72,14 +86,21 @@
         <!-- 訂單列表 -->
         <div class="orders-list">
           <div v-if="filteredOrders.length > 0">
-            <div v-for="order in filteredOrders" :key="order._id" class="order-card" @click="showOrderDetail(order)">
+            <div
+              v-for="order in filteredOrders"
+              :key="order._id"
+              class="order-card"
+              @click="showOrderDetail(order)"
+            >
               <div class="order-header">
                 <div class="order-info">
                   <h6 class="order-number">訂單編號：{{ generateOrderNumber(order) }}</h6>
                   <p class="order-date">{{ formatDateTime(order.createdAt) }}</p>
                 </div>
                 <div class="order-status">
-                  <span :class="getStatusClass(order.status)">{{ formatStatus(order.status) }}</span>
+                  <span :class="getStatusClass(order.status)">{{
+                    formatStatus(order.status)
+                  }}</span>
                 </div>
               </div>
 
@@ -107,9 +128,7 @@
                       {{ formatOrderType(order.orderType) }}
                     </span>
                   </div>
-                  <div class="order-total">
-                    總計：${{ order.total.toLocaleString() }}
-                  </div>
+                  <div class="order-total">總計：${{ order.total.toLocaleString() }}</div>
                 </div>
               </div>
 
@@ -117,7 +136,11 @@
                 <button class="btn btn-outline-primary btn-sm" @click.stop="showOrderDetail(order)">
                   查看詳情
                 </button>
-                <button v-if="canReorder(order)" class="btn btn-primary btn-sm ms-2" @click.stop="reorder(order)">
+                <button
+                  v-if="canReorder(order)"
+                  class="btn btn-primary btn-sm ms-2"
+                  @click.stop="reorder(order)"
+                >
                   再次訂購
                 </button>
               </div>
@@ -125,9 +148,13 @@
           </div>
 
           <div v-else class="empty-state">
-            <i class="bi bi-bag text-muted" style="font-size: 4rem;"></i>
+            <i class="bi bi-bag text-muted" style="font-size: 4rem"></i>
             <h5 class="mt-3 text-muted">
-              {{ selectedStatus === 'all' ? '沒有訂單記錄' : `沒有${getStatusLabel(selectedStatus)}的訂單` }}
+              {{
+                selectedStatus === 'all'
+                  ? '沒有訂單記錄'
+                  : `沒有${getStatusLabel(selectedStatus)}的訂單`
+              }}
             </h5>
             <p class="text-muted">
               {{ selectedStatus === 'all' ? '快去點餐吧！' : '切換到其他狀態查看訂單' }}
@@ -137,9 +164,17 @@
 
         <!-- 載入更多按鈕 -->
         <div v-if="hasMoreOrders" class="load-more-section">
-          <button class="btn btn-outline-secondary" @click="loadMoreOrders" :disabled="isLoadingMore">
-            <span v-if="isLoadingMore" class="spinner-border spinner-border-sm me-2" role="status"
-              aria-hidden="true"></span>
+          <button
+            class="btn btn-outline-secondary"
+            @click="loadMoreOrders"
+            :disabled="isLoadingMore"
+          >
+            <span
+              v-if="isLoadingMore"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
             載入更多訂單
           </button>
         </div>
@@ -152,7 +187,9 @@
     <div v-if="selectedOrder" class="order-detail">
       <div class="detail-header">
         <div class="detail-status">
-          <span :class="getStatusClass(selectedOrder.status)">{{ formatStatus(selectedOrder.status) }}</span>
+          <span :class="getStatusClass(selectedOrder.status)">{{
+            formatStatus(selectedOrder.status)
+          }}</span>
         </div>
         <div class="detail-info">
           <h5>訂單編號：{{ generateOrderNumber(selectedOrder) }}</h5>
@@ -171,17 +208,25 @@
             <div v-for="(item, index) in selectedOrder.items" :key="index" class="item-detail">
               <div class="item-info">
                 <div class="item-name">{{ item.dishInstance?.name || '餐點' }}</div>
-                <div v-if="item.dishInstance?.options && item.dishInstance.options.length > 0" class="item-options">
-                  <span v-for="(category, catIndex) in item.dishInstance.options" :key="catIndex"
-                    class="option-category">
-                    <span v-for="(selection, selIndex) in category.selections" :key="selIndex" class="option-tag">
+                <div
+                  v-if="item.dishInstance?.options && item.dishInstance.options.length > 0"
+                  class="item-options"
+                >
+                  <span
+                    v-for="(category, catIndex) in item.dishInstance.options"
+                    :key="catIndex"
+                    class="option-category"
+                  >
+                    <span
+                      v-for="(selection, selIndex) in category.selections"
+                      :key="selIndex"
+                      class="option-tag"
+                    >
                       {{ selection.optionName || selection.name }}
                     </span>
                   </span>
                 </div>
-                <div class="item-note" v-if="item.note">
-                  備註：{{ item.note }}
-                </div>
+                <div class="item-note" v-if="item.note">備註：{{ item.note }}</div>
               </div>
               <div class="item-pricing">
                 <div class="item-quantity">x{{ item.quantity }}</div>
@@ -244,9 +289,16 @@
               <span>優惠折扣</span>
               <span>-${{ selectedOrder.totalDiscount }}</span>
             </div>
-            <div v-if="selectedOrder.manualAdjustment && selectedOrder.manualAdjustment !== 0" class="payment-row">
+            <div
+              v-if="selectedOrder.manualAdjustment && selectedOrder.manualAdjustment !== 0"
+              class="payment-row"
+            >
               <span>{{ selectedOrder.manualAdjustment > 0 ? '額外費用' : '額外折扣' }}</span>
-              <span>{{ selectedOrder.manualAdjustment > 0 ? '+' : '' }}${{ selectedOrder.manualAdjustment }}</span>
+              <span
+                >{{ selectedOrder.manualAdjustment > 0 ? '+' : '' }}${{
+                  selectedOrder.manualAdjustment
+                }}</span
+              >
             </div>
             <div class="payment-row total">
               <span>總計</span>
@@ -263,10 +315,12 @@
 
     <template #footer>
       <div class="modal-footer-actions">
-        <BButton variant="secondary" @click="$refs.orderDetailModal.hide()">
-          關閉
-        </BButton>
-        <BButton v-if="selectedOrder && canReorder(selectedOrder)" variant="primary" @click="reorder(selectedOrder)">
+        <BButton variant="secondary" @click="$refs.orderDetailModal.hide()"> 關閉 </BButton>
+        <BButton
+          v-if="selectedOrder && canReorder(selectedOrder)"
+          variant="primary"
+          @click="reorder(selectedOrder)"
+        >
           再次訂購
         </BButton>
       </div>
@@ -275,216 +329,215 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/customerAuth';
-import { BModal, BButton } from 'bootstrap-vue-next';
-import api from '@/api';
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/customerAuth'
+import { BModal, BButton } from 'bootstrap-vue-next'
+import api from '@/api'
 
 // 路由
-const router = useRouter();
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
 // 模態框參考
-const orderDetailModal = ref(null);
+const orderDetailModal = ref(null)
 
 // 狀態管理
-const isLoading = ref(true);
-const isLoadingMore = ref(false);
-const errorMessage = ref('');
-const selectedStatus = ref('all');
-const selectedOrder = ref(null);
+const isLoading = ref(true)
+const isLoadingMore = ref(false)
+const errorMessage = ref('')
+const selectedStatus = ref('all')
+const selectedOrder = ref(null)
 
 // 訂單資料
-const orders = ref([]);
-const currentPage = ref(1);
-const hasMoreOrders = ref(false);
-const pageLimit = ref(30);
+const orders = ref([])
+const currentPage = ref(1)
+const hasMoreOrders = ref(false)
+const pageLimit = ref(30)
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
-  return sessionStorage.getItem('currentBrandId');
-});
+  return sessionStorage.getItem('currentBrandId')
+})
 
 // 計算屬性
-const totalOrders = computed(() => orders.value.length);
+const totalOrders = computed(() => orders.value.length)
 
 const totalAmount = computed(() => {
   return orders.value
-    .filter(order => order.status === 'paid')
-    .reduce((sum, order) => sum + (order.total || 0), 0);
-});
+    .filter((order) => order.status === 'paid')
+    .reduce((sum, order) => sum + (order.total || 0), 0)
+})
 
 const unpaidOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'unpaid');
-});
+  return orders.value.filter((order) => order.status === 'unpaid')
+})
 
 const paidOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'paid');
-});
+  return orders.value.filter((order) => order.status === 'paid')
+})
 
 const pendingOrders = computed(() => {
-  return unpaidOrders.value;
-});
+  return unpaidOrders.value
+})
 
 const cancelledOrders = computed(() => {
-  return orders.value.filter(order => order.status === 'cancelled');
-});
+  return orders.value.filter((order) => order.status === 'cancelled')
+})
 
 const filteredOrders = computed(() => {
   if (selectedStatus.value === 'all') {
-    return orders.value;
+    return orders.value
   }
-  return orders.value.filter(order => order.status === selectedStatus.value);
-});
+  return orders.value.filter((order) => order.status === selectedStatus.value)
+})
 
 // 返回上一頁
 const goBack = () => {
-  router.push('/member');
-};
+  router.push('/member')
+}
 
 // 生成訂單編號
 const generateOrderNumber = (order) => {
-  return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`;
-};
+  return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`
+}
 
 // 格式化狀態
 const formatStatus = (status) => {
   const statusMap = {
-    'unpaid': '待付款',
-    'paid': '已付款',
-    'cancelled': '已取消'
-  };
-  return statusMap[status] || status;
-};
+    unpaid: '待付款',
+    paid: '已付款',
+    cancelled: '已取消',
+  }
+  return statusMap[status] || status
+}
 
 // 獲取狀態樣式
 const getStatusClass = (status) => {
   const statusClasses = {
-    'unpaid': 'badge bg-warning',
-    'paid': 'badge bg-success',
-    'cancelled': 'badge bg-danger'
-  };
-  return statusClasses[status] || 'badge bg-secondary';
-};
+    unpaid: 'badge bg-warning',
+    paid: 'badge bg-success',
+    cancelled: 'badge bg-danger',
+  }
+  return statusClasses[status] || 'badge bg-secondary'
+}
 
 // 獲取狀態標籤
 const getStatusLabel = (status) => {
   const statusLabels = {
-    'unpaid': '待付款',
-    'paid': '已付款',
-    'cancelled': '已取消'
-  };
-  return statusLabels[status] || status;
-};
+    unpaid: '待付款',
+    paid: '已付款',
+    cancelled: '已取消',
+  }
+  return statusLabels[status] || status
+}
 
 // 格式化支付方式
 const formatPaymentMethod = (method) => {
   const methodMap = {
-    'credit_card': '信用卡',
-    'cash': '現金',
-    'line_pay': 'LINE Pay',
-    'apple_pay': 'Apple Pay',
-    'other': '其他'
-  };
-  return methodMap[method] || method || '未設定';
-};
+    credit_card: '信用卡',
+    cash: '現金',
+    line_pay: 'LINE Pay',
+    apple_pay: 'Apple Pay',
+    other: '其他',
+  }
+  return methodMap[method] || method || '未設定'
+}
 
 // 格式化訂單類型
 const formatOrderType = (type) => {
   const typeMap = {
-    'dine_in': '內用',
-    'takeout': '外帶',
-    'delivery': '外送'
-  };
-  return typeMap[type] || type;
-};
+    dine_in: '內用',
+    takeout: '外帶',
+    delivery: '外送',
+  }
+  return typeMap[type] || type
+}
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
-  if (!dateString) return '未設定';
+  if (!dateString) return '未設定'
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '無效日期';
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '無效日期'
 
-  return date.toLocaleString('zh-TW');
-};
+  return date.toLocaleString('zh-TW')
+}
 
 // 判斷是否可以重新訂購
 const canReorder = (order) => {
-  return ['paid', 'cancelled'].includes(order.status);
-};
+  return ['paid', 'cancelled'].includes(order.status)
+}
 
 // 顯示訂單詳情
 const showOrderDetail = async (order) => {
-  console.log('顯示訂單詳情:', order);
-  selectedOrder.value = order;
+  console.log('顯示訂單詳情:', order)
+  selectedOrder.value = order
   if (orderDetailModal.value) {
-    orderDetailModal.value.show();
+    orderDetailModal.value.show()
   }
-};
+}
 
 // 重新訂購
 const reorder = (order) => {
   // TODO: 實作重新訂購邏輯
-  console.log('重新訂購:', order);
+  console.log('重新訂購:', order)
   // 可以跳轉到購物車頁面，預填訂單項目
   // router.push('/cart');
-};
+}
 
 // 載入更多訂單
 const loadMoreOrders = async () => {
   if (!hasMoreOrders.value || isLoadingMore.value) {
-    return;
+    return
   }
 
   try {
-    isLoadingMore.value = true;
+    isLoadingMore.value = true
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
-    const nextPage = currentPage.value + 1;
+    const nextPage = currentPage.value + 1
     const response = await api.orderCustomer.getUserOrders({
       brandId: currentBrandId,
       page: nextPage,
       limit: pageLimit.value,
       sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
+      sortOrder: 'desc',
+    })
 
     if (response.orders && response.orders.length > 0) {
-      orders.value = [...orders.value, ...response.orders];
-      currentPage.value = nextPage;
-      hasMoreOrders.value = response.pagination?.hasNextPage || false;
+      orders.value = [...orders.value, ...response.orders]
+      currentPage.value = nextPage
+      hasMoreOrders.value = response.pagination?.hasNextPage || false
     } else {
-      hasMoreOrders.value = false;
+      hasMoreOrders.value = false
     }
-
   } catch (error) {
-    console.error('載入更多訂單失敗:', error);
-    errorMessage.value = '載入更多訂單失敗';
+    console.error('載入更多訂單失敗:', error)
+    errorMessage.value = '載入更多訂單失敗'
   } finally {
-    isLoadingMore.value = false;
+    isLoadingMore.value = false
   }
-};
+}
 
 // 載入訂單資料
 const loadOrdersData = async () => {
   try {
-    isLoading.value = true;
-    errorMessage.value = '';
+    isLoading.value = true
+    errorMessage.value = ''
 
-    const currentBrandId = brandId.value;
+    const currentBrandId = brandId.value
     if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊');
+      throw new Error('無法獲取品牌資訊')
     }
 
     // 檢查用戶是否已登入
     if (!authStore.isLoggedIn) {
-      throw new Error('請先登入以查看訂單資料');
+      throw new Error('請先登入以查看訂單資料')
     }
 
     const response = await api.orderCustomer.getUserOrders({
@@ -492,53 +545,52 @@ const loadOrdersData = async () => {
       page: 1,
       limit: pageLimit.value,
       sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
+      sortOrder: 'desc',
+    })
 
     if (response) {
-      orders.value = response.orders || [];
-      currentPage.value = 1;
-      hasMoreOrders.value = response.pagination?.hasNextPage || false;
+      orders.value = response.orders || []
+      currentPage.value = 1
+      hasMoreOrders.value = response.pagination?.hasNextPage || false
     }
-
   } catch (error) {
-    console.error('載入訂單資料失敗:', error);
+    console.error('載入訂單資料失敗:', error)
 
     if (error.response) {
       if (error.response.status === 401) {
-        errorMessage.value = '請先登入以查看訂單資料';
+        errorMessage.value = '請先登入以查看訂單資料'
         // 可以考慮跳轉到登入頁面
         // router.push('/auth/login');
       } else if (error.response.data && error.response.data.message) {
-        errorMessage.value = error.response.data.message;
+        errorMessage.value = error.response.data.message
       } else {
-        errorMessage.value = `載入失敗：${error.response.status}`;
+        errorMessage.value = `載入失敗：${error.response.status}`
       }
     } else if (error.message) {
-      errorMessage.value = error.message;
+      errorMessage.value = error.message
     } else {
-      errorMessage.value = '無法載入訂單資料，請稍後再試';
+      errorMessage.value = '無法載入訂單資料，請稍後再試'
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 組件掛載後載入資料
 onMounted(async () => {
   // 確保品牌ID存在
   if (brandId.value) {
-    authStore.setBrandId(brandId.value);
+    authStore.setBrandId(brandId.value)
   }
 
   // 先檢查登入狀態
   if (!authStore.isLoggedIn) {
-    await authStore.checkAuthStatus();
+    await authStore.checkAuthStatus()
   }
 
   // 然後載入訂單資料
-  await loadOrdersData();
-});
+  await loadOrdersData()
+})
 </script>
 
 <style scoped>
@@ -694,7 +746,9 @@ onMounted(async () => {
   margin-bottom: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .order-card:hover {

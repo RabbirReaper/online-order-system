@@ -16,7 +16,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllCouponTemplates(brandId) {
-      return apiClient.get(`/promotion/brands/${brandId}/coupons/templates`);
+      return apiClient.get(`/promotion/brands/${brandId}/coupons/templates`)
     },
 
     /**
@@ -27,7 +27,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getCouponTemplateById({ brandId, id }) {
-      return apiClient.get(`/promotion/brands/${brandId}/coupons/templates/${id}`);
+      return apiClient.get(`/promotion/brands/${brandId}/coupons/templates/${id}`)
     },
 
     /**
@@ -38,7 +38,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createCouponTemplate({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/coupons/templates`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/coupons/templates`, data)
     },
 
     /**
@@ -50,7 +50,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateCouponTemplate({ brandId, id, data }) {
-      return apiClient.put(`/promotion/brands/${brandId}/coupons/templates/${id}`, data);
+      return apiClient.put(`/promotion/brands/${brandId}/coupons/templates/${id}`, data)
     },
 
     /**
@@ -61,7 +61,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteCouponTemplate({ brandId, id }) {
-      return apiClient.delete(`/promotion/brands/${brandId}/coupons/templates/${id}`);
+      return apiClient.delete(`/promotion/brands/${brandId}/coupons/templates/${id}`)
     },
 
     // =============================================================================
@@ -75,7 +75,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllCouponInstances(brandId, params = {}) {
-      return apiClient.get(`/promotion/brands/${brandId}/coupons/instances/admin`, { params });
+      return apiClient.get(`/promotion/brands/${brandId}/coupons/instances/admin`, { params })
     },
 
     /**
@@ -86,7 +86,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     issueCouponToUser({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/coupons/instances/issue`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/coupons/instances/issue`, data)
     },
 
     // =============================================================================
@@ -100,7 +100,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserCoupons(brandId, params = {}) {
-      return apiClient.get(`/promotion/brands/${brandId}/coupons`, { params });
+      return apiClient.get(`/promotion/brands/${brandId}/coupons`, { params })
     },
 
     /**
@@ -111,7 +111,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     redeemCoupon({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/coupons/redeem`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/coupons/redeem`, data)
     },
 
     // =============================================================================
@@ -124,7 +124,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllVoucherTemplates(brandId) {
-      return apiClient.get(`/promotion/brands/${brandId}/vouchers/templates`);
+      return apiClient.get(`/promotion/brands/${brandId}/vouchers/templates`)
     },
 
     /**
@@ -135,7 +135,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getVoucherTemplateById({ brandId, id }) {
-      return apiClient.get(`/promotion/brands/${brandId}/vouchers/templates/${id}`);
+      return apiClient.get(`/promotion/brands/${brandId}/vouchers/templates/${id}`)
     },
 
     /**
@@ -146,7 +146,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createVoucherTemplate({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/vouchers/templates`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/vouchers/templates`, data)
     },
 
     /**
@@ -158,7 +158,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateVoucherTemplate({ brandId, id, data }) {
-      return apiClient.put(`/promotion/brands/${brandId}/vouchers/templates/${id}`, data);
+      return apiClient.put(`/promotion/brands/${brandId}/vouchers/templates/${id}`, data)
     },
 
     /**
@@ -169,7 +169,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteVoucherTemplate({ brandId, id }) {
-      return apiClient.delete(`/promotion/brands/${brandId}/vouchers/templates/${id}`);
+      return apiClient.delete(`/promotion/brands/${brandId}/vouchers/templates/${id}`)
     },
 
     /**
@@ -178,7 +178,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAvailableVoucherTemplates(brandId) {
-      return apiClient.get(`/promotion/brands/${brandId}/vouchers/templates/available`);
+      return apiClient.get(`/promotion/brands/${brandId}/vouchers/templates/available`)
     },
 
     /**
@@ -187,7 +187,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     autoCreateVoucherTemplatesForDishes(brandId) {
-      return apiClient.post(`/promotion/brands/${brandId}/vouchers/templates/auto-create`);
+      return apiClient.post(`/promotion/brands/${brandId}/vouchers/templates/auto-create`)
     },
 
     // =============================================================================
@@ -201,7 +201,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserVouchers(brandId, params = {}) {
-      return apiClient.get(`/promotion/brands/${brandId}/vouchers`, { params });
+      return apiClient.get(`/promotion/brands/${brandId}/vouchers`, { params })
     },
 
     /**
@@ -212,7 +212,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     useVoucher({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/vouchers/use`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/vouchers/use`, data)
     },
 
     /**
@@ -223,7 +223,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     validateVoucher({ brandId, voucherId }) {
-      return apiClient.get(`/promotion/brands/${brandId}/vouchers/${voucherId}/validate`);
+      return apiClient.get(`/promotion/brands/${brandId}/vouchers/${voucherId}/validate`)
     },
 
     // =============================================================================
@@ -236,7 +236,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllPointRules(brandId) {
-      return apiClient.get(`/promotion/brands/${brandId}/points/rules`);
+      return apiClient.get(`/promotion/brands/${brandId}/points/rules`)
     },
 
     /**
@@ -247,7 +247,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getPointRuleById({ brandId, id }) {
-      return apiClient.get(`/promotion/brands/${brandId}/points/rules/${id}`);
+      return apiClient.get(`/promotion/brands/${brandId}/points/rules/${id}`)
     },
 
     /**
@@ -258,7 +258,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createPointRule({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/points/rules`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/points/rules`, data)
     },
 
     /**
@@ -270,7 +270,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updatePointRule({ brandId, id, data }) {
-      return apiClient.put(`/promotion/brands/${brandId}/points/rules/${id}`, data);
+      return apiClient.put(`/promotion/brands/${brandId}/points/rules/${id}`, data)
     },
 
     /**
@@ -281,7 +281,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deletePointRule({ brandId, id }) {
-      return apiClient.delete(`/promotion/brands/${brandId}/points/rules/${id}`);
+      return apiClient.delete(`/promotion/brands/${brandId}/points/rules/${id}`)
     },
 
     // =============================================================================
@@ -294,7 +294,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserPointsBalance(brandId) {
-      return apiClient.get(`/promotion/brands/${brandId}/points/balance`);
+      return apiClient.get(`/promotion/brands/${brandId}/points/balance`)
     },
 
     /**
@@ -304,7 +304,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getUserPointHistory(brandId, params = {}) {
-      return apiClient.get(`/promotion/brands/${brandId}/points/history`, { params });
-    }
-  };
+      return apiClient.get(`/promotion/brands/${brandId}/points/history`, { params })
+    },
+  }
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex vh-100 overflow-hidden">
     <!-- 側邊欄 -->
-    <aside class="sidebar bg-dark" :class="{ 'show': showSidebar }">
+    <aside class="sidebar bg-dark" :class="{ show: showSidebar }">
       <div class="d-flex flex-column h-100">
         <div class="sidebar-header p-3 d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
@@ -16,7 +16,11 @@
         <nav class="pt-2 pb-2 flex-grow-1 sidebar-nav">
           <!-- 儀表板區塊 -->
           <div class="mb-1">
-            <router-link class="nav-link px-3" :to="`/admin/${brandId}`" exact-active-class="active">
+            <router-link
+              class="nav-link px-3"
+              :to="`/admin/${brandId}`"
+              exact-active-class="active"
+            >
               <i class="bi bi-speedometer2 me-2"></i>
               儀表板
             </router-link>
@@ -24,8 +28,11 @@
 
           <!-- 店鋪管理 -->
           <div class="mb-1">
-            <CollapsibleSection title="店鋪管理" :initialExpanded="isExpanded('storeManagement')"
-              @toggle="(expanded) => handleSectionToggle('storeManagement', expanded)">
+            <CollapsibleSection
+              title="店鋪管理"
+              :initialExpanded="isExpanded('storeManagement')"
+              @toggle="(expanded) => handleSectionToggle('storeManagement', expanded)"
+            >
               <template #icon><i class="bi bi-shop me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/stores`">
@@ -46,22 +53,27 @@
 
           <!-- 菜單管理 -->
           <div class="mb-1">
-            <CollapsibleSection title="菜單管理" :initialExpanded="isExpanded('menuManagement')"
-              @toggle="(expanded) => handleSectionToggle('menuManagement', expanded)">
+            <CollapsibleSection
+              title="菜單管理"
+              :initialExpanded="isExpanded('menuManagement')"
+              @toggle="(expanded) => handleSectionToggle('menuManagement', expanded)"
+            >
               <template #icon><i class="bi bi-menu-button-wide me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/menus`">
                 <i class="bi bi-list-check me-2"></i>
                 菜單列表
               </router-link>
-
             </CollapsibleSection>
           </div>
 
           <!-- 餐點管理 -->
           <div class="mb-1">
-            <CollapsibleSection title="餐點管理" :initialExpanded="isExpanded('dishManagement')"
-              @toggle="(expanded) => handleSectionToggle('dishManagement', expanded)">
+            <CollapsibleSection
+              title="餐點管理"
+              :initialExpanded="isExpanded('dishManagement')"
+              @toggle="(expanded) => handleSectionToggle('dishManagement', expanded)"
+            >
               <template #icon><i class="bi bi-cup-hot me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template`">
@@ -69,7 +81,10 @@
                 餐點列表
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template/create`">
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/dishes/template/create`"
+              >
                 <i class="bi bi-card-list me-2"></i>
                 建立餐點模板
               </router-link>
@@ -88,8 +103,11 @@
 
           <!-- 訂單管理 -->
           <div class="mb-1">
-            <CollapsibleSection title="訂單管理" :initialExpanded="isExpanded('orderManagement')"
-              @toggle="(expanded) => handleSectionToggle('orderManagement', expanded)">
+            <CollapsibleSection
+              title="訂單管理"
+              :initialExpanded="isExpanded('orderManagement')"
+              @toggle="(expanded) => handleSectionToggle('orderManagement', expanded)"
+            >
               <template #icon><i class="bi bi-receipt me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/orders`">
@@ -106,8 +124,11 @@
 
           <!-- 促銷管理 -->
           <div class="mb-1">
-            <CollapsibleSection title="促銷管理" :initialExpanded="isExpanded('promotionManagement')"
-              @toggle="(expanded) => handleSectionToggle('promotionManagement', expanded)">
+            <CollapsibleSection
+              title="促銷管理"
+              :initialExpanded="isExpanded('promotionManagement')"
+              @toggle="(expanded) => handleSectionToggle('promotionManagement', expanded)"
+            >
               <template #icon><i class="bi bi-megaphone me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/coupons`">
@@ -134,8 +155,11 @@
 
           <!-- 用戶管理 -->
           <div class="mb-1">
-            <CollapsibleSection title="用戶管理" :initialExpanded="isExpanded('userManagement')"
-              @toggle="(expanded) => handleSectionToggle('userManagement', expanded)">
+            <CollapsibleSection
+              title="用戶管理"
+              :initialExpanded="isExpanded('userManagement')"
+              @toggle="(expanded) => handleSectionToggle('userManagement', expanded)"
+            >
               <template #icon><i class="bi bi-people me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/store-admins`">
@@ -152,8 +176,11 @@
 
           <!-- 系統設置 -->
           <div class="mb-1">
-            <CollapsibleSection title="系統設置" :initialExpanded="isExpanded('systemSettings')"
-              @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)">
+            <CollapsibleSection
+              title="系統設置"
+              :initialExpanded="isExpanded('systemSettings')"
+              @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)"
+            >
               <template #icon><i class="bi bi-gear me-2"></i></template>
 
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/account-settings`">
@@ -177,7 +204,8 @@
     <main class="main-content">
       <!-- 移動版頂部導航欄 -->
       <div
-        class="d-flex d-md-none align-items-center justify-content-between bg-dark text-white p-3 sticky-top mobile-top-nav">
+        class="d-flex d-md-none align-items-center justify-content-between bg-dark text-white p-3 sticky-top mobile-top-nav"
+      >
         <div class="d-flex align-items-center">
           <button class="btn btn-link text-white me-2" @click="toggleSidebar">
             <i class="bi bi-list"></i>
@@ -199,7 +227,8 @@
       <div class="content-wrapper">
         <!-- 桌面版頂部標題欄 -->
         <div
-          class="d-none d-md-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          class="d-none d-md-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+        >
           <h2>{{ getPageTitle() }}</h2>
           <!-- 使用 b-dropdown 替代原生的 dropdown -->
           <BDropdown text="" size="sm" variant="outline-secondary">
@@ -223,175 +252,181 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { BDropdown, BDropdownItem, BDropdownDivider } from 'bootstrap-vue-next';
-import api from '@/api';
-import CollapsibleSection from '@/components/common/CollapsibleSection.vue';
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { BDropdown, BDropdownItem, BDropdownDivider } from 'bootstrap-vue-next'
+import api from '@/api'
+import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
 
 // 路由
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 // 品牌 ID 從路由中獲取
-const brandId = computed(() => route.params.brandId);
+const brandId = computed(() => route.params.brandId)
 
 // 側邊欄是否顯示 (用於移動版)
-const showSidebar = ref(false);
+const showSidebar = ref(false)
 
 // 狀態變數
-const currentUserRole = ref('');
-const currentUserRoleLabel = ref('載入中...');
-const currentBrandName = ref('載入中...');
-const isLoading = ref(true);
+const currentUserRole = ref('')
+const currentUserRoleLabel = ref('載入中...')
+const currentBrandName = ref('載入中...')
+const isLoading = ref(true)
 
 // 已展開的折疊項目ID列表
-const expandedItems = ref([]);
+const expandedItems = ref([])
 
 // 角色標籤對應
 const getRoleLabel = (role) => {
   const labels = {
-    'primary_system_admin': '系統主管理員',
-    'system_admin': '系統管理員',
-    'primary_brand_admin': '品牌主管理員',
-    'brand_admin': '品牌管理員',
-    'primary_store_admin': '店鋪主管理員',
-    'store_admin': '店鋪管理員',
-    'employee': '員工'
-  };
-  return labels[role] || role;
-};
+    primary_system_admin: '系統主管理員',
+    system_admin: '系統管理員',
+    primary_brand_admin: '品牌主管理員',
+    brand_admin: '品牌管理員',
+    primary_store_admin: '店鋪主管理員',
+    store_admin: '店鋪管理員',
+    employee: '員工',
+  }
+  return labels[role] || role
+}
 
 // 檢查特定折疊項是否應該展開
 const isExpanded = (id) => {
-  return expandedItems.value.includes(id);
-};
+  return expandedItems.value.includes(id)
+}
 
 // 處理區段折疊/展開
 const handleSectionToggle = (sectionId, isExpanded) => {
-  const index = expandedItems.value.indexOf(sectionId);
+  const index = expandedItems.value.indexOf(sectionId)
 
   if (isExpanded && index === -1) {
     // 展開該區段
-    expandedItems.value.push(sectionId);
+    expandedItems.value.push(sectionId)
   } else if (!isExpanded && index !== -1) {
     // 折疊該區段
-    expandedItems.value.splice(index, 1);
+    expandedItems.value.splice(index, 1)
   }
-};
+}
 
 // 切換側邊欄顯示 (用於移動版)
 const toggleSidebar = () => {
-  showSidebar.value = !showSidebar.value;
-};
+  showSidebar.value = !showSidebar.value
+}
 
 // 關閉側邊欄當選擇一個項目時 (移動版)
 const closeSidebarOnMobile = () => {
   if (window.innerWidth < 768) {
-    showSidebar.value = false;
+    showSidebar.value = false
   }
-};
+}
 
 // 根據當前路由名稱獲取頁面標題
 const getPageTitle = () => {
-  const routeName = route.name;
-  const routePath = route.path;
+  const routeName = route.name
+  const routePath = route.path
 
   // 根據路由路徑或名稱返回相應標題
-  if (routePath.includes('/stores/create')) return '新增店鋪';
-  if (routePath.includes('/stores/edit')) return '編輯店鋪';
-  if (routePath.includes('/stores/detail')) return '店鋪詳情';
-  if (routePath.includes('/stores')) return '店鋪管理';
+  if (routePath.includes('/stores/create')) return '新增店鋪'
+  if (routePath.includes('/stores/edit')) return '編輯店鋪'
+  if (routePath.includes('/stores/detail')) return '店鋪詳情'
+  if (routePath.includes('/stores')) return '店鋪管理'
 
-  if (routePath.includes('/inventory/logs')) return '庫存變更記錄';
-  if (routePath.includes('/inventory')) return '庫存管理';
+  if (routePath.includes('/inventory/logs')) return '庫存變更記錄'
+  if (routePath.includes('/inventory')) return '庫存管理'
 
-  if (routePath.includes('/menus')) return '菜單管理';
-  if (routePath.includes('/dishes')) return '餐點管理';
-  if (routePath.includes('/option-categories')) return '選項類別';
-  if (routePath.includes('/options')) return '選項管理';
+  if (routePath.includes('/menus')) return '菜單管理'
+  if (routePath.includes('/dishes')) return '餐點管理'
+  if (routePath.includes('/option-categories')) return '選項類別'
+  if (routePath.includes('/options')) return '選項管理'
 
-  if (routePath.includes('/orders/reports')) return '銷售報表';
-  if (routePath.includes('/orders')) return '訂單管理';
+  if (routePath.includes('/orders/reports')) return '銷售報表'
+  if (routePath.includes('/orders')) return '訂單管理'
 
-  if (routePath.includes('/coupons')) return '優惠券管理';
-  if (routePath.includes('/point-rules')) return '點數規則';
+  if (routePath.includes('/coupons')) return '優惠券管理'
+  if (routePath.includes('/point-rules')) return '點數規則'
 
-  if (routePath.includes('/store-admins')) return '店鋪管理員';
-  if (routePath.includes('/customers')) return '顧客管理';
+  if (routePath.includes('/store-admins')) return '店鋪管理員'
+  if (routePath.includes('/customers')) return '顧客管理'
 
-  if (routePath.includes('/settings')) return '品牌設置';
-  if (routePath.includes('/account-settings')) return '帳號設置';
+  if (routePath.includes('/settings')) return '品牌設置'
+  if (routePath.includes('/account-settings')) return '帳號設置'
 
   // 預設標題
-  return '品牌儀表板';
-};
+  return '品牌儀表板'
+}
 
 // 獲取當前用戶角色
 const fetchCurrentUserRole = async () => {
   try {
-    const response = await api.adminAuth.checkStatus();
+    const response = await api.adminAuth.checkStatus()
     if (response.loggedIn) {
-      currentUserRole.value = response.role;
-      currentUserRoleLabel.value = getRoleLabel(response.role);
+      currentUserRole.value = response.role
+      currentUserRoleLabel.value = getRoleLabel(response.role)
     } else {
       // 如果未登入，重定向到登入頁面
-      router.push('/admin/login');
+      router.push('/admin/login')
     }
   } catch (error) {
-    console.error('獲取用戶角色失敗:', error);
-    currentUserRoleLabel.value = '未知角色';
+    console.error('獲取用戶角色失敗:', error)
+    currentUserRoleLabel.value = '未知角色'
   }
-};
+}
 
 // 獲取品牌資訊
 const fetchBrandInfo = async () => {
-  if (!brandId.value) return;
+  if (!brandId.value) return
 
-  isLoading.value = true;
+  isLoading.value = true
 
   try {
-    const response = await api.brand.getBrandById(brandId.value);
+    const response = await api.brand.getBrandById(brandId.value)
     if (response && response.brand) {
-      currentBrandName.value = response.brand.name;
+      currentBrandName.value = response.brand.name
     }
   } catch (error) {
-    console.error('獲取品牌資訊失敗', error);
+    console.error('獲取品牌資訊失敗', error)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 處理登出
 const handleLogout = async () => {
   try {
-    await api.adminAuth.logout();
-    router.push('/admin/login');
+    await api.adminAuth.logout()
+    router.push('/admin/login')
   } catch (error) {
-    console.error('登出失敗', error);
-    router.push('/admin/login');
+    console.error('登出失敗', error)
+    router.push('/admin/login')
   }
-};
+}
 
 // 監聽路由變化
-watch(() => route.path, () => {
-  closeSidebarOnMobile();
-  // 不再重設折疊狀態，只在初始化時設定一次
-});
+watch(
+  () => route.path,
+  () => {
+    closeSidebarOnMobile()
+    // 不再重設折疊狀態，只在初始化時設定一次
+  },
+)
 
 // 監聽品牌ID變化
-watch(() => brandId.value, (newId, oldId) => {
-  if (newId !== oldId) {
-    fetchBrandInfo();
-  }
-});
+watch(
+  () => brandId.value,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      fetchBrandInfo()
+    }
+  },
+)
 
 // 生命週期鉤子
 onMounted(() => {
   // 載入用戶角色和品牌資訊
-  fetchCurrentUserRole();
-  fetchBrandInfo();
-});
+  fetchCurrentUserRole()
+  fetchBrandInfo()
+})
 </script>
 
 <style scoped>

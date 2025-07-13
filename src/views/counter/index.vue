@@ -7,38 +7,58 @@
           <div class="time-display text-center mb-3">
             <div class="fs-6">{{ currentTime }}</div>
           </div>
-          <button class="btn mb-3"
+          <button
+            class="btn mb-3"
             :class="counterStore.activeComponent === 'DineIn' ? 'btn-primary' : 'btn-outline-light'"
-            @click="counterStore.setActiveComponent('DineIn')">
+            @click="counterStore.setActiveComponent('DineIn')"
+          >
             內用
           </button>
-          <button class="btn mb-3"
-            :class="counterStore.activeComponent === 'TakeOut' ? 'btn-primary' : 'btn-outline-light'"
-            @click="counterStore.setActiveComponent('TakeOut')">
+          <button
+            class="btn mb-3"
+            :class="
+              counterStore.activeComponent === 'TakeOut' ? 'btn-primary' : 'btn-outline-light'
+            "
+            @click="counterStore.setActiveComponent('TakeOut')"
+          >
             外帶
           </button>
-          <button class="btn mb-3"
+          <button
+            class="btn mb-3"
             :class="counterStore.activeComponent === 'Orders' ? 'btn-primary' : 'btn-outline-light'"
-            @click="counterStore.setActiveComponent('Orders')">
+            @click="counterStore.setActiveComponent('Orders')"
+          >
             訂單
           </button>
 
           <!-- 增強版更新資料按鈕 -->
-          <button class="btn mt-auto refresh-btn" :class="{
-            'btn-warning': !isRefreshing && !isOnCooldown && !refreshSuccess,
-            'btn-secondary': isRefreshing,
-            'btn-dark': isOnCooldown,
-            'btn-success': refreshSuccess && showSuccessMessage,
-            'refreshing': isRefreshing,
-            'disabled': isOnCooldown
-          }" :disabled="isRefreshing || isOnCooldown" @click="handleRefreshData">
+          <button
+            class="btn mt-auto refresh-btn"
+            :class="{
+              'btn-warning': !isRefreshing && !isOnCooldown && !refreshSuccess,
+              'btn-secondary': isRefreshing,
+              'btn-dark': isOnCooldown,
+              'btn-success': refreshSuccess && showSuccessMessage,
+              refreshing: isRefreshing,
+              disabled: isOnCooldown,
+            }"
+            :disabled="isRefreshing || isOnCooldown"
+            @click="handleRefreshData"
+          >
             <!-- 載入中的動畫 -->
-            <span v-if="isRefreshing" class="spinner-border spinner-border-sm me-2" role="status"
-              aria-hidden="true"></span>
+            <span
+              v-if="isRefreshing"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
 
             <!-- 更新圖示 -->
-            <i v-else-if="!isOnCooldown" class="bi bi-arrow-clockwise me-1"
-              :class="{ 'spin-once': showSpinAnimation }"></i>
+            <i
+              v-else-if="!isOnCooldown"
+              class="bi bi-arrow-clockwise me-1"
+              :class="{ 'spin-once': showSpinAnimation }"
+            ></i>
 
             <!-- 冷卻時間圖示 -->
             <i v-else class="bi bi-clock me-1"></i>
@@ -70,19 +90,19 @@
 </template>
 
 <script setup>
-import { computed, onMounted, markRaw, onUnmounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useCounterStore } from '@/stores/counter';
-import DineIn from '@/components/counter/DineIn.vue';
-import TakeOut from '@/components/counter/TakeOut.vue';
-import OrderList from '@/components/counter/OrderList.vue';
-import OrderCart from '@/components/counter/OrderCart/index.vue';
+import { computed, onMounted, markRaw, onUnmounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCounterStore } from '@/stores/counter'
+import DineIn from '@/components/counter/DineIn.vue'
+import TakeOut from '@/components/counter/TakeOut.vue'
+import OrderList from '@/components/counter/OrderList.vue'
+import OrderCart from '@/components/counter/OrderCart/index.vue'
 
 // 路由和參數
-const route = useRoute();
-const router = useRouter();
-const brandId = route.params.brandId;
-const storeId = route.params.storeId;
+const route = useRoute()
+const router = useRouter()
+const brandId = route.params.brandId
+const storeId = route.params.storeId
 
 const currentTime = ref('')
 
@@ -91,137 +111,136 @@ const updateTime = () => {
   const now = new Date()
   currentTime.value = now.toLocaleTimeString([], {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 let timer = null
 
 // 使用 Pinia store
-const counterStore = useCounterStore();
+const counterStore = useCounterStore()
 
 // 新增的按鈕狀態
-const isRefreshing = ref(false);
-const isOnCooldown = ref(false);
-const cooldownSeconds = ref(0);
-const refreshSuccess = ref(false);
-const showSuccessMessage = ref(false);
-const showSpinAnimation = ref(false);
+const isRefreshing = ref(false)
+const isOnCooldown = ref(false)
+const cooldownSeconds = ref(0)
+const refreshSuccess = ref(false)
+const showSuccessMessage = ref(false)
+const showSpinAnimation = ref(false)
 
 // 計時器引用
-let cooldownTimer = null;
-let successTimer = null;
-let spinTimer = null;
+let cooldownTimer = null
+let successTimer = null
+let spinTimer = null
 
 // 組件映射
 const componentMap = {
   DineIn: markRaw(DineIn),
   TakeOut: markRaw(TakeOut),
-  Orders: markRaw(OrderList)
-};
+  Orders: markRaw(OrderList),
+}
 
 // 計算屬性獲取當前活動組件
 const currentActiveComponent = computed(() => {
-  return componentMap[counterStore.activeComponent];
-});
+  return componentMap[counterStore.activeComponent]
+})
 
 // 原有的重新整理數據函數
 const refreshData = async () => {
-  await counterStore.refreshData(brandId, storeId);
-};
+  await counterStore.refreshData(brandId, storeId)
+}
 
 // 處理更新資料點擊（增強版）
 const handleRefreshData = async () => {
-  if (isRefreshing.value || isOnCooldown.value) return;
+  if (isRefreshing.value || isOnCooldown.value) return
 
   try {
     // 開始更新動畫
-    isRefreshing.value = true;
-    refreshSuccess.value = false;
-    showSuccessMessage.value = false;
+    isRefreshing.value = true
+    refreshSuccess.value = false
+    showSuccessMessage.value = false
 
     // 觸發一次旋轉動畫
-    triggerSpinAnimation();
+    triggerSpinAnimation()
 
     // 呼叫實際的更新函數
-    await refreshData();
+    await refreshData()
 
     // 更新成功
-    refreshSuccess.value = true;
-    showSuccessMessage.value = true;
+    refreshSuccess.value = true
+    showSuccessMessage.value = true
 
     // 2秒後隱藏成功訊息
     successTimer = setTimeout(() => {
-      showSuccessMessage.value = false;
-      refreshSuccess.value = false;
-    }, 2000);
-
+      showSuccessMessage.value = false
+      refreshSuccess.value = false
+    }, 2000)
   } catch (error) {
-    console.error('更新資料失敗:', error);
+    console.error('更新資料失敗:', error)
     // 可以添加錯誤提示，但保持簡潔
     // alert('更新失敗，請稍後再試');
   } finally {
-    isRefreshing.value = false;
-    startCooldown();
+    isRefreshing.value = false
+    startCooldown()
   }
-};
+}
 
 // 開始冷卻倒計時
 const startCooldown = () => {
-  isOnCooldown.value = true;
-  cooldownSeconds.value = 5;
+  isOnCooldown.value = true
+  cooldownSeconds.value = 5
 
   cooldownTimer = setInterval(() => {
-    cooldownSeconds.value--;
+    cooldownSeconds.value--
 
     if (cooldownSeconds.value <= 0) {
-      clearInterval(cooldownTimer);
-      isOnCooldown.value = false;
-      cooldownSeconds.value = 0;
+      clearInterval(cooldownTimer)
+      isOnCooldown.value = false
+      cooldownSeconds.value = 0
     }
-  }, 1000);
-};
+  }, 1000)
+}
 
 // 觸發旋轉動畫
 const triggerSpinAnimation = () => {
-  showSpinAnimation.value = true;
+  showSpinAnimation.value = true
   spinTimer = setTimeout(() => {
-    showSpinAnimation.value = false;
-  }, 600);
-};
+    showSpinAnimation.value = false
+  }, 600)
+}
 
 // 清理計時器
 const cleanup = () => {
   if (cooldownTimer) {
-    clearInterval(cooldownTimer);
+    clearInterval(cooldownTimer)
   }
   if (successTimer) {
-    clearTimeout(successTimer);
+    clearTimeout(successTimer)
   }
   if (spinTimer) {
-    clearTimeout(spinTimer);
+    clearTimeout(spinTimer)
   }
   if (timer) {
-    clearInterval(timer);
+    clearInterval(timer)
   }
-};
+}
 
 // 生命周期鉤子
 onMounted(async () => {
   // 設置品牌和店鋪ID
-  counterStore.setBrandAndStore(brandId, storeId);
+  counterStore.setBrandAndStore(brandId, storeId)
 
   updateTime()
   timer = setInterval(updateTime, 1000 * 60) // 每分鐘更新
 
   // 載入初始數據
-  await counterStore.fetchStoreData(brandId, storeId);
-  await counterStore.fetchMenuData(brandId, storeId);
-  await counterStore.fetchTodayOrders(brandId, storeId);
-});
+  await counterStore.fetchStoreData(brandId, storeId)
+  await counterStore.fetchMenuData(brandId, storeId)
+  await counterStore.fetchTodayOrders(brandId, storeId)
+})
 
 onUnmounted(() => {
-  cleanup();
-});
+  cleanup()
+})
 </script>
 
 <style scoped>

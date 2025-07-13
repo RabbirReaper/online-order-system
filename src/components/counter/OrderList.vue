@@ -4,23 +4,39 @@
       <h4>訂單管理 {{ counterStore.currentDate }}</h4>
       <div class="d-flex justify-content-between align-items-center mt-2">
         <div class="d-flex align-items-center">
-          <div class="input-group input-group-sm me-2" style="max-width: 200px;">
-            <input type="date" class="form-control" v-model="selectedDate" :max="maxDate">
+          <div class="input-group input-group-sm me-2" style="max-width: 200px">
+            <input type="date" class="form-control" v-model="selectedDate" :max="maxDate" />
           </div>
-          <button class="btn btn-light btn-sm me-2" @click="fetchOrdersByDate" :disabled="isLoading">
-            <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
-              aria-hidden="true"></span>
+          <button
+            class="btn btn-light btn-sm me-2"
+            @click="fetchOrdersByDate"
+            :disabled="isLoading"
+          >
+            <span
+              v-if="isLoading"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
             {{ isLoading ? '載入中...' : '搜尋' }}
           </button>
         </div>
         <div class="d-flex">
-          <select class="form-select form-select-sm me-2" style="max-width: 150px;" v-model="filterType">
+          <select
+            class="form-select form-select-sm me-2"
+            style="max-width: 150px"
+            v-model="filterType"
+          >
             <option value="all">所有類型</option>
             <option value="dine_in">內用</option>
             <option value="takeout">外帶</option>
             <option value="delivery">外送</option>
           </select>
-          <select class="form-select form-select-sm" style="max-width: 150px;" v-model="filterStatus">
+          <select
+            class="form-select form-select-sm"
+            style="max-width: 150px"
+            v-model="filterStatus"
+          >
             <option value="all">所有狀態</option>
             <option value="unpaid">未結帳</option>
             <option value="paid">已完成</option>
@@ -62,14 +78,21 @@
               <p class="text-muted">沒有符合條件的訂單</p>
             </td>
           </tr>
-          <tr v-for="order in filteredOrders" :key="order._id" :class="{
-            'table-active': counterStore.selectedOrder && counterStore.selectedOrder._id === order._id,
-            'table-loading': selectedOrderId === order._id && isSelectingOrder
-          }" @click="selectOrder(order)" class="order-row" :style="{
-            cursor: isSelectingOrder ? 'wait' : 'pointer',
-            pointerEvents: isSelectingOrder ? 'none' : 'auto'
-          }">
-
+          <tr
+            v-for="order in filteredOrders"
+            :key="order._id"
+            :class="{
+              'table-active':
+                counterStore.selectedOrder && counterStore.selectedOrder._id === order._id,
+              'table-loading': selectedOrderId === order._id && isSelectingOrder,
+            }"
+            @click="selectOrder(order)"
+            class="order-row"
+            :style="{
+              cursor: isSelectingOrder ? 'wait' : 'pointer',
+              pointerEvents: isSelectingOrder ? 'none' : 'auto',
+            }"
+          >
             <td>{{ counterStore.formatTime(order.createdAt) }}</td>
             <td class="fs-5">{{ order.sequence }}</td>
             <td>
@@ -80,8 +103,11 @@
                 桌號: {{ order.dineInInfo.tableNumber }}
               </span>
               <!-- 載入 spinner -->
-              <div v-if="selectedOrderId === order._id && isSelectingOrder"
-                class="spinner-border spinner-border-sm ms-2 text-primary d-inline-block" role="status">
+              <div
+                v-if="selectedOrderId === order._id && isSelectingOrder"
+                class="spinner-border spinner-border-sm ms-2 text-primary d-inline-block"
+                role="status"
+              >
                 <span class="visually-hidden">載入中...</span>
               </div>
             </td>
@@ -99,24 +125,40 @@
       </table>
     </div>
 
-
-
     <!-- 訂單詳情模態框 -->
-    <div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel"
-      aria-hidden="true">
+    <div
+      class="modal fade"
+      id="orderDetailsModal"
+      tabindex="-1"
+      aria-labelledby="orderDetailsModalLabel"
+      aria-hidden="true"
+    >
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="orderDetailsModalLabel">
-              訂單詳情 #{{ counterStore.selectedOrder?.orderNumber || counterStore.selectedOrder?._id.slice(-6) }}
+              訂單詳情 #{{
+                counterStore.selectedOrder?.orderNumber || counterStore.selectedOrder?._id.slice(-6)
+              }}
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body" v-if="counterStore.selectedOrder">
             <div class="row mb-3">
               <div class="col-md-6">
-                <p><strong>訂單時間：</strong> {{ counterStore.formatDateTime(counterStore.selectedOrder.createdAt) }}</p>
-                <p><strong>取餐方式：</strong> {{ formatOrderType(counterStore.selectedOrder.orderType) }}</p>
+                <p>
+                  <strong>訂單時間：</strong>
+                  {{ counterStore.formatDateTime(counterStore.selectedOrder.createdAt) }}
+                </p>
+                <p>
+                  <strong>取餐方式：</strong>
+                  {{ formatOrderType(counterStore.selectedOrder.orderType) }}
+                </p>
                 <p v-if="counterStore.selectedOrder.dineInInfo?.tableNumber">
                   <strong>桌號：</strong> {{ counterStore.selectedOrder.dineInInfo.tableNumber }}
                 </p>
@@ -126,7 +168,10 @@
               </div>
               <div class="col-md-6">
                 <p><strong>付款方式：</strong> {{ counterStore.selectedOrder.paymentMethod }}</p>
-                <p><strong>狀態：</strong> {{ counterStore.formatStatus(counterStore.selectedOrder.status) }}</p>
+                <p>
+                  <strong>狀態：</strong>
+                  {{ counterStore.formatStatus(counterStore.selectedOrder.status) }}
+                </p>
                 <p v-if="counterStore.selectedOrder.notes">
                   <strong>備註：</strong> {{ counterStore.selectedOrder.notes }}
                 </p>
@@ -148,13 +193,24 @@
                   <tr v-for="(item, index) in counterStore.selectedOrder.items" :key="index">
                     <td>{{ item.name }}</td>
                     <td>
-                      <div v-for="optionCategory in item.options" :key="optionCategory.optionCategoryId" class="mb-1">
+                      <div
+                        v-for="optionCategory in item.options"
+                        :key="optionCategory.optionCategoryId"
+                        class="mb-1"
+                      >
                         <small>{{ optionCategory.optionCategoryName }}:</small>
-                        <small v-for="selection in optionCategory.selections" :key="selection.optionId" class="ms-1">
-                          {{ selection.name }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
+                        <small
+                          v-for="selection in optionCategory.selections"
+                          :key="selection.optionId"
+                          class="ms-1"
+                        >
+                          {{ selection.name
+                          }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
                         </small>
                       </div>
-                      <small v-if="item.note" class="text-muted d-block">備註: {{ item.note }}</small>
+                      <small v-if="item.note" class="text-muted d-block"
+                        >備註: {{ item.note }}</small
+                      >
                     </td>
                     <td>{{ item.quantity }}</td>
                     <td>${{ item.subtotal }}</td>
@@ -163,7 +219,9 @@
                 <tfoot>
                   <tr>
                     <td colspan="3" class="text-end"><strong>總計：</strong></td>
-                    <td><strong>${{ calculateOrderTotal(counterStore.selectedOrder) }}</strong></td>
+                    <td>
+                      <strong>${{ calculateOrderTotal(counterStore.selectedOrder) }}</strong>
+                    </td>
                   </tr>
                 </tfoot>
               </table>
@@ -171,10 +229,18 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
-            <button type="button" class="btn btn-success" @click="printOrder"
-              :disabled="!counterStore.selectedOrder || isPrinting">
-              <span v-if="isPrinting" class="spinner-border spinner-border-sm me-2" role="status"
-                aria-hidden="true"></span>
+            <button
+              type="button"
+              class="btn btn-success"
+              @click="printOrder"
+              :disabled="!counterStore.selectedOrder || isPrinting"
+            >
+              <span
+                v-if="isPrinting"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
               {{ isPrinting ? '列印中...' : '列印訂單' }}
             </button>
           </div>
@@ -185,151 +251,151 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useCounterStore } from '@/stores/counter';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useCounterStore } from '@/stores/counter'
+import api from '@/api'
 
 const props = defineProps({
   brandId: {
     type: String,
-    required: true
+    required: true,
   },
   storeId: {
     type: String,
-    required: true
-  }
-});
+    required: true,
+  },
+})
 
 // 使用 Pinia store
-const counterStore = useCounterStore();
+const counterStore = useCounterStore()
 
 // 本地狀態
-const selectedDate = ref('');
-const filterType = ref('all');
-const filterStatus = ref('all');
-const isLoading = ref(false);
-const isPrinting = ref(false);
-const errorMessage = ref('');
-const maxDate = ref('');
+const selectedDate = ref('')
+const filterType = ref('all')
+const filterStatus = ref('all')
+const isLoading = ref(false)
+const isPrinting = ref(false)
+const errorMessage = ref('')
+const maxDate = ref('')
 
 // 🎯 新增：防重複點擊和視覺回饋狀態
-const isSelectingOrder = ref(false);  // 是否有訂單正在載入
-const selectedOrderId = ref(null);    // 哪個訂單正在載入
+const isSelectingOrder = ref(false) // 是否有訂單正在載入
+const selectedOrderId = ref(null) // 哪個訂單正在載入
 
 // 計算屬性
 const filteredOrders = computed(() => {
-  let filtered = [...counterStore.todayOrders];
+  let filtered = [...counterStore.todayOrders]
 
   // 過濾取餐方式
   if (filterType.value !== 'all') {
-    filtered = filtered.filter(order => order.orderType === filterType.value);
+    filtered = filtered.filter((order) => order.orderType === filterType.value)
   }
 
   // 過濾訂單狀態
   if (filterStatus.value !== 'all') {
-    filtered = filtered.filter(order => order.status === filterStatus.value);
+    filtered = filtered.filter((order) => order.status === filterStatus.value)
   }
 
   // 按時間排序（最新的在前）
-  return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-});
+  return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+})
 
 // 簡化的日期處理 - 讓瀏覽器處理本地時區
 const getLocalDate = (date = null) => {
-  const targetDate = date ? new Date(date) : new Date();
-  return targetDate.toLocaleDateString('en-CA'); // 返回 YYYY-MM-DD 格式
-};
+  const targetDate = date ? new Date(date) : new Date()
+  return targetDate.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
+}
 
 // 方法
 const fetchOrdersByDate = async () => {
-  if (isLoading.value) return;
+  if (isLoading.value) return
 
-  isLoading.value = true;
-  errorMessage.value = '';
+  isLoading.value = true
+  errorMessage.value = ''
 
   try {
     if (selectedDate.value) {
-      await counterStore.fetchOrdersByDate(props.brandId, props.storeId, selectedDate.value);
+      await counterStore.fetchOrdersByDate(props.brandId, props.storeId, selectedDate.value)
     } else {
-      await counterStore.fetchTodayOrders(props.brandId, props.storeId);
+      await counterStore.fetchTodayOrders(props.brandId, props.storeId)
     }
   } catch (error) {
-    console.error('獲取訂單失敗:', error);
-    errorMessage.value = error.message || '獲取訂單失敗';
+    console.error('獲取訂單失敗:', error)
+    errorMessage.value = error.message || '獲取訂單失敗'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 🎯 改善的 selectOrder 函數
 const selectOrder = async (order) => {
   // 防止重複點擊
   if (isSelectingOrder.value) {
-    return;
+    return
   }
 
   // 立即提供視覺回饋
-  selectedOrderId.value = order._id;
-  isSelectingOrder.value = true;
-  errorMessage.value = '';
+  selectedOrderId.value = order._id
+  isSelectingOrder.value = true
+  errorMessage.value = ''
 
   try {
     // 獲取訂單詳情
     const response = await api.orderAdmin.getOrderById({
       brandId: props.brandId,
       storeId: props.storeId,
-      orderId: order._id
-    });
+      orderId: order._id,
+    })
 
     if (response.success) {
-      counterStore.selectOrder(response.order);
+      counterStore.selectOrder(response.order)
     }
   } catch (error) {
-    console.error('獲取訂單詳情失敗:', error);
-    errorMessage.value = '獲取訂單詳情失敗';
-    selectedOrderId.value = null; // 錯誤時清除選中狀態
+    console.error('獲取訂單詳情失敗:', error)
+    errorMessage.value = '獲取訂單詳情失敗'
+    selectedOrderId.value = null // 錯誤時清除選中狀態
   } finally {
-    isSelectingOrder.value = false;
+    isSelectingOrder.value = false
   }
-};
+}
 
 const getOrderTypeClass = (orderType) => {
   const classMap = {
-    'dine_in': 'badge bg-primary',
-    'takeout': 'badge bg-success',
-    'delivery': 'badge bg-warning text-dark'
-  };
-  return classMap[orderType] || 'badge bg-secondary';
-};
+    dine_in: 'badge bg-primary',
+    takeout: 'badge bg-success',
+    delivery: 'badge bg-warning text-dark',
+  }
+  return classMap[orderType] || 'badge bg-secondary'
+}
 
 const formatOrderType = (orderType) => {
   const typeMap = {
-    'dine_in': '內用',
-    'takeout': '外帶',
-    'delivery': '外送'
-  };
-  return typeMap[orderType] || orderType;
-};
+    dine_in: '內用',
+    takeout: '外帶',
+    delivery: '外送',
+  }
+  return typeMap[orderType] || orderType
+}
 
 const calculateOrderTotal = (order) => {
-  if (!order.items) return 0;
+  if (!order.items) return 0
 
-  const itemsTotal = order.items.reduce((total, item) => total + (item.subtotal || 0), 0);
-  const adjustment = order.manualAdjustment || 0;
-  const discounts = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0;
+  const itemsTotal = order.items.reduce((total, item) => total + (item.subtotal || 0), 0)
+  const adjustment = order.manualAdjustment || 0
+  const discounts = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0
 
-  return Math.max(0, itemsTotal + adjustment - discounts);
-};
+  return Math.max(0, itemsTotal + adjustment - discounts)
+}
 
 const printOrder = () => {
-  if (!counterStore.selectedOrder || isPrinting.value) return;
+  if (!counterStore.selectedOrder || isPrinting.value) return
 
-  isPrinting.value = true;
+  isPrinting.value = true
 
   try {
     // 創建列印窗口
-    const printWindow = window.open('', '_blank');
-    const order = counterStore.selectedOrder;
+    const printWindow = window.open('', '_blank')
+    const order = counterStore.selectedOrder
 
     let printContent = `
       <html>
@@ -364,21 +430,26 @@ const printOrder = () => {
               </tr>
             </thead>
             <tbody>
-    `;
+    `
 
     // 添加餐點明細
-    order.items.forEach(item => {
-      let optionsText = '';
+    order.items.forEach((item) => {
+      let optionsText = ''
       if (item.options && item.options.length > 0) {
-        optionsText = item.options.map(category => {
-          const selections = category.selections.map(selection =>
-            `${selection.name}${selection.price > 0 ? `(+$${selection.price})` : ''}`
-          ).join(', ');
-          return `${category.optionCategoryName}: ${selections}`;
-        }).join('<br>');
+        optionsText = item.options
+          .map((category) => {
+            const selections = category.selections
+              .map(
+                (selection) =>
+                  `${selection.name}${selection.price > 0 ? `(+$${selection.price})` : ''}`,
+              )
+              .join(', ')
+            return `${category.optionCategoryName}: ${selections}`
+          })
+          .join('<br>')
       }
       if (item.note) {
-        optionsText += optionsText ? `<br>備註: ${item.note}` : `備註: ${item.note}`;
+        optionsText += optionsText ? `<br>備註: ${item.note}` : `備註: ${item.note}`
       }
 
       printContent += `
@@ -388,8 +459,8 @@ const printOrder = () => {
           <td>${item.quantity}</td>
           <td>${item.subtotal}</td>
         </tr>
-      `;
-    });
+      `
+    })
 
     // 添加總計
     printContent += `
@@ -407,48 +478,48 @@ const printOrder = () => {
           </div>
         </body>
       </html>
-    `;
+    `
 
     // 寫入並列印
-    printWindow.document.open();
-    printWindow.document.write(printContent);
-    printWindow.document.close();
+    printWindow.document.open()
+    printWindow.document.write(printContent)
+    printWindow.document.close()
 
     // 等待載入
     setTimeout(() => {
-      printWindow.print();
+      printWindow.print()
       printWindow.onafterprint = () => {
-        isPrinting.value = false;
-      };
+        isPrinting.value = false
+      }
       // 安全超時
       setTimeout(() => {
-        isPrinting.value = false;
-      }, 3000);
-    }, 500);
+        isPrinting.value = false
+      }, 3000)
+    }, 500)
   } catch (error) {
-    console.error('列印訂單失敗:', error);
-    errorMessage.value = '列印訂單時發生錯誤';
-    isPrinting.value = false;
+    console.error('列印訂單失敗:', error)
+    errorMessage.value = '列印訂單時發生錯誤'
+    isPrinting.value = false
   }
-};
+}
 
 // 初始化
 onMounted(() => {
-  const today = getLocalDate();
-  selectedDate.value = today;
-  maxDate.value = today;
+  const today = getLocalDate()
+  selectedDate.value = today
+  maxDate.value = today
 
-  fetchOrdersByDate();
+  fetchOrdersByDate()
 
   // 初始化 Bootstrap Modal
-  import('bootstrap/js/dist/modal').then(module => {
-    const Modal = module.default;
-    const modalElement = document.getElementById('orderDetailsModal');
+  import('bootstrap/js/dist/modal').then((module) => {
+    const Modal = module.default
+    const modalElement = document.getElementById('orderDetailsModal')
     if (modalElement) {
-      new Modal(modalElement);
+      new Modal(modalElement)
     }
-  });
-});
+  })
+})
 </script>
 
 <style scoped>
@@ -486,29 +557,34 @@ table {
 /* 🎯 新增：正在載入的訂單樣式 - 簡化版 */
 .table-loading {
   --bs-table-bg: rgba(13, 202, 240, 0.1) !important;
-  background: linear-gradient(45deg,
-      rgba(13, 202, 240, 0.05) 0%,
-      rgba(13, 202, 240, 0.15) 50%,
-      rgba(13, 202, 240, 0.05) 100%);
+  background: linear-gradient(
+    45deg,
+    rgba(13, 202, 240, 0.05) 0%,
+    rgba(13, 202, 240, 0.15) 50%,
+    rgba(13, 202, 240, 0.05) 100%
+  );
   animation: gentle-pulse 2s ease-in-out infinite;
 }
 
 /* 🎯 新增：溫和的脈動動畫 */
 @keyframes gentle-pulse {
-
   0%,
   100% {
-    background: linear-gradient(45deg,
-        rgba(13, 202, 240, 0.05) 0%,
-        rgba(13, 202, 240, 0.15) 50%,
-        rgba(13, 202, 240, 0.05) 100%);
+    background: linear-gradient(
+      45deg,
+      rgba(13, 202, 240, 0.05) 0%,
+      rgba(13, 202, 240, 0.15) 50%,
+      rgba(13, 202, 240, 0.05) 100%
+    );
   }
 
   50% {
-    background: linear-gradient(45deg,
-        rgba(13, 202, 240, 0.1) 0%,
-        rgba(13, 202, 240, 0.2) 50%,
-        rgba(13, 202, 240, 0.1) 100%);
+    background: linear-gradient(
+      45deg,
+      rgba(13, 202, 240, 0.1) 0%,
+      rgba(13, 202, 240, 0.2) 50%,
+      rgba(13, 202, 240, 0.1) 100%
+    );
   }
 }
 </style>

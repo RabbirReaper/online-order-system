@@ -16,11 +16,17 @@
     <div v-if="brand && !isLoading">
       <!-- 頁面頂部工具列 -->
       <div class="d-flex justify-content-between mb-4">
-        <h2 class="mb-0">{{ brand.name }} <BBadge pill :variant="brand.isActive ? 'success' : 'secondary'">{{
-          brand.isActive ? '啟用中' : '已停用' }}</BBadge>
+        <h2 class="mb-0">
+          {{ brand.name }}
+          <BBadge pill :variant="brand.isActive ? 'success' : 'secondary'">{{
+            brand.isActive ? '啟用中' : '已停用'
+          }}</BBadge>
         </h2>
         <div class="d-flex">
-          <router-link :to="{ name: 'brand-edit', params: { id: brand._id } }" class="btn btn-primary me-2">
+          <router-link
+            :to="{ name: 'brand-edit', params: { id: brand._id } }"
+            class="btn btn-primary me-2"
+          >
             <i class="bi bi-pencil me-1"></i>編輯品牌
           </router-link>
           <router-link :to="{ name: 'brand-list' }" class="btn btn-secondary">
@@ -36,11 +42,15 @@
           <BCard class="h-100">
             <BCardBody>
               <BCardTitle>基本資訊</BCardTitle>
-              <hr>
+              <hr />
               <div class="mb-3">
-                <div class="rounded overflow-hidden" style="max-height: 300px;">
-                  <BImg :src="brand.image?.url || '/placeholder.jpg'" class="w-100 object-fit-cover" :alt="brand.name"
-                    fluid />
+                <div class="rounded overflow-hidden" style="max-height: 300px">
+                  <BImg
+                    :src="brand.image?.url || '/placeholder.jpg'"
+                    class="w-100 object-fit-cover"
+                    :alt="brand.name"
+                    fluid
+                  />
                 </div>
               </div>
               <div class="mb-3">
@@ -62,9 +72,15 @@
             </BCardBody>
             <BCardFooter class="bg-transparent">
               <div class="d-flex justify-content-between">
-                <BButton size="sm" :variant="brand.isActive ? 'outline-warning' : 'outline-success'"
-                  @click="toggleBrandActive">
-                  <i class="bi" :class="brand.isActive ? 'bi-pause-fill me-1' : 'bi-play-fill me-1'"></i>
+                <BButton
+                  size="sm"
+                  :variant="brand.isActive ? 'outline-warning' : 'outline-success'"
+                  @click="toggleBrandActive"
+                >
+                  <i
+                    class="bi"
+                    :class="brand.isActive ? 'bi-pause-fill me-1' : 'bi-play-fill me-1'"
+                  ></i>
                   {{ brand.isActive ? '停用品牌' : '啟用品牌' }}
                 </BButton>
                 <!-- 刪除按鈕，使用 v-model:show 控制 modal -->
@@ -81,7 +97,7 @@
           <BCard class="h-100">
             <BCardBody>
               <BCardTitle>品牌統計</BCardTitle>
-              <hr>
+              <hr />
               <BRow class="g-3 mb-4">
                 <BCol md="6">
                   <BCard bg-variant="light">
@@ -130,8 +146,10 @@
                       </BBadge>
                     </BTd>
                     <BTd>
-                      <router-link :to="`/admin/${brand._id}?storeId=${store._id}`"
-                        class="btn btn-sm btn-outline-primary">
+                      <router-link
+                        :to="`/admin/${brand._id}?storeId=${store._id}`"
+                        class="btn btn-sm btn-outline-primary"
+                      >
                         <i class="bi bi-door-open me-1"></i>進入
                       </router-link>
                     </BTd>
@@ -157,9 +175,17 @@
     </div>
 
     <!-- 刪除確認對話框 - 使用 BModal 元件 -->
-    <BModal v-model:show="showDeleteModal" id="deleteBrandModal" title="確認刪除" centered @ok="handleDelete"
-      @cancel="showDeleteModal = false">
-      <p v-if="brand">您確定要刪除品牌 <strong>{{ brand.name }}</strong> 嗎？</p>
+    <BModal
+      v-model:show="showDeleteModal"
+      id="deleteBrandModal"
+      title="確認刪除"
+      centered
+      @ok="handleDelete"
+      @cancel="showDeleteModal = false"
+    >
+      <p v-if="brand">
+        您確定要刪除品牌 <strong>{{ brand.name }}</strong> 嗎？
+      </p>
       <BAlert variant="danger" show>
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         此操作無法撤銷，品牌相關的所有資料都將被永久刪除。
@@ -176,135 +202,149 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/api'
 import {
-  BAlert, BCard, BCardBody, BCardTitle, BCardFooter, BRow, BCol,
-  BModal, BButton, BSpinner, BBadge, BImg, BTableSimple, BThead,
-  BTbody, BTr, BTh, BTd
-} from 'bootstrap-vue-next';
+  BAlert,
+  BCard,
+  BCardBody,
+  BCardTitle,
+  BCardFooter,
+  BRow,
+  BCol,
+  BModal,
+  BButton,
+  BSpinner,
+  BBadge,
+  BImg,
+  BTableSimple,
+  BThead,
+  BTbody,
+  BTr,
+  BTh,
+  BTd,
+} from 'bootstrap-vue-next'
 
 // 路由
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 // 狀態
-const brand = ref(null);
-const stores = ref([]);
-const isLoading = ref(true);
-const error = ref('');
-const isDeleting = ref(false);
-const storeCount = ref(0);
-const activeStoreCount = ref(0);
-const showDeleteModal = ref(false);
+const brand = ref(null)
+const stores = ref([])
+const isLoading = ref(true)
+const error = ref('')
+const isDeleting = ref(false)
+const storeCount = ref(0)
+const activeStoreCount = ref(0)
+const showDeleteModal = ref(false)
 
 // 獲取品牌資料
 const fetchBrandData = async () => {
-  if (!route.params.id) return;
+  if (!route.params.id) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     // 獲取品牌詳情
-    const response = await api.brand.getBrandById(route.params.id);
+    const response = await api.brand.getBrandById(route.params.id)
 
     if (response && response.brand) {
-      brand.value = response.brand;
+      brand.value = response.brand
 
       // 獲取品牌下的店鋪
       const storesResponse = await api.store.getAllStores({
-        brandId: route.params.id
-      });
+        brandId: route.params.id,
+      })
 
       if (storesResponse && storesResponse.stores) {
-        stores.value = storesResponse.stores;
-        storeCount.value = stores.value.length;
-        activeStoreCount.value = stores.value.filter(store => store.isActive).length;
+        stores.value = storesResponse.stores
+        storeCount.value = stores.value.length
+        activeStoreCount.value = stores.value.filter((store) => store.isActive).length
       }
     } else {
-      error.value = '獲取品牌資料失敗';
+      error.value = '獲取品牌資料失敗'
     }
   } catch (err) {
-    console.error('獲取品牌資料時發生錯誤:', err);
-    error.value = '獲取品牌資料時發生錯誤，請稍後再試';
+    console.error('獲取品牌資料時發生錯誤:', err)
+    error.value = '獲取品牌資料時發生錯誤，請稍後再試'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 格式化日期
 const formatDate = (dateString) => {
-  if (!dateString) return '無資料';
+  if (!dateString) return '無資料'
 
-  const date = new Date(dateString);
+  const date = new Date(dateString)
   return date.toLocaleDateString('zh-TW', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 切換品牌啟用狀態
 const toggleBrandActive = async () => {
-  if (!brand.value) return;
+  if (!brand.value) return
 
   try {
-    const newStatus = !brand.value.isActive;
+    const newStatus = !brand.value.isActive
     await api.brand.toggleBrandActive({
       id: brand.value._id,
-      isActive: newStatus
-    });
+      isActive: newStatus,
+    })
 
     // 更新本地狀態
-    brand.value.isActive = newStatus;
-
+    brand.value.isActive = newStatus
   } catch (err) {
-    console.error('切換品牌狀態失敗:', err);
-    alert('切換品牌狀態時發生錯誤');
+    console.error('切換品牌狀態失敗:', err)
+    alert('切換品牌狀態時發生錯誤')
   }
-};
+}
 
 // 處理刪除確認
 const handleDelete = async () => {
-  if (!brand.value) return;
+  if (!brand.value) return
 
-  isDeleting.value = true;
+  isDeleting.value = true
 
   try {
-    await api.brand.deleteBrand(brand.value._id);
+    await api.brand.deleteBrand(brand.value._id)
 
     // 關閉模態對話框
-    showDeleteModal.value = false;
+    showDeleteModal.value = false
 
     // 返回品牌列表
     setTimeout(() => {
-      router.push({ name: 'brand-list' });
+      router.push({ name: 'brand-list' })
 
       // 觸發刷新列表事件
-      window.dispatchEvent(new CustomEvent('refresh-brand-list'));
-    }, 300);
+      window.dispatchEvent(new CustomEvent('refresh-brand-list'))
+    }, 300)
   } catch (err) {
-    console.error('刪除品牌失敗:', err);
+    console.error('刪除品牌失敗:', err)
 
     if (err.response && err.response.data && err.response.data.message) {
-      alert(`刪除失敗: ${err.response.data.message}`);
+      alert(`刪除失敗: ${err.response.data.message}`)
     } else {
-      alert('刪除品牌時發生錯誤');
+      alert('刪除品牌時發生錯誤')
     }
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 獲取品牌資料
-  fetchBrandData();
-});
+  fetchBrandData()
+})
 </script>
 
 <style scoped>

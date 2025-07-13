@@ -12,10 +12,17 @@
         </p>
       </div>
       <div class="d-flex">
-        <router-link :to="`/admin/${brandId}/menus/store/${storeId}`" class="btn btn-outline-secondary me-2">
+        <router-link
+          :to="`/admin/${brandId}/menus/store/${storeId}`"
+          class="btn btn-outline-secondary me-2"
+        >
           <i class="bi bi-arrow-left me-1"></i>返回菜單管理
         </router-link>
-        <router-link v-if="menu" :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`" class="btn btn-primary">
+        <router-link
+          v-if="menu"
+          :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
+          class="btn btn-primary"
+        >
           <i class="bi bi-pencil me-1"></i>編輯菜單
         </router-link>
       </div>
@@ -39,8 +46,10 @@
       <div class="col-12">
         <!-- 菜單資訊卡片 -->
         <div class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center"
-            :class="menu.isActive ? 'bg-success text-white' : 'bg-secondary text-white'">
+          <div
+            class="card-header d-flex justify-content-between align-items-center"
+            :class="menu.isActive ? 'bg-success text-white' : 'bg-secondary text-white'"
+          >
             <div class="d-flex align-items-center">
               <h5 class="mb-0">{{ menu.name }}</h5>
               <span class="badge rounded-pill bg-light text-dark ms-2">
@@ -57,7 +66,9 @@
                 <p class="mb-2"><strong>菜單ID:</strong> {{ menu._id }}</p>
                 <p class="mb-2"><strong>所屬店鋪:</strong> {{ storeName }}</p>
                 <p class="mb-2"><strong>菜單類型:</strong> {{ getMenuTypeText(menu.menuType) }}</p>
-                <p class="mb-2"><strong>分類數量:</strong> {{ menu.categories ? menu.categories.length : 0 }}</p>
+                <p class="mb-2">
+                  <strong>分類數量:</strong> {{ menu.categories ? menu.categories.length : 0 }}
+                </p>
                 <p class="mb-2"><strong>商品數量:</strong> {{ countTotalItems(menu) }}</p>
               </div>
               <div class="col-md-6">
@@ -82,18 +93,33 @@
 
             <!-- 菜單內容 -->
             <div v-else class="menu-preview">
-              <div v-for="category in sortedCategories" :key="category._id" class="menu-category mb-4">
+              <div
+                v-for="category in sortedCategories"
+                :key="category._id"
+                class="menu-category mb-4"
+              >
                 <h5 class="category-title">{{ category.name }}</h5>
-                <p v-if="category.description" class="category-description text-muted">{{ category.description }}</p>
+                <p v-if="category.description" class="category-description text-muted">
+                  {{ category.description }}
+                </p>
 
                 <!-- 分類商品 -->
                 <div class="category-items">
-                  <div v-if="category.items && category.items.length > 0"
-                    class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
+                  <div
+                    v-if="category.items && category.items.length > 0"
+                    class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4"
+                  >
                     <div v-for="item in sortItems(category.items)" :key="item._id" class="col">
-                      <div class="card h-100 item-card" :class="{ 'item-disabled': !item.isShowing }">
+                      <div
+                        class="card h-100 item-card"
+                        :class="{ 'item-disabled': !item.isShowing }"
+                      >
                         <!-- 商品圖片 -->
-                        <img :src="getItemImage(item)" class="card-img-top item-image" :alt="getItemName(item)">
+                        <img
+                          :src="getItemImage(item)"
+                          class="card-img-top item-image"
+                          :alt="getItemName(item)"
+                        />
 
                         <!-- 商品類型標記 -->
                         <div class="item-type-badge">
@@ -109,35 +135,48 @@
 
                         <div class="card-body">
                           <h6 class="item-name">{{ getItemName(item) }}</h6>
-                          <p class="item-description text-muted small">{{ getItemDescription(item) }}</p>
+                          <p class="item-description text-muted small">
+                            {{ getItemDescription(item) }}
+                          </p>
 
                           <!-- 價格顯示 -->
                           <div class="item-pricing">
                             <!-- 現金價格 -->
-                            <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
+                            <div
+                              v-if="item.priceOverride !== null && item.priceOverride !== undefined"
+                            >
                               <p class="item-price text-success mb-1">
                                 <strong>現金價: {{ formatPrice(item.priceOverride) }}</strong>
                               </p>
-                              <p class="original-price text-muted small text-decoration-line-through">
+                              <p
+                                class="original-price text-muted small text-decoration-line-through"
+                              >
                                 原價: {{ formatPrice(getItemOriginalPrice(item)) }}
                               </p>
                             </div>
                             <div v-else>
-                              <p class="item-price mb-1">現金價: {{ formatPrice(getItemOriginalPrice(item)) }}</p>
+                              <p class="item-price mb-1">
+                                現金價: {{ formatPrice(getItemOriginalPrice(item)) }}
+                              </p>
                             </div>
 
                             <!-- 點數價格 -->
-                            <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
+                            <div
+                              v-if="item.pointOverride !== null && item.pointOverride !== undefined"
+                            >
                               <p class="item-points text-warning mb-0">
                                 <strong>點數價: {{ formatPoints(item.pointOverride) }}</strong>
                               </p>
-                              <p class="original-points text-muted small text-decoration-line-through">
+                              <p
+                                class="original-points text-muted small text-decoration-line-through"
+                              >
                                 原點數: {{ formatPoints(getItemOriginalPoints(item)) }}
                               </p>
                             </div>
                             <div v-else-if="getItemOriginalPoints(item) > 0">
-                              <p class="item-points text-warning mb-0">點數價: {{ formatPoints(getItemOriginalPoints(item))
-                                }}</p>
+                              <p class="item-points text-warning mb-0">
+                                點數價: {{ formatPoints(getItemOriginalPoints(item)) }}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -173,10 +212,19 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <template v-for="(category, categoryIndex) in sortedCategories" :key="categoryIndex">
+                  <template
+                    v-for="(category, categoryIndex) in sortedCategories"
+                    :key="categoryIndex"
+                  >
                     <tr>
-                      <td :rowspan="category.items && category.items.length > 0 ? category.items.length + 1 : 2"
-                        class="align-middle fw-bold border-end">
+                      <td
+                        :rowspan="
+                          category.items && category.items.length > 0
+                            ? category.items.length + 1
+                            : 2
+                        "
+                        class="align-middle fw-bold border-end"
+                      >
                         {{ category.name }}
                         <div class="small text-muted">順序: {{ category.order }}</div>
                       </td>
@@ -190,8 +238,12 @@
                         </td>
                         <td>{{ getItemName(item) }}</td>
                         <td>
-                          <div v-if="item.priceOverride !== null && item.priceOverride !== undefined">
-                            <span class="text-success fw-bold">{{ formatPrice(item.priceOverride) }}</span>
+                          <div
+                            v-if="item.priceOverride !== null && item.priceOverride !== undefined"
+                          >
+                            <span class="text-success fw-bold">{{
+                              formatPrice(item.priceOverride)
+                            }}</span>
                             <small class="text-muted text-decoration-line-through d-block">
                               原價: {{ formatPrice(getItemOriginalPrice(item)) }}
                             </small>
@@ -201,8 +253,12 @@
                           </div>
                         </td>
                         <td>
-                          <div v-if="item.pointOverride !== null && item.pointOverride !== undefined">
-                            <span class="text-warning fw-bold">{{ formatPoints(item.pointOverride) }}</span>
+                          <div
+                            v-if="item.pointOverride !== null && item.pointOverride !== undefined"
+                          >
+                            <span class="text-warning fw-bold">{{
+                              formatPoints(item.pointOverride)
+                            }}</span>
                             <small class="text-muted text-decoration-line-through d-block">
                               原點數: {{ formatPoints(getItemOriginalPoints(item)) }}
                             </small>
@@ -212,7 +268,10 @@
                           </div>
                         </td>
                         <td>
-                          <span class="badge" :class="item.isShowing ? 'bg-success' : 'bg-secondary'">
+                          <span
+                            class="badge"
+                            :class="item.isShowing ? 'bg-success' : 'bg-secondary'"
+                          >
                             {{ item.isShowing ? '顯示' : '隱藏' }}
                           </span>
                         </td>
@@ -237,9 +296,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api'
 import {
   getMenuTypeText,
   getItemTypeText,
@@ -255,48 +314,48 @@ import {
   getItemDescription,
   getItemImage,
   getItemOriginalPrice,
-  getItemOriginalPoints
-} from './menuUtils';
+  getItemOriginalPoints,
+} from './menuUtils'
 
 // 路由相關
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
-const storeId = computed(() => route.params.storeId);
-const menuId = computed(() => route.params.menuId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
+const storeId = computed(() => route.params.storeId)
+const menuId = computed(() => route.params.menuId)
 
 // 狀態變數
-const store = ref(null);
-const menu = ref(null);
-const isLoading = ref(true);
-const error = ref('');
-const storeName = ref('載入中...');
+const store = ref(null)
+const menu = ref(null)
+const isLoading = ref(true)
+const error = ref('')
+const storeName = ref('載入中...')
 
 // 計算屬性
 const sortedCategories = computed(() => {
-  if (!menu.value || !menu.value.categories) return [];
-  return sortCategories(menu.value.categories);
-});
+  if (!menu.value || !menu.value.categories) return []
+  return sortCategories(menu.value.categories)
+})
 
 // 獲取店鋪和菜單資料
 const fetchData = async () => {
-  if (!storeId.value || !menuId.value || !brandId.value) return;
+  if (!storeId.value || !menuId.value || !brandId.value) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     // 1. 獲取店鋪資料
     const storeResponse = await api.store.getStoreById({
       brandId: brandId.value,
-      id: storeId.value
-    });
+      id: storeId.value,
+    })
 
     if (storeResponse && storeResponse.store) {
-      store.value = storeResponse.store;
-      storeName.value = storeResponse.store.name;
+      store.value = storeResponse.store
+      storeName.value = storeResponse.store.name
     } else {
-      error.value = '無法獲取店鋪資訊';
-      return;
+      error.value = '無法獲取店鋪資訊'
+      return
     }
 
     // 2. 獲取菜單資料
@@ -304,38 +363,37 @@ const fetchData = async () => {
       brandId: brandId.value,
       storeId: storeId.value,
       menuId: menuId.value,
-      includeUnpublished: true // 管理界面顯示所有商品
-    });
+      includeUnpublished: true, // 管理界面顯示所有商品
+    })
 
     if (menuResponse && menuResponse.menu) {
-      menu.value = menuResponse.menu;
+      menu.value = menuResponse.menu
     } else {
-      error.value = '無法獲取菜單資訊';
+      error.value = '無法獲取菜單資訊'
     }
-
   } catch (err) {
-    console.error('獲取資料失敗:', err);
+    console.error('獲取資料失敗:', err)
     if (err.response && err.response.status === 404) {
-      error.value = '找不到指定的菜單';
+      error.value = '找不到指定的菜單'
     } else {
-      error.value = '獲取資料時發生錯誤，請稍後再試';
+      error.value = '獲取資料時發生錯誤，請稍後再試'
     }
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 監聽ID變化
 watch([storeId, menuId, brandId], ([newStoreId, newMenuId, newBrandId]) => {
   if (newStoreId && newMenuId && newBrandId) {
-    fetchData();
+    fetchData()
   }
-});
+})
 
 // 生命週期鉤子
 onMounted(() => {
-  fetchData();
-});
+  fetchData()
+})
 </script>
 
 <style scoped>
@@ -359,7 +417,9 @@ onMounted(() => {
 }
 
 .item-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   overflow: hidden;
   position: relative;
 }

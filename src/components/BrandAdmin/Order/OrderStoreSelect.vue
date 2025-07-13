@@ -3,8 +3,14 @@
     <!-- 搜尋和篩選 -->
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex">
-        <div class="input-group" style="width: 300px;">
-          <input type="text" class="form-control" placeholder="搜尋店鋪..." v-model="searchQuery" @input="handleSearch">
+        <div class="input-group" style="width: 300px">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="搜尋店鋪..."
+            v-model="searchQuery"
+            @input="handleSearch"
+          />
           <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
             <i class="bi bi-search"></i>
           </button>
@@ -37,9 +43,12 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4">
       <div v-for="store in stores" :key="store._id" class="col">
         <div class="card h-100 store-card hover-shadow">
-          <div class="card-img-top position-relative overflow-hidden" style="height: 180px;">
-            <img :src="store.image?.url || '/placeholder.jpg'" class="img-fluid w-100 h-100 object-fit-cover"
-              :alt="store.name">
+          <div class="card-img-top position-relative overflow-hidden" style="height: 180px">
+            <img
+              :src="store.image?.url || '/placeholder.jpg'"
+              class="img-fluid w-100 h-100 object-fit-cover"
+              :alt="store.name"
+            />
             <div class="store-status" :class="store.isActive ? 'bg-success' : 'bg-secondary'">
               {{ store.isActive ? '啟用中' : '已停用' }}
             </div>
@@ -70,7 +79,10 @@
           </div>
 
           <div class="card-footer bg-transparent border-top-0">
-            <router-link :to="`/admin/${brandId}/orders/store/${store._id}`" class="btn btn-primary w-100">
+            <router-link
+              :to="`/admin/${brandId}/orders/store/${store._id}`"
+              class="btn btn-primary w-100"
+            >
               <i class="bi bi-receipt me-1"></i>查看訂單
             </router-link>
           </div>
@@ -98,7 +110,12 @@
           <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
         </li>
 
-        <li class="page-item" v-for="page in getPageNumbers()" :key="page" :class="{ active: currentPage === page }">
+        <li
+          class="page-item"
+          v-for="page in getPageNumbers()"
+          :key="page"
+          :class="{ active: currentPage === page }"
+        >
           <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
         </li>
 
@@ -111,174 +128,177 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/api';
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 從路由中獲取品牌ID
-const route = useRoute();
-const brandId = computed(() => route.params.brandId);
+const route = useRoute()
+const brandId = computed(() => route.params.brandId)
 
 // 狀態變數
-const stores = ref([]);
-const isLoading = ref(true);
-const searchQuery = ref('');
-const filterActive = ref('all');
-const currentPage = ref(1);
-const networkError = ref('');
+const stores = ref([])
+const isLoading = ref(true)
+const searchQuery = ref('')
+const filterActive = ref('all')
+const currentPage = ref(1)
+const networkError = ref('')
 const pagination = reactive({
   total: 0,
   totalPages: 0,
-  limit: 9 // 每頁顯示9個店鋪
-});
+  limit: 9, // 每頁顯示9個店鋪
+})
 
 // 獲取當天星期幾 (0-6，0代表星期日)
 const getTodayDayOfWeek = () => {
-  return new Date().getDay();
-};
+  return new Date().getDay()
+}
 
 // 檢查店鋪是否有菜單
 const hasMenu = (store) => {
-  return !!store.menuId;
-};
+  return !!store.menuId
+}
 
 // 獲取當天的營業時間
 const getTodayBusinessHours = (store) => {
   if (!store.businessHours || store.businessHours.length === 0) {
-    return null;
+    return null
   }
 
-  const today = getTodayDayOfWeek();
-  const todayHours = store.businessHours.find(h => h.day === today);
+  const today = getTodayDayOfWeek()
+  const todayHours = store.businessHours.find((h) => h.day === today)
 
-  return todayHours;
-};
+  return todayHours
+}
 
 // 檢查今天是否營業
 const isTodayOpen = (store) => {
-  const todayHours = getTodayBusinessHours(store);
-  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0;
-};
+  const todayHours = getTodayBusinessHours(store)
+  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0
+}
 
 // 格式化營業時間
 const formatBusinessHours = (businessHours) => {
   if (!businessHours || !businessHours.periods || businessHours.periods.length === 0) {
-    return '無資料';
+    return '無資料'
   }
 
-  return businessHours.periods.map(period => {
-    return `${period.open}-${period.close}`;
-  }).join(', ');
-};
+  return businessHours.periods
+    .map((period) => {
+      return `${period.open}-${period.close}`
+    })
+    .join(', ')
+}
 
 // 頁碼生成
 const getPageNumbers = () => {
-  const totalPages = pagination.totalPages;
-  const currentPageNum = currentPage.value;
-  const pageNumbers = [];
+  const totalPages = pagination.totalPages
+  const currentPageNum = currentPage.value
+  const pageNumbers = []
 
   // 顯示最多 5 個頁碼
   if (totalPages <= 5) {
     // 若總頁數少於 5，顯示全部頁碼
     for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
+      pageNumbers.push(i)
     }
   } else {
     // 若總頁數大於 5，顯示當前頁附近的頁碼
     if (currentPageNum <= 3) {
       // 當前頁在前 3 頁，顯示前 5 頁
       for (let i = 1; i <= 5; i++) {
-        pageNumbers.push(i);
+        pageNumbers.push(i)
       }
     } else if (currentPageNum >= totalPages - 2) {
       // 當前頁在後 3 頁，顯示後 5 頁
       for (let i = totalPages - 4; i <= totalPages; i++) {
-        pageNumbers.push(i);
+        pageNumbers.push(i)
       }
     } else {
       // 當前頁在中間，顯示當前頁及其前後 2 頁
       for (let i = currentPageNum - 2; i <= currentPageNum + 2; i++) {
-        pageNumbers.push(i);
+        pageNumbers.push(i)
       }
     }
   }
 
-  return pageNumbers;
-};
+  return pageNumbers
+}
 
 // 加載店鋪列表
 const fetchStores = async () => {
-  if (!brandId.value) return;
+  if (!brandId.value) return
 
-  isLoading.value = true;
-  networkError.value = '';
+  isLoading.value = true
+  networkError.value = ''
 
   try {
     // 獲取店鋪列表
     const response = await api.store.getAllStores({
       brandId: brandId.value,
-      activeOnly: filterActive.value === 'active' ? true : undefined
-    });
+      activeOnly: filterActive.value === 'active' ? true : undefined,
+    })
 
     if (response && response.stores) {
-      stores.value = response.stores;
+      stores.value = response.stores
 
       // 處理搜尋過濾
       if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase();
-        stores.value = stores.value.filter(store =>
-          store.name.toLowerCase().includes(query)
-        );
+        const query = searchQuery.value.toLowerCase()
+        stores.value = stores.value.filter((store) => store.name.toLowerCase().includes(query))
       }
 
       // 如果選擇只顯示未啟用，需要手動過濾
       if (filterActive.value === 'inactive') {
-        stores.value = stores.value.filter(store => !store.isActive);
+        stores.value = stores.value.filter((store) => !store.isActive)
       }
 
       // 分頁處理
-      pagination.total = stores.value.length;
-      pagination.totalPages = Math.ceil(pagination.total / pagination.limit);
-      const start = (currentPage.value - 1) * pagination.limit;
-      const end = start + pagination.limit;
-      stores.value = stores.value.slice(start, end);
+      pagination.total = stores.value.length
+      pagination.totalPages = Math.ceil(pagination.total / pagination.limit)
+      const start = (currentPage.value - 1) * pagination.limit
+      const end = start + pagination.limit
+      stores.value = stores.value.slice(start, end)
     }
   } catch (error) {
-    console.error('獲取店鋪列表失敗:', error);
-    networkError.value = '網路連線有問題，無法獲取店鋪資料';
+    console.error('獲取店鋪列表失敗:', error)
+    networkError.value = '網路連線有問題，無法獲取店鋪資料'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 切換頁碼
 const changePage = (page) => {
   if (page < 1 || page > pagination.totalPages) {
-    return;
+    return
   }
 
-  currentPage.value = page;
-  fetchStores();
-};
+  currentPage.value = page
+  fetchStores()
+}
 
 // 處理搜尋
 const handleSearch = () => {
-  currentPage.value = 1; // 重置頁碼
-  fetchStores();
-};
+  currentPage.value = 1 // 重置頁碼
+  fetchStores()
+}
 
 // 監聽品牌ID變化
-watch(() => brandId.value, (newId, oldId) => {
-  if (newId !== oldId) {
-    fetchStores();
-  }
-});
+watch(
+  () => brandId.value,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      fetchStores()
+    }
+  },
+)
 
 // 生命週期鉤子
 onMounted(() => {
   // 載入店鋪列表
-  fetchStores();
-});
+  fetchStores()
+})
 </script>
 
 <style scoped>
@@ -288,7 +308,9 @@ onMounted(() => {
 
 /* 店鋪卡片樣式 */
 .store-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }

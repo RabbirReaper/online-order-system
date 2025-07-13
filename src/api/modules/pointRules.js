@@ -11,7 +11,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllPointRules(brandId) {
-      return apiClient.get(`/promotion/brands/${brandId}/points/rules`);
+      return apiClient.get(`/promotion/brands/${brandId}/points/rules`)
     },
 
     /**
@@ -22,7 +22,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getPointRuleById({ brandId, id }) {
-      return apiClient.get(`/promotion/brands/${brandId}/points/rules/${id}`);
+      return apiClient.get(`/promotion/brands/${brandId}/points/rules/${id}`)
     },
 
     /**
@@ -39,7 +39,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createPointRule({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/points/rules`, data);
+      return apiClient.post(`/promotion/brands/${brandId}/points/rules`, data)
     },
 
     /**
@@ -57,7 +57,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updatePointRule({ brandId, id, data }) {
-      return apiClient.put(`/promotion/brands/${brandId}/points/rules/${id}`, data);
+      return apiClient.put(`/promotion/brands/${brandId}/points/rules/${id}`, data)
     },
 
     /**
@@ -68,7 +68,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deletePointRule({ brandId, id }) {
-      return apiClient.delete(`/promotion/brands/${brandId}/points/rules/${id}`);
+      return apiClient.delete(`/promotion/brands/${brandId}/points/rules/${id}`)
     },
 
     /**
@@ -80,7 +80,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     togglePointRuleActive({ brandId, id, isActive }) {
-      return apiClient.put(`/promotion/brands/${brandId}/points/rules/${id}`, { isActive });
+      return apiClient.put(`/promotion/brands/${brandId}/points/rules/${id}`, { isActive })
     },
 
     /**
@@ -90,8 +90,8 @@ export default function (apiClient) {
      */
     getActivePointRules(brandId) {
       return apiClient.get(`/promotion/brands/${brandId}/points/rules`, {
-        params: { activeOnly: true }
-      });
-    }
-  };
+        params: { activeOnly: true },
+      })
+    },
+  }
 }

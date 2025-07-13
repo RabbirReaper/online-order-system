@@ -18,7 +18,10 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">{{ voucher.name }}</h4>
         <div class="d-flex">
-          <router-link :to="`/admin/${brandId}/vouchers/edit/${voucher._id}`" class="btn btn-primary me-2">
+          <router-link
+            :to="`/admin/${brandId}/vouchers/edit/${voucher._id}`"
+            class="btn btn-primary me-2"
+          >
             <i class="bi bi-pencil me-1"></i>編輯兌換券
           </router-link>
           <router-link :to="`/admin/${brandId}/vouchers`" class="btn btn-secondary">
@@ -64,7 +67,7 @@
 
               <div class="mb-3" v-if="voucher.image">
                 <h6 class="text-muted mb-1">兌換券圖片</h6>
-                <img :src="voucher.image.url" class="img-fluid rounded" style="max-width: 300px;">
+                <img :src="voucher.image.url" class="img-fluid rounded" style="max-width: 300px" />
               </div>
             </div>
           </div>
@@ -82,8 +85,13 @@
                   <p class="fs-4 text-success mb-0">
                     ${{ formatPrice(voucher.cashPrice.selling || voucher.cashPrice.original) }}
                   </p>
-                  <small v-if="voucher.cashPrice.selling && voucher.cashPrice.selling < voucher.cashPrice.original"
-                    class="text-muted text-decoration-line-through">
+                  <small
+                    v-if="
+                      voucher.cashPrice.selling &&
+                      voucher.cashPrice.selling < voucher.cashPrice.original
+                    "
+                    class="text-muted text-decoration-line-through"
+                  >
                     原價 ${{ formatPrice(voucher.cashPrice.original) }}
                   </small>
                 </div>
@@ -95,8 +103,13 @@
                   <p class="fs-4 text-primary mb-0">
                     {{ voucher.pointPrice.selling || voucher.pointPrice.original }} 點
                   </p>
-                  <small v-if="voucher.pointPrice.selling && voucher.pointPrice.selling < voucher.pointPrice.original"
-                    class="text-muted text-decoration-line-through">
+                  <small
+                    v-if="
+                      voucher.pointPrice.selling &&
+                      voucher.pointPrice.selling < voucher.pointPrice.original
+                    "
+                    class="text-muted text-decoration-line-through"
+                  >
                     原價 {{ voucher.pointPrice.original }} 點
                   </small>
                 </div>
@@ -105,8 +118,11 @@
               <div class="mb-3">
                 <h6 class="text-muted mb-1">購買限制</h6>
                 <p>
-                  {{ voucher.purchaseLimitPerUser ?
-                    `每人限購 ${voucher.purchaseLimitPerUser} 個` : '無限制' }}
+                  {{
+                    voucher.purchaseLimitPerUser
+                      ? `每人限購 ${voucher.purchaseLimitPerUser} 個`
+                      : '無限制'
+                  }}
                 </p>
               </div>
 
@@ -160,14 +176,22 @@
                     </p>
                     <!-- 顯示標籤 -->
                     <div v-if="dishTemplate.tags && dishTemplate.tags.length > 0" class="mt-2">
-                      <span v-for="tag in dishTemplate.tags" :key="tag" class="badge bg-secondary me-1 small">
+                      <span
+                        v-for="tag in dishTemplate.tags"
+                        :key="tag"
+                        class="badge bg-secondary me-1 small"
+                      >
                         {{ tag }}
                       </span>
                     </div>
                   </div>
                   <div class="col-md-4" v-if="dishTemplate.image">
-                    <img :src="dishTemplate.image.url" class="img-fluid rounded"
-                      style="max-height: 120px; object-fit: cover;" :alt="dishTemplate.image.alt || dishTemplate.name">
+                    <img
+                      :src="dishTemplate.image.url"
+                      class="img-fluid rounded"
+                      style="max-height: 120px; object-fit: cover"
+                      :alt="dishTemplate.image.alt || dishTemplate.name"
+                    />
                   </div>
                 </div>
               </div>
@@ -227,158 +251,158 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import api from '@/api';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
 
 // 路由
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
 // 從路由中獲取品牌ID和兌換券ID
-const brandId = computed(() => route.params.brandId);
-const voucherId = computed(() => route.params.id);
+const brandId = computed(() => route.params.brandId)
+const voucherId = computed(() => route.params.id)
 
 // 狀態
-const isLoading = ref(false);
-const isDishLoading = ref(false);
-const error = ref('');
-const dishError = ref('');
+const isLoading = ref(false)
+const isDishLoading = ref(false)
+const error = ref('')
+const dishError = ref('')
 
 // 兌換券和餐點資料
-const voucher = ref(null);
-const dishTemplate = ref(null);
+const voucher = ref(null)
+const dishTemplate = ref(null)
 
 // 格式化價格
 const formatPrice = (price) => {
-  return price?.toLocaleString('zh-TW') || '0';
-};
+  return price?.toLocaleString('zh-TW') || '0'
+}
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
+  if (!dateString) return ''
+  const date = new Date(dateString)
   return date.toLocaleString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+    minute: '2-digit',
+  })
+}
 
 // 獲取狀態徽章樣式
 const getStatusBadgeClass = (voucher) => {
-  if (!voucher.isActive) return 'bg-secondary';
+  if (!voucher.isActive) return 'bg-secondary'
 
-  const now = new Date();
+  const now = new Date()
   if (voucher.autoStatusControl && voucher.validTo && new Date(voucher.validTo) < now) {
-    return 'bg-warning';
+    return 'bg-warning'
   }
 
-  return 'bg-success';
-};
+  return 'bg-success'
+}
 
 // 獲取狀態文字
 const getStatusText = (voucher) => {
-  if (!voucher.isActive) return '停用';
+  if (!voucher.isActive) return '停用'
 
-  const now = new Date();
+  const now = new Date()
   if (voucher.autoStatusControl && voucher.validTo && new Date(voucher.validTo) < now) {
-    return '已過期';
+    return '已過期'
   }
 
-  return '啟用';
-};
+  return '啟用'
+}
 
 // 計算兌換券總價值
 const bundleValue = computed(() => {
-  if (!voucher.value || !voucher.value.bundleItems) return 0;
+  if (!voucher.value || !voucher.value.bundleItems) return 0
 
   return voucher.value.bundleItems.reduce((total, item) => {
-    const itemValue = (item.couponTemplate?.pointCost || 0) * item.quantity;
-    return total + itemValue;
-  }, 0);
-});
+    const itemValue = (item.couponTemplate?.pointCost || 0) * item.quantity
+    return total + itemValue
+  }, 0)
+})
 
 // 計算節省的點數
 const savings = computed(() => {
-  if (!voucher.value || !voucher.value.pointPrice) return 0;
+  if (!voucher.value || !voucher.value.pointPrice) return 0
 
-  const cost = voucher.value.pointPrice.selling || voucher.value.pointPrice.original || 0;
-  return Math.max(0, bundleValue.value - cost);
-});
+  const cost = voucher.value.pointPrice.selling || voucher.value.pointPrice.original || 0
+  return Math.max(0, bundleValue.value - cost)
+})
 
 // 計算使用率
 const usageRate = computed(() => {
   if (!voucher.value || !voucher.value.totalSold || voucher.value.totalSold === 0) {
-    return 0;
+    return 0
   }
-  return Math.round(((voucher.value.totalUsed || 0) / voucher.value.totalSold) * 100);
-});
+  return Math.round(((voucher.value.totalUsed || 0) / voucher.value.totalSold) * 100)
+})
 
 // 獲取餐點模板詳情
 const fetchDishTemplate = async (dishTemplateId) => {
-  if (!dishTemplateId || !brandId.value) return;
+  if (!dishTemplateId || !brandId.value) return
 
-  isDishLoading.value = true;
-  dishError.value = '';
+  isDishLoading.value = true
+  dishError.value = ''
 
   try {
     const response = await api.dish.getDishTemplateById({
       brandId: brandId.value,
-      id: dishTemplateId
-    });
+      id: dishTemplateId,
+    })
 
     if (response && response.template) {
-      dishTemplate.value = response.template;
+      dishTemplate.value = response.template
     } else {
-      dishError.value = '餐點模板不存在';
+      dishError.value = '餐點模板不存在'
     }
   } catch (err) {
-    console.error('獲取餐點模板詳情時發生錯誤:', err);
-    dishError.value = '載入餐點詳情失敗';
+    console.error('獲取餐點模板詳情時發生錯誤:', err)
+    dishError.value = '載入餐點詳情失敗'
   } finally {
-    isDishLoading.value = false;
+    isDishLoading.value = false
   }
-};
+}
 
 // 獲取兌換券資料
 const fetchVoucherData = async () => {
-  if (!voucherId.value || !brandId.value) return;
+  if (!voucherId.value || !brandId.value) return
 
-  isLoading.value = true;
-  error.value = '';
+  isLoading.value = true
+  error.value = ''
 
   try {
     const response = await api.promotion.getVoucherTemplateById({
       brandId: brandId.value,
-      id: voucherId.value
-    });
+      id: voucherId.value,
+    })
 
     if (response && response.template) {
-      voucher.value = response.template;
+      voucher.value = response.template
 
       // 如果有關聯的餐點模板，獲取詳細資訊
       if (response.template.exchangeDishTemplate) {
-        await fetchDishTemplate(response.template.exchangeDishTemplate);
+        await fetchDishTemplate(response.template.exchangeDishTemplate)
       }
     } else {
-      error.value = '獲取兌換券資料失敗';
+      error.value = '獲取兌換券資料失敗'
     }
   } catch (err) {
-    console.error('獲取兌換券資料時發生錯誤:', err);
-    error.value = '獲取兌換券資料時發生錯誤，請稍後再試';
+    console.error('獲取兌換券資料時發生錯誤:', err)
+    error.value = '獲取兌換券資料時發生錯誤，請稍後再試'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 // 生命週期鉤子
 onMounted(() => {
   // 獲取兌換券資料
-  fetchVoucherData();
-});
+  fetchVoucherData()
+})
 </script>
 
 <style scoped>

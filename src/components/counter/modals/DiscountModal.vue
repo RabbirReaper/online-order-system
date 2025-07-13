@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5)">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -13,16 +13,30 @@
           <div class="number-keypad">
             <div class="row g-2">
               <div class="col-4" v-for="num in [1, 2, 3, 4, 5, 6, 7, 8, 9]" :key="num">
-                <button class="btn btn-outline-secondary w-100" @click="$emit('appendDiscount', num)">{{ num }}</button>
+                <button
+                  class="btn btn-outline-secondary w-100"
+                  @click="$emit('appendDiscount', num)"
+                >
+                  {{ num }}
+                </button>
               </div>
               <div class="col-4">
-                <button class="btn btn-outline-secondary w-100" @click="$emit('appendDiscount', 0)">0</button>
+                <button class="btn btn-outline-secondary w-100" @click="$emit('appendDiscount', 0)">
+                  0
+                </button>
               </div>
               <div class="col-4">
-                <button class="btn btn-outline-secondary w-100" @click="$emit('appendDiscount', '00')">00</button>
+                <button
+                  class="btn btn-outline-secondary w-100"
+                  @click="$emit('appendDiscount', '00')"
+                >
+                  00
+                </button>
               </div>
               <div class="col-4">
-                <button class="btn btn-outline-danger w-100" @click="$emit('clearDiscount')">清除</button>
+                <button class="btn btn-outline-danger w-100" @click="$emit('clearDiscount')">
+                  清除
+                </button>
               </div>
             </div>
           </div>
@@ -40,16 +54,11 @@
 const props = defineProps({
   tempDiscount: {
     type: Number,
-    required: true
-  }
-});
+    required: true,
+  },
+})
 
-defineEmits([
-  'close',
-  'appendDiscount',
-  'clearDiscount',
-  'confirm'
-]);
+defineEmits(['close', 'appendDiscount', 'clearDiscount', 'confirm'])
 </script>
 
 <style scoped>

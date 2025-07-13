@@ -13,7 +13,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getAllStores({ brandId, ...queryParams }) {
-      return apiClient.get(`/store/brands/${brandId}`, { params: queryParams });
+      return apiClient.get(`/store/brands/${brandId}`, { params: queryParams })
     },
 
     /**
@@ -24,7 +24,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getStoreById({ brandId, id }) {
-      return apiClient.get(`/store/brands/${brandId}/${id}`);
+      return apiClient.get(`/store/brands/${brandId}/${id}`)
     },
 
     /**
@@ -57,7 +57,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createStore({ brandId, data }) {
-      return apiClient.post(`/store/brands/${brandId}`, data);
+      return apiClient.post(`/store/brands/${brandId}`, data)
     },
 
     /**
@@ -70,7 +70,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateStore({ brandId, id, data }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}`, data);
+      return apiClient.put(`/store/brands/${brandId}/${id}`, data)
     },
 
     /**
@@ -81,7 +81,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteStore({ brandId, id }) {
-      return apiClient.delete(`/store/brands/${brandId}/${id}`);
+      return apiClient.delete(`/store/brands/${brandId}/${id}`)
     },
 
     /**
@@ -93,7 +93,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     toggleStoreActive({ brandId, id, isActive }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}`, { isActive });
+      return apiClient.put(`/store/brands/${brandId}/${id}`, { isActive })
     },
 
     /**
@@ -104,7 +104,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getBusinessHours({ brandId, id }) {
-      return apiClient.get(`/store/brands/${brandId}/${id}/business-hours`);
+      return apiClient.get(`/store/brands/${brandId}/${id}/business-hours`)
     },
 
     /**
@@ -116,7 +116,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateBusinessHours({ brandId, id, businessHours }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}/business-hours`, { businessHours });
+      return apiClient.put(`/store/brands/${brandId}/${id}/business-hours`, { businessHours })
     },
 
     /**
@@ -128,7 +128,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateAnnouncements({ brandId, id, announcements }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}/announcements`, { announcements });
+      return apiClient.put(`/store/brands/${brandId}/${id}/announcements`, { announcements })
     },
 
     /**
@@ -139,7 +139,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     getStoreStatus({ brandId, id }) {
-      return apiClient.get(`/store/brands/${brandId}/${id}/status`);
+      return apiClient.get(`/store/brands/${brandId}/${id}/status`)
     },
 
     /**
@@ -151,7 +151,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateServiceSettings({ brandId, id, serviceSettings }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}/service-settings`, { serviceSettings });
-    }
-  };
+      return apiClient.put(`/store/brands/${brandId}/${id}/service-settings`, { serviceSettings })
+    },
+  }
 }

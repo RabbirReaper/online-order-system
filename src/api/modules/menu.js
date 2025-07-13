@@ -16,17 +16,21 @@ export default function (apiClient) {
      * @param {string} [params.menuType] - 篩選特定類型的菜單 (food, cash_coupon, point_exchange)
      * @returns {Promise} - API 回應，包含 menus 陣列
      */
-    getAllStoreMenus({ brandId, storeId, includeUnpublished = false, activeOnly = false, menuType }) {
+    getAllStoreMenus({
+      brandId,
+      storeId,
+      includeUnpublished = false,
+      activeOnly = false,
+      menuType,
+    }) {
       return apiClient.get(`/menu/brands/${brandId}/${storeId}/menus`, {
         params: {
           includeUnpublished,
           activeOnly,
-          menuType
-        }
-      });
+          menuType,
+        },
+      })
     },
-
-
 
     /**
      * 根據ID獲取特定菜單
@@ -39,8 +43,8 @@ export default function (apiClient) {
      */
     getMenuById({ brandId, storeId, menuId, includeUnpublished = true }) {
       return apiClient.get(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`, {
-        params: { includeUnpublished }
-      });
+        params: { includeUnpublished },
+      })
     },
 
     /**
@@ -56,7 +60,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     createMenu({ brandId, storeId, data }) {
-      return apiClient.post(`/menu/brands/${brandId}/${storeId}/menu`, data);
+      return apiClient.post(`/menu/brands/${brandId}/${storeId}/menu`, data)
     },
 
     /**
@@ -69,7 +73,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     updateMenu({ brandId, storeId, menuId, data }) {
-      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`, data);
+      return apiClient.put(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`, data)
     },
 
     /**
@@ -81,7 +85,7 @@ export default function (apiClient) {
      * @returns {Promise} - API 回應
      */
     deleteMenu({ brandId, storeId, menuId }) {
-      return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`);
+      return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`)
     },
-  };
+  }
 }
