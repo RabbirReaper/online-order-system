@@ -50,13 +50,8 @@
               <!-- 追蹤狀態篩選 -->
               <div class="mb-3">
                 <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    v-model="filters.onlyTracked"
-                    id="onlyTracked"
-                    @change="applyFilters"
-                  />
+                  <input class="form-check-input" type="checkbox" v-model="filters.onlyTracked" id="onlyTracked"
+                    @change="applyFilters" />
                   <label class="form-check-label" for="onlyTracked"> 只顯示追蹤庫存的項目 </label>
                 </div>
               </div>
@@ -67,13 +62,7 @@
         </BDropdown>
 
         <div class="input-group" style="width: 300px">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="搜尋項目名稱..."
-            v-model="searchQuery"
-            @input="handleSearch"
-          />
+          <input type="text" class="form-control" placeholder="搜尋項目名稱..." v-model="searchQuery" @input="handleSearch" />
           <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
             <i class="bi bi-search"></i>
           </button>
@@ -145,7 +134,7 @@
                 <th>最低警告值</th>
                 <th>補貨目標</th>
                 <th>追蹤庫存</th>
-                <th>可販售庫存</th>
+                <th>是否自動停售</th>
                 <th>售完狀態</th>
                 <th width="250">操作</th>
               </tr>
@@ -153,10 +142,7 @@
             <tbody>
               <tr v-for="item in inventories" :key="item._id" :class="getRowClass(item)">
                 <td>
-                  <span
-                    class="badge"
-                    :class="item.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'"
-                  >
+                  <span class="badge" :class="item.inventoryType === 'DishTemplate' ? 'bg-info' : 'bg-secondary'">
                     {{ item.inventoryType === 'DishTemplate' ? '餐點' : '其他' }}
                   </span>
                 </td>
@@ -177,34 +163,19 @@
                 <td>{{ item.targetStockLevel || '-' }}</td>
                 <td>
                   <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="item.isInventoryTracked"
-                      disabled
-                    />
+                    <input class="form-check-input" type="checkbox" :checked="item.isInventoryTracked" disabled />
                   </div>
                 </td>
                 <td>
                   <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="item.enableAvailableStock"
-                      disabled
-                    />
+                    <input class="form-check-input" type="checkbox" :checked="item.enableAvailableStock" disabled />
                   </div>
                 </td>
                 <td>
                   <div class="form-check form-switch">
-                    <input
-                      v-if="item.inventoryType === 'DishTemplate'"
-                      class="form-check-input"
-                      type="checkbox"
-                      v-model="item.isSoldOut"
-                      @change="toggleSoldOut(item)"
-                      :disabled="pendingSoldOutItem && pendingSoldOutItem._id === item._id"
-                    />
+                    <input v-if="item.inventoryType === 'DishTemplate'" class="form-check-input" type="checkbox"
+                      v-model="item.isSoldOut" @change="toggleSoldOut(item)"
+                      :disabled="pendingSoldOutItem && pendingSoldOutItem._id === item._id" />
                     <input v-else class="form-check-input" type="checkbox" disabled />
                   </div>
                 </td>
@@ -216,10 +187,8 @@
                     <BButton variant="outline-secondary" @click="openShowSettingModal(item)">
                       <i class="bi bi-gear me-1"></i> 設定
                     </BButton>
-                    <BButton
-                      variant="outline-secondary"
-                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`"
-                    >
+                    <BButton variant="outline-secondary"
+                      :to="`/admin/${brandId}/inventory/store/${storeId}/detail/${item._id}?type=${item.inventoryType}`">
                       <i class="bi bi-eye"></i> 詳情
                     </BButton>
                   </BButtonGroup>
@@ -246,12 +215,7 @@
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
           <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
         </li>
-        <li
-          class="page-item"
-          v-for="page in visiblePages"
-          :key="page"
-          :class="{ active: currentPage === page }"
-        >
+        <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: currentPage === page }">
           <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
         </li>
         <li class="page-item" :class="{ disabled: currentPage === pagination.totalPages }">
@@ -261,50 +225,23 @@
     </nav>
 
     <!-- 初始化餐點庫存 Modal -->
-    <InitializeDishInventoryModal
-      v-if="showInitializeModal"
-      :store-id="storeId"
-      :brand-id="brandId"
-      @close="showInitializeModal = false"
-      @success="handleInitializeSuccess"
-    />
+    <InitializeDishInventoryModal v-if="showInitializeModal" :store-id="storeId" :brand-id="brandId"
+      @close="showInitializeModal = false" @success="handleInitializeSuccess" />
 
     <!-- 新增自訂義庫存 Modal -->
-    <CreateInventoryModal
-      v-if="showCreateModal"
-      :store-id="storeId"
-      :brand-id="brandId"
-      @close="showCreateModal = false"
-      @success="handleCreateSuccess"
-    />
+    <CreateInventoryModal v-if="showCreateModal" :store-id="storeId" :brand-id="brandId"
+      @close="showCreateModal = false" @success="handleCreateSuccess" />
 
     <!-- 庫存調整 Modal -->
-    <StockAdjustModal
-      v-if="showAdjustModal"
-      :item="selectedItem"
-      :store-id="storeId"
-      :brand-id="brandId"
-      @close="showAdjustModal = false"
-      @success="handleAdjustSuccess"
-    />
+    <StockAdjustModal v-if="showAdjustModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
+      @close="showAdjustModal = false" @success="handleAdjustSuccess" />
 
     <!-- 庫存設定 -->
-    <StockSettingModal
-      v-if="showSettingModal"
-      :item="selectedItem"
-      :store-id="storeId"
-      :brand-id="brandId"
-      @close="showSettingModal = false"
-      @success="handleSettingSuccess"
-    />
+    <StockSettingModal v-if="showSettingModal" :item="selectedItem" :store-id="storeId" :brand-id="brandId"
+      @close="showSettingModal = false" @success="handleSettingSuccess" />
   </div>
   <!-- 確認售完狀態變更 Modal -->
-  <BModal
-    v-model="showSoldOutConfirm"
-    title="確認變更售完狀態"
-    @ok="confirmSoldOutChange"
-    @cancel="cancelSoldOutChange"
-  >
+  <BModal v-model="showSoldOutConfirm" title="確認變更售完狀態" @ok="confirmSoldOutChange" @cancel="cancelSoldOutChange">
     <p v-if="pendingSoldOutItem?.isSoldOut">
       確定要將「{{ pendingSoldOutItem?.itemName }}」設為售完嗎？設為售完後，顧客將無法點餐此項目。
     </p>
@@ -701,7 +638,7 @@ onMounted(() => {
   background-color: rgba(255, 193, 7, 0.1);
 }
 
-.btn-group-sm > .btn {
+.btn-group-sm>.btn {
   padding: 0.25rem 0.5rem;
 }
 
