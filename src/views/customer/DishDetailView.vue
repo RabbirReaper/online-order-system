@@ -1,34 +1,51 @@
 <template>
   <div class="dish-detail-view">
     <div class="container-wrapper">
-      <div v-if="isLoading" class="loading-container d-flex justify-content-center align-items-center">
+      <div
+        v-if="isLoading"
+        class="loading-container d-flex justify-content-center align-items-center"
+      >
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
       </div>
 
       <div v-else class="detail-container">
-        <div class="header d-flex align-items-center p-3 position-absolute top-0 start-0 w-100 bg-transparent"
-          style="z-index: 10">
-          <button class="btn btn-sm rounded-circle shadow" @click="goBack" style="
+        <div
+          class="header d-flex align-items-center p-3 position-absolute top-0 start-0 w-100 bg-transparent"
+          style="z-index: 10"
+        >
+          <button
+            class="btn btn-sm rounded-circle shadow"
+            @click="goBack"
+            style="
               background-color: rgba(255, 255, 255, 0.8);
               width: 46px;
               height: 46px;
               display: flex;
               align-items: center;
               justify-content: center;
-            ">
+            "
+          >
             <i class="bi bi-arrow-left fs-3"></i>
           </button>
-          <h5 v-if="isEditMode" class="ms-3 mb-0 text-white" style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5)">
+          <h5
+            v-if="isEditMode"
+            class="ms-3 mb-0 text-white"
+            style="text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5)"
+          >
             編輯餐點
           </h5>
         </div>
 
         <!-- Image -->
         <div class="image-container" style="height: 240px; overflow: hidden; position: relative">
-          <img :src="dish.image && dish.image.url ? dish.image.url : ''" :alt="dish.name" class="w-100 h-100"
-            style="object-fit: cover" />
+          <img
+            :src="dish.image && dish.image.url ? dish.image.url : ''"
+            :alt="dish.name"
+            class="w-100 h-100"
+            style="object-fit: cover"
+          />
         </div>
 
         <!-- Item name and price -->
@@ -38,8 +55,14 @@
           <p class="text-muted fs-5" style="white-space: pre-line">{{ dish.description }}</p>
         </div>
 
-        <OptionSelector :dish="dish" :option-categories="optionCategories" :is-edit-mode="isEditMode"
-          :existing-item="existingItem" @add-to-cart="addToCart" @update-cart="updateCart" />
+        <OptionSelector
+          :dish="dish"
+          :option-categories="optionCategories"
+          :is-edit-mode="isEditMode"
+          :existing-item="existingItem"
+          @add-to-cart="addToCart"
+          @update-cart="updateCart"
+        />
       </div>
     </div>
   </div>
