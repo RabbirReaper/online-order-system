@@ -240,13 +240,13 @@
 
         <!-- 點數獎勵提示 -->
         <div
-          v-if="pointsAwarded > 0"
+          v-if="pointsEarned > 0"
           class="points-reward-card bg-warning bg-opacity-10 border border-warning rounded-3 p-3 mb-4"
         >
           <div class="d-flex align-items-center">
             <i class="bi bi-star-fill text-warning me-2"></i>
             <span
-              >恭喜您獲得 <strong>{{ pointsAwarded }}</strong> 點獎勵點數！</span
+              >恭喜您獲得 <strong>{{ pointsEarned }}</strong> 點獎勵點數！</span
             >
           </div>
         </div>
@@ -304,7 +304,7 @@ const authStore = useAuthStore()
 
 // 訂單資訊
 const orderDetails = ref({})
-const pointsAwarded = ref(0)
+const pointsEarned = ref(0)
 const isLoading = ref(true)
 const isRefreshing = ref(false)
 const errorMessage = ref('')
@@ -495,8 +495,8 @@ const fetchOrderDetails = async () => {
       orderDetails.value = orderData
 
       // 獲取點數獎勵資訊（如果有的話）
-      if (response.pointsAwarded) {
-        pointsAwarded.value = response.pointsAwarded
+      if (orderDetails.value.pointsEarned) {
+        pointsEarned.value = orderDetails.value.pointsEarned
       }
 
       console.log('訂單詳情載入成功:', orderDetails.value)
