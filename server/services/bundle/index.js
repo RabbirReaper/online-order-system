@@ -4,12 +4,12 @@
  */
 
 // 導入 Bundle 相關服務
-import * as bundleService from './bundleService.js';
-import * as bundleInstanceService from './bundleInstance.js';
+import * as bundleService from './bundleService.js'
+import * as bundleInstanceService from './bundleInstance.js'
 
 // 導出所有 Bundle 服務
-export const bundle = bundleService;
-export const bundleInstance = bundleInstanceService;
+export const bundle = bundleService
+export const bundleInstance = bundleInstanceService
 
 // =============================================================================
 // Bundle 模板服務導出
@@ -21,12 +21,9 @@ export const {
   updateBundle,
   deleteBundle,
   checkPurchaseLimit,
-} = bundleService;
+} = bundleService
 
 // =============================================================================
 // Bundle 實例服務導出
 // =============================================================================
-export const {
-  getInstanceById,
-  createInstance
-} = bundleInstanceService;
+export const { getInstanceById, createInstance } = bundleInstanceService

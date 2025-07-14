@@ -1,34 +1,37 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
-const voucherTemplateSchema = new mongoose.Schema({
-  brand: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Brand',
-    required: true
+const voucherTemplateSchema = new mongoose.Schema(
+  {
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Brand',
+      required: true,
+    },
+    name: {
+      type: String,
+      trim: true,
+      required: true,
+    },
+    description: {
+      type: String,
+    },
+    exchangeDishTemplate: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'DishTemplate',
+      required: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    totalIssued: {
+      type: Number,
+      default: 0,
+    },
   },
-  name: {
-    type: String,
-    trim: true,
-    required: true
-  },
-  description: {
-    type: String
-  },
-  exchangeDishTemplate: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'DishTemplate',
-    required: true
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  totalIssued: {
-    type: Number,
-    default: 0
-  }
-}, { timestamps: true });
+  { timestamps: true },
+)
 
-voucherTemplateSchema.index({ brand: 1 });
+voucherTemplateSchema.index({ brand: 1 })
 
-export default mongoose.model('VoucherTemplate', voucherTemplateSchema);
+export default mongoose.model('VoucherTemplate', voucherTemplateSchema)

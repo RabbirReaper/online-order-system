@@ -1,39 +1,39 @@
-import * as brandService from '../../services/store/brandService.js';
-import { asyncHandler } from '../../middlewares/error.js';
+import * as brandService from '../../services/store/brandService.js'
+import { asyncHandler } from '../../middlewares/error.js'
 
 // 獲取所有品牌
 export const getAllBrands = asyncHandler(async (req, res) => {
   try {
-    const brands = await brandService.getAllBrands();
+    const brands = await brandService.getAllBrands()
 
     res.json({
       success: true,
-      brands
-    });
+      brands,
+    })
   } catch (error) {
-    console.error('Error getting brands:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('Error getting brands:', error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
-});
+})
 
 // 獲取單個品牌
 export const getBrandById = asyncHandler(async (req, res) => {
   try {
-    const { brandId } = req.params;
-    const brand = await brandService.getBrandById(brandId);
+    const { brandId } = req.params
+    const brand = await brandService.getBrandById(brandId)
 
     res.json({
       success: true,
-      brand
-    });
+      brand,
+    })
   } catch (error) {
-    console.error('Error getting brand:', error);
+    console.error('Error getting brand:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 創建品牌
 export const createBrand = asyncHandler(async (req, res) => {
@@ -41,134 +41,134 @@ export const createBrand = asyncHandler(async (req, res) => {
     // 圖片數據直接從請求體中獲取
     // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
-    const newBrand = await brandService.createBrand(req.body);
+    const newBrand = await brandService.createBrand(req.body)
 
     res.json({
       success: true,
       message: 'Brand created successfully',
-      brand: newBrand
-    });
+      brand: newBrand,
+    })
   } catch (error) {
-    console.error('Error creating brand:', error);
+    console.error('Error creating brand:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 更新品牌
 export const updateBrand = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
 
     // 圖片數據直接從請求體中獲取
     // req.body.imageData 應該包含 Base64 編碼的圖片數據
 
-    const updatedBrand = await brandService.updateBrand(id, req.body);
+    const updatedBrand = await brandService.updateBrand(id, req.body)
 
     res.json({
       success: true,
       message: 'Brand updated successfully',
-      brand: updatedBrand
-    });
+      brand: updatedBrand,
+    })
   } catch (error) {
-    console.error('Error updating brand:', error);
+    console.error('Error updating brand:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 刪除品牌
 export const deleteBrand = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await brandService.deleteBrand(id);
+    const { id } = req.params
+    const result = await brandService.deleteBrand(id)
 
     res.json({
       success: true,
-      message: 'Brand deleted successfully'
-    });
+      message: 'Brand deleted successfully',
+    })
   } catch (error) {
-    console.error('Error deleting brand:', error);
+    console.error('Error deleting brand:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 獲取品牌的所有店鋪
 export const getBrandStores = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
     const options = {
-      activeOnly: req.query.activeOnly === 'true'
-    };
+      activeOnly: req.query.activeOnly === 'true',
+    }
 
-    const result = await brandService.getBrandStores(id, options);
+    const result = await brandService.getBrandStores(id, options)
 
     res.json({
       success: true,
       brand: result.brand,
-      stores: result.stores
-    });
+      stores: result.stores,
+    })
   } catch (error) {
-    console.error('Error getting brand stores:', error);
+    console.error('Error getting brand stores:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 獲取品牌統計數據
 export const getBrandStats = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const stats = await brandService.getBrandStats(id);
+    const { id } = req.params
+    const stats = await brandService.getBrandStats(id)
 
     res.json({
       success: true,
       brand: stats.brand,
-      stats: stats.stats
-    });
+      stats: stats.stats,
+    })
   } catch (error) {
-    console.error('Error getting brand stats:', error);
+    console.error('Error getting brand stats:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 切換品牌啟用狀態
 export const toggleBrandActive = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const { isActive } = req.body;
+    const { id } = req.params
+    const { isActive } = req.body
 
     if (isActive === undefined) {
       return res.status(400).json({
         success: false,
-        message: '啟用狀態為必填欄位'
-      });
+        message: '啟用狀態為必填欄位',
+      })
     }
 
-    const brand = await brandService.toggleBrandActive(id, isActive);
+    const brand = await brandService.toggleBrandActive(id, isActive)
 
     res.json({
       success: true,
       message: `品牌已${isActive ? '啟用' : '停用'}`,
-      brand
-    });
+      brand,
+    })
   } catch (error) {
-    console.error('Error toggling brand status:', error);
+    console.error('Error toggling brand status:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})

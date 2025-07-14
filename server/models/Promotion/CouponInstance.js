@@ -1,64 +1,67 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
-const couponInstanceSchema = new mongoose.Schema({
-  brand: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Brand',
-    required: true
-  },
-  template: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'CouponTemplate',
-    required: true
-  },
-  couponName: {
-    type: String,
-    required: true
-  },
-  discountInfo: {
-    discountType: {
+const couponInstanceSchema = new mongoose.Schema(
+  {
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Brand',
+      required: true,
+    },
+    template: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CouponTemplate',
+      required: true,
+    },
+    couponName: {
       type: String,
-      enum: ['percentage', 'fixed'],
-      required: true
+      required: true,
     },
-    discountValue: {
-      type: Number,
-      required: true
+    discountInfo: {
+      discountType: {
+        type: String,
+        enum: ['percentage', 'fixed'],
+        required: true,
+      },
+      discountValue: {
+        type: Number,
+        required: true,
+      },
+      maxDiscountAmount: {
+        type: Number,
+      },
+      minPurchaseAmount: {
+        type: Number,
+        default: 0,
+      },
     },
-    maxDiscountAmount: {
-      type: Number
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
-    minPurchaseAmount: {
-      type: Number,
-      default: 0
-    }
+    isUsed: {
+      type: Boolean,
+      default: false,
+    },
+    usedAt: {
+      type: Date,
+    },
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+    },
+    acquiredAt: {
+      type: Date,
+      default: Date.now,
+    },
+    expiryDate: {
+      type: Date,
+      required: true,
+    },
   },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  isUsed: {
-    type: Boolean,
-    default: false
-  },
-  usedAt: {
-    type: Date
-  },
-  order: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order'
-  },
-  acquiredAt: {
-    type: Date,
-    default: Date.now
-  },
-  expiryDate: {
-    type: Date,
-    required: true
-  }
-}, { timestamps: true });
+  { timestamps: true },
+)
 
-couponInstanceSchema.index({ brand: 1, user: 1 });
+couponInstanceSchema.index({ brand: 1, user: 1 })
 
-export default mongoose.model('CouponInstance', couponInstanceSchema);
+export default mongoose.model('CouponInstance', couponInstanceSchema)

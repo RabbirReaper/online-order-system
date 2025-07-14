@@ -4,16 +4,16 @@
  */
 
 // 導入餐點相關服務
-import * as dishTemplateService from './dishTemplate.js';
-import * as dishInstanceService from './dishInstance.js';
-import * as optionService from './optionService.js';
-import * as optionCategoryService from './optionCategoryService.js';
+import * as dishTemplateService from './dishTemplate.js'
+import * as dishInstanceService from './dishInstance.js'
+import * as optionService from './optionService.js'
+import * as optionCategoryService from './optionCategoryService.js'
 
 // 導出所有餐點服務
-export const template = dishTemplateService;
-export const instance = dishInstanceService;
-export const option = optionService;
-export const optionCategory = optionCategoryService;
+export const template = dishTemplateService
+export const instance = dishInstanceService
+export const option = optionService
+export const optionCategory = optionCategoryService
 
 // 簡單導出，方便直接調用
 export const {
@@ -22,8 +22,8 @@ export const {
   createTemplate,
   updateTemplate,
   deleteTemplate,
-  getTemplateOptions
-} = dishTemplateService;
+  getTemplateOptions,
+} = dishTemplateService
 
 export const {
   getAllInstances,
@@ -31,8 +31,8 @@ export const {
   createInstance,
   updateInstance,
   deleteInstance,
-  calculateFinalPrice
-} = dishInstanceService;
+  calculateFinalPrice,
+} = dishInstanceService
 
 export const {
   getAllOptions,
@@ -40,13 +40,8 @@ export const {
   getOptionById,
   createOption,
   updateOption,
-  deleteOption
-} = optionService;
+  deleteOption,
+} = optionService
 
-export const {
-  getAllCategories,
-  getCategoryById,
-  createCategory,
-  updateCategory,
-  deleteCategory
-} = optionCategoryService;
+export const { getAllCategories, getCategoryById, createCategory, updateCategory, deleteCategory } =
+  optionCategoryService

@@ -4,16 +4,16 @@
  */
 
 // 導入用戶相關服務
-import * as userAuthService from './userAuthService.js';
-import * as adminAuthService from './adminAuthService.js';
-import * as adminService from './adminService.js';
-import * as userProfileService from './userProfile.js';
+import * as userAuthService from './userAuthService.js'
+import * as adminAuthService from './adminAuthService.js'
+import * as adminService from './adminService.js'
+import * as userProfileService from './userProfile.js'
 
 // 導出所有用戶服務
-export const userAuth = userAuthService;
-export const adminAuth = adminAuthService;
-export const admin = adminService;
-export const profile = userProfileService;
+export const userAuth = userAuthService
+export const adminAuth = adminAuthService
+export const admin = adminService
+export const profile = userProfileService
 
 // 簡單導出用戶認證服務，方便直接調用
 export const {
@@ -25,8 +25,8 @@ export const {
   changePassword,
   sendPhoneVerification,
   verifyPhoneCode,
-  checkUserStatus
-} = userAuthService;
+  checkUserStatus,
+} = userAuthService
 
 // 簡單導出管理員認證服務，方便直接調用
 export const {
@@ -35,8 +35,8 @@ export const {
   changeAdminPassword,
   checkAdminStatus,
   getCurrentAdminProfile,
-  updateCurrentAdminProfile
-} = adminAuthService;
+  updateCurrentAdminProfile,
+} = adminAuthService
 
 // 簡單導出管理員服務，方便直接調用
 export const {
@@ -45,8 +45,8 @@ export const {
   createAdmin,
   updateAdmin,
   deleteAdmin,
-  toggleAdminStatus
-} = adminService;
+  toggleAdminStatus,
+} = adminService
 
 // 簡單導出用戶資料服務，方便直接調用
 export const {
@@ -58,5 +58,5 @@ export const {
   setDefaultAddress,
   getAllUsers,
   getUserById,
-  toggleUserStatus
-} = userProfileService;
+  toggleUserStatus,
+} = userProfileService

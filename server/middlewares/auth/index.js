@@ -3,7 +3,7 @@
  * 統一匯出所有認證與授權相關的 middleware
  */
 
-import { authenticate } from './authentication.js';
+import { authenticate } from './authentication.js'
 import {
   requireRole,
   requireSystemLevel,
@@ -11,8 +11,8 @@ import {
   requireStoreAccess,
   requireMemberManagement,
   requireHigherRole,
-  requireScopeMatch
-} from './authorization.js';
+  requireScopeMatch,
+} from './authorization.js'
 
 // 統一匯出
 export {
@@ -23,11 +23,11 @@ export {
   requireStoreAccess,
   requireMemberManagement,
   requireHigherRole,
-  requireScopeMatch
-};
+  requireScopeMatch,
+}
 
 // 預設的管理員認證
-export const adminAuth = authenticate('admin');
+export const adminAuth = authenticate('admin')
 
 // 預設的用戶認證
-export const userAuth = authenticate('user');
+export const userAuth = authenticate('user')

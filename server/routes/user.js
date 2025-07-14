@@ -1,63 +1,69 @@
-import express from 'express';
-import * as userController from '../controllers/User/user.js';
-import {
-  authenticate,
-  requireRole,
-  requireBrandAccess
-} from '../middlewares/auth/index.js';
+import express from 'express'
+import * as userController from '../controllers/User/user.js'
+import { authenticate, requireRole, requireBrandAccess } from '../middlewares/auth/index.js'
 
-const router = express.Router();
+const router = express.Router()
 
 // 用戶個人資料管理（需要用戶認證）
-router.get('/brands/:brandId/profile',
-  authenticate('user'),
-  userController.getUserProfile
-);
+router.get('/brands/:brandId/profile', authenticate('user'), userController.getUserProfile)
 
-router.put('/brands/:brandId/profile',
-  authenticate('user'),
-  userController.updateUserProfile
-);
+router.put('/brands/:brandId/profile', authenticate('user'), userController.updateUserProfile)
 
 // 地址管理（需要用戶認證）
-router.post('/brands/:brandId/addresses',
-  authenticate('user'),
-  userController.addAddress
-);
+router.post('/brands/:brandId/addresses', authenticate('user'), userController.addAddress)
 
-router.put('/brands/:brandId/addresses/:addressId',
+router.put(
+  '/brands/:brandId/addresses/:addressId',
   authenticate('user'),
-  userController.updateAddress
-);
+  userController.updateAddress,
+)
 
-router.delete('/brands/:brandId/addresses/:addressId',
+router.delete(
+  '/brands/:brandId/addresses/:addressId',
   authenticate('user'),
-  userController.deleteAddress
-);
+  userController.deleteAddress,
+)
 
 // 用戶管理路由（後台管理員功能）
 // 按品牌獲取用戶
-router.get('/brands/:brandId/users',
+router.get(
+  '/brands/:brandId/users',
   authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
   requireBrandAccess,
-  userController.getAllUsers
-);
+  userController.getAllUsers,
+)
 
 // 獲取特定用戶
-router.get('/brands/:brandId/users/:id',
+router.get(
+  '/brands/:brandId/users/:id',
   authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
   requireBrandAccess,
-  userController.getUserById
-);
+  userController.getUserById,
+)
 
 // 切換用戶狀態
-router.patch('/brands/:brandId/users/:id/status',
+router.patch(
+  '/brands/:brandId/users/:id/status',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
-  userController.toggleUserStatus
-);
+  userController.toggleUserStatus,
+)
 
-export default router;
+export default router

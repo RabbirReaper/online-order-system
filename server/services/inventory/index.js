@@ -4,12 +4,12 @@
  */
 
 // 導入庫存相關服務
-import * as stockManagement from './stockManagement.js';
-import * as stockStats from './stockStats.js';
+import * as stockManagement from './stockManagement.js'
+import * as stockStats from './stockStats.js'
 
 // 導出所有庫存服務
-export const management = stockManagement;
-export const stats = stockStats;
+export const management = stockManagement
+export const stats = stockStats
 
 // 簡單導出，方便直接調用
 export const {
@@ -26,13 +26,13 @@ export const {
   restoreInventoryForCancelledOrder,
   bulkUpdateInventory,
   toggleSoldOut,
-  initializeDishInventory
-} = stockManagement;
+  initializeDishInventory,
+} = stockManagement
 
 export const {
   getInventoryLogs,
   getStockTrends,
   getItemInventoryStats,
   getInventoryHealthReport,
-  getStockChangeSummary
-} = stockStats;
+  getStockChangeSummary,
+} = stockStats

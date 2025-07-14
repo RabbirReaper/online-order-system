@@ -1,53 +1,52 @@
-import express from 'express';
-import * as menuController from '../controllers/Store/menu.js';
+import express from 'express'
+import * as menuController from '../controllers/Store/menu.js'
 import {
   authenticate,
   requireRole,
   requireBrandAccess,
-  requireStoreAccess
-} from '../middlewares/auth/index.js';
+  requireStoreAccess,
+} from '../middlewares/auth/index.js'
 
-const router = express.Router();
+const router = express.Router()
 
 // =============================================================================
 // 菜單路由 - 支援多菜單邏輯
 // =============================================================================
 
 // 🆕 獲取店鋪的所有菜單
-router.get('/brands/:brandId/:storeId/menus',
-  menuController.getAllStoreMenus
-);
+router.get('/brands/:brandId/:storeId/menus', menuController.getAllStoreMenus)
 
 // 🆕 根據ID獲取特定菜單
-router.get('/brands/:brandId/:storeId/menu/:menuId',
-  menuController.getMenuById
-);
+router.get('/brands/:brandId/:storeId/menu/:menuId', menuController.getMenuById)
 
 // 創建菜單（系統級和品牌級）
-router.post('/brands/:brandId/:storeId/menu',
+router.post(
+  '/brands/:brandId/:storeId/menu',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  menuController.createMenu
-);
+  menuController.createMenu,
+)
 
 // 更新菜單（系統級和品牌級）
-router.put('/brands/:brandId/:storeId/menu/:menuId',
+router.put(
+  '/brands/:brandId/:storeId/menu/:menuId',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  menuController.updateMenu
-);
+  menuController.updateMenu,
+)
 
 // 刪除菜單（系統級和品牌級）
-router.delete('/brands/:brandId/:storeId/menu/:menuId',
+router.delete(
+  '/brands/:brandId/:storeId/menu/:menuId',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   requireStoreAccess,
-  menuController.deleteMenu
-);
+  menuController.deleteMenu,
+)
 
-export default router;
+export default router

@@ -5,13 +5,13 @@
  */
 
 // 導入客戶相關服務
-import * as orderCustomer from './orderCustomer.js';
+import * as orderCustomer from './orderCustomer.js'
 
 // 導入管理員相關服務
-import * as orderAdmin from './orderAdmin.js';
+import * as orderAdmin from './orderAdmin.js'
 
 // 分別導出
-export { orderCustomer, orderAdmin };
+export { orderCustomer, orderAdmin }
 
 // 為了向後兼容，也可以直接導出常用功能
 export const {
@@ -24,12 +24,7 @@ export const {
   calculateOrderAmounts,
   updateOrderAmounts,
   processOrderPaymentComplete,
-  processOrderPointsReward
-} = orderCustomer;
+  processOrderPointsReward,
+} = orderCustomer
 
-export const {
-  getStoreOrders,
-  getOrderById,
-  updateOrder,
-  cancelOrder,
-} = orderAdmin;
+export const { getStoreOrders, getOrderById, updateOrder, cancelOrder } = orderAdmin

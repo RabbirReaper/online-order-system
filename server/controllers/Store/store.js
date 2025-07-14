@@ -1,44 +1,44 @@
-import * as storeService from '../../services/store/storeManagement.js';
-import { asyncHandler } from '../../middlewares/error.js';
+import * as storeService from '../../services/store/storeManagement.js'
+import { asyncHandler } from '../../middlewares/error.js'
 
 // 獲取所有店家
 export const getAllStores = asyncHandler(async (req, res) => {
   try {
     const options = {
       brandId: req.brandId,
-      activeOnly: req.query.activeOnly === 'true'
-    };
+      activeOnly: req.query.activeOnly === 'true',
+    }
 
-    const stores = await storeService.getAllStores(options);
+    const stores = await storeService.getAllStores(options)
 
     res.json({
       success: true,
-      stores
-    });
+      stores,
+    })
   } catch (error) {
-    console.error('Error getting stores:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('Error getting stores:', error)
+    res.status(500).json({ success: false, message: 'Internal server error' })
   }
-});
+})
 
 // 獲取單個店家
 export const getStoreById = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const store = await storeService.getStoreById(id);
+    const { id } = req.params
+    const store = await storeService.getStoreById(id)
 
     res.json({
       success: true,
-      store
-    });
+      store,
+    })
   } catch (error) {
-    console.error('Error getting store:', error);
+    console.error('Error getting store:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 創建店家
 export const createStore = asyncHandler(async (req, res) => {
@@ -46,215 +46,215 @@ export const createStore = asyncHandler(async (req, res) => {
     // 使用從 middleware 設置的 brandId
     const storeData = {
       ...req.body,
-      brand: req.brandId // 從 requireBrandAccess middleware 取得
-    };
+      brand: req.brandId, // 從 requireBrandAccess middleware 取得
+    }
 
-    const newStore = await storeService.createStore(storeData);
+    const newStore = await storeService.createStore(storeData)
 
     res.json({
       success: true,
       message: 'Store created successfully',
-      store: newStore
-    });
+      store: newStore,
+    })
   } catch (error) {
-    console.error('Error creating store:', error);
+    console.error('Error creating store:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 更新店家
 export const updateStore = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params
 
-    const updatedStore = await storeService.updateStore(id, req.body);
+    const updatedStore = await storeService.updateStore(id, req.body)
 
     res.json({
       success: true,
       message: 'Store updated successfully',
-      store: updatedStore
-    });
+      store: updatedStore,
+    })
   } catch (error) {
-    console.error('Error updating store:', error);
+    console.error('Error updating store:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 刪除店家
 export const deleteStore = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const result = await storeService.deleteStore(id);
+    const { id } = req.params
+    const result = await storeService.deleteStore(id)
 
     res.json({
       success: true,
-      message: 'Store deleted successfully'
-    });
+      message: 'Store deleted successfully',
+    })
   } catch (error) {
-    console.error('Error deleting store:', error);
+    console.error('Error deleting store:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 切換店家啟用狀態
 export const toggleStoreActive = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const { isActive } = req.body;
+    const { id } = req.params
+    const { isActive } = req.body
 
     if (isActive === undefined) {
       return res.status(400).json({
         success: false,
-        message: '缺少參數 isActive'
-      });
+        message: '缺少參數 isActive',
+      })
     }
 
-    const store = await storeService.toggleStoreActive(id, isActive);
+    const store = await storeService.toggleStoreActive(id, isActive)
 
     res.json({
       success: true,
       message: `Store ${isActive ? 'activated' : 'deactivated'} successfully`,
-      store
-    });
+      store,
+    })
   } catch (error) {
-    console.error('Error toggling store status:', error);
+    console.error('Error toggling store status:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 獲取店家營業時間
 export const getStoreBusinessHours = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const businessHours = await storeService.getStoreBusinessHours(id);
+    const { id } = req.params
+    const businessHours = await storeService.getStoreBusinessHours(id)
 
     res.json({
       success: true,
-      businessHours
-    });
+      businessHours,
+    })
   } catch (error) {
-    console.error('Error getting business hours:', error);
+    console.error('Error getting business hours:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 更新店家營業時間
 export const updateStoreBusinessHours = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const { businessHours } = req.body;
+    const { id } = req.params
+    const { businessHours } = req.body
 
     if (!businessHours) {
       return res.status(400).json({
         success: false,
-        message: '缺少參數 businessHours'
-      });
+        message: '缺少參數 businessHours',
+      })
     }
 
-    const store = await storeService.updateStoreBusinessHours(id, businessHours);
+    const store = await storeService.updateStoreBusinessHours(id, businessHours)
 
     res.json({
       success: true,
       message: 'Business hours updated successfully',
-      store
-    });
+      store,
+    })
   } catch (error) {
-    console.error('Error updating business hours:', error);
+    console.error('Error updating business hours:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 更新店家公告
 export const updateStoreAnnouncements = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const { announcements } = req.body;
+    const { id } = req.params
+    const { announcements } = req.body
 
     if (!announcements) {
       return res.status(400).json({
         success: false,
-        message: '缺少參數 announcements'
-      });
+        message: '缺少參數 announcements',
+      })
     }
 
-    const store = await storeService.updateStoreAnnouncements(id, announcements);
+    const store = await storeService.updateStoreAnnouncements(id, announcements)
 
     res.json({
       success: true,
       message: 'Announcements updated successfully',
-      store
-    });
+      store,
+    })
   } catch (error) {
-    console.error('Error updating announcements:', error);
+    console.error('Error updating announcements:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 獲取店家當前營業狀態
 export const getStoreCurrentStatus = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const status = await storeService.getStoreCurrentStatus(id);
+    const { id } = req.params
+    const status = await storeService.getStoreCurrentStatus(id)
 
     res.json({
       success: true,
-      status
-    });
+      status,
+    })
   } catch (error) {
-    console.error('Error getting store status:', error);
+    console.error('Error getting store status:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})
 
 // 更新店家服務設定
 export const updateServiceSettings = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params;
-    const { serviceSettings } = req.body;
+    const { id } = req.params
+    const { serviceSettings } = req.body
 
     if (!serviceSettings) {
       return res.status(400).json({
         success: false,
-        message: '缺少參數 serviceSettings'
-      });
+        message: '缺少參數 serviceSettings',
+      })
     }
 
-    const store = await storeService.updateStoreServiceSettings(id, serviceSettings);
+    const store = await storeService.updateStoreServiceSettings(id, serviceSettings)
 
     res.json({
       success: true,
       message: '服務設定更新成功',
-      store
-    });
+      store,
+    })
   } catch (error) {
-    console.error('Error updating service settings:', error);
+    console.error('Error updating service settings:', error)
     res.status(error.statusCode || 500).json({
       success: false,
-      message: error.message || 'Internal server error'
-    });
+      message: error.message || 'Internal server error',
+    })
   }
-});
+})

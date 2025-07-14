@@ -1,23 +1,23 @@
-import express from 'express';
-import * as orderController from '../controllers/Order/orderCustomer.js';
-import { authenticate } from '../middlewares/auth/index.js';
+import express from 'express'
+import * as orderController from '../controllers/Order/orderCustomer.js'
+import { authenticate } from '../middlewares/auth/index.js'
 
-const router = express.Router();
+const router = express.Router()
 
 // 創建訂單（公開，可匿名訪問）
-router.post('/brands/:brandId/stores/:storeId/create', orderController.createOrder);
+router.post('/brands/:brandId/stores/:storeId/create', orderController.createOrder)
 
 // 個人訂單列表（需要用戶認證）
-router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.getUserOrders);
+router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.getUserOrders)
 
 // 獲取個人訂單詳情
-router.get('/brands/:brandId/order/:orderId', orderController.getUserOrderById);
+router.get('/brands/:brandId/order/:orderId', orderController.getUserOrderById)
 
 // 支付相關路由
 // 處理支付
-router.post('/brands/:brandId/orders/:orderId/payment', orderController.processPayment);
+router.post('/brands/:brandId/orders/:orderId/payment', orderController.processPayment)
 
 // 支付回調
-router.post('/brands/:brandId/orders/:orderId/payment/callback', orderController.paymentCallback);
+router.post('/brands/:brandId/orders/:orderId/payment/callback', orderController.paymentCallback)
 
-export default router;
+export default router

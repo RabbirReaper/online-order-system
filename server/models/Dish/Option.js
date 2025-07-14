@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from 'mongoose'
 
 /*
 refDishTemplate 可選
@@ -10,9 +10,9 @@ const OptionSchema = new mongoose.Schema({
   name: { type: String, trim: true, required: true },
   refDishTemplate: { type: mongoose.Schema.Types.ObjectId, ref: 'DishTemplate' },
   price: { type: Number, default: 0 },
-  tags: [{ type: String }]
-});
+  tags: [{ type: String }],
+})
 
-OptionSchema.index({ brand: 1 });
+OptionSchema.index({ brand: 1 })
 
-export default mongoose.model('Option', OptionSchema);
+export default mongoose.model('Option', OptionSchema)

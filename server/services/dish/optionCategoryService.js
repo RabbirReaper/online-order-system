@@ -3,11 +3,11 @@
  * 處理餐點選項類別相關業務邏輯
  */
 
-import OptionCategory from '../../models/Dish/OptionCategory.js';
-import Option from '../../models/Dish/Option.js';
-import DishTemplate from '../../models/Dish/DishTemplate.js';
-import mongoose from 'mongoose';
-import { AppError } from '../../middlewares/error.js';
+import OptionCategory from '../../models/Dish/OptionCategory.js'
+import Option from '../../models/Dish/Option.js'
+import DishTemplate from '../../models/Dish/DishTemplate.js'
+import mongoose from 'mongoose'
+import { AppError } from '../../middlewares/error.js'
 
 /**
  * 獲取所有選項類別（按品牌過濾）
@@ -24,12 +24,12 @@ export const getAllCategories = async (brandId) => {
       populate: {
         path: 'refDishTemplate',
         model: 'DishTemplate',
-        select: 'name'
-      }
-    });
+        select: 'name',
+      },
+    })
 
-  return categories;
-};
+  return categories
+}
 
 /**
  * 根據ID獲取選項類別（驗證品牌）
@@ -40,34 +40,34 @@ export const getAllCategories = async (brandId) => {
  */
 export const getCategoryById = async (categoryId, brandId, includeOptions = false) => {
   // 根據是否需要選項詳情選擇查詢
-  let category;
+  let category
 
   if (includeOptions) {
     category = await OptionCategory.findOne({
       _id: categoryId,
-      brand: brandId
+      brand: brandId,
     }).populate({
       path: 'options.refOption',
       model: 'Option',
       populate: {
         path: 'refDishTemplate',
         model: 'DishTemplate',
-        select: 'name'
-      }
-    });
+        select: 'name',
+      },
+    })
   } else {
     category = await OptionCategory.findOne({
       _id: categoryId,
-      brand: brandId
-    });
+      brand: brandId,
+    })
   }
 
   if (!category) {
-    throw new AppError('選項類別不存在或無權訪問', 404);
+    throw new AppError('選項類別不存在或無權訪問', 404)
   }
 
-  return category;
-};
+  return category
+}
 
 /**
  * 創建選項類別
@@ -78,28 +78,28 @@ export const getCategoryById = async (categoryId, brandId, includeOptions = fals
 export const createCategory = async (categoryData, brandId) => {
   // 基本驗證
   if (!categoryData.name || !categoryData.inputType) {
-    throw new AppError('名稱和輸入類型為必填欄位', 400);
+    throw new AppError('名稱和輸入類型為必填欄位', 400)
   }
 
   // 檢查名稱是否已存在於該品牌下
   const existingCategory = await OptionCategory.findOne({
     name: categoryData.name,
-    brand: brandId
-  });
+    brand: brandId,
+  })
 
   if (existingCategory) {
-    throw new AppError('此選項類別名稱已存在', 400);
+    throw new AppError('此選項類別名稱已存在', 400)
   }
 
   // 確保設置品牌ID
-  categoryData.brand = brandId;
+  categoryData.brand = brandId
 
   // 創建選項類別
-  const newCategory = new OptionCategory(categoryData);
-  await newCategory.save();
+  const newCategory = new OptionCategory(categoryData)
+  await newCategory.save()
 
-  return newCategory;
-};
+  return newCategory
+}
 
 /**
  * 更新選項類別
@@ -112,11 +112,11 @@ export const updateCategory = async (categoryId, updateData, brandId) => {
   // 檢查類別是否存在且屬於該品牌
   const category = await OptionCategory.findOne({
     _id: categoryId,
-    brand: brandId
-  });
+    brand: brandId,
+  })
 
   if (!category) {
-    throw new AppError('選項類別不存在或無權訪問', 404);
+    throw new AppError('選項類別不存在或無權訪問', 404)
   }
 
   // 檢查名稱是否已存在於該品牌下 (排除當前ID)
@@ -124,24 +124,24 @@ export const updateCategory = async (categoryId, updateData, brandId) => {
     const existingCategory = await OptionCategory.findOne({
       name: updateData.name,
       brand: brandId,
-      _id: { $ne: categoryId }
-    });
+      _id: { $ne: categoryId },
+    })
 
     if (existingCategory) {
-      throw new AppError('此選項類別名稱已存在', 400);
+      throw new AppError('此選項類別名稱已存在', 400)
     }
   }
 
   // 防止更改品牌
-  delete updateData.brand;
+  delete updateData.brand
 
   // 更新類別
   if (updateData.name) {
-    category.name = updateData.name;
+    category.name = updateData.name
   }
 
   if (updateData.inputType) {
-    category.inputType = updateData.inputType;
+    category.inputType = updateData.inputType
   }
 
   // 更新選項列表 (如果提供)
@@ -149,26 +149,26 @@ export const updateCategory = async (categoryId, updateData, brandId) => {
     // 檢查所有選項是否存在且屬於該品牌
     for (const option of updateData.options) {
       if (!option.refOption) {
-        throw new AppError('選項ID為必填欄位', 400);
+        throw new AppError('選項ID為必填欄位', 400)
       }
 
       const optionExists = await Option.findOne({
         _id: option.refOption,
-        brand: brandId
-      });
+        brand: brandId,
+      })
 
       if (!optionExists) {
-        throw new AppError(`選項 ${option.refOption} 不存在或不屬於此品牌`, 404);
+        throw new AppError(`選項 ${option.refOption} 不存在或不屬於此品牌`, 404)
       }
     }
 
-    category.options = updateData.options;
+    category.options = updateData.options
   }
 
-  await category.save();
+  await category.save()
 
-  return category;
-};
+  return category
+}
 
 /**
  * 刪除選項類別
@@ -180,24 +180,24 @@ export const deleteCategory = async (categoryId, brandId) => {
   // 檢查類別是否存在且屬於該品牌
   const category = await OptionCategory.findOne({
     _id: categoryId,
-    brand: brandId
-  });
+    brand: brandId,
+  })
 
   if (!category) {
-    throw new AppError('選項類別不存在或無權訪問', 404);
+    throw new AppError('選項類別不存在或無權訪問', 404)
   }
 
   // 檢查是否有餐點模板使用了此類別
   const templatesUsingCategory = await DishTemplate.countDocuments({
     'optionCategories.categoryId': new mongoose.Types.ObjectId(categoryId),
-    brand: brandId
-  });
+    brand: brandId,
+  })
 
   if (templatesUsingCategory > 0) {
-    throw new AppError('此選項類別被餐點模板使用中，無法刪除', 400);
+    throw new AppError('此選項類別被餐點模板使用中，無法刪除', 400)
   }
 
-  await category.deleteOne();
+  await category.deleteOne()
 
-  return { success: true, message: '選項類別已刪除' };
-};
+  return { success: true, message: '選項類別已刪除' }
+}
