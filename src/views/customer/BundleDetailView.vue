@@ -51,20 +51,23 @@
           <!-- 價格顯示 - 根據菜單類型動態顯示 -->
           <div class="price-section mb-3">
             <!-- 現金價格 - 只在現金購買菜單顯示 -->
-            <div v-if="shouldShowCashPrice && bundle.cashPrice?.original" class="price-item">
+            <div v-if="shouldShowCashPrice && hasCashPrice" class="price-item">
               <div class="price-current text-danger fw-bold fs-4">
-                ${{ bundle.cashPrice.original }}
+                <span>${{ currentCashPrice }}</span>
+                <span v-if="hasOriginalCashPrice" class="original-price ms-2">
+                  原價 ${{ bundle.cashPrice.original }}
+                </span>
               </div>
               <small class="text-muted">現金購買價格</small>
             </div>
 
             <!-- 點數價格 - 只在點數兌換菜單顯示 -->
-            <div
-              v-if="shouldShowPointPrice && bundle.pointPrice?.original !== undefined"
-              class="price-item mt-2"
-            >
+            <div v-if="shouldShowPointPrice && hasPointPrice" class="price-item mt-2">
               <div class="point-price text-primary fw-bold fs-5">
-                {{ bundle.pointPrice.original }} 點數
+                <span>{{ currentPointPrice }} 點數</span>
+                <span v-if="hasOriginalPointPrice" class="original-price ms-2">
+                  原價 {{ bundle.pointPrice.original }} 點數
+                </span>
               </div>
               <small class="text-muted">點數兌換價格</small>
             </div>
@@ -163,10 +166,10 @@
               <button
                 class="btn btn-outline-primary w-100"
                 @click="addToCartCash"
-                :disabled="!bundle.cashPrice?.original || isAddingToCart"
+                :disabled="!hasCashPrice || isAddingToCart"
               >
                 <i class="bi bi-cash-stack me-2"></i>
-                現金購買 ${{ bundle.cashPrice?.original }}
+                現金購買 ${{ currentCashPrice }}
               </button>
             </div>
 
@@ -175,10 +178,10 @@
               <button
                 class="btn btn-primary w-100"
                 @click="addToCartPoints"
-                :disabled="bundle.pointPrice?.original === undefined || isAddingToCart"
+                :disabled="!hasPointPrice || isAddingToCart"
               >
                 <i class="bi bi-star-fill me-2"></i>
-                點數兌換 {{ bundle.pointPrice?.original }}點
+                點數兌換 {{ currentPointPrice }}點
               </button>
             </div>
           </div>
@@ -231,6 +234,53 @@ const menuTypeText = computed(() => {
     point_exchange: '點數兌換詳情',
   }
   return typeMap[menuType.value] || '商品詳情'
+})
+
+// 價格相關計算屬性
+const hasCashPrice = computed(() => {
+  return (
+    bundle.value.cashPrice &&
+    (bundle.value.cashPrice.selling > 0 || bundle.value.cashPrice.original > 0)
+  )
+})
+
+const hasPointPrice = computed(() => {
+  return (
+    bundle.value.pointPrice &&
+    (bundle.value.pointPrice.selling >= 0 || bundle.value.pointPrice.original >= 0)
+  )
+})
+
+const currentCashPrice = computed(() => {
+  if (!bundle.value.cashPrice) return 0
+  // 優先使用特價，如果沒有特價則使用原價
+  return bundle.value.cashPrice.selling || bundle.value.cashPrice.original || 0
+})
+
+const currentPointPrice = computed(() => {
+  if (!bundle.value.pointPrice) return 0
+  // 優先使用特價，如果沒有特價則使用原價
+  return bundle.value.pointPrice.selling !== undefined
+    ? bundle.value.pointPrice.selling
+    : bundle.value.pointPrice.original || 0
+})
+
+const hasOriginalCashPrice = computed(() => {
+  return (
+    bundle.value.cashPrice &&
+    bundle.value.cashPrice.original > 0 &&
+    bundle.value.cashPrice.selling > 0 &&
+    bundle.value.cashPrice.original > bundle.value.cashPrice.selling
+  )
+})
+
+const hasOriginalPointPrice = computed(() => {
+  return (
+    bundle.value.pointPrice &&
+    bundle.value.pointPrice.original > 0 &&
+    bundle.value.pointPrice.selling !== undefined &&
+    bundle.value.pointPrice.original > bundle.value.pointPrice.selling
+  )
 })
 
 // 登入狀態相關計算屬性
@@ -310,7 +360,7 @@ const addToCartCash = async () => {
     return
   }
 
-  if (isAddingToCart.value || !bundle.value.cashPrice?.original) return
+  if (isAddingToCart.value || !hasCashPrice.value) return
 
   isAddingToCart.value = true
 
@@ -320,14 +370,14 @@ const addToCartCash = async () => {
       dishInstance: {
         templateId: bundle.value._id,
         name: bundle.value.name,
-        basePrice: bundle.value.cashPrice.original,
-        finalPrice: bundle.value.cashPrice.original,
+        basePrice: currentCashPrice.value,
+        finalPrice: currentCashPrice.value,
         options: [], // 套餐沒有選項
         bundleType: 'cash', // 標記為現金購買套餐
       },
       quantity: 1,
       note: '',
-      subtotal: bundle.value.cashPrice.original,
+      subtotal: currentCashPrice.value,
     }
 
     cartStore.addItem(bundleCartItem)
@@ -359,7 +409,7 @@ const addToCartPoints = async () => {
     return
   }
 
-  if (isAddingToCart.value) return
+  if (isAddingToCart.value || !hasPointPrice.value) return
 
   isAddingToCart.value = true
 
@@ -373,7 +423,7 @@ const addToCartPoints = async () => {
         finalPrice: 0,
         options: [],
         bundleType: 'points', // 標記為點數兌換套餐
-        pointCost: bundle.value.pointPrice.original,
+        pointCost: currentPointPrice.value,
       },
       quantity: 1,
       note: '點數兌換商品',
@@ -480,6 +530,13 @@ onMounted(async () => {
 .point-price::before {
   content: '★';
   color: #ffc107;
+}
+
+.original-price {
+  font-size: 0.85rem;
+  text-decoration: line-through;
+  color: #6c757d;
+  font-weight: 500;
 }
 
 .validity-section {
