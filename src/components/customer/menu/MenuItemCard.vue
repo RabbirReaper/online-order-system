@@ -44,18 +44,21 @@
         <!-- 套餐價格 -->
         <div v-else-if="item.itemType === 'bundle'" class="bundle-price-section">
           <!-- 現金價格 -->
-          <div v-if="bundleCashPrice > 0" class="item-price-tag">
+          <div v-if="menuType === 'cash_coupon' && bundleCashPrice > 0" class="item-price-tag">
             <span class="price-label">現金價</span>
-            <span>${{ bundleCashPrice }}</span>
+            <span class="current-price">${{ bundleCashPrice }}</span>
             <span v-if="hasOriginalCashPrice" class="original-price">
               原價 ${{ bundleOriginalCashPrice }}
             </span>
           </div>
 
           <!-- 點數價格 -->
-          <div v-if="bundlePointPrice > 0" class="item-price-tag point-price">
+          <div
+            v-if="menuType === 'point_exchange' && bundlePointPrice > 0"
+            class="item-price-tag point-price"
+          >
             <span class="price-label">點數價</span>
-            <span>{{ bundlePointPrice }} 點</span>
+            <span class="current-price">{{ bundlePointPrice }} 點</span>
             <span v-if="hasOriginalPointPrice" class="original-price">
               原價 {{ bundleOriginalPointPrice }} 點
             </span>
@@ -141,16 +144,19 @@ const dishPrice = computed(() => {
   return 0
 })
 
-// 計算屬性 - 套餐價格
+// 計算屬性 - 套餐價格（修正版）
 const bundleCashPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    // 根據菜單類型決定顯示的價格
-    if (props.menuType === 'cash_coupon') {
-      // 現金購買預購券菜單，顯示現金價格
-      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0
-    } else {
-      // 其他菜單類型，顯示一般現金價格
-      return props.item.priceOverride || props.item.bundle?.sellingPrice || 0
+    // 優先使用菜單項目的價格覆蓋
+    if (props.item.priceOverride !== undefined) {
+      return props.item.priceOverride
+    }
+
+    // 使用 Bundle 的現金價格
+    const bundle = props.item.bundle
+    if (bundle?.cashPrice) {
+      // 優先使用售價，如果沒有售價則使用原價
+      return bundle.cashPrice.selling || bundle.cashPrice.original || 0
     }
   }
   return 0
@@ -158,33 +164,51 @@ const bundleCashPrice = computed(() => {
 
 const bundleOriginalCashPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.originalPrice || 0
+    const bundle = props.item.bundle
+    if (bundle?.cashPrice?.original) {
+      return bundle.cashPrice.original
+    }
   }
   return 0
 })
 
 const hasOriginalCashPrice = computed(() => {
-  return bundleOriginalCashPrice.value > bundleCashPrice.value
+  // 只有當原價存在且大於售價時才顯示原價
+  return bundleOriginalCashPrice.value > 0 && bundleOriginalCashPrice.value > bundleCashPrice.value
 })
 
 const bundlePointPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.pointOverride !== undefined
-      ? props.item.pointOverride
-      : props.item.bundle?.sellingPoint || 0
+    // 優先使用菜單項目的點數價格覆蓋
+    if (props.item.pointOverride !== undefined) {
+      return props.item.pointOverride
+    }
+
+    // 使用 Bundle 的點數價格
+    const bundle = props.item.bundle
+    if (bundle?.pointPrice) {
+      // 優先使用售價，如果沒有售價則使用原價
+      return bundle.pointPrice.selling || bundle.pointPrice.original || 0
+    }
   }
   return 0
 })
 
 const bundleOriginalPointPrice = computed(() => {
   if (props.item.itemType === 'bundle') {
-    return props.item.bundle?.originalPoint || 0
+    const bundle = props.item.bundle
+    if (bundle?.pointPrice?.original) {
+      return bundle.pointPrice.original
+    }
   }
   return 0
 })
 
 const hasOriginalPointPrice = computed(() => {
-  return bundleOriginalPointPrice.value > bundlePointPrice.value
+  // 只有當原價存在且大於售價時才顯示原價
+  return (
+    bundleOriginalPointPrice.value > 0 && bundleOriginalPointPrice.value > bundlePointPrice.value
+  )
 })
 
 // 計算屬性 - 庫存狀態
@@ -244,7 +268,6 @@ const handleClick = () => {
     return
   }
 
-  // console.log('MenuItemCard: 點擊項目', props.item);
   emit('select-item', props.item)
 }
 </script>
@@ -357,7 +380,6 @@ const handleClick = () => {
   font-weight: 700;
   font-size: 1rem;
   color: #2c3e50;
-  /* 原本是 var(--text-color) */
   margin-bottom: 0.4rem;
   transition: color 0.2s;
   flex: 1;
@@ -365,7 +387,6 @@ const handleClick = () => {
 
 .menu-item-card:not(.sold-out):hover .item-title {
   color: #d35400;
-  /* 原本是 var(--primary-color) */
 }
 
 .menu-item-card.sold-out .item-title {
@@ -382,20 +403,15 @@ const handleClick = () => {
 /* 價格相關樣式 */
 .item-price-section {
   margin-top: auto;
-  /* 新增以下屬性 */
   display: flex;
   justify-content: flex-end;
-  /* 靠右對齊 */
   align-items: flex-end;
-  /* 靠下對齊 */
   margin-left: auto;
-  /* 推到右側 */
 }
 
 .item-price-tag {
   display: inline-block;
   background-color: #dceeda;
-  /* 原本是 var(--price-color) */
   color: rgb(230, 11, 11);
   font-weight: 700;
   font-size: 1.1rem;
@@ -415,6 +431,10 @@ const handleClick = () => {
   font-size: 0.9rem;
   padding: 0.25rem 0.6rem;
   margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
 }
 
 .point-price {
@@ -424,19 +444,30 @@ const handleClick = () => {
 
 .price-label {
   font-size: 0.7rem;
-  margin-right: 0.25rem;
   opacity: 0.8;
+  font-weight: 500;
+}
+
+.current-price {
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 .original-price {
   font-size: 0.75rem;
   text-decoration: line-through;
   opacity: 0.6;
-  margin-left: 0.25rem;
+  font-weight: 500;
+  color: #6c757d;
 }
 
 .menu-item-card.sold-out .item-price-tag {
   background-color: #e9ecef;
+  color: #6c757d;
+}
+
+.menu-item-card.sold-out .current-price,
+.menu-item-card.sold-out .original-price {
   color: #6c757d;
 }
 
@@ -475,13 +506,21 @@ const handleClick = () => {
     padding: 0.25rem 0.6rem;
   }
 
+  .bundle-price-section .item-price-tag {
+    font-size: 0.85rem;
+  }
+
+  .current-price {
+    font-size: 0.9rem;
+  }
+
+  .original-price {
+    font-size: 0.7rem;
+  }
+
   .inventory-badge .badge {
     font-size: 0.6rem;
     padding: 0.2rem 0.4rem;
-  }
-
-  .bundle-price-section .item-price-tag {
-    font-size: 0.85rem;
   }
 }
 </style>
