@@ -135,8 +135,9 @@
                   <table class="table table-striped">
                     <thead>
                       <tr>
+                        <th>類型</th>
                         <th>項目</th>
-                        <th>選項</th>
+                        <th>內容/選項</th>
                         <th>數量</th>
                         <th>小計</th>
                         <th>備註</th>
@@ -144,37 +145,115 @@
                     </thead>
                     <tbody>
                       <tr v-for="(item, index) in order.items" :key="index">
-                        <td>{{ getDishName(item) }}</td>
+                        <!-- 項目類型 -->
                         <td>
-                          <div v-if="getDishOptions(item).length > 0">
-                            <div
-                              v-for="option in getDishOptions(item)"
-                              :key="option.optionCategoryName"
-                              class="mb-1"
-                            >
-                              <small
-                                ><strong>{{ option.optionCategoryName }}:</strong></small
-                              >
+                          <span :class="getItemTypeClass(item.itemType)">
+                            {{ formatItemType(item.itemType) }}
+                          </span>
+                        </td>
+
+                        <!-- 項目名稱 -->
+                        <td>{{ getItemName(item) }}</td>
+
+                        <!-- 內容/選項 -->
+                        <td>
+                          <!-- 餐點選項 -->
+                          <div v-if="item.itemType === 'dish'">
+                            <div v-if="getDishOptions(item).length > 0">
                               <div
-                                v-for="selection in option.selections"
-                                :key="selection.name"
-                                class="ms-2"
+                                v-for="option in getDishOptions(item)"
+                                :key="option.optionCategoryName"
+                                class="mb-1"
                               >
                                 <small
-                                  >{{ selection.name }}
-                                  <span v-if="selection.price > 0">(+${{ selection.price }})</span>
-                                </small>
+                                  ><strong>{{ option.optionCategoryName }}:</strong></small
+                                >
+                                <div
+                                  v-for="selection in option.selections"
+                                  :key="selection.name"
+                                  class="ms-2"
+                                >
+                                  <small
+                                    >{{ selection.name }}
+                                    <span v-if="selection.price > 0"
+                                      >(+${{ selection.price }})</span
+                                    >
+                                  </small>
+                                </div>
                               </div>
                             </div>
+                            <span v-else class="text-muted">無選項</span>
                           </div>
-                          <span v-else class="text-muted">無選項</span>
+
+                          <!-- Bundle 內容 -->
+                          <div v-else-if="item.itemType === 'bundle'">
+                            <div v-if="getBundleItems(item).length > 0">
+                              <div
+                                v-for="bundleItem in getBundleItems(item)"
+                                :key="bundleItem.voucherTemplate"
+                                class="mb-1"
+                              >
+                                <small class="text-primary">
+                                  <i class="bi bi-ticket-perforated me-1"></i>
+                                  {{ bundleItem.voucherName }} x{{ bundleItem.quantity }}
+                                </small>
+                                <!-- 顯示兌換券可兌換的餐點 -->
+                                <div v-if="bundleItem.exchangeDish" class="ms-3">
+                                  <small class="text-muted">
+                                    可兌換：{{ bundleItem.exchangeDish }}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                            <span v-else class="text-muted">Bundle 內容載入中...</span>
+                          </div>
+
+                          <!-- 其他類型 -->
+                          <div v-else>
+                            <span class="text-muted">{{ item.itemType }}</span>
+                          </div>
                         </td>
+
+                        <!-- 數量 -->
                         <td>{{ item.quantity }}</td>
+
+                        <!-- 小計 -->
                         <td>${{ item.subtotal }}</td>
+
+                        <!-- 備註 -->
                         <td>{{ item.note || '-' }}</td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 兌換券信息 -->
+            <div class="card mb-3" v-if="hasGeneratedVouchers(order)">
+              <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-gift me-2"></i>已獲得的兌換券</h6>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-success">
+                  <i class="bi bi-check-circle-fill me-2"></i>
+                  此訂單已成功生成兌換券！
+                </div>
+                <div v-for="(item, index) in order.items" :key="index">
+                  <div v-if="item.itemType === 'bundle' && item.generatedVouchers?.length > 0">
+                    <h6 class="text-primary">{{ getItemName(item) }}</h6>
+                    <div class="row">
+                      <div
+                        v-for="voucherId in item.generatedVouchers"
+                        :key="voucherId"
+                        class="col-md-6 mb-2"
+                      >
+                        <div class="border rounded p-2 bg-light">
+                          <small class="text-muted">兌換券 ID: {{ voucherId }}</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -186,10 +265,25 @@
               </div>
               <div class="card-body">
                 <div class="row">
-                  <div class="d-flex justify-content-between mb-2">
-                    <span>餐點小計:</span>
-                    <span>${{ order.subtotal || 0 }}</span>
+                  <!-- 分項小計 -->
+                  <div class="d-flex justify-content-between mb-1" v-if="order.dishSubtotal > 0">
+                    <span class="text-muted">餐點小計:</span>
+                    <span>${{ order.dishSubtotal || 0 }}</span>
                   </div>
+                  <div class="d-flex justify-content-between mb-1" v-if="order.bundleSubtotal > 0">
+                    <span class="text-muted">套餐小計:</span>
+                    <span>${{ order.bundleSubtotal || 0 }}</span>
+                  </div>
+
+                  <!-- 總小計 -->
+                  <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                    <span><strong>商品小計:</strong></span>
+                    <span
+                      ><strong>${{ order.subtotal || 0 }}</strong></span
+                    >
+                  </div>
+
+                  <!-- 其他費用 -->
                   <div class="d-flex justify-content-between mb-2" v-if="order.serviceCharge > 0">
                     <span>服務費:</span>
                     <span>${{ order.serviceCharge }}</span>
@@ -218,6 +312,27 @@
                     <span>實付金額:</span>
                     <span class="text-primary fs-5">${{ order.total }}</span>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 點數獎勵信息 -->
+            <div class="card mb-3" v-if="order.pointsEarned > 0">
+              <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-star-fill text-warning me-2"></i>點數獎勵</h6>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-info">
+                  <i class="bi bi-gift-fill me-2"></i>
+                  恭喜！本次消費獲得 <strong>{{ order.pointsEarned }}</strong> 點數獎勵
+                </div>
+                <div v-if="order.pointsRule">
+                  <small class="text-muted">
+                    獎勵規則：{{ order.pointsRule.ruleName }} (每 ${{
+                      order.pointsRule.conversionRate
+                    }}
+                    元 = 1 點)
+                  </small>
                 </div>
               </div>
             </div>
@@ -296,26 +411,87 @@ const getOrderNumber = (order) => {
   return order._id || ''
 }
 
-// 獲取餐點名稱
-const getDishName = (item) => {
-  if (!item || !item.dishInstance) return '未知餐點'
+// 獲取項目名稱（支援 dish 和 bundle）
+const getItemName = (item) => {
+  if (!item) return '未知項目'
 
-  if (typeof item.dishInstance === 'object') {
-    return item.dishInstance.name || '未知餐點'
+  // 統一使用 itemName 字段
+  if (item.itemName) {
+    return item.itemName
   }
 
-  return '未知餐點'
+  // 降級處理
+  if (item.itemType === 'dish' && item.dishInstance) {
+    if (typeof item.dishInstance === 'object') {
+      return item.dishInstance.name || '未知餐點'
+    }
+  } else if (item.itemType === 'bundle' && item.bundleInstance) {
+    if (typeof item.bundleInstance === 'object') {
+      return item.bundleInstance.name || '未知套餐'
+    }
+  }
+
+  return '未知項目'
 }
 
 // 獲取餐點選項
 const getDishOptions = (item) => {
-  if (!item || !item.dishInstance) return []
+  if (!item || item.itemType !== 'dish' || !item.dishInstance) return []
 
   if (typeof item.dishInstance === 'object' && item.dishInstance.options) {
     return item.dishInstance.options || []
   }
 
   return []
+}
+
+// 獲取 Bundle 項目內容
+const getBundleItems = (item) => {
+  if (!item || item.itemType !== 'bundle' || !item.bundleInstance) return []
+
+  if (typeof item.bundleInstance === 'object' && item.bundleInstance.bundleItems) {
+    return (
+      item.bundleInstance.bundleItems.map((bundleItem) => {
+        // 處理 bundleItem 結構
+        return {
+          voucherTemplate: bundleItem.voucherTemplate?._id || bundleItem.voucherTemplate,
+          voucherName: bundleItem.voucherName || bundleItem.voucherTemplate?.name || '兌換券',
+          quantity: bundleItem.quantity || 1,
+          exchangeDish: bundleItem.voucherTemplate?.exchangeDishTemplate?.name || null,
+        }
+      }) || []
+    )
+  }
+
+  return []
+}
+
+// 檢查是否有生成的兌換券
+const hasGeneratedVouchers = (order) => {
+  if (!order || !order.items) return false
+
+  return order.items.some(
+    (item) =>
+      item.itemType === 'bundle' && item.generatedVouchers && item.generatedVouchers.length > 0,
+  )
+}
+
+// 格式化項目類型
+const formatItemType = (itemType) => {
+  const typeMap = {
+    dish: '餐點',
+    bundle: '兌換券',
+  }
+  return typeMap[itemType] || itemType
+}
+
+// 獲取項目類型的樣式類別
+const getItemTypeClass = (itemType) => {
+  const classes = {
+    dish: 'badge bg-primary',
+    bundle: 'badge bg-success',
+  }
+  return classes[itemType] || 'badge bg-secondary'
 }
 
 // 格式化日期時間
@@ -410,5 +586,29 @@ const getOrderStatusClass = (status) => {
   border-top: none;
   font-weight: 600;
   background-color: #f8f9fa;
+}
+
+.text-primary {
+  color: #0d6efd !important;
+}
+
+.text-success {
+  color: #198754 !important;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #dee2e6 !important;
+}
+
+.border-top {
+  border-top: 1px solid #dee2e6 !important;
 }
 </style>
