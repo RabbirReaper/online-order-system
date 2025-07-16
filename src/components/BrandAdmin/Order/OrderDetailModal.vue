@@ -324,15 +324,7 @@
               <div class="card-body">
                 <div class="alert alert-info">
                   <i class="bi bi-gift-fill me-2"></i>
-                  恭喜！本次消費獲得 <strong>{{ order.pointsEarned }}</strong> 點數獎勵
-                </div>
-                <div v-if="order.pointsRule">
-                  <small class="text-muted">
-                    獎勵規則：{{ order.pointsRule.ruleName }} (每 ${{
-                      order.pointsRule.conversionRate
-                    }}
-                    元 = 1 點)
-                  </small>
+                  本次消費獲得 <strong>{{ order.pointsEarned }}</strong> 點數獎勵
                 </div>
               </div>
             </div>
