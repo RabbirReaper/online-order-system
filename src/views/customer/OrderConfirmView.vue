@@ -175,7 +175,7 @@
                     :key="bundleIdx"
                     class="ms-2"
                   >
-                    • {{ bundleItem.quantity }}x {{ getBundleItemName(bundleItem) }}
+                    • {{ bundleItem.quantity }}x {{ bundleItem.voucherName }}
                   </div>
                 </div>
 
@@ -364,16 +364,6 @@ const getItemName = (item) => {
     return item.bundleInstance?.name || item.itemName || '未知套餐'
   }
   return item.itemName || '未知商品'
-}
-
-// 獲取Bundle項目名稱
-const getBundleItemName = (bundleItem) => {
-  if (bundleItem.itemType === 'dish') {
-    return bundleItem.dishTemplate?.name || '餐點'
-  } else if (bundleItem.itemType === 'voucher') {
-    return bundleItem.voucherTemplate?.name || '兌換券'
-  }
-  return '未知項目'
 }
 
 // 格式化訂單類型
