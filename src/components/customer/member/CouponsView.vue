@@ -21,7 +21,7 @@
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">載入中...</span>
         </div>
-        <p class="mt-3">載入您的優惠券資料中，請稍候...</p>
+        <p class="mt-3">載入您的券資料中，請稍候...</p>
       </div>
 
       <div v-else-if="errorMessage" class="alert alert-danger">
@@ -32,93 +32,123 @@
       </div>
 
       <div v-else class="coupons-content">
-        <!-- 優惠券總覽 -->
+        <!-- 券類型切換 -->
+        <div class="type-navigation">
+          <button
+            class="type-btn"
+            :class="{ active: activeType === 'all' }"
+            @click="activeType = 'all'"
+          >
+            全部 ({{ allItems.length }})
+          </button>
+          <button
+            class="type-btn"
+            :class="{ active: activeType === 'coupon' }"
+            @click="activeType = 'coupon'"
+          >
+            優惠券 ({{ couponItems.length }})
+          </button>
+          <button
+            class="type-btn"
+            :class="{ active: activeType === 'voucher' }"
+            @click="activeType = 'voucher'"
+          >
+            兌換券 ({{ voucherItems.length }})
+          </button>
+        </div>
+
+        <!-- 券總覽 -->
         <div class="coupons-overview">
           <div class="overview-stats">
             <div class="stat-item">
-              <div class="stat-number">{{ availableCoupons.length }}</div>
-              <div class="stat-label">可用優惠券</div>
+              <div class="stat-number">{{ availableItems.length }}</div>
+              <div class="stat-label">可用</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number">{{ usedCoupons.length }}</div>
+              <div class="stat-number">{{ usedItems.length }}</div>
               <div class="stat-label">已使用</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number">{{ expiredCoupons.length }}</div>
+              <div class="stat-number">{{ expiredItems.length }}</div>
               <div class="stat-label">已過期</div>
             </div>
           </div>
         </div>
 
-        <!-- 標籤頁切換 -->
+        <!-- 狀態標籤頁切換 -->
         <div class="tab-navigation">
           <button
             class="tab-btn"
             :class="{ active: activeTab === 'available' }"
             @click="activeTab = 'available'"
           >
-            可使用 ({{ availableCoupons.length }})
+            可使用 ({{ availableItems.length }})
           </button>
           <button
             class="tab-btn"
             :class="{ active: activeTab === 'used' }"
             @click="activeTab = 'used'"
           >
-            已使用 ({{ usedCoupons.length }})
+            已使用 ({{ usedItems.length }})
           </button>
           <button
             class="tab-btn"
             :class="{ active: activeTab === 'expired' }"
             @click="activeTab = 'expired'"
           >
-            已過期 ({{ expiredCoupons.length }})
+            已過期 ({{ expiredItems.length }})
           </button>
         </div>
 
-        <!-- 優惠券列表 -->
+        <!-- 券列表 -->
         <div class="coupons-list">
-          <!-- 可使用的優惠券 -->
+          <!-- 可使用的券 -->
           <div v-if="activeTab === 'available'">
-            <div v-if="availableCoupons.length > 0">
-              <div
-                v-for="coupon in availableCoupons"
-                :key="coupon._id"
-                class="coupon-card available"
-              >
+            <div v-if="availableItems.length > 0">
+              <div v-for="item in availableItems" :key="item._id" class="coupon-card available">
                 <div class="coupon-left">
                   <div class="coupon-type-icon">
-                    <i :class="getCouponIcon(coupon.discountInfo?.discountType)"></i>
+                    <i :class="getItemIcon(item)"></i>
                   </div>
                   <div class="coupon-value">
                     <span
-                      v-if="coupon.discountInfo?.discountType === 'fixed'"
+                      v-if="item._type === 'coupon' && item.discountInfo?.discountType === 'fixed'"
                       class="discount-amount"
                     >
-                      ${{ coupon.discountInfo.discountValue }}
+                      ${{ item.discountInfo.discountValue }}
                     </span>
                     <span
-                      v-else-if="coupon.discountInfo?.discountType === 'percentage'"
+                      v-else-if="
+                        item._type === 'coupon' && item.discountInfo?.discountType === 'percentage'
+                      "
                       class="discount-amount"
                     >
-                      {{ coupon.discountInfo.discountValue }}%
+                      {{ item.discountInfo.discountValue }}%
                     </span>
-                    <span v-else class="exchange-label">優惠券</span>
+                    <span v-else class="exchange-label">
+                      {{ item._type === 'voucher' ? '兌換券' : '優惠券' }}
+                    </span>
+                  </div>
+                  <div class="coupon-type-tag">
+                    <span :class="getTypeTagClass(item._type)">
+                      {{ getTypeLabel(item._type) }}
+                    </span>
                   </div>
                 </div>
                 <div class="coupon-content">
-                  <h6 class="coupon-title">{{ coupon.couponName }}</h6>
-                  <p class="coupon-desc">{{ getCouponDescription(coupon) }}</p>
+                  <h6 class="coupon-title">{{ getItemName(item) }}</h6>
+                  <p class="coupon-desc">{{ getItemDescription(item) }}</p>
                   <div class="coupon-validity">
                     <i class="bi bi-calendar3 me-1"></i>
-                    有效期至：{{ formatDate(coupon.expiryDate) }}
+                    有效期至：{{ formatDate(item.expiryDate) }}
                   </div>
                   <div class="coupon-acquired">
                     <i class="bi bi-clock me-1"></i>
-                    獲得時間：{{ formatDate(coupon.acquiredAt) }}
+                    獲得時間：{{ formatDate(item.acquiredAt) }}
                   </div>
                 </div>
                 <div class="coupon-actions">
-                  <button class="btn btn-primary btn-sm" @click="showCouponDetail(coupon)">
+                  <button class="btn btn-primary btn-sm" @click="showItemDetail(item)">
                     查看詳情
                   </button>
                 </div>
@@ -126,45 +156,54 @@
             </div>
             <div v-else class="empty-state">
               <i class="bi bi-ticket-perforated text-muted" style="font-size: 4rem"></i>
-              <h5 class="mt-3 text-muted">沒有可用的優惠券</h5>
-              <p class="text-muted">完成訂單或達成條件即可獲得優惠券！</p>
+              <h5 class="mt-3 text-muted">沒有可用的券</h5>
+              <p class="text-muted">完成訂單或達成條件即可獲得優惠券和兌換券！</p>
             </div>
           </div>
 
-          <!-- 已使用的優惠券 -->
+          <!-- 已使用的券 -->
           <div v-if="activeTab === 'used'">
-            <div v-if="usedCoupons.length > 0">
-              <div v-for="coupon in usedCoupons" :key="coupon._id" class="coupon-card used">
+            <div v-if="usedItems.length > 0">
+              <div v-for="item in usedItems" :key="item._id" class="coupon-card used">
                 <div class="coupon-left">
                   <div class="coupon-type-icon">
-                    <i :class="getCouponIcon(coupon.discountInfo?.discountType)"></i>
+                    <i :class="getItemIcon(item)"></i>
                   </div>
                   <div class="coupon-value">
                     <span
-                      v-if="coupon.discountInfo?.discountType === 'fixed'"
+                      v-if="item._type === 'coupon' && item.discountInfo?.discountType === 'fixed'"
                       class="discount-amount"
                     >
-                      ${{ coupon.discountInfo.discountValue }}
+                      ${{ item.discountInfo.discountValue }}
                     </span>
                     <span
-                      v-else-if="coupon.discountInfo?.discountType === 'percentage'"
+                      v-else-if="
+                        item._type === 'coupon' && item.discountInfo?.discountType === 'percentage'
+                      "
                       class="discount-amount"
                     >
-                      {{ coupon.discountInfo.discountValue }}%
+                      {{ item.discountInfo.discountValue }}%
                     </span>
-                    <span v-else class="exchange-label">優惠券</span>
+                    <span v-else class="exchange-label">
+                      {{ item._type === 'voucher' ? '兌換券' : '優惠券' }}
+                    </span>
+                  </div>
+                  <div class="coupon-type-tag">
+                    <span :class="getTypeTagClass(item._type)">
+                      {{ getTypeLabel(item._type) }}
+                    </span>
                   </div>
                 </div>
                 <div class="coupon-content">
-                  <h6 class="coupon-title">{{ coupon.couponName }}</h6>
-                  <p class="coupon-desc">{{ getCouponDescription(coupon) }}</p>
+                  <h6 class="coupon-title">{{ getItemName(item) }}</h6>
+                  <p class="coupon-desc">{{ getItemDescription(item) }}</p>
                   <div class="coupon-used-info">
                     <i class="bi bi-check-circle-fill me-1 text-success"></i>
-                    於 {{ formatDate(coupon.usedAt) }} 使用
+                    於 {{ formatDate(item.usedAt) }} 使用
                   </div>
-                  <div class="coupon-order" v-if="coupon.order">
+                  <div class="coupon-order" v-if="item.order">
                     <i class="bi bi-bag me-1"></i>
-                    訂單ID：{{ coupon.order }}
+                    訂單ID：{{ item.order }}
                   </div>
                 </div>
                 <div class="coupon-status">
@@ -175,40 +214,49 @@
             <div v-else class="empty-state">
               <i class="bi bi-check2-circle text-muted" style="font-size: 4rem"></i>
               <h5 class="mt-3 text-muted">沒有使用記錄</h5>
-              <p class="text-muted">您還沒有使用過任何優惠券</p>
+              <p class="text-muted">您還沒有使用過任何券</p>
             </div>
           </div>
 
-          <!-- 已過期的優惠券 -->
+          <!-- 已過期的券 -->
           <div v-if="activeTab === 'expired'">
-            <div v-if="expiredCoupons.length > 0">
-              <div v-for="coupon in expiredCoupons" :key="coupon._id" class="coupon-card expired">
+            <div v-if="expiredItems.length > 0">
+              <div v-for="item in expiredItems" :key="item._id" class="coupon-card expired">
                 <div class="coupon-left">
                   <div class="coupon-type-icon">
-                    <i :class="getCouponIcon(coupon.discountInfo?.discountType)"></i>
+                    <i :class="getItemIcon(item)"></i>
                   </div>
                   <div class="coupon-value">
                     <span
-                      v-if="coupon.discountInfo?.discountType === 'fixed'"
+                      v-if="item._type === 'coupon' && item.discountInfo?.discountType === 'fixed'"
                       class="discount-amount"
                     >
-                      ${{ coupon.discountInfo.discountValue }}
+                      ${{ item.discountInfo.discountValue }}
                     </span>
                     <span
-                      v-else-if="coupon.discountInfo?.discountType === 'percentage'"
+                      v-else-if="
+                        item._type === 'coupon' && item.discountInfo?.discountType === 'percentage'
+                      "
                       class="discount-amount"
                     >
-                      {{ coupon.discountInfo.discountValue }}%
+                      {{ item.discountInfo.discountValue }}%
                     </span>
-                    <span v-else class="exchange-label">優惠券</span>
+                    <span v-else class="exchange-label">
+                      {{ item._type === 'voucher' ? '兌換券' : '優惠券' }}
+                    </span>
+                  </div>
+                  <div class="coupon-type-tag">
+                    <span :class="getTypeTagClass(item._type)">
+                      {{ getTypeLabel(item._type) }}
+                    </span>
                   </div>
                 </div>
                 <div class="coupon-content">
-                  <h6 class="coupon-title">{{ coupon.couponName }}</h6>
-                  <p class="coupon-desc">{{ getCouponDescription(coupon) }}</p>
+                  <h6 class="coupon-title">{{ getItemName(item) }}</h6>
+                  <p class="coupon-desc">{{ getItemDescription(item) }}</p>
                   <div class="coupon-expired-info">
                     <i class="bi bi-x-circle-fill me-1 text-danger"></i>
-                    於 {{ formatDate(coupon.expiryDate) }} 過期
+                    於 {{ formatDate(item.expiryDate) }} 過期
                   </div>
                 </div>
                 <div class="coupon-status">
@@ -218,8 +266,8 @@
             </div>
             <div v-else class="empty-state">
               <i class="bi bi-clock-history text-muted" style="font-size: 4rem"></i>
-              <h5 class="mt-3 text-muted">沒有過期的優惠券</h5>
-              <p class="text-muted">很好！您沒有浪費任何優惠券</p>
+              <h5 class="mt-3 text-muted">沒有過期的券</h5>
+              <p class="text-muted">很好！您沒有浪費任何券</p>
             </div>
           </div>
         </div>
@@ -227,65 +275,85 @@
     </div>
   </div>
 
-  <!-- 優惠券詳情模態框 -->
-  <BModal id="couponDetailModal" title="優惠券詳情" size="lg" ref="couponDetailModal">
-    <div v-if="selectedCoupon" class="coupon-detail">
+  <!-- 券詳情模態框 -->
+  <BModal id="itemDetailModal" title="券詳情" size="lg" ref="itemDetailModal">
+    <div v-if="selectedItem" class="coupon-detail">
       <div class="detail-header">
         <div class="detail-icon">
-          <i :class="getCouponIcon(selectedCoupon.discountInfo?.discountType)"></i>
+          <i :class="getItemIcon(selectedItem)"></i>
         </div>
         <div class="detail-info">
-          <h4>{{ selectedCoupon.couponName }}</h4>
-          <p class="text-muted">{{ getCouponDescription(selectedCoupon) }}</p>
+          <h4>{{ getItemName(selectedItem) }}</h4>
+          <span :class="getTypeTagClass(selectedItem._type)" class="me-2">
+            {{ getTypeLabel(selectedItem._type) }}
+          </span>
+          <p class="text-muted">{{ getItemDescription(selectedItem) }}</p>
         </div>
       </div>
 
       <div class="detail-content">
-        <div class="detail-item">
-          <strong>優惠內容：</strong>
-          <span v-if="selectedCoupon.discountInfo?.discountType === 'fixed'">
-            折抵 ${{ selectedCoupon.discountInfo.discountValue }} 元
-          </span>
-          <span v-else-if="selectedCoupon.discountInfo?.discountType === 'percentage'">
-            {{ selectedCoupon.discountInfo.discountValue }}% 折扣
-          </span>
-          <span v-else> 優惠券 </span>
+        <!-- 優惠券詳情 -->
+        <div v-if="selectedItem._type === 'coupon'">
+          <div class="detail-item">
+            <strong>優惠內容：</strong>
+            <span v-if="selectedItem.discountInfo?.discountType === 'fixed'">
+              折抵 ${{ selectedItem.discountInfo.discountValue }} 元
+            </span>
+            <span v-else-if="selectedItem.discountInfo?.discountType === 'percentage'">
+              {{ selectedItem.discountInfo.discountValue }}% 折扣
+            </span>
+            <span v-else>優惠券</span>
+          </div>
+          <div class="detail-item" v-if="selectedItem.discountInfo?.maxDiscountAmount">
+            <strong>最高折抵：</strong>
+            ${{ selectedItem.discountInfo.maxDiscountAmount }} 元
+          </div>
+          <div class="detail-item" v-if="selectedItem.discountInfo?.minPurchaseAmount">
+            <strong>最低消費：</strong>
+            ${{ selectedItem.discountInfo.minPurchaseAmount }} 元
+          </div>
         </div>
 
-        <div class="detail-item" v-if="selectedCoupon.discountInfo?.maxDiscountAmount">
-          <strong>最高折抵：</strong>
-          ${{ selectedCoupon.discountInfo.maxDiscountAmount }} 元
+        <!-- 兌換券詳情 -->
+        <div v-else-if="selectedItem._type === 'voucher'">
+          <div class="detail-item">
+            <strong>兌換內容：</strong>
+            <span v-if="selectedItem.exchangeDishTemplate">
+              {{ selectedItem.exchangeDishTemplate.name || '指定餐點' }}
+            </span>
+            <span v-else>兌換券</span>
+          </div>
+          <div class="detail-item" v-if="selectedItem.exchangeDishTemplate?.basePrice">
+            <strong>餐點價值：</strong>
+            ${{ selectedItem.exchangeDishTemplate.basePrice }} 元
+          </div>
         </div>
 
-        <div class="detail-item" v-if="selectedCoupon.discountInfo?.minPurchaseAmount">
-          <strong>最低消費：</strong>
-          ${{ selectedCoupon.discountInfo.minPurchaseAmount }} 元
-        </div>
-
+        <!-- 共同資訊 -->
         <div class="detail-item">
           <strong>獲得時間：</strong>
-          {{ formatDateTime(selectedCoupon.acquiredAt) }}
+          {{ formatDateTime(selectedItem.acquiredAt) }}
         </div>
 
         <div class="detail-item">
           <strong>有效期限：</strong>
-          {{ formatDateTime(selectedCoupon.expiryDate) }}
+          {{ formatDateTime(selectedItem.expiryDate) }}
         </div>
 
-        <div class="detail-item" v-if="selectedCoupon.usedAt">
+        <div class="detail-item" v-if="selectedItem.usedAt">
           <strong>使用時間：</strong>
-          {{ formatDateTime(selectedCoupon.usedAt) }}
+          {{ formatDateTime(selectedItem.usedAt) }}
         </div>
 
-        <div class="detail-item" v-if="selectedCoupon.order">
+        <div class="detail-item" v-if="selectedItem.order">
           <strong>使用訂單：</strong>
-          {{ selectedCoupon.order }}
+          {{ selectedItem.order }}
         </div>
       </div>
     </div>
 
     <template #footer>
-      <BButton variant="secondary" @click="$refs.couponDetailModal.hide()"> 關閉 </BButton>
+      <BButton variant="secondary" @click="$refs.itemDetailModal.hide()">關閉</BButton>
     </template>
   </BModal>
 </template>
@@ -302,35 +370,52 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // 模態框參考
-const couponDetailModal = ref(null)
+const itemDetailModal = ref(null)
 
 // 狀態管理
 const isLoading = ref(true)
 const errorMessage = ref('')
-const activeTab = ref('available')
-const selectedCoupon = ref(null)
+const activeTab = ref('available') // 狀態標籤：available, used, expired
+const activeType = ref('all') // 類型標籤：all, coupon, voucher
+const selectedItem = ref(null)
 
-// 優惠券資料
-const coupons = ref([])
+// 券資料
+const allItems = ref([]) // 存放所有券（優惠券+兌換券）
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
   return sessionStorage.getItem('currentBrandId')
 })
 
-// 分類優惠券
-const availableCoupons = computed(() => {
-  const now = new Date()
-  return coupons.value.filter((coupon) => !coupon.isUsed && new Date(coupon.expiryDate) > now)
+// 按類型篩選
+const couponItems = computed(() => {
+  return allItems.value.filter((item) => item._type === 'coupon')
 })
 
-const usedCoupons = computed(() => {
-  return coupons.value.filter((coupon) => coupon.isUsed)
+const voucherItems = computed(() => {
+  return allItems.value.filter((item) => item._type === 'voucher')
 })
 
-const expiredCoupons = computed(() => {
+// 根據選擇的類型獲取當前顯示的項目
+const currentTypeItems = computed(() => {
+  if (activeType.value === 'coupon') return couponItems.value
+  if (activeType.value === 'voucher') return voucherItems.value
+  return allItems.value // all
+})
+
+// 按狀態分類券
+const availableItems = computed(() => {
   const now = new Date()
-  return coupons.value.filter((coupon) => !coupon.isUsed && new Date(coupon.expiryDate) <= now)
+  return currentTypeItems.value.filter((item) => !item.isUsed && new Date(item.expiryDate) > now)
+})
+
+const usedItems = computed(() => {
+  return currentTypeItems.value.filter((item) => item.isUsed)
+})
+
+const expiredItems = computed(() => {
+  const now = new Date()
+  return currentTypeItems.value.filter((item) => !item.isUsed && new Date(item.expiryDate) <= now)
 })
 
 // 返回上一頁
@@ -338,22 +423,55 @@ const goBack = () => {
   router.push('/member')
 }
 
-// 獲取優惠券圖標
-const getCouponIcon = (discountType) => {
+// 獲取券類型標籤樣式
+const getTypeTagClass = (type) => {
+  return type === 'coupon' ? 'badge bg-warning text-dark' : 'badge bg-info'
+}
+
+// 獲取券類型標籤文字
+const getTypeLabel = (type) => {
+  return type === 'coupon' ? '優惠券' : '兌換券'
+}
+
+// 獲取券圖標
+const getItemIcon = (item) => {
+  if (item._type === 'voucher') {
+    return 'bi bi-gift text-primary' // 兌換券圖標
+  }
+
+  // 優惠券圖標
   const iconMap = {
     percentage: 'bi bi-percent text-success',
     fixed: 'bi bi-cash text-success',
   }
-  return iconMap[discountType] || 'bi bi-ticket-perforated text-secondary'
+  return iconMap[item.discountInfo?.discountType] || 'bi bi-ticket-perforated text-secondary'
 }
 
-// 獲取優惠券描述
-const getCouponDescription = (coupon) => {
-  if (!coupon.discountInfo) {
+// 獲取券名稱
+const getItemName = (item) => {
+  if (item._type === 'coupon') {
+    return item.couponName || '優惠券'
+  } else {
+    return item.voucherName || item.name || '兌換券'
+  }
+}
+
+// 獲取券描述
+const getItemDescription = (item) => {
+  if (item._type === 'voucher') {
+    // 兌換券描述
+    if (item.exchangeDishTemplate) {
+      return `可兌換：${item.exchangeDishTemplate.name || '指定餐點'}`
+    }
+    return '兌換券'
+  }
+
+  // 優惠券描述
+  if (!item.discountInfo) {
     return '優惠券'
   }
 
-  const { discountType, discountValue, maxDiscountAmount, minPurchaseAmount } = coupon.discountInfo
+  const { discountType, discountValue, maxDiscountAmount, minPurchaseAmount } = item.discountInfo
 
   let description = ''
 
@@ -376,32 +494,28 @@ const getCouponDescription = (coupon) => {
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return '未設定'
-
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return '無效日期'
-
   return date.toLocaleDateString('zh-TW')
 }
 
 // 格式化日期時間
 const formatDateTime = (dateString) => {
   if (!dateString) return '未設定'
-
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return '無效日期'
-
   return date.toLocaleString('zh-TW')
 }
 
-// 顯示優惠券詳情
-const showCouponDetail = (coupon) => {
-  selectedCoupon.value = coupon
-  if (couponDetailModal.value) {
-    couponDetailModal.value.show()
+// 顯示券詳情
+const showItemDetail = (item) => {
+  selectedItem.value = item
+  if (itemDetailModal.value) {
+    itemDetailModal.value.show()
   }
 }
 
-// 載入優惠券資料
+// 載入券資料
 const loadCouponsData = async () => {
   try {
     isLoading.value = true
@@ -415,30 +529,73 @@ const loadCouponsData = async () => {
 
     // 檢查用戶是否已登入
     if (!authStore.isLoggedIn) {
-      throw new Error('請先登入以查看優惠券資料')
+      throw new Error('請先登入以查看券資料')
     }
 
-    // 調用 API 獲取用戶優惠券
-    const response = await api.promotion.getUserCoupons(currentBrandId, {
-      // 可以添加查詢參數，如分頁等
-      // page: 1,
-      // limit: 50
-    })
+    console.log('🔍 開始同時載入優惠券和兌換券...')
 
-    // 設置優惠券資料
-    if (response && response.coupons) {
-      coupons.value = response.coupons
-    } else {
-      coupons.value = []
+    // 🔥 同時獲取優惠券和兌換券
+    const [couponsResponse, vouchersResponse] = await Promise.all([
+      // 獲取優惠券 (折價券)
+      api.promotion
+        .getUserCoupons(currentBrandId, {
+          includeUsed: true,
+          includeExpired: true,
+        })
+        .catch((error) => {
+          console.warn('獲取優惠券失敗:', error)
+          return { coupons: [] }
+        }),
+
+      // 獲取兌換券
+      api.promotion
+        .getUserVouchers(currentBrandId, {
+          includeUsed: true,
+          includeExpired: true,
+        })
+        .catch((error) => {
+          console.warn('獲取兌換券失敗:', error)
+          return { vouchers: [] }
+        }),
+    ])
+
+    console.log('📥 優惠券回應:', couponsResponse)
+    console.log('📥 兌換券回應:', vouchersResponse)
+
+    // 合併兩種券，並添加類型標識
+    const mergedItems = []
+
+    // 處理優惠券 (Coupon)
+    if (couponsResponse && couponsResponse.coupons) {
+      couponsResponse.coupons.forEach((coupon) => {
+        mergedItems.push({
+          ...coupon,
+          _type: 'coupon', // 添加類型標識
+        })
+      })
+      console.log(`✅ 載入了 ${couponsResponse.coupons.length} 個優惠券`)
     }
 
-    console.log('載入的優惠券資料:', coupons.value)
+    // 處理兌換券 (Voucher)
+    if (vouchersResponse && vouchersResponse.vouchers) {
+      vouchersResponse.vouchers.forEach((voucher) => {
+        mergedItems.push({
+          ...voucher,
+          _type: 'voucher', // 添加類型標識
+        })
+      })
+      console.log(`✅ 載入了 ${vouchersResponse.vouchers.length} 個兌換券`)
+    }
+
+    allItems.value = mergedItems
+    console.log(`🎉 總共載入了 ${mergedItems.length} 個券`)
+    console.log('合併後的券資料:', allItems.value)
   } catch (error) {
-    console.error('載入優惠券資料失敗:', error)
+    console.error('❌ 載入券資料失敗:', error)
 
     if (error.response) {
       if (error.response.status === 401) {
-        errorMessage.value = '請先登入以查看優惠券資料'
+        errorMessage.value = '請先登入以查看券資料'
       } else if (error.response.data && error.response.data.message) {
         errorMessage.value = error.response.data.message
       } else {
@@ -447,7 +604,7 @@ const loadCouponsData = async () => {
     } else if (error.message) {
       errorMessage.value = error.message
     } else {
-      errorMessage.value = '無法載入優惠券資料，請稍後再試'
+      errorMessage.value = '無法載入券資料，請稍後再試'
     }
   } finally {
     isLoading.value = false
@@ -464,7 +621,7 @@ onMounted(async () => {
   // 等待下一個tick，確保組件完全掛載
   await nextTick()
 
-  // 載入優惠券資料
+  // 載入券資料
   await loadCouponsData()
 })
 </script>
@@ -542,7 +699,37 @@ onMounted(async () => {
   margin-bottom: 2rem;
 }
 
-/* 優惠券總覽 */
+/* 券類型導航 */
+.type-navigation {
+  display: flex;
+  background-color: white;
+  border-radius: 12px;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.type-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background-color: transparent;
+  border-radius: 8px;
+  font-weight: 500;
+  color: #6c757d;
+  transition: all 0.2s;
+}
+
+.type-btn.active {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.type-btn:hover:not(.active) {
+  background-color: #f8f9fa;
+}
+
+/* 券總覽 */
 .coupons-overview {
   background-color: white;
   border-radius: 12px;
@@ -606,7 +793,7 @@ onMounted(async () => {
   background-color: #f8f9fa;
 }
 
-/* 優惠券卡片 */
+/* 券卡片 */
 .coupons-list {
   margin-bottom: 2rem;
 }
@@ -643,6 +830,7 @@ onMounted(async () => {
   padding: 1.5rem;
   background-color: #f8f9fa;
   min-width: 120px;
+  position: relative;
 }
 
 .coupon-type-icon i {
@@ -664,6 +852,16 @@ onMounted(async () => {
   font-size: 1rem;
   font-weight: 600;
   color: #007bff;
+}
+
+.coupon-type-tag {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.coupon-type-tag .badge {
+  font-size: 0.7rem;
 }
 
 .coupon-content {
@@ -721,7 +919,7 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* 優惠券詳情模態框 */
+/* 券詳情模態框 */
 .coupon-detail {
   padding: 0;
 }
@@ -743,7 +941,7 @@ onMounted(async () => {
 }
 
 .detail-info h4 {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .detail-content {
@@ -785,6 +983,7 @@ onMounted(async () => {
     gap: 0.75rem;
   }
 
+  .type-navigation,
   .tab-navigation {
     flex-direction: column;
     gap: 0.5rem;
@@ -806,6 +1005,11 @@ onMounted(async () => {
 
   .coupon-type-icon i {
     margin-bottom: 0;
+  }
+
+  .coupon-type-tag {
+    position: static;
+    margin-left: auto;
   }
 
   .coupon-actions,

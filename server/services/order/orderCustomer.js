@@ -8,6 +8,7 @@ import DishInstance from '../../models/Dish/DishInstance.js'
 import BundleInstance from '../../models/Promotion/BundleInstance.js'
 import Bundle from '../../models/Promotion/Bundle.js'
 import VoucherInstance from '../../models/Promotion/VoucherInstance.js'
+import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js'
 import { AppError } from '../../middlewares/error.js'
 import * as inventoryService from '../inventory/stockManagement.js'
 import * as bundleService from '../bundle/bundleService.js'
@@ -334,12 +335,16 @@ export const processOrderPaymentComplete = async (order) => {
 }
 
 /**
- * 拆解 Bundle 生成 VoucherInstance - 付款完成後執行
+ * 拆解 Bundle 生成 VoucherInstance - 付款完成後執行 (修正版)
  */
 const generateVouchersForBundle = async (bundleItem, order) => {
-  const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance).populate(
-    'bundleItems.voucherTemplate',
-  )
+  const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance).populate({
+    path: 'bundleItems.voucherTemplate',
+    populate: {
+      path: 'exchangeDishTemplate',
+      select: 'name basePrice',
+    },
+  })
 
   if (!bundleInstance) {
     throw new AppError('Bundle 實例不存在', 404)
@@ -347,47 +352,62 @@ const generateVouchersForBundle = async (bundleItem, order) => {
 
   const generatedVouchers = []
 
-  //console.log(`Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`);
+  console.log(
+    `Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`,
+  )
 
   // 根據購買的 Bundle 數量生成 Voucher
   for (let i = 0; i < bundleItem.quantity; i++) {
     // 拆解 Bundle 中的每個 VoucherTemplate
     for (const bundleVoucherItem of bundleInstance.bundleItems) {
-      // 只處理 exchange 類型的兌換券
-      if (bundleVoucherItem.voucherTemplate.voucherType === 'exchange') {
+      // 檢查 voucherTemplate 是否存在且有效
+      if (bundleVoucherItem.voucherTemplate && bundleVoucherItem.voucherTemplate.isActive) {
+        // 根據每個券模板的數量生成對應數量的券實例
         for (let j = 0; j < bundleVoucherItem.quantity; j++) {
+          // 確保有 exchangeDishTemplate
+          if (!bundleVoucherItem.voucherTemplate.exchangeDishTemplate) {
+            console.warn(
+              `VoucherTemplate ${bundleVoucherItem.voucherTemplate.name} 沒有關聯的餐點模板，跳過`,
+            )
+            continue
+          }
+
           const voucherInstance = new VoucherInstance({
             brand: order.brand,
             template: bundleVoucherItem.voucherTemplate._id,
             voucherName: bundleVoucherItem.voucherTemplate.name,
-            voucherType: bundleVoucherItem.voucherTemplate.voucherType,
+            exchangeDishTemplate: bundleVoucherItem.voucherTemplate.exchangeDishTemplate._id,
             user: order.user,
             acquiredAt: new Date(),
-            pointsUsed: 0, // Bundle 購買不直接消耗點數
             order: order._id,
-            sourceBundle: bundleItem.bundleInstance, // 記錄來源 Bundle
+            // 設置過期日期（購買時間 + Bundle 設定的有效期天數）
+            expiryDate: new Date(
+              Date.now() + bundleInstance.voucherValidityDays * 24 * 60 * 60 * 1000,
+            ),
           })
 
-          // 設置兌換項目資訊
-          if (bundleVoucherItem.voucherTemplate.voucherType === 'exchange') {
-            voucherInstance.exchangeItems = bundleVoucherItem.voucherTemplate.exchangeInfo.items
+          try {
+            await voucherInstance.save()
+            generatedVouchers.push(voucherInstance)
+            console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`)
+
+            // 更新 VoucherTemplate 的發放統計
+            await VoucherTemplate.findByIdAndUpdate(bundleVoucherItem.voucherTemplate._id, {
+              $inc: { totalIssued: 1 },
+            })
+          } catch (saveError) {
+            console.error(`Failed to save voucher instance:`, saveError)
+            // 可以選擇拋出錯誤或繼續處理其他券
+            throw new AppError(`生成兌換券失敗: ${saveError.message}`, 500)
           }
-
-          // 設置過期日期（購買時間 + Bundle 設定的有效期天數）
-          const expiryDate = new Date()
-          expiryDate.setDate(expiryDate.getDate() + bundleInstance.voucherValidityDays)
-          voucherInstance.expiryDate = expiryDate
-
-          await voucherInstance.save()
-          generatedVouchers.push(voucherInstance)
-
-          //console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`);
         }
+      } else {
+        console.warn(`VoucherTemplate not found or inactive for bundle item:`, bundleVoucherItem)
       }
     }
   }
 
-  //console.log(`✅ Generated ${generatedVouchers.length} vouchers total`);
+  console.log(`✅ Generated ${generatedVouchers.length} vouchers total`)
   return generatedVouchers
 }
 
