@@ -43,7 +43,7 @@
             <template v-if="isBundle(item) && item.bundleInstance?.bundleItems">
               <div class="options small">
                 <div class="mb-1">
-                  <span class="text-muted">套餐內容:</span>
+                  <span class="text-muted">購買內容:</span>
                 </div>
                 <div
                   v-for="bundleItem in item.bundleInstance.bundleItems"

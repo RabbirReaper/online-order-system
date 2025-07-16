@@ -110,10 +110,21 @@
                   {{ order.store.name || '店鋪資訊' }}
                 </div>
 
+                <!-- 修改：支援混合項目顯示 -->
                 <div class="order-items">
                   <div v-for="(item, index) in order.items" :key="index" class="order-item">
-                    <span class="item-name">{{ item.dishInstance?.name || '餐點' }}</span>
+                    <!-- 根據項目類型顯示不同內容 -->
+                    <div class="item-content">
+                      <div class="item-type-icon">
+                        <i :class="getItemTypeIcon(item)"></i>
+                      </div>
+                      <span class="item-name">{{ getItemName(item) }}</span>
+                    </div>
                     <span class="item-quantity">x{{ item.quantity }}</span>
+                  </div>
+                  <!-- 如果項目太多，顯示摘要 -->
+                  <div v-if="order.items.length > 3" class="more-items">
+                    還有其他 {{ order.items.length - 3 }} 個項目...
                   </div>
                 </div>
 
@@ -207,9 +218,23 @@
           <div class="items-list">
             <div v-for="(item, index) in selectedOrder.items" :key="index" class="item-detail">
               <div class="item-info">
-                <div class="item-name">{{ item.dishInstance?.name || '餐點' }}</div>
+                <div class="item-header">
+                  <div class="item-type-badge">
+                    <i :class="getItemTypeIcon(item)"></i>
+                    <span :class="getItemTypeBadge(item)">
+                      {{ getItemTypeLabel(item) }}
+                    </span>
+                  </div>
+                  <div class="item-name">{{ getItemName(item) }}</div>
+                </div>
+
+                <!-- 餐點選項 -->
                 <div
-                  v-if="item.dishInstance?.options && item.dishInstance.options.length > 0"
+                  v-if="
+                    item.itemType === 'dish' &&
+                    item.dishInstance?.options &&
+                    item.dishInstance.options.length > 0
+                  "
                   class="item-options"
                 >
                   <span
@@ -226,6 +251,25 @@
                     </span>
                   </span>
                 </div>
+
+                <!-- Bundle 內容 -->
+                <div
+                  v-if="item.itemType === 'bundle' && item.bundleInstance?.bundleItems"
+                  class="bundle-content"
+                >
+                  <div class="bundle-items-title">包含券類：</div>
+                  <div
+                    v-for="(bundleItem, bIndex) in item.bundleInstance.bundleItems"
+                    :key="bIndex"
+                    class="bundle-item"
+                  >
+                    <i class="bi bi-ticket-perforated me-1"></i>
+                    <span>{{ bundleItem.voucherName }}</span>
+                    <span class="bundle-item-qty">x{{ bundleItem.quantity }}</span>
+                  </div>
+                </div>
+
+                <!-- 備註 -->
                 <div class="item-note" v-if="item.note">備註：{{ item.note }}</div>
               </div>
               <div class="item-pricing">
@@ -273,6 +317,15 @@
         <div class="detail-section">
           <h6>付款資訊</h6>
           <div class="payment-detail">
+            <!-- 分類小計 -->
+            <div v-if="selectedOrder.dishSubtotal > 0" class="payment-row">
+              <span>餐點小計</span>
+              <span>${{ selectedOrder.dishSubtotal.toLocaleString() }}</span>
+            </div>
+            <div v-if="selectedOrder.bundleSubtotal > 0" class="payment-row">
+              <span>券包小計</span>
+              <span>${{ selectedOrder.bundleSubtotal.toLocaleString() }}</span>
+            </div>
             <div class="payment-row">
               <span>小計</span>
               <span>${{ selectedOrder.subtotal.toLocaleString() || 0 }}</span>
@@ -391,6 +444,32 @@ const filteredOrders = computed(() => {
   }
   return orders.value.filter((order) => order.status === selectedStatus.value)
 })
+
+// 🆕 獲取項目類型圖標
+const getItemTypeIcon = (item) => {
+  if (item.itemType === 'bundle') {
+    return 'bi bi-gift text-primary'
+  }
+  return 'bi bi-plate text-warning'
+}
+
+// 🆕 獲取項目名稱（支援 Bundle 和 Dish）
+const getItemName = (item) => {
+  if (item.itemType === 'bundle') {
+    return item.bundleInstance?.name || item.itemName || 'Bundle'
+  }
+  return item.dishInstance?.name || item.itemName || '餐點'
+}
+
+// 🆕 獲取項目類型標籤
+const getItemTypeLabel = (item) => {
+  return item.itemType === 'bundle' ? '券包' : '餐點'
+}
+
+// 🆕 獲取項目類型徽章樣式
+const getItemTypeBadge = (item) => {
+  return item.itemType === 'bundle' ? 'badge bg-primary' : 'badge bg-warning'
+}
 
 // 返回上一頁
 const goBack = () => {
@@ -793,22 +872,38 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* 🆕 項目內容樣式 */
+.item-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.item-type-icon {
+  margin-right: 0.5rem;
+  width: 20px;
+  text-align: center;
 }
 
 .item-name {
   color: #333;
+  font-weight: 500;
 }
 
 .item-quantity {
   color: #6c757d;
   font-size: 0.9rem;
+  margin-left: 0.5rem;
 }
 
 .more-items {
   color: #6c757d;
   font-size: 0.85rem;
   font-style: italic;
+  margin-top: 0.5rem;
 }
 
 .order-summary {
@@ -914,7 +1009,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 0.75rem 0;
+  padding: 1rem 0;
   border-bottom: 1px solid #f8f9fa;
 }
 
@@ -926,13 +1021,32 @@ onMounted(async () => {
   flex: 1;
 }
 
+/* 🆕 項目標題樣式 */
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.item-type-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.item-type-badge .badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+}
+
 .item-name {
   font-weight: 500;
-  margin-bottom: 0.25rem;
+  color: #333;
 }
 
 .item-options {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .option-tag {
@@ -944,6 +1058,39 @@ onMounted(async () => {
   font-size: 0.8rem;
   margin-right: 0.25rem;
   margin-bottom: 0.25rem;
+}
+
+/* 🆕 Bundle 內容樣式 */
+.bundle-content {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.bundle-items-title {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.bundle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.bundle-item:last-child {
+  margin-bottom: 0;
+}
+
+.bundle-item-qty {
+  font-weight: 500;
+  color: #495057;
 }
 
 .item-note {
@@ -1093,6 +1240,22 @@ onMounted(async () => {
 
   .modal-footer-actions .btn {
     width: 100%;
+  }
+
+  /* 手機版 Bundle 內容調整 */
+  .bundle-content {
+    padding: 0.5rem;
+  }
+
+  .bundle-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
 </style>

@@ -33,7 +33,7 @@
           "
         >
           <div class="bundle-content">
-            <p class="card-text small mb-1 text-muted">套餐內容：</p>
+            <p class="card-text small mb-1 text-muted">購買內容：</p>
             <div
               v-for="(bundleItem, bundleIdx) in item.bundleInstance.bundleItems"
               :key="bundleIdx"
