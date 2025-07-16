@@ -150,7 +150,7 @@ export const getAvailableVoucherTemplates = async (brandId) => {
 }
 
 /**
- * 獲取用戶兌換券
+ * 獲取用戶兌換券 - 移除 sourceBundle populate
  * @param {String} userId - 用戶ID
  * @param {Object} options - 查詢選項
  * @returns {Promise<Array>} 用戶的兌換券列表
@@ -170,7 +170,7 @@ export const getUserVouchers = async (userId, options = {}) => {
 
   const vouchers = await VoucherInstance.find(query)
     .populate('template', 'name description')
-    .populate('sourceBundle', 'name') // populate 來源 Bundle
+    .populate('exchangeDishTemplate', 'name basePrice image') // 直接 populate 餐點資訊
     .sort({ createdAt: -1 })
 
   return vouchers
@@ -205,7 +205,7 @@ export const useVoucher = async (voucherId, userId, orderId = null) => {
   voucher.isUsed = true
   voucher.usedAt = new Date()
   if (orderId) {
-    voucher.usedInOrder = orderId
+    voucher.order = orderId
   }
 
   await voucher.save()
