@@ -455,7 +455,7 @@ const fetchVoucherData = async () => {
       brandId: brandId.value,
       id: voucherId.value,
     })
-    console.log('獲取兌換券資料:', response)
+    // console.log('獲取兌換券資料:', response)
     if (response && response.template) {
       voucher.value = response.template
 
