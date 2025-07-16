@@ -149,3 +149,25 @@ export const autoCreateVoucherTemplatesForDishes = asyncHandler(async (req, res)
     createdTemplates: result.createdTemplates,
   })
 })
+
+/**
+ * 根據模板ID獲取兌換券統計（管理員功能）
+ */
+export const getVoucherInstanceStatsByTemplate = async (req, res, next) => {
+  try {
+    const { brandId, templateId } = req.params
+
+    const result = await voucherService.voucher.getVoucherInstanceStatsByTemplate(
+      templateId,
+      brandId,
+    )
+
+    res.json({
+      success: true,
+      ...result,
+    })
+  } catch (error) {
+    console.error('獲取兌換券統計失敗:', error)
+    next(error)
+  }
+}

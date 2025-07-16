@@ -217,29 +217,44 @@
         <div class="col-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title mb-3">購買統計</h5>
-              <div class="row text-center">
-                <div class="col-md-3">
+              <h5 class="card-title mb-3">兌換券統計</h5>
+
+              <!-- 載入統計中 -->
+              <div v-if="isStatsLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">載入統計中...</span>
+                </div>
+              </div>
+
+              <!-- 統計數據 -->
+              <div v-else class="row text-center">
+                <div class="col-md-4">
                   <div class="border-end">
-                    <h3 class="text-primary mb-1">{{ voucher.totalSold || 0 }}</h3>
-                    <p class="text-muted mb-0">總銷售</p>
+                    <h3 class="text-primary mb-1">{{ voucherStats.totalIssued }}</h3>
+                    <p class="text-muted mb-0">總發行</p>
                   </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                   <div class="border-end">
-                    <h3 class="text-success mb-1">{{ voucher.totalRevenue || 0 }}</h3>
-                    <p class="text-muted mb-0">總收益</p>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="border-end">
-                    <h3 class="text-warning mb-1">{{ voucher.totalUsed || 0 }}</h3>
+                    <h3 class="text-success mb-1">{{ voucherStats.totalUsed }}</h3>
                     <p class="text-muted mb-0">已使用</p>
                   </div>
                 </div>
-                <div class="col-md-3">
-                  <h3 class="text-info mb-1">{{ usageRate }}%</h3>
+                <div class="col-md-4">
+                  <h3 class="text-info mb-1">{{ voucherStats.usageRate }}%</h3>
                   <p class="text-muted mb-0">使用率</p>
+                </div>
+              </div>
+
+              <!-- 過期統計 -->
+              <div class="row text-center mt-3 pt-3 border-top">
+                <div class="col-md-6">
+                  <h5 class="text-warning mb-1">{{ voucherStats.totalExpired }}</h5>
+                  <p class="text-muted mb-0">已過期</p>
+                </div>
+                <div class="col-md-6">
+                  <h5 class="text-success mb-1">{{ voucherStats.totalActive }}</h5>
+                  <p class="text-muted mb-0">可使用</p>
                 </div>
               </div>
             </div>
@@ -266,12 +281,23 @@ const voucherId = computed(() => route.params.id)
 // 狀態
 const isLoading = ref(false)
 const isDishLoading = ref(false)
+const isStatsLoading = ref(false)
 const error = ref('')
 const dishError = ref('')
 
 // 兌換券和餐點資料
 const voucher = ref(null)
 const dishTemplate = ref(null)
+const voucherInstances = ref([])
+
+// 兌換券統計數據
+const voucherStats = ref({
+  totalIssued: 0,
+  totalUsed: 0,
+  totalExpired: 0,
+  totalActive: 0,
+  usageRate: 0,
+})
 
 // 格式化價格
 const formatPrice = (price) => {
@@ -333,13 +359,99 @@ const savings = computed(() => {
   return Math.max(0, bundleValue.value - cost)
 })
 
-// 計算使用率
-const usageRate = computed(() => {
-  if (!voucher.value || !voucher.value.totalSold || voucher.value.totalSold === 0) {
-    return 0
+// 計算兌換券統計
+const calculateVoucherStats = (instances) => {
+  const now = new Date()
+
+  const stats = {
+    totalIssued: instances.length,
+    totalUsed: 0,
+    totalExpired: 0,
+    totalActive: 0,
+    usageRate: 0,
   }
-  return Math.round(((voucher.value.totalUsed || 0) / voucher.value.totalSold) * 100)
-})
+
+  instances.forEach((instance) => {
+    if (instance.isUsed) {
+      stats.totalUsed++
+    } else if (new Date(instance.expiryDate) < now) {
+      stats.totalExpired++
+    } else {
+      stats.totalActive++
+    }
+  })
+
+  // 計算使用率
+  if (stats.totalIssued > 0) {
+    stats.usageRate = Math.round((stats.totalUsed / stats.totalIssued) * 100)
+  }
+
+  return stats
+}
+
+// 獲取兌換券實例統計 (模擬 API - 實際需要後端提供)
+const fetchVoucherInstanceStats = async () => {
+  if (!voucherId.value || !brandId.value) return
+
+  isStatsLoading.value = true
+
+  try {
+    // 暫時使用模擬數據，實際使用時需要調用真實 API
+    // const response = await api.promotion.getVoucherInstanceStatsByTemplate({
+    //   brandId: brandId.value,
+    //   templateId: voucherId.value
+    // })
+
+    // 模擬數據 - 實際使用時請替換為真實 API 調用
+    const mockInstances = [
+      {
+        _id: '1',
+        isUsed: true,
+        usedAt: new Date('2024-01-15'),
+        expiryDate: new Date('2024-12-31'),
+      },
+      {
+        _id: '2',
+        isUsed: false,
+        usedAt: null,
+        expiryDate: new Date('2024-12-31'),
+      },
+      {
+        _id: '3',
+        isUsed: false,
+        usedAt: null,
+        expiryDate: new Date('2024-01-01'), // 已過期
+      },
+      {
+        _id: '4',
+        isUsed: false,
+        usedAt: null,
+        expiryDate: new Date('2024-12-31'),
+      },
+      {
+        _id: '5',
+        isUsed: true,
+        usedAt: new Date('2024-02-10'),
+        expiryDate: new Date('2024-12-31'),
+      },
+    ]
+
+    voucherInstances.value = mockInstances
+    voucherStats.value = calculateVoucherStats(mockInstances)
+  } catch (err) {
+    console.error('獲取兌換券統計時發生錯誤:', err)
+    // 使用默認值
+    voucherStats.value = {
+      totalIssued: 0,
+      totalUsed: 0,
+      totalExpired: 0,
+      totalActive: 0,
+      usageRate: 0,
+    }
+  } finally {
+    isStatsLoading.value = false
+  }
+}
 
 // 獲取餐點模板詳情
 const fetchDishTemplate = async (dishTemplateId) => {
@@ -379,7 +491,7 @@ const fetchVoucherData = async () => {
       brandId: brandId.value,
       id: voucherId.value,
     })
-
+    console.log('獲取兌換券資料:', response)
     if (response && response.template) {
       voucher.value = response.template
 
@@ -387,6 +499,9 @@ const fetchVoucherData = async () => {
       if (response.template.exchangeDishTemplate) {
         await fetchDishTemplate(response.template.exchangeDishTemplate)
       }
+
+      // 獲取兌換券實例統計
+      await fetchVoucherInstanceStats()
     } else {
       error.value = '獲取兌換券資料失敗'
     }

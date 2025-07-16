@@ -39,6 +39,7 @@ export const {
   getUserVouchers,
   useVoucher,
   autoCreateVoucherTemplatesForDishes,
+  getVoucherInstanceStatsByTemplate,
 } = voucherService
 
 // Point 服務導出

@@ -179,6 +179,17 @@ router.post(
   voucherTemplateController.createVoucherTemplate,
 )
 
+/**
+ * 根據模板ID獲取兌換券實例（管理員功能）
+ */
+router.get(
+  '/brands/:brandId/vouchers/templates/:templateId/instances',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  voucherTemplateController.getVoucherInstanceStatsByTemplate,
+)
+
 // =============================================================================
 // 兌換券路由（用戶）- Voucher 系統
 // =============================================================================

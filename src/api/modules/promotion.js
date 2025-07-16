@@ -190,6 +190,19 @@ export default function (apiClient) {
       return apiClient.post(`/promotion/brands/${brandId}/vouchers/templates/auto-create`)
     },
 
+    /**
+     * 根據模板ID獲取兌換券統計（管理員功能）
+     * @param {Object} params - 參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.templateId - 兌換券模板ID
+     * @returns {Promise} - API 回應
+     */
+    getVoucherInstanceStatsByTemplate({ brandId, templateId }) {
+      return apiClient.get(
+        `/promotion/brands/${brandId}/vouchers/templates/${templateId}/instances`,
+      )
+    },
+
     // =============================================================================
     // 兌換券用戶相關 API - Voucher 系統
     // =============================================================================

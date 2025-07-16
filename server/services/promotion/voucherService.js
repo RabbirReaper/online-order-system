@@ -42,6 +42,106 @@ export const getVoucherTemplateById = async (templateId, brandId) => {
 }
 
 /**
+ * 根據模板ID獲取兌換券統計
+ * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
+ * @returns {Promise<Object>} 兌換券統計資訊
+ */
+export const getVoucherInstanceStatsByTemplate = async (templateId, brandId) => {
+  // 驗證模板是否存在且屬於該品牌
+  const template = await VoucherTemplate.findOne({
+    _id: templateId,
+    brand: brandId,
+  })
+
+  if (!template) {
+    throw new AppError('兌換券模板不存在或無權訪問', 404)
+  }
+
+  // 計算統計資訊
+  const stats = await calculateVoucherInstanceStats(templateId, brandId)
+
+  return {
+    template: {
+      id: template._id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+    },
+    stats,
+  }
+}
+
+/**
+ * 計算兌換券實例統計資訊
+ * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
+ * @returns {Promise<Object>} 統計資訊
+ */
+const calculateVoucherInstanceStats = async (templateId, brandId) => {
+  const now = new Date()
+
+  // 使用聚合管道來計算統計資訊
+  const stats = await VoucherInstance.aggregate([
+    {
+      $match: {
+        template: new mongoose.Types.ObjectId(templateId),
+        brand: new mongoose.Types.ObjectId(brandId),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalIssued: { $sum: 1 },
+        totalUsed: {
+          $sum: {
+            $cond: [{ $eq: ['$isUsed', true] }, 1, 0],
+          },
+        },
+        totalExpired: {
+          $sum: {
+            $cond: [
+              {
+                $and: [{ $eq: ['$isUsed', false] }, { $lt: ['$expiryDate', now] }],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalActive: {
+          $sum: {
+            $cond: [
+              {
+                $and: [{ $eq: ['$isUsed', false] }, { $gte: ['$expiryDate', now] }],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ])
+
+  const result =
+    stats.length > 0
+      ? stats[0]
+      : {
+          totalIssued: 0,
+          totalUsed: 0,
+          totalExpired: 0,
+          totalActive: 0,
+        }
+
+  // 計算使用率
+  result.usageRate =
+    result.totalIssued > 0 ? Math.round((result.totalUsed / result.totalIssued) * 100) : 0
+
+  return result
+}
+
+/**
  * 創建兌換券模板
  * @param {Object} templateData - 模板數據
  * @returns {Promise<Object>} 創建的兌換券模板
