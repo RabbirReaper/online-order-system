@@ -389,58 +389,22 @@ const calculateVoucherStats = (instances) => {
   return stats
 }
 
-// 獲取兌換券實例統計 (模擬 API - 實際需要後端提供)
+// 獲取兌換券實例統計
 const fetchVoucherInstanceStats = async () => {
   if (!voucherId.value || !brandId.value) return
 
   isStatsLoading.value = true
 
   try {
-    // 暫時使用模擬數據，實際使用時需要調用真實 API
-    // const response = await api.promotion.getVoucherInstanceStatsByTemplate({
-    //   brandId: brandId.value,
-    //   templateId: voucherId.value
-    // })
-
-    // 模擬數據 - 實際使用時請替換為真實 API 調用
-    const mockInstances = [
-      {
-        _id: '1',
-        isUsed: true,
-        usedAt: new Date('2024-01-15'),
-        expiryDate: new Date('2024-12-31'),
-      },
-      {
-        _id: '2',
-        isUsed: false,
-        usedAt: null,
-        expiryDate: new Date('2024-12-31'),
-      },
-      {
-        _id: '3',
-        isUsed: false,
-        usedAt: null,
-        expiryDate: new Date('2024-01-01'), // 已過期
-      },
-      {
-        _id: '4',
-        isUsed: false,
-        usedAt: null,
-        expiryDate: new Date('2024-12-31'),
-      },
-      {
-        _id: '5',
-        isUsed: true,
-        usedAt: new Date('2024-02-10'),
-        expiryDate: new Date('2024-12-31'),
-      },
-    ]
-
-    voucherInstances.value = mockInstances
-    voucherStats.value = calculateVoucherStats(mockInstances)
+    const response = await api.promotion.getVoucherInstanceStatsByTemplate({
+      brandId: brandId.value,
+      templateId: voucherId.value,
+    })
+    voucherStats.value = response.stats
   } catch (err) {
     console.error('獲取兌換券統計時發生錯誤:', err)
-    // 使用默認值
+    // 使用預設值
+    voucherInstances.value = []
     voucherStats.value = {
       totalIssued: 0,
       totalUsed: 0,
