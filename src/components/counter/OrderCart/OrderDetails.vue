@@ -8,30 +8,57 @@
       <div v-for="(item, index) in selectedOrder.items" :key="index" class="list-group-item">
         <div class="d-flex justify-content-between">
           <div class="item-details">
-            <!-- 餐點名稱 -->
-            <h6 class="mb-2 fw-bold">{{ item.dishInstance.name }}</h6>
+            <!-- 項目名稱 -->
+            <h6 class="mb-2 fw-bold">{{ getItemDisplayName(item) }}</h6>
 
-            <!-- 選項列表 -->
-            <div class="options small">
-              <div
-                v-for="optionCategory in item.dishInstance.options"
-                :key="optionCategory.optionCategoryId"
-                class="mb-1"
-              >
-                <span class="text-muted">{{ optionCategory.optionCategoryName }}:</span>
-                <span
-                  v-for="selection in optionCategory.selections"
-                  :key="selection.optionId"
-                  class="ms-1"
+            <!-- 項目類型標籤 -->
+            <div class="mb-2">
+              <span class="badge" :class="getItemTypeBadgeClass(item)">
+                {{ getItemTypeLabel(item) }}
+              </span>
+            </div>
+
+            <!-- 餐點選項列表 -->
+            <template v-if="isDish(item) && item.dishInstance?.options">
+              <div class="options small">
+                <div
+                  v-for="optionCategory in item.dishInstance.options"
+                  :key="optionCategory.optionCategoryId"
+                  class="mb-1"
                 >
-                  {{ selection.name
-                  }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
-                </span>
+                  <span class="text-muted">{{ optionCategory.optionCategoryName }}:</span>
+                  <span
+                    v-for="selection in optionCategory.selections"
+                    :key="selection.optionId"
+                    class="ms-1"
+                  >
+                    {{ selection.name
+                    }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
+                  </span>
+                </div>
               </div>
+            </template>
 
-              <div v-if="item.note" class="mb-1">
-                <span class="text-muted">備註:</span> {{ item.note }}
+            <!-- 套餐內容顯示 -->
+            <template v-if="isBundle(item) && item.bundleInstance?.bundleItems">
+              <div class="options small">
+                <div class="mb-1">
+                  <span class="text-muted">套餐內容:</span>
+                </div>
+                <div
+                  v-for="bundleItem in item.bundleInstance.bundleItems"
+                  :key="bundleItem._id || bundleItem.voucherTemplate?._id"
+                  class="ms-2 mb-1"
+                >
+                  <span class="badge bg-light text-dark me-1">{{ bundleItem.quantity }}x</span>
+                  <span>{{ getBundleItemName(bundleItem) }}</span>
+                </div>
               </div>
+            </template>
+
+            <!-- 備註 -->
+            <div v-if="item.note" class="options small">
+              <div class="mb-1"><span class="text-muted">備註:</span> {{ item.note }}</div>
             </div>
           </div>
 
@@ -108,7 +135,7 @@
         <div v-if="selectedOrder.deliveryInfo?.address">
           配送地址: {{ selectedOrder.deliveryInfo.address }}
         </div>
-        <div>付款方式: {{ selectedOrder.paymentMethod }}</div>
+        <div>付款方式: {{ selectedOrder.paymentMethod || '未設定' }}</div>
         <div v-if="selectedOrder.notes">備註: {{ selectedOrder.notes }}</div>
       </small>
     </div>
@@ -127,6 +154,71 @@ const props = defineProps({
 
 const counterStore = useCounterStore()
 
+// 項目類型判斷方法
+const isDish = (item) => {
+  return item.itemType === 'dish' && item.dishInstance
+}
+
+const isBundle = (item) => {
+  return item.itemType === 'bundle' && item.bundleInstance
+}
+
+const getItemType = (item) => {
+  if (isDish(item)) return 'dish'
+  if (isBundle(item)) return 'bundle'
+  return 'unknown'
+}
+
+const getItemTypeLabel = (item) => {
+  const type = getItemType(item)
+  switch (type) {
+    case 'dish':
+      return '餐點'
+    case 'bundle':
+      return '套餐'
+    default:
+      return '未知'
+  }
+}
+
+const getItemTypeBadgeClass = (item) => {
+  const type = getItemType(item)
+  switch (type) {
+    case 'dish':
+      return 'bg-primary'
+    case 'bundle':
+      return 'bg-success'
+    default:
+      return 'bg-secondary'
+  }
+}
+
+const getItemDisplayName = (item) => {
+  if (isDish(item)) {
+    return item.dishInstance?.name || item.itemName || '未知餐點'
+  } else if (isBundle(item)) {
+    return item.bundleInstance?.name || item.itemName || '未知套餐'
+  }
+  return item.itemName || '未知項目'
+}
+
+const getBundleItemName = (bundleItem) => {
+  // 根據 bundle item 的類型返回對應的名稱
+  if (bundleItem.voucherTemplate) {
+    // 兌換券項目
+    return bundleItem.voucherTemplate.name || bundleItem.voucherName || '兌換券'
+  } else if (bundleItem.dishTemplate) {
+    // 餐點項目（如果有的話）
+    return bundleItem.dishTemplate.name || bundleItem.dishName || '餐點'
+  } else if (bundleItem.couponTemplate) {
+    // 優惠券項目（如果有的話）
+    return bundleItem.couponTemplate.name || bundleItem.couponName || '優惠券'
+  }
+
+  // 備用：使用冗餘儲存的名稱
+  return bundleItem.voucherName || bundleItem.dishName || bundleItem.couponName || '未知項目'
+}
+
 // 格式化訂單類型
 const formatOrderType = (orderType) => {
   const typeMap = {
@@ -142,5 +234,13 @@ const formatOrderType = (orderType) => {
 .list-group-item {
   border-radius: 8px;
   margin-bottom: 8px;
+}
+
+.options {
+  padding-left: 0.5rem;
+}
+
+.badge {
+  font-size: 0.75rem;
 }
 </style>
