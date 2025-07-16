@@ -349,7 +349,12 @@ const generateVouchersForBundle = async (bundleItem, order) => {
 
   const generatedVouchers = []
 
-  //console.log(`Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`);
+  // 🔧 新增：記錄每個模板生成的數量，用於批量更新
+  const templateIssueCount = new Map()
+
+  console.log(
+    `Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`,
+  )
 
   // 根據購買的 Bundle 數量生成 Voucher
   for (let i = 0; i < bundleItem.quantity; i++) {
@@ -361,11 +366,10 @@ const generateVouchersForBundle = async (bundleItem, order) => {
           brand: order.brand,
           template: bundleVoucherItem.voucherTemplate._id,
           voucherName: bundleVoucherItem.voucherTemplate.name,
-          exchangeDishTemplate: bundleVoucherItem.voucherTemplate.exchangeDishTemplate, // 直接設置可兌換的餐點
+          exchangeDishTemplate: bundleVoucherItem.voucherTemplate.exchangeDishTemplate,
           user: order.user,
           acquiredAt: new Date(),
           order: order._id,
-          // 移除 sourceBundle 設置
         })
 
         // 設置過期日期（購買時間 + Bundle 設定的有效期天數）
@@ -376,12 +380,34 @@ const generateVouchersForBundle = async (bundleItem, order) => {
         await voucherInstance.save()
         generatedVouchers.push(voucherInstance)
 
-        //console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`);
+        // 🔧 新增：記錄該模板的發行數量
+        const templateId = bundleVoucherItem.voucherTemplate._id.toString()
+        templateIssueCount.set(templateId, (templateIssueCount.get(templateId) || 0) + 1)
+
+        // console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`)
       }
     }
   }
 
-  //console.log(`✅ Generated ${generatedVouchers.length} vouchers total`);
+  // 🔧 新增：批量更新 VoucherTemplate 的 totalIssued 欄位
+  const VoucherTemplate = (await import('../../models/Promotion/VoucherTemplate.js')).default
+
+  for (const [templateId, count] of templateIssueCount) {
+    try {
+      await VoucherTemplate.findByIdAndUpdate(
+        templateId,
+        { $inc: { totalIssued: count } },
+        { new: true },
+      )
+      // console.log(`✅ Updated VoucherTemplate ${templateId} totalIssued by +${count}`)
+    } catch (updateError) {
+      console.error(`❌ Failed to update VoucherTemplate ${templateId} totalIssued:`, updateError)
+      // 不拋出錯誤，避免影響主要流程，但記錄錯誤
+    }
+  }
+  // console.log(`✅ Generated ${generatedVouchers.length} vouchers total`)
+  // console.log(`✅ Updated ${templateIssueCount.size} voucher templates`)
+
   return generatedVouchers
 }
 
@@ -677,5 +703,54 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
     order.status = 'cancelled'
     await order.save()
     return order
+  }
+}
+
+/**
+ * 發放兌換券給用戶（管理員功能）
+ * 文件位置：server/services/promotion/voucherService.js
+ * 🔧 新增：缺少的兌換券發放功能
+ * 預計新增 尚未更新router
+ */
+export const issueVoucherToUser = async (userId, templateId, adminId, reason = '管理員發放') => {
+  const template = await VoucherTemplate.findById(templateId).populate(
+    'exchangeDishTemplate',
+    'name basePrice',
+  )
+
+  if (!template) {
+    throw new AppError('兌換券模板不存在', 404)
+  }
+
+  if (!template.isActive) {
+    throw new AppError('兌換券模板已停用', 400)
+  }
+
+  // 計算過期日期（使用預設30天，或可以從模板中讀取）
+  const expiryDate = new Date()
+  expiryDate.setDate(expiryDate.getDate() + 30) // 預設30天有效期
+
+  const voucherInstance = new VoucherInstance({
+    brand: template.brand,
+    template: templateId,
+    user: userId,
+    voucherName: template.name,
+    exchangeDishTemplate: template.exchangeDishTemplate,
+    acquiredAt: new Date(),
+    expiryDate,
+    issuedBy: adminId,
+    issueReason: reason,
+  })
+
+  await voucherInstance.save()
+
+  // 🔧 重要：更新模板發放數量
+  template.totalIssued += 1
+  await template.save()
+
+  return {
+    success: true,
+    message: '兌換券發放成功',
+    voucher: voucherInstance,
   }
 }
