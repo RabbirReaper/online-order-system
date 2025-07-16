@@ -175,7 +175,7 @@ const getItemTypeLabel = (item) => {
     case 'dish':
       return '餐點'
     case 'bundle':
-      return '套餐'
+      return '兌換券'
     default:
       return '未知'
   }
