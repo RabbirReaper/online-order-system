@@ -111,10 +111,12 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  // 修正後的 addItem 方法，使資料結構符合 DishInstance Model
   function addItem(cartItem) {
-    // cartItem 結構：{ dishInstance, quantity, note, subtotal }
-    if (!cartItem || !cartItem.dishInstance || !cartItem.dishInstance.templateId) {
+    // ✅ 同時支援 dish 和 bundle
+    const isValidDish = cartItem?.dishInstance?.templateId
+    const isValidBundle = cartItem?.bundleInstance?.templateId
+
+    if (!cartItem || (!isValidDish && !isValidBundle)) {
       console.error('無效的購物車項目:', cartItem)
       return
     }
@@ -124,34 +126,40 @@ export const useCartStore = defineStore('cart', () => {
       return
     }
 
-    // 生成購物車項目的唯一鍵值 (包含 note)
-    const itemKey = generateItemKey(
-      cartItem.dishInstance.templateId,
-      cartItem.dishInstance.options,
-      cartItem.note,
-    )
+    let itemKey
+    if (cartItem.dishInstance) {
+      itemKey = generateItemKey(
+        cartItem.dishInstance.templateId,
+        cartItem.dishInstance.options,
+        cartItem.note,
+      )
+    } else if (cartItem.bundleInstance) {
+      itemKey = generateBundleKey(
+        cartItem.bundleInstance.templateId,
+        cartItem.bundleInstance.purchaseType,
+        cartItem.note,
+      )
+    }
 
-    // 檢查購物車中是否已有相同的餐點及選項
+    // 檢查是否已存在相同項目
     const existingItemIndex = items.value.findIndex((item) => item.key === itemKey)
 
     if (existingItemIndex !== -1) {
-      // 如果餐點已存在，更新數量
       const newQuantity = items.value[existingItemIndex].quantity + cartItem.quantity
       updateItemQuantity(existingItemIndex, newQuantity)
     } else {
-      // 添加新餐點到購物車，結構符合前端需求
       const newItem = {
         key: itemKey,
-        dishInstance: {
-          templateId: cartItem.dishInstance.templateId,
-          name: cartItem.dishInstance.name,
-          basePrice: cartItem.dishInstance.basePrice,
-          finalPrice: cartItem.dishInstance.finalPrice,
-          options: cartItem.dishInstance.options,
-        },
         quantity: cartItem.quantity,
         note: cartItem.note || '',
         subtotal: cartItem.subtotal,
+      }
+
+      // 根據類型添加對應的實例
+      if (cartItem.dishInstance) {
+        newItem.dishInstance = cartItem.dishInstance
+      } else if (cartItem.bundleInstance) {
+        newItem.bundleInstance = cartItem.bundleInstance
       }
 
       items.value.push(newItem)
@@ -178,6 +186,12 @@ export const useCartStore = defineStore('cart', () => {
     return `${templateId}:${optionsKey}${noteKey}`
   }
 
+  // 新增：生成 bundle 項目的唯一鍵值
+  function generateBundleKey(templateId, purchaseType = 'cash', note = '') {
+    const noteKey = note ? `:${encodeURIComponent(note)}` : ''
+    return `bundle-${templateId}-${purchaseType}${noteKey}`
+  }
+
   function removeItem(index) {
     if (index >= 0 && index < items.value.length) {
       items.value.splice(index, 1)
@@ -186,7 +200,7 @@ export const useCartStore = defineStore('cart', () => {
 
   function updateItemQuantity(index, quantity) {
     if (index < 0 || index >= items.value.length) {
-      console.error('無效的餐點索引:', index)
+      console.error('無效的項目索引:', index)
       return
     }
 
@@ -194,10 +208,22 @@ export const useCartStore = defineStore('cart', () => {
       removeItem(index)
     } else {
       const item = items.value[index]
-      const finalPrice = item.dishInstance.finalPrice || item.dishInstance.basePrice
+      let finalPrice = 0
+
+      // ✅ 根據項目類型獲取價格
+      if (item.dishInstance) {
+        finalPrice = item.dishInstance.finalPrice || item.dishInstance.basePrice
+      } else if (item.bundleInstance) {
+        finalPrice = item.bundleInstance.finalPrice
+      } else {
+        console.error('未知的項目類型:', item)
+        return
+      }
 
       item.quantity = quantity
       item.subtotal = finalPrice * quantity
+
+      console.log('更新項目數量:', { index, quantity, finalPrice, subtotal: item.subtotal })
     }
   }
 
@@ -385,9 +411,7 @@ export const useCartStore = defineStore('cart', () => {
       const orderData = {
         // 訂單項目 - 轉換為後端期望的格式
         items: items.value.map((item) => {
-          // 動態判斷項目類型
           if (item.dishInstance) {
-            // 餐點項目
             return {
               itemType: 'dish',
               templateId: item.dishInstance.templateId,
@@ -400,29 +424,17 @@ export const useCartStore = defineStore('cart', () => {
               note: item.note || '',
             }
           } else if (item.bundleInstance) {
-            // 套餐項目
+            // ✅ 這部分需要修改為符合後端 BundleInstance schema 的格式
             return {
               itemType: 'bundle',
-              bundleId: item.bundleInstance.bundleId,
+              templateId: item.bundleInstance.templateId, // 使用 templateId 而非 bundleId
               name: item.bundleInstance.name,
-              sellingPrice: item.bundleInstance.sellingPrice,
-              originalPrice: item.bundleInstance.originalPrice,
-              sellingPoint: item.bundleInstance.sellingPoint,
-              originalPoint: item.bundleInstance.originalPoint,
+              description: item.bundleInstance.description,
+              finalPrice: item.bundleInstance.finalPrice,
+              cashPrice: item.bundleInstance.cashPrice,
+              pointPrice: item.bundleInstance.pointPrice,
               bundleItems: item.bundleInstance.bundleItems,
-              quantity: item.quantity,
-              subtotal: item.subtotal,
-              note: item.note || '',
-            }
-          } else {
-            // 預設為餐點（向下相容）
-            return {
-              itemType: 'dish',
-              templateId: item.dishInstance?.templateId,
-              name: item.dishInstance?.name,
-              basePrice: item.dishInstance?.basePrice,
-              finalPrice: item.dishInstance?.finalPrice || item.dishInstance?.basePrice,
-              options: item.dishInstance?.options || [],
+              voucherValidityDays: item.bundleInstance.voucherValidityDays,
               quantity: item.quantity,
               subtotal: item.subtotal,
               note: item.note || '',

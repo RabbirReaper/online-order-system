@@ -574,8 +574,12 @@ export const getUserOrderById = async (orderId) => {
       path: 'items.bundleInstance',
       select: 'name bundleItems',
       populate: {
-        path: 'bundleItems.dishTemplate bundleItems.voucherTemplate',
-        select: 'name',
+        path: 'bundleItems.voucherTemplate', // 修復：移除 dishTemplate，只保留 voucherTemplate
+        select: 'name exchangeDishTemplate',
+        populate: {
+          path: 'exchangeDishTemplate', // 進一步 populate 餐點資料
+          select: 'name basePrice',
+        },
       },
     })
 

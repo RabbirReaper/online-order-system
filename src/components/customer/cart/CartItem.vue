@@ -2,13 +2,18 @@
   <div class="cart-item card mb-3 border-0 shadow-sm">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-start mb-2">
-        <h6 class="card-title mb-0 fw-bold">{{ item.dishInstance.name }}</h6>
+        <!-- ✅ 動態顯示名稱，支援 dish 和 bundle -->
+        <h6 class="card-title mb-0 fw-bold">{{ itemName }}</h6>
         <div class="item-price fw-bold">${{ item.subtotal }}</div>
       </div>
 
       <div class="item-details mb-3">
-        <!-- 顯示所有選項 -->
-        <template v-if="item.dishInstance.options && item.dishInstance.options.length > 0">
+        <!-- ✅ 條件顯示 - 只對 dish 顯示選項 -->
+        <template
+          v-if="
+            item.dishInstance && item.dishInstance.options && item.dishInstance.options.length > 0
+          "
+        >
           <p
             class="card-text small mb-1"
             v-for="(category, catIndex) in item.dishInstance.options"
@@ -19,10 +24,35 @@
           </p>
         </template>
 
-        <!-- 特殊要求 -->
-        <p class="card-text small mb-1" v-if="item.dishInstance.note">
-          備註: {{ item.dishInstance.note }}
-        </p>
+        <!-- ✅ 新增 - Bundle 內容顯示 -->
+        <template
+          v-if="
+            item.bundleInstance &&
+            item.bundleInstance.bundleItems &&
+            item.bundleInstance.bundleItems.length > 0
+          "
+        >
+          <div class="bundle-content">
+            <p class="card-text small mb-1 text-muted">套餐內容：</p>
+            <div
+              v-for="(bundleItem, bundleIdx) in item.bundleInstance.bundleItems"
+              :key="bundleIdx"
+              class="card-text small mb-1 ms-2"
+            >
+              • {{ bundleItem.quantity }}x {{ bundleItem.voucherName }}
+            </div>
+          </div>
+        </template>
+
+        <!-- ✅ 顯示備註 - 支援兩種格式 -->
+        <p class="card-text small mb-1" v-if="itemNote">備註: {{ itemNote }}</p>
+
+        <!-- ✅ Bundle 類型標籤 -->
+        <div v-if="item.bundleInstance" class="mt-2">
+          <span class="badge bg-info text-dark">
+            {{ item.bundleInstance.purchaseType === 'points' ? '點數兌換' : '現金購買' }}
+          </span>
+        </div>
       </div>
 
       <div class="d-flex justify-content-between align-items-center">
@@ -30,7 +60,12 @@
           <button class="btn btn-sm btn-outline-danger me-2" @click="$emit('remove', index)">
             <i class="bi bi-trash"></i>
           </button>
-          <button class="btn btn-sm btn-outline-secondary" @click="editItem">
+          <!-- ✅ 條件顯示編輯按鈕 - 只有 dish 可以編輯 -->
+          <button
+            v-if="item.dishInstance"
+            class="btn btn-sm btn-outline-secondary"
+            @click="editItem"
+          >
             <i class="bi bi-pencil"></i>
           </button>
         </div>
@@ -57,6 +92,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 
@@ -76,6 +112,26 @@ const props = defineProps({
 
 const emit = defineEmits(['remove', 'edit', 'quantity-change'])
 
+// ✅ 計算屬性 - 動態獲取項目名稱
+const itemName = computed(() => {
+  if (props.item.dishInstance) {
+    return props.item.dishInstance.name || '未知餐點'
+  } else if (props.item.bundleInstance) {
+    return props.item.bundleInstance.name || '未知套餐'
+  }
+  return '未知商品'
+})
+
+// ✅ 計算屬性 - 動態獲取備註
+const itemNote = computed(() => {
+  if (props.item.dishInstance && props.item.dishInstance.note) {
+    return props.item.dishInstance.note
+  } else if (props.item.note) {
+    return props.item.note
+  }
+  return ''
+})
+
 // 格式化選項為字符串
 const formatSelections = (selections) => {
   if (!selections || selections.length === 0) return ''
@@ -91,9 +147,15 @@ const formatSelections = (selections) => {
     .join(', ')
 }
 
-// 修正後的 editItem 函數
+// ✅ 修正後的 editItem 函數 - 只對 dish 有效
 const editItem = () => {
   const item = props.item
+
+  // 只有 dishInstance 才能編輯
+  if (!item.dishInstance) {
+    alert('套餐商品無法編輯')
+    return
+  }
 
   // 確保有品牌和店鋪ID
   if (!cartStore.currentBrand || !cartStore.currentStore) {
@@ -171,5 +233,16 @@ const editItem = () => {
 .btn-outline-secondary:hover {
   background-color: #6c757d;
   color: white;
+}
+
+.bundle-content {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 4px;
+}
+
+.badge {
+  font-size: 0.7em;
 }
 </style>

@@ -4,6 +4,7 @@
  */
 
 import Bundle from '../../models/Promotion/Bundle.js'
+import BundleInstance from '../../models/Promotion/BundleInstance.js'
 import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js'
 import Order from '../../models/Order/Order.js'
 import { AppError } from '../../middlewares/error.js'

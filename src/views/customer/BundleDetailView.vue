@@ -367,13 +367,18 @@ const addToCartCash = async () => {
   try {
     // 創建符合 cartStore.addItem 期望格式的套餐購物車項目
     const bundleCartItem = {
-      dishInstance: {
-        templateId: bundle.value._id,
+      bundleInstance: {
+        templateId: bundle.value._id, // 對應後端的 templateId
         name: bundle.value.name,
-        basePrice: currentCashPrice.value,
+        description: bundle.value.description,
+        cashPrice: {
+          original: bundle.value.cashPrice?.original || currentCashPrice.value,
+          selling: bundle.value.cashPrice?.selling || currentCashPrice.value,
+        },
+        bundleItems: bundle.value.bundleItems || [],
         finalPrice: currentCashPrice.value,
-        options: [], // 套餐沒有選項
-        bundleType: 'cash', // 標記為現金購買套餐
+        voucherValidityDays: bundle.value.voucherValidityDays || 30,
+        purchaseType: 'cash', // 標記購買類型
       },
       quantity: 1,
       note: '',
@@ -416,18 +421,23 @@ const addToCartPoints = async () => {
   try {
     // 創建點數兌換套餐購物車項目
     const bundleCartItem = {
-      dishInstance: {
+      bundleInstance: {
         templateId: bundle.value._id,
         name: `${bundle.value.name} (點數兌換)`,
-        basePrice: 0, // 點數兌換價格為0
-        finalPrice: 0,
-        options: [],
-        bundleType: 'points', // 標記為點數兌換套餐
+        description: bundle.value.description,
+        pointPrice: {
+          original: bundle.value.pointPrice?.original || currentPointPrice.value,
+          selling: bundle.value.pointPrice?.selling || currentPointPrice.value,
+        },
+        bundleItems: bundle.value.bundleItems || [],
+        finalPrice: 0, // 點數兌換現金價格為0
         pointCost: currentPointPrice.value,
+        voucherValidityDays: bundle.value.voucherValidityDays || 30,
+        purchaseType: 'points',
       },
       quantity: 1,
       note: '點數兌換商品',
-      subtotal: 0, // 點數兌換不計入現金小計
+      subtotal: 0,
     }
 
     cartStore.addItem(bundleCartItem)

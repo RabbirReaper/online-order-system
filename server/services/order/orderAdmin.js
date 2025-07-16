@@ -58,7 +58,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
   const skip = (page - 1) * limit
   const total = await Order.countDocuments(query)
 
-  // 查詢訂單，包含 Bundle 資訊
+  // 查詢訂單，包含 Bundle 資訊 - 修復 populate 路徑
   const orders = await Order.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -94,7 +94,18 @@ export const getOrderById = async (orderId, storeId) => {
 
   const order = await Order.findOne(query)
     .populate('items.dishInstance', 'name finalPrice options')
-    .populate('items.bundleInstance', 'name finalPrice bundleItems')
+    .populate({
+      path: 'items.bundleInstance',
+      select: 'name finalPrice bundleItems',
+      populate: {
+        path: 'bundleItems.voucherTemplate', // 修復：應該是 voucherTemplate，不是 dishTemplate
+        select: 'name exchangeDishTemplate',
+        populate: {
+          path: 'exchangeDishTemplate', // 進一步 populate 餐點資料
+          select: 'name basePrice',
+        },
+      },
+    })
     .populate('user', 'name email phone')
     .lean()
 
@@ -104,6 +115,8 @@ export const getOrderById = async (orderId, storeId) => {
 
   return order
 }
+
+// ... 其餘函數保持不變
 
 /**
  * 更新訂單（統一接口）- 支援 Bundle 和點數給予
