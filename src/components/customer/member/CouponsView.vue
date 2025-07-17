@@ -532,7 +532,7 @@ const loadCouponsData = async () => {
       throw new Error('請先登入以查看券資料')
     }
 
-    console.log('🔍 開始同時載入優惠券和兌換券...')
+    // console.log('🔍 開始同時載入優惠券和兌換券...')
 
     // 🔥 同時獲取優惠券和兌換券
     const [couponsResponse, vouchersResponse] = await Promise.all([
@@ -559,8 +559,8 @@ const loadCouponsData = async () => {
         }),
     ])
 
-    console.log('📥 優惠券回應:', couponsResponse)
-    console.log('📥 兌換券回應:', vouchersResponse)
+    // console.log('📥 優惠券回應:', couponsResponse)
+    // console.log('📥 兌換券回應:', vouchersResponse)
 
     // 合併兩種券，並添加類型標識
     const mergedItems = []
@@ -573,7 +573,7 @@ const loadCouponsData = async () => {
           _type: 'coupon', // 添加類型標識
         })
       })
-      console.log(`✅ 載入了 ${couponsResponse.coupons.length} 個優惠券`)
+      // console.log(`✅ 載入了 ${couponsResponse.coupons.length} 個優惠券`)
     }
 
     // 處理兌換券 (Voucher)
@@ -584,12 +584,12 @@ const loadCouponsData = async () => {
           _type: 'voucher', // 添加類型標識
         })
       })
-      console.log(`✅ 載入了 ${vouchersResponse.vouchers.length} 個兌換券`)
+      // console.log(`✅ 載入了 ${vouchersResponse.vouchers.length} 個兌換券`)
     }
 
     allItems.value = mergedItems
-    console.log(`🎉 總共載入了 ${mergedItems.length} 個券`)
-    console.log('合併後的券資料:', allItems.value)
+    // console.log(`🎉 總共載入了 ${mergedItems.length} 個券`)
+    // console.log('合併後的券資料:', allItems.value)
   } catch (error) {
     console.error('❌ 載入券資料失敗:', error)
 
