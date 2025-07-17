@@ -191,7 +191,7 @@
       <div class="col-md-6 mb-3">
         <div class="card h-100">
           <div class="card-body">
-            <DishSalesBarChart :dish-sales="popularDishesData" :height="450" />
+            <ItemSalesBarChart :item-sales="popularItemsData" :height="450" />
           </div>
         </div>
       </div>
@@ -316,7 +316,7 @@ import api from '@/api'
 import OrderDetailModal from '@/components/BrandAdmin/Order/OrderDetailModal.vue'
 import HourlyOrdersLineChart from '@/components/BrandAdmin/Order/Charts/HourlyOrdersLineChart.vue'
 import OrderTypesPieChart from '@/components/BrandAdmin/Order/Charts/OrderTypesPieChart.vue'
-import DishSalesBarChart from '@/components/BrandAdmin/Order/Charts/DishSalesBarChart.vue'
+import ItemSalesBarChart from '@/components/BrandAdmin/Order/Charts/ItemSalesBarChart.vue'
 import PaymentMethodsPieChart from '@/components/BrandAdmin/Order/Charts/PaymentMethodsPieChart.vue'
 
 const route = useRoute()
@@ -437,6 +437,44 @@ const initializeDateRange = () => {
   setToday()
 }
 
+// 修正：獲取項目名稱 - 支援 dish 和 bundle 兩種類型
+const getItemName = (item) => {
+  if (!item) return '未知項目'
+
+  // 直接使用 itemName 欄位（這是冗餘存儲的項目名稱）
+  if (item.itemName) {
+    return item.itemName
+  }
+
+  // 回退邏輯：根據 itemType 處理
+  if (item.itemType === 'dish' && item.dishInstance) {
+    if (typeof item.dishInstance === 'object') {
+      return item.dishInstance.name || '未知餐點'
+    }
+    return '餐點'
+  } else if (item.itemType === 'bundle' && item.bundleInstance) {
+    if (typeof item.bundleInstance === 'object') {
+      return item.bundleInstance.name || '未知兌換券'
+    }
+    return '兌換券'
+  }
+
+  return '未知項目'
+}
+
+// 修正：獲取項目類型標籤
+const getItemTypeLabel = (item) => {
+  if (!item) return ''
+
+  if (item.itemType === 'dish') {
+    return '餐點'
+  } else if (item.itemType === 'bundle') {
+    return '兌換券'
+  }
+
+  return '其他'
+}
+
 // 從訂單資料計算圖表資料
 const hourlyChartData = computed(() => {
   const hourlyStats = {}
@@ -477,26 +515,29 @@ const orderTypesData = computed(() => {
   return types
 })
 
-const popularDishesData = computed(() => {
-  const dishStats = {}
+// 修正：改為通用的項目銷售數據，支援餐點和兌換券
+const popularItemsData = computed(() => {
+  const itemStats = {}
 
   allOrders.value.forEach((order) => {
     if (order.items && order.items.length > 0) {
       order.items.forEach((item) => {
-        const dishName = getDishName(item)
+        const itemName = getItemName(item)
+        const itemType = getItemTypeLabel(item)
+        const displayName = `${itemName} (${itemType})`
         const quantity = item.quantity || 1
-        dishStats[dishName] = (dishStats[dishName] || 0) + quantity
+        itemStats[displayName] = (itemStats[displayName] || 0) + quantity
       })
     }
   })
 
   // 轉換為數組並排序
-  const dishArray = Object.entries(dishStats)
+  const itemArray = Object.entries(itemStats)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10) // 只取前10名
 
-  return dishArray
+  return itemArray
 })
 
 const paymentMethodsData = computed(() => {
@@ -533,17 +574,6 @@ const summaryData = computed(() => {
 
   return data
 })
-
-// 獲取餐點名稱
-const getDishName = (item) => {
-  if (!item || !item.dishInstance) return '未知餐點'
-
-  if (typeof item.dishInstance === 'object') {
-    return item.dishInstance.name || '未知餐點'
-  }
-
-  return '未知餐點'
-}
 
 // API 調用
 const fetchStoreInfo = async () => {
@@ -860,6 +890,16 @@ watch(
   margin-bottom: 0.5rem;
 }
 
+/* 訂單項目摘要樣式 */
+.order-items-summary {
+  font-size: 0.875rem;
+  color: #6c757d;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .summary-item {
     margin-bottom: 1rem;
@@ -868,6 +908,10 @@ watch(
 
   .summary-item h2 {
     font-size: 2rem;
+  }
+
+  .order-items-summary {
+    max-width: 150px;
   }
 }
 </style>

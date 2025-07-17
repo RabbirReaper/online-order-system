@@ -20,7 +20,7 @@ import {
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const props = defineProps({
-  dishSales: {
+  itemSales: {
     type: Array,
     required: true,
     default: () => [],
@@ -36,11 +36,11 @@ const props = defineProps({
 })
 
 onMounted(() => {
-  // console.log('DishSalesBarChart mounted with props:', props);
+  // console.log('ItemSalesBarChart mounted with props:', props);
 })
 
 // 限制名稱長度的輔助函數
-const limitNameLength = (name, maxLength = 12) => {
+const limitNameLength = (name, maxLength = 15) => {
   if (!name) return ''
   if (name.length <= maxLength) return name
   return name.substring(0, maxLength) + '...'
@@ -72,9 +72,20 @@ const createGradientColors = (count) => {
   return colors
 }
 
+// 根據項目類型調整顏色
+const getItemTypeColor = (name) => {
+  if (name.includes('(餐點)')) {
+    return [52, 152, 219] // 藍色系 - 餐點
+  } else if (name.includes('(兌換券)')) {
+    return [46, 204, 113] // 綠色系 - 兌換券
+  } else {
+    return [155, 89, 182] // 紫色系 - 其他
+  }
+}
+
 const chartData = computed(() => {
   // 如果沒有數據，顯示空狀態
-  if (!props.dishSales || props.dishSales.length === 0) {
+  if (!props.itemSales || props.itemSales.length === 0) {
     return {
       labels: ['暫無銷售數據'],
       datasets: [
@@ -89,12 +100,12 @@ const chartData = computed(() => {
     }
   }
 
-  // 限制顯示前10個餐點，並確保數據格式正確
-  const topDishes = props.dishSales
+  // 限制顯示前10個項目，並確保數據格式正確
+  const topItems = props.itemSales
     .filter((item) => item && typeof item.count === 'number' && item.count > 0)
     .slice(0, 10)
 
-  if (topDishes.length === 0) {
+  if (topItems.length === 0) {
     return {
       labels: ['暫無銷售數據'],
       datasets: [
@@ -109,14 +120,19 @@ const chartData = computed(() => {
     }
   }
 
-  const backgroundColors = createGradientColors(topDishes.length)
+  // 根據項目類型生成顏色
+  const backgroundColors = topItems.map((item, index) => {
+    const [r, g, b] = getItemTypeColor(item.name || '')
+    const opacity = Math.max(0.7, 1 - Math.floor(index / 5) * 0.1)
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`
+  })
 
   return {
-    labels: topDishes.map((item) => limitNameLength(item.name || '未知餐點')),
+    labels: topItems.map((item) => limitNameLength(item.name || '未知項目')),
     datasets: [
       {
         label: '銷量',
-        data: topDishes.map((item) => item.count || 0),
+        data: topItems.map((item) => item.count || 0),
         backgroundColor: backgroundColors,
         borderColor: backgroundColors.map((color) => color.replace('0.7', '1')),
         borderWidth: 2,
@@ -130,11 +146,11 @@ const chartData = computed(() => {
 })
 
 const chartOptions = computed(() => {
-  const dishes = props.dishSales || []
-  const originalNames = dishes.map((item) => item.name || '未知餐點')
+  const items = props.itemSales || []
+  const originalNames = items.map((item) => item.name || '未知項目')
 
   // 找出最大值以便設置合適的最大刻度
-  const maxValue = dishes.length > 0 ? Math.max(...dishes.map((item) => item.count || 0)) : 0
+  const maxValue = items.length > 0 ? Math.max(...items.map((item) => item.count || 0)) : 0
   const suggestedMax = Math.ceil(maxValue * 1.15) // 增加15%空間
 
   return {
@@ -150,7 +166,7 @@ const chartOptions = computed(() => {
       },
       title: {
         display: true,
-        text: dishes.length > 0 ? '熱門餐點銷量 TOP 10' : '餐點銷量統計',
+        text: items.length > 0 ? '熱門項目銷量 TOP 10' : '項目銷量統計',
         padding: {
           top: 10,
           bottom: 25,
@@ -183,7 +199,29 @@ const chartOptions = computed(() => {
             return originalNames[index] || '' // 顯示完整名稱
           },
           label: function (context) {
-            return `銷量: ${context.raw} 份`
+            const itemName = originalNames[context.dataIndex] || ''
+            let unit = '份'
+
+            // 根據項目類型調整單位
+            if (itemName.includes('(兌換券)')) {
+              unit = '套'
+            } else if (itemName.includes('(餐點)')) {
+              unit = '份'
+            }
+
+            return `銷量: ${context.raw} ${unit}`
+          },
+          afterLabel: function (context) {
+            const itemName = originalNames[context.dataIndex] || ''
+
+            // 為不同類型的項目添加額外說明
+            if (itemName.includes('(兌換券)')) {
+              return '類型: 兌換券套裝'
+            } else if (itemName.includes('(餐點)')) {
+              return '類型: 單品餐點'
+            }
+
+            return ''
           },
         },
       },
