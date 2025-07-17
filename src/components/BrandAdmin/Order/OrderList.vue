@@ -251,7 +251,7 @@
                   </span>
                 </td>
                 <td class="text-success fw-bold">${{ order.total }}</td>
-                <td>{{ formatPaymentMethod(order.paymentMethod) }}</td>
+                <td>{{ formatPaymentMethod(order) }}</td>
                 <td>
                   <span :class="getOrderStatusClass(order.status)">
                     {{ formatOrderStatus(order.status) }}
@@ -544,7 +544,7 @@ const paymentMethodsData = computed(() => {
   const methods = {}
 
   allOrders.value.forEach((order) => {
-    const displayMethod = formatPaymentMethod(order.paymentMethod)
+    const displayMethod = formatPaymentMethod(order)
     methods[displayMethod] = (methods[displayMethod] || 0) + 1
   })
 
@@ -773,6 +773,8 @@ const formatOrderStatus = (status) => {
 }
 
 const formatPaymentMethod = (method) => {
+  if (method.status === 'unpaid') return '未付款'
+  method = method.paymentMethod
   const methodMap = {
     cash: '現金',
     credit_card: '信用卡',
