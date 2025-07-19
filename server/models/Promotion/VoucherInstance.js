@@ -26,16 +26,16 @@ const voucherInstanceSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'BundleInstance',
+    }, // 新增：記錄由哪個 BundleInstance 創建
     isUsed: {
       type: Boolean,
       default: false,
     },
     usedAt: {
       type: Date,
-    },
-    order: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order',
     },
     acquiredAt: {
       type: Date,

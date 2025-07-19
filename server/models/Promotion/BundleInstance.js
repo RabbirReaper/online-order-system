@@ -50,13 +50,10 @@ const BundleInstanceSchema = new mongoose.Schema(
         min: 0,
       }, // 點數售價
     },
-    // Bundle 內容 - 冗餘存儲
+
+    // Bundle 內容 - 購買時的快照（不包含引用）
     bundleItems: [
       {
-        voucherTemplate: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'VoucherTemplate',
-        },
         quantity: {
           type: Number,
           required: true,
