@@ -261,7 +261,7 @@ const createDishItem = async (item, brandId) => {
 }
 
 /**
- * 創建 Bundle 項目 (移除重複驗證，因為已經預檢查過)
+ * 創建 Bundle 項目 (移除 generatedVouchers 設定)
  */
 const createBundleItem = async (item, userId, storeId, brandId) => {
   // 創建 Bundle 實例 - 記錄購買的 Bundle
@@ -281,7 +281,6 @@ const createBundleItem = async (item, userId, storeId, brandId) => {
     quantity: item.quantity,
     subtotal: item.subtotal || bundleInstance.finalPrice * item.quantity,
     note: item.note || '',
-    generatedVouchers: [], // 付款完成後才生成 Voucher
   }
 }
 
@@ -301,9 +300,6 @@ export const processOrderPaymentComplete = async (order) => {
         //console.log(`Generating vouchers for bundle: ${item.itemName}`);
         const bundleVouchers = await generateVouchersForBundle(item, order)
         generatedVouchers.push(...bundleVouchers)
-
-        // 更新訂單項目的 generatedVouchers
-        item.generatedVouchers = bundleVouchers.map((v) => v._id)
       }
     }
 
@@ -335,16 +331,22 @@ export const processOrderPaymentComplete = async (order) => {
 }
 
 /**
- * 拆解 Bundle 生成 VoucherInstance - 付款完成後執行
- * 移除 sourceBundle 相關邏輯
+ * 拆解 Bundle 生成 VoucherInstance - 設定 createdBy.bundleInstance
  */
 const generateVouchersForBundle = async (bundleItem, order) => {
-  const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance).populate(
-    'bundleItems.voucherTemplate',
-  )
+  const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance)
 
   if (!bundleInstance) {
     throw new AppError('Bundle 實例不存在', 404)
+  }
+
+  // 取得 Bundle 模板資訊
+  const bundleTemplate = await Bundle.findById(bundleInstance.templateId).populate(
+    'bundleItems.voucherTemplate',
+  )
+
+  if (!bundleTemplate) {
+    throw new AppError('Bundle 模板不存在', 404)
   }
 
   const generatedVouchers = []
@@ -359,7 +361,7 @@ const generateVouchersForBundle = async (bundleItem, order) => {
   // 根據購買的 Bundle 數量生成 Voucher
   for (let i = 0; i < bundleItem.quantity; i++) {
     // 拆解 Bundle 中的每個 VoucherTemplate
-    for (const bundleVoucherItem of bundleInstance.bundleItems) {
+    for (const bundleVoucherItem of bundleTemplate.bundleItems) {
       // 根據兌換券模板生成兌換券實例
       for (let j = 0; j < bundleVoucherItem.quantity; j++) {
         const voucherInstance = new VoucherInstance({
@@ -369,7 +371,7 @@ const generateVouchersForBundle = async (bundleItem, order) => {
           exchangeDishTemplate: bundleVoucherItem.voucherTemplate.exchangeDishTemplate,
           user: order.user,
           acquiredAt: new Date(),
-          order: order._id,
+          createdBy: bundleInstance._id, // 設定創建來源
         })
 
         // 設置過期日期（購買時間 + Bundle 設定的有效期天數）
@@ -543,7 +545,7 @@ export const updateOrderAmounts = (order) => {
 }
 
 /**
- * 獲取用戶訂單
+ * 獲取用戶訂單 - 修改查詢邏輯以獲取相關 vouchers
  */
 export const getUserOrders = async (userId, options = {}) => {
   const { brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options
@@ -562,10 +564,25 @@ export const getUserOrders = async (userId, options = {}) => {
     .populate('brand', 'name')
     .populate('items.dishInstance', 'name finalPrice options')
     .populate('items.bundleInstance', 'name finalPrice')
-    .populate('items.generatedVouchers', 'voucherName voucherType isUsed expiryDate')
     .sort(sort)
     .skip(skip)
     .limit(limit)
+
+  // 為每個訂單查詢相關的 vouchers
+  for (const order of orders) {
+    const bundleInstances = order.items
+      .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
+      .map((item) => item.bundleInstance._id)
+
+    if (bundleInstances.length > 0) {
+      const relatedVouchers = await VoucherInstance.find({
+        'createdBy.bundleInstance': { $in: bundleInstances },
+      }).select('voucherName isUsed expiryDate createdBy')
+
+      // 將 vouchers 附加到訂單對象
+      order._doc.generatedVouchers = relatedVouchers
+    }
+  }
 
   const totalPages = Math.ceil(total / limit)
   const hasNextPage = page < totalPages
@@ -585,26 +602,44 @@ export const getUserOrders = async (userId, options = {}) => {
 }
 
 /**
- * 根據ID獲取訂單詳情（不限制用戶，支援匿名訂單）
+ * 根據ID獲取訂單詳情（修改查詢邏輯）
  */
 export const getUserOrderById = async (orderId) => {
   const order = await Order.findById(orderId)
     .populate('items.dishInstance', 'name options')
     .populate({
       path: 'items.bundleInstance',
-      select: 'name bundleItems',
+      select: 'name templateId',
       populate: {
-        path: 'bundleItems.voucherTemplate', // 修復：移除 dishTemplate，只保留 voucherTemplate
-        select: 'name exchangeDishTemplate',
+        path: 'templateId',
+        select: 'bundleItems',
         populate: {
-          path: 'exchangeDishTemplate', // 進一步 populate 餐點資料
-          select: 'name basePrice',
+          path: 'bundleItems.voucherTemplate',
+          select: 'name exchangeDishTemplate',
+          populate: {
+            path: 'exchangeDishTemplate',
+            select: 'name basePrice',
+          },
         },
       },
     })
 
   if (!order) {
     throw new AppError('訂單不存在', 404)
+  }
+
+  // 查詢相關的 vouchers
+  const bundleInstances = order.items
+    .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
+    .map((item) => item.bundleInstance._id)
+
+  if (bundleInstances.length > 0) {
+    const relatedVouchers = await VoucherInstance.find({
+      'createdBy.bundleInstance': { $in: bundleInstances },
+    }).populate('exchangeDishTemplate', 'name basePrice')
+
+    // 將 vouchers 附加到訂單對象
+    order._doc.generatedVouchers = relatedVouchers
   }
 
   return order
@@ -738,8 +773,7 @@ export const issueVoucherToUser = async (userId, templateId, adminId, reason = '
     exchangeDishTemplate: template.exchangeDishTemplate,
     acquiredAt: new Date(),
     expiryDate,
-    issuedBy: adminId,
-    issueReason: reason,
+    // 管理員發放的 voucher 不設定 createdBy
   })
 
   await voucherInstance.save()

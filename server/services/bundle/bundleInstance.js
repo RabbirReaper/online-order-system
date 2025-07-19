@@ -6,6 +6,7 @@
 import BundleInstance from '../../models/Promotion/BundleInstance.js'
 import Bundle from '../../models/Promotion/Bundle.js'
 import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js'
+import VoucherInstance from '../../models/Promotion/VoucherInstance.js'
 import { AppError } from '../../middlewares/error.js'
 
 /**
@@ -22,20 +23,19 @@ export const getInstanceById = async (instanceId, brandId = null) => {
     query.brand = brandId
   }
 
-  const instance = await BundleInstance.findOne(query)
-    .populate('templateId')
-    .populate({
-      path: 'bundleItems.voucherTemplate',
-      select: 'name description validityPeriod exchangeDishTemplate',
-      populate: {
-        path: 'exchangeDishTemplate',
-        select: 'name basePrice image',
-      },
-    })
+  const instance = await BundleInstance.findOne(query).populate('templateId', 'name description') // 只需要基本的模板資訊
 
   if (!instance) {
     throw new AppError('Bundle 實例不存在或無權訪問', 404)
   }
+
+  // 查詢相關的 vouchers
+  const relatedVouchers = await VoucherInstance.find({
+    createdBy: instanceId,
+  }).populate('exchangeDishTemplate', 'name basePrice')
+
+  // 將 vouchers 附加到實例對象
+  instance._doc.generatedVouchers = relatedVouchers
 
   return instance
 }
@@ -79,9 +79,8 @@ export const createInstance = async (instanceData) => {
   instanceData.pointPrice = template.pointPrice
   instanceData.voucherValidityDays = template.voucherValidityDays
 
-  // 複製 Bundle 項目資訊
+  // 複製 Bundle 項目資訊（只保留快照，不保留引用）
   instanceData.bundleItems = template.bundleItems.map((item) => ({
-    voucherTemplate: item.voucherTemplate._id,
     quantity: item.quantity,
     voucherName: item.voucherName,
   }))
@@ -103,16 +102,10 @@ export const createInstance = async (instanceData) => {
   await newInstance.save()
 
   // 返回完整的實例資料
-  const populatedInstance = await BundleInstance.findById(newInstance._id)
-    .populate('templateId')
-    .populate({
-      path: 'bundleItems.voucherTemplate',
-      select: 'name description validityPeriod exchangeDishTemplate',
-      populate: {
-        path: 'exchangeDishTemplate',
-        select: 'name basePrice image',
-      },
-    })
+  const populatedInstance = await BundleInstance.findById(newInstance._id).populate(
+    'templateId',
+    'name description',
+  )
 
   return populatedInstance
 }
@@ -142,10 +135,18 @@ export const getUserBundleInstances = async (userId, brandId, options = {}) => {
   // 查詢實例
   const instances = await BundleInstance.find(query)
     .populate('templateId', 'name')
-    .populate('bundleItems.voucherTemplate', 'name')
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
+
+  // 為每個實例查詢相關的 vouchers
+  for (const instance of instances) {
+    const relatedVouchers = await VoucherInstance.find({
+      createdBy: instance._id,
+    }).select('voucherName isUsed expiryDate')
+
+    instance._doc.generatedVouchers = relatedVouchers
+  }
 
   // 處理分頁信息
   const totalPages = Math.ceil(total / limit)
@@ -186,7 +187,6 @@ export const updateInstance = async (instanceId, updateData, brandId) => {
   // 防止更改關鍵欄位
   delete updateData.brand
   delete updateData.templateId
-  delete updateData.bundleItems
   delete updateData.finalPrice
 
   // 更新實例
@@ -216,8 +216,14 @@ export const deleteInstance = async (instanceId, brandId) => {
     throw new AppError('Bundle 實例不存在或無權訪問', 404)
   }
 
-  // TODO: 檢查是否有關聯的兌換券，如果有則拒絕刪除
-  // 或者處理相關的兌換券狀態
+  // 檢查是否有關聯的兌換券，如果有則拒絕刪除
+  const relatedVouchers = await VoucherInstance.countDocuments({
+    createdBy: instanceId,
+  })
+
+  if (relatedVouchers > 0) {
+    throw new AppError('此 Bundle 實例已生成兌換券，無法刪除', 400)
+  }
 
   await instance.deleteOne()
 

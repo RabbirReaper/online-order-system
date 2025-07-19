@@ -58,7 +58,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
   const skip = (page - 1) * limit
   const total = await Order.countDocuments(query)
 
-  // 查詢訂單，包含 Bundle 資訊 - 修復 populate 路徑
+  // 查詢訂單，包含 Bundle 資訊
   const orders = await Order.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -67,6 +67,22 @@ export const getStoreOrders = async (storeId, options = {}) => {
     .populate('items.bundleInstance', 'name finalPrice')
     .populate('user', 'name email phone')
     .lean()
+
+  // 為每個訂單查詢相關的 vouchers
+  for (const order of orders) {
+    const bundleInstances = order.items
+      .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
+      .map((item) => item.bundleInstance._id)
+
+    if (bundleInstances.length > 0) {
+      const relatedVouchers = await VoucherInstance.find({
+        'createdBy.bundleInstance': { $in: bundleInstances },
+      }).select('voucherName isUsed expiryDate createdBy')
+
+      // 將 vouchers 附加到訂單對象
+      order.generatedVouchers = relatedVouchers
+    }
+  }
 
   const totalPages = Math.ceil(total / limit)
   const hasNextPage = page < totalPages
@@ -96,13 +112,17 @@ export const getOrderById = async (orderId, storeId) => {
     .populate('items.dishInstance', 'name finalPrice options')
     .populate({
       path: 'items.bundleInstance',
-      select: 'name finalPrice bundleItems',
+      select: 'name finalPrice templateId',
       populate: {
-        path: 'bundleItems.voucherTemplate', // 修復：應該是 voucherTemplate，不是 dishTemplate
-        select: 'name exchangeDishTemplate',
+        path: 'templateId',
+        select: 'bundleItems',
         populate: {
-          path: 'exchangeDishTemplate', // 進一步 populate 餐點資料
-          select: 'name basePrice',
+          path: 'bundleItems.voucherTemplate',
+          select: 'name exchangeDishTemplate',
+          populate: {
+            path: 'exchangeDishTemplate',
+            select: 'name basePrice',
+          },
         },
       },
     })
@@ -113,10 +133,22 @@ export const getOrderById = async (orderId, storeId) => {
     throw new AppError('訂單不存在', 404)
   }
 
+  // 查詢相關的 vouchers
+  const bundleInstances = order.items
+    .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
+    .map((item) => item.bundleInstance._id)
+
+  if (bundleInstances.length > 0) {
+    const relatedVouchers = await VoucherInstance.find({
+      'createdBy.bundleInstance': { $in: bundleInstances },
+    }).populate('exchangeDishTemplate', 'name basePrice')
+
+    // 將 vouchers 附加到訂單對象
+    order.generatedVouchers = relatedVouchers
+  }
+
   return order
 }
-
-// ... 其餘函數保持不變
 
 /**
  * 更新訂單（統一接口）- 支援 Bundle 和點數給予
@@ -204,19 +236,22 @@ export const cancelOrder = async (orderId, reason, adminId) => {
   }
 
   // 如果訂單包含已生成的兌換券，需要處理券的狀態
-  for (const item of order.items) {
-    if (item.itemType === 'bundle' && item.generatedVouchers && item.generatedVouchers.length > 0) {
-      // 將未使用的兌換券標記為無效
-      for (const voucherId of item.generatedVouchers) {
-        const voucher = await VoucherInstance.findById(voucherId)
-        if (voucher && !voucher.isUsed) {
-          // 標記券為已使用（實際上是取消）
-          voucher.isUsed = true
-          voucher.usedAt = new Date()
-          voucher.invalidReason = 'ORDER_CANCELLED'
-          await voucher.save()
-        }
-      }
+  const bundleInstances = order.items
+    .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
+    .map((item) => item.bundleInstance)
+
+  if (bundleInstances.length > 0) {
+    // 將未使用的兌換券標記為無效
+    const relatedVouchers = await VoucherInstance.find({
+      createdBy: { $in: bundleInstances },
+      isUsed: false,
+    })
+
+    for (const voucher of relatedVouchers) {
+      voucher.isUsed = true
+      voucher.usedAt = new Date()
+      voucher.invalidReason = 'ORDER_CANCELLED'
+      await voucher.save()
     }
   }
 
