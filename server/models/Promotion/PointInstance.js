@@ -51,7 +51,7 @@ const pointInstanceSchema = new mongoose.Schema(
     },
     usedAt: { type: Date },
     usedIn: {
-      model: { type: String, enum: ['Order'] },
+      model: { type: String, enum: ['BundleRedemption'] },
       id: { type: mongoose.Schema.Types.ObjectId, refPath: 'usedIn.model' },
     },
   },
