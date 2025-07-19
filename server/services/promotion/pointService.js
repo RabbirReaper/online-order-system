@@ -72,18 +72,37 @@ export const getUserPoints = async (userId, brandId) => {
  * @param {String} userId - 用戶ID
  * @param {String} brandId - 品牌ID
  * @param {Number} pointsToUse - 要使用的點數數量
- * @param {Object} orderInfo - 訂單資訊 {model: 'Order', id: orderId}
+ * @param {Object} usageInfo - 使用資訊
+ * @param {String} usageInfo.model - 使用模型 ('Order' | 'BundleRedemption')
+ * @param {String} usageInfo.id - 關聯ID (orderId | bundleInstanceId)
  * @returns {Promise<Object>} 使用點數結果
  */
-export const usePoints = async (userId, brandId, pointsToUse, orderInfo) => {
+export const usePoints = async (userId, brandId, pointsToUse, usageInfo) => {
+  // 參數驗證
+  if (!usageInfo || !usageInfo.model || !usageInfo.id) {
+    throw new AppError('使用資訊參數不完整', 400)
+  }
+
+  // 驗證支援的模型類型
+  const supportedModels = ['Order', 'BundleRedemption']
+  if (!supportedModels.includes(usageInfo.model)) {
+    throw new AppError(`不支援的使用模型: ${usageInfo.model}`, 400)
+  }
+
+  console.log(`Using ${pointsToUse} points for ${usageInfo.model}: ${usageInfo.id}`)
+
   // 1. 檢查用戶是否有足夠點數
   const totalPoints = await getUserPointsBalance(userId, brandId)
   if (totalPoints < pointsToUse) {
-    throw new AppError('點數不足', 400)
+    throw new AppError(`點數不足，需要 ${pointsToUse} 點，目前有 ${totalPoints} 點`, 400)
   }
 
   // 2. 獲取可用點數列表 (按過期時間排序)
   const activePoints = await getUserPoints(userId, brandId)
+
+  if (activePoints.length === 0) {
+    throw new AppError('沒有可用的點數', 400)
+  }
 
   // 3. 從最早過期的點數開始使用
   let remainingToUse = pointsToUse
@@ -96,20 +115,44 @@ export const usePoints = async (userId, brandId, pointsToUse, orderInfo) => {
     // 每個實例只有1點，直接標記為已使用
     point.status = 'used'
     point.usedAt = now
-    point.usedIn = orderInfo
+    point.usedIn = {
+      model: usageInfo.model,
+      id: usageInfo.id,
+    }
 
     remainingToUse -= 1
     usedPoints.push(point)
   }
 
+  // 確保使用了正確數量的點數
+  if (usedPoints.length !== pointsToUse) {
+    throw new AppError(
+      `點數使用異常，預期使用 ${pointsToUse} 點，實際使用 ${usedPoints.length} 點`,
+      500,
+    )
+  }
+
   // 4. 保存變更
-  const savePromises = usedPoints.map((p) => p.save())
-  await Promise.all(savePromises)
+  try {
+    const savePromises = usedPoints.map((p) => p.save())
+    await Promise.all(savePromises)
+
+    console.log(`✅ Successfully used ${pointsToUse} points for ${usageInfo.model}`)
+  } catch (saveError) {
+    console.error('保存點數使用記錄時發生錯誤:', saveError)
+    throw new AppError('點數使用記錄保存失敗', 500)
+  }
 
   return {
     success: true,
     pointsUsed: pointsToUse,
     usedPoints: usedPoints,
+    usageInfo: {
+      model: usageInfo.model,
+      id: usageInfo.id,
+      usedAt: now,
+    },
+    remainingPoints: totalPoints - pointsToUse,
   }
 }
 
@@ -135,18 +178,29 @@ export const markExpiredPoints = async () => {
 
 /**
  * 退還點數 (用於取消訂單等場景)
- * @param {String} orderId - 訂單ID
+ * @param {String} relatedModel - 關聯模型 ('Order' | 'BundleRedemption')
+ * @param {String} relatedId - 關聯ID
  * @returns {Promise<Object>} 退還結果
  */
-export const refundPointsForOrder = async (orderId) => {
+export const refundPointsForTransaction = async (relatedModel, relatedId) => {
+  // 驗證支援的模型類型
+  const supportedModels = ['BundleRedemption']
+  if (!supportedModels.includes(relatedModel)) {
+    throw new AppError(`不支援的關聯模型: ${relatedModel}`, 400)
+  }
+
   const pointsToRefund = await PointInstance.find({
-    'usedIn.model': 'Order',
-    'usedIn.id': orderId,
+    'usedIn.model': relatedModel,
+    'usedIn.id': relatedId,
     status: 'used',
   })
 
   if (pointsToRefund.length === 0) {
-    return { success: true, message: '沒有找到需要退還的點數', refundedCount: 0 }
+    return {
+      success: true,
+      message: '沒有找到需要退還的點數',
+      refundedCount: 0,
+    }
   }
 
   const now = new Date()
@@ -169,6 +223,8 @@ export const refundPointsForOrder = async (orderId) => {
 
   // 保存所有更改
   await Promise.all(pointsToRefund.map((p) => p.save()))
+
+  console.log(`✅ Refunded ${pointsToRefund.length} points for ${relatedModel}: ${relatedId}`)
 
   return {
     success: true,
@@ -228,6 +284,8 @@ export const addPointsToUser = async (
 
   // 批量保存點數實例
   const savedInstances = await PointInstance.insertMany(pointInstances)
+
+  console.log(`✅ Added ${amount} points to user ${userId} from source: ${source}`)
 
   return savedInstances
 }
