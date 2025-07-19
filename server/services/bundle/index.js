@@ -26,4 +26,9 @@ export const {
 // =============================================================================
 // Bundle 實例服務導出
 // =============================================================================
-export const { getInstanceById, createInstance } = bundleInstanceService
+export const {
+  getInstanceById,
+  createInstance,
+  redeemBundleWithPoints,
+  generateVouchersForBundle,
+} = bundleInstanceService

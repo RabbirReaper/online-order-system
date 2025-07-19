@@ -297,7 +297,11 @@ export const processOrderPaymentComplete = async (order) => {
     for (const item of order.items) {
       if (item.itemType === 'bundle') {
         //console.log(`Generating vouchers for bundle: ${item.itemName}`);
-        await generateVouchersForBundle(item, order)
+        await bundleInstanceService.generateVouchersForBundle(
+          item.bundleInstance,
+          order.brand,
+          order.user,
+        )
       }
     }
 
@@ -324,85 +328,6 @@ export const processOrderPaymentComplete = async (order) => {
     console.error('Failed to process payment completion:', error)
     throw error
   }
-}
-
-/**
- * 拆解 Bundle 生成 VoucherInstance - 設定 createdBy
- */
-const generateVouchersForBundle = async (bundleItem, order) => {
-  const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance)
-
-  if (!bundleInstance) {
-    throw new AppError('Bundle 實例不存在', 404)
-  }
-
-  // 取得 Bundle 模板資訊
-  const bundleTemplate = await Bundle.findById(bundleInstance.templateId).populate(
-    'bundleItems.voucherTemplate',
-  )
-
-  if (!bundleTemplate) {
-    throw new AppError('Bundle 模板不存在', 404)
-  }
-
-  // 🔧 新增：記錄每個模板生成的數量，用於批量更新
-  const templateIssueCount = new Map()
-
-  console.log(
-    `Generating vouchers for bundle: ${bundleInstance.name} (qty: ${bundleItem.quantity})`,
-  )
-
-  // 根據購買的 Bundle 數量生成 Voucher
-  for (let i = 0; i < bundleItem.quantity; i++) {
-    // 拆解 Bundle 中的每個 VoucherTemplate
-    for (const bundleVoucherItem of bundleTemplate.bundleItems) {
-      // 根據兌換券模板生成兌換券實例
-      for (let j = 0; j < bundleVoucherItem.quantity; j++) {
-        const voucherInstance = new VoucherInstance({
-          brand: order.brand,
-          template: bundleVoucherItem.voucherTemplate._id,
-          voucherName: bundleVoucherItem.voucherTemplate.name,
-          exchangeDishTemplate: bundleVoucherItem.voucherTemplate.exchangeDishTemplate,
-          user: order.user,
-          acquiredAt: new Date(),
-          createdBy: bundleInstance._id, // 設定創建來源
-        })
-
-        // 設置過期日期（購買時間 + Bundle 設定的有效期天數）
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() + bundleInstance.voucherValidityDays)
-        voucherInstance.expiryDate = expiryDate
-
-        await voucherInstance.save()
-
-        // 🔧 新增：記錄該模板的發行數量
-        const templateId = bundleVoucherItem.voucherTemplate._id.toString()
-        templateIssueCount.set(templateId, (templateIssueCount.get(templateId) || 0) + 1)
-
-        // console.log(`Generated voucher: ${bundleVoucherItem.voucherTemplate.name}`)
-      }
-    }
-  }
-
-  // 🔧 新增：批量更新 VoucherTemplate 的 totalIssued 欄位
-  const VoucherTemplate = (await import('../../models/Promotion/VoucherTemplate.js')).default
-
-  for (const [templateId, count] of templateIssueCount) {
-    try {
-      await VoucherTemplate.findByIdAndUpdate(
-        templateId,
-        { $inc: { totalIssued: count } },
-        { new: true },
-      )
-      // console.log(`✅ Updated VoucherTemplate ${templateId} totalIssued by +${count}`)
-    } catch (updateError) {
-      console.error(`❌ Failed to update VoucherTemplate ${templateId} totalIssued:`, updateError)
-      // 不拋出錯誤，避免影響主要流程，但記錄錯誤
-    }
-  }
-
-  // console.log(`✅ Generated vouchers total`)
-  // console.log(`✅ Updated ${templateIssueCount.size} voucher templates`)
 }
 
 /**
