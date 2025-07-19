@@ -187,25 +187,19 @@
 
                           <!-- Bundle 內容 -->
                           <div v-else-if="item.itemType === 'bundle'">
-                            <div v-if="getBundleItems(item).length > 0">
+                            <div v-if="item.bundleInstance?.templateId?.bundleItems?.length > 0">
                               <div
-                                v-for="bundleItem in getBundleItems(item)"
-                                :key="bundleItem.voucherTemplate"
-                                class="mb-1"
+                                v-for="bundleItem in item.bundleInstance.templateId.bundleItems"
+                                :key="bundleItem._id"
                               >
                                 <small class="text-primary">
                                   <i class="bi bi-ticket-perforated me-1"></i>
-                                  {{ bundleItem.voucherName }} x{{ bundleItem.quantity }}
+                                  {{ bundleItem.voucherName || bundleItem.voucherTemplate?.name }}
+                                  x{{ bundleItem.quantity }}
                                 </small>
-                                <!-- 顯示兌換券可兌換的餐點 -->
-                                <div v-if="bundleItem.exchangeDish" class="ms-3">
-                                  <small class="text-muted">
-                                    可兌換：{{ bundleItem.exchangeDish }}
-                                  </small>
-                                </div>
                               </div>
                             </div>
-                            <span v-else class="text-muted">Bundle 內容載入中...</span>
+                            <small v-else class="text-muted">Bundle 資訊</small>
                           </div>
 
                           <!-- 其他類型 -->
@@ -225,35 +219,6 @@
                       </tr>
                     </tbody>
                   </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- 兌換券信息 -->
-            <div class="card mb-3" v-if="hasGeneratedVouchers(order)">
-              <div class="card-header bg-light">
-                <h6 class="mb-0"><i class="bi bi-gift me-2"></i>已獲得的兌換券</h6>
-              </div>
-              <div class="card-body">
-                <div class="alert alert-success">
-                  <i class="bi bi-check-circle-fill me-2"></i>
-                  此訂單已成功生成兌換券！
-                </div>
-                <div v-for="(item, index) in order.items" :key="index">
-                  <div v-if="item.itemType === 'bundle' && item.generatedVouchers?.length > 0">
-                    <h6 class="text-primary">{{ getItemName(item) }}</h6>
-                    <div class="row">
-                      <div
-                        v-for="voucherId in item.generatedVouchers"
-                        :key="voucherId"
-                        class="col-md-6 mb-2"
-                      >
-                        <div class="border rounded p-2 bg-light">
-                          <small class="text-muted">兌換券 ID: {{ voucherId }}</small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -435,37 +400,6 @@ const getDishOptions = (item) => {
   }
 
   return []
-}
-
-// 獲取 Bundle 項目內容
-const getBundleItems = (item) => {
-  if (!item || item.itemType !== 'bundle' || !item.bundleInstance) return []
-
-  if (typeof item.bundleInstance === 'object' && item.bundleInstance.bundleItems) {
-    return (
-      item.bundleInstance.bundleItems.map((bundleItem) => {
-        // 處理 bundleItem 結構
-        return {
-          voucherTemplate: bundleItem.voucherTemplate?._id || bundleItem.voucherTemplate,
-          voucherName: bundleItem.voucherName || bundleItem.voucherTemplate?.name || '兌換券',
-          quantity: bundleItem.quantity || 1,
-          exchangeDish: bundleItem.voucherTemplate?.exchangeDishTemplate?.name || null,
-        }
-      }) || []
-    )
-  }
-
-  return []
-}
-
-// 檢查是否有生成的兌換券
-const hasGeneratedVouchers = (order) => {
-  if (!order || !order.items) return false
-
-  return order.items.some(
-    (item) =>
-      item.itemType === 'bundle' && item.generatedVouchers && item.generatedVouchers.length > 0,
-  )
 }
 
 // 格式化項目類型
