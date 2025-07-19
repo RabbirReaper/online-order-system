@@ -81,7 +81,7 @@ export const createOrder = async (orderData) => {
     }
 
     // Step 7: 如果是即時付款，處理後續流程
-    let result = { ...order.toObject(), pointsAwarded: 0, generatedVouchers: [] }
+    let result = { ...order.toObject(), pointsAwarded: 0 }
 
     if (order.status === 'paid') {
       //console.log('Processing immediate payment completion...');
@@ -261,7 +261,7 @@ const createDishItem = async (item, brandId) => {
 }
 
 /**
- * 創建 Bundle 項目 (移除 generatedVouchers 設定)
+ * 創建 Bundle 項目
  */
 const createBundleItem = async (item, userId, storeId, brandId) => {
   // 創建 Bundle 實例 - 記錄購買的 Bundle
@@ -289,7 +289,6 @@ const createBundleItem = async (item, userId, storeId, brandId) => {
  */
 export const processOrderPaymentComplete = async (order) => {
   let pointsReward = { pointsAwarded: 0 }
-  let generatedVouchers = []
 
   //console.log(`Processing payment completion for order ${order._id}...`);
 
@@ -298,8 +297,7 @@ export const processOrderPaymentComplete = async (order) => {
     for (const item of order.items) {
       if (item.itemType === 'bundle') {
         //console.log(`Generating vouchers for bundle: ${item.itemName}`);
-        const bundleVouchers = await generateVouchersForBundle(item, order)
-        generatedVouchers.push(...bundleVouchers)
+        await generateVouchersForBundle(item, order)
       }
     }
 
@@ -316,13 +314,11 @@ export const processOrderPaymentComplete = async (order) => {
     await order.save()
 
     //console.log(`✅ Payment completion processed:`);
-    //console.log(`   - Generated vouchers: ${generatedVouchers.length}`);
     //console.log(`   - Points awarded: ${pointsReward.pointsAwarded}`);
 
     return {
       ...order.toObject(),
       pointsAwarded: pointsReward.pointsAwarded,
-      generatedVouchers,
     }
   } catch (error) {
     console.error('Failed to process payment completion:', error)
@@ -331,7 +327,7 @@ export const processOrderPaymentComplete = async (order) => {
 }
 
 /**
- * 拆解 Bundle 生成 VoucherInstance - 設定 createdBy.bundleInstance
+ * 拆解 Bundle 生成 VoucherInstance - 設定 createdBy
  */
 const generateVouchersForBundle = async (bundleItem, order) => {
   const bundleInstance = await BundleInstance.findById(bundleItem.bundleInstance)
@@ -348,8 +344,6 @@ const generateVouchersForBundle = async (bundleItem, order) => {
   if (!bundleTemplate) {
     throw new AppError('Bundle 模板不存在', 404)
   }
-
-  const generatedVouchers = []
 
   // 🔧 新增：記錄每個模板生成的數量，用於批量更新
   const templateIssueCount = new Map()
@@ -380,7 +374,6 @@ const generateVouchersForBundle = async (bundleItem, order) => {
         voucherInstance.expiryDate = expiryDate
 
         await voucherInstance.save()
-        generatedVouchers.push(voucherInstance)
 
         // 🔧 新增：記錄該模板的發行數量
         const templateId = bundleVoucherItem.voucherTemplate._id.toString()
@@ -407,10 +400,9 @@ const generateVouchersForBundle = async (bundleItem, order) => {
       // 不拋出錯誤，避免影響主要流程，但記錄錯誤
     }
   }
-  // console.log(`✅ Generated ${generatedVouchers.length} vouchers total`)
-  // console.log(`✅ Updated ${templateIssueCount.size} voucher templates`)
 
-  return generatedVouchers
+  // console.log(`✅ Generated vouchers total`)
+  // console.log(`✅ Updated ${templateIssueCount.size} voucher templates`)
 }
 
 /**
@@ -545,7 +537,7 @@ export const updateOrderAmounts = (order) => {
 }
 
 /**
- * 獲取用戶訂單 - 修改查詢邏輯以獲取相關 vouchers
+ * 獲取用戶訂單
  */
 export const getUserOrders = async (userId, options = {}) => {
   const { brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options
@@ -568,22 +560,6 @@ export const getUserOrders = async (userId, options = {}) => {
     .skip(skip)
     .limit(limit)
 
-  // 為每個訂單查詢相關的 vouchers
-  for (const order of orders) {
-    const bundleInstances = order.items
-      .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
-      .map((item) => item.bundleInstance._id)
-
-    if (bundleInstances.length > 0) {
-      const relatedVouchers = await VoucherInstance.find({
-        'createdBy.bundleInstance': { $in: bundleInstances },
-      }).select('voucherName isUsed expiryDate createdBy')
-
-      // 將 vouchers 附加到訂單對象
-      order._doc.generatedVouchers = relatedVouchers
-    }
-  }
-
   const totalPages = Math.ceil(total / limit)
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
@@ -602,7 +578,7 @@ export const getUserOrders = async (userId, options = {}) => {
 }
 
 /**
- * 根據ID獲取訂單詳情（修改查詢邏輯）
+ * 根據ID獲取訂單詳情
  */
 export const getUserOrderById = async (orderId) => {
   const order = await Order.findById(orderId)
@@ -626,20 +602,6 @@ export const getUserOrderById = async (orderId) => {
 
   if (!order) {
     throw new AppError('訂單不存在', 404)
-  }
-
-  // 查詢相關的 vouchers
-  const bundleInstances = order.items
-    .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
-    .map((item) => item.bundleInstance._id)
-
-  if (bundleInstances.length > 0) {
-    const relatedVouchers = await VoucherInstance.find({
-      'createdBy.bundleInstance': { $in: bundleInstances },
-    }).populate('exchangeDishTemplate', 'name basePrice')
-
-    // 將 vouchers 附加到訂單對象
-    order._doc.generatedVouchers = relatedVouchers
   }
 
   return order
@@ -743,9 +705,6 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
 
 /**
  * 發放兌換券給用戶（管理員功能）
- * 文件位置：server/services/promotion/voucherService.js
- * 🔧 新增：缺少的兌換券發放功能
- * 預計新增 尚未更新router
  */
 export const issueVoucherToUser = async (userId, templateId, adminId, reason = '管理員發放') => {
   const template = await VoucherTemplate.findById(templateId).populate(

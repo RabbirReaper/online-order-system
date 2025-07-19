@@ -23,19 +23,11 @@ export const getInstanceById = async (instanceId, brandId = null) => {
     query.brand = brandId
   }
 
-  const instance = await BundleInstance.findOne(query).populate('templateId', 'name description') // 只需要基本的模板資訊
+  const instance = await BundleInstance.findOne(query).populate('templateId', 'name description')
 
   if (!instance) {
     throw new AppError('Bundle 實例不存在或無權訪問', 404)
   }
-
-  // 查詢相關的 vouchers
-  const relatedVouchers = await VoucherInstance.find({
-    createdBy: instanceId,
-  }).populate('exchangeDishTemplate', 'name basePrice')
-
-  // 將 vouchers 附加到實例對象
-  instance._doc.generatedVouchers = relatedVouchers
 
   return instance
 }
@@ -138,15 +130,6 @@ export const getUserBundleInstances = async (userId, brandId, options = {}) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-
-  // 為每個實例查詢相關的 vouchers
-  for (const instance of instances) {
-    const relatedVouchers = await VoucherInstance.find({
-      createdBy: instance._id,
-    }).select('voucherName isUsed expiryDate')
-
-    instance._doc.generatedVouchers = relatedVouchers
-  }
 
   // 處理分頁信息
   const totalPages = Math.ceil(total / limit)

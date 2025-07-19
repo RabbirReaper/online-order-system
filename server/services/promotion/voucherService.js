@@ -250,7 +250,7 @@ export const getAvailableVoucherTemplates = async (brandId) => {
 }
 
 /**
- * 獲取用戶兌換券 - 移除 order populate，改為 populate createdBy.bundleInstance
+ * 獲取用戶兌換券
  * @param {String} userId - 用戶ID
  * @param {Object} options - 查詢選項
  * @returns {Promise<Array>} 用戶的兌換券列表
@@ -271,7 +271,7 @@ export const getUserVouchers = async (userId, options = {}) => {
   const vouchers = await VoucherInstance.find(query)
     .populate('template', 'name description')
     .populate('exchangeDishTemplate', 'name basePrice image') // 直接 populate 餐點資訊
-    .populate('createdBy', 'name templateId') // 新的關聯
+    .populate('createdBy', 'name templateId') // populate BundleInstance 資訊
     .sort({ createdAt: -1 })
 
   return vouchers
@@ -305,7 +305,6 @@ export const useVoucher = async (voucherId, userId, orderId = null) => {
   // 標記為已使用
   voucher.isUsed = true
   voucher.usedAt = new Date()
-  // 注意：這裡不再設定 order 欄位，因為已移除
 
   await voucher.save()
 

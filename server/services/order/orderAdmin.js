@@ -68,22 +68,6 @@ export const getStoreOrders = async (storeId, options = {}) => {
     .populate('user', 'name email phone')
     .lean()
 
-  // 為每個訂單查詢相關的 vouchers
-  for (const order of orders) {
-    const bundleInstances = order.items
-      .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
-      .map((item) => item.bundleInstance._id)
-
-    if (bundleInstances.length > 0) {
-      const relatedVouchers = await VoucherInstance.find({
-        'createdBy.bundleInstance': { $in: bundleInstances },
-      }).select('voucherName isUsed expiryDate createdBy')
-
-      // 將 vouchers 附加到訂單對象
-      order.generatedVouchers = relatedVouchers
-    }
-  }
-
   const totalPages = Math.ceil(total / limit)
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
@@ -131,20 +115,6 @@ export const getOrderById = async (orderId, storeId) => {
 
   if (!order) {
     throw new AppError('訂單不存在', 404)
-  }
-
-  // 查詢相關的 vouchers
-  const bundleInstances = order.items
-    .filter((item) => item.itemType === 'bundle' && item.bundleInstance)
-    .map((item) => item.bundleInstance._id)
-
-  if (bundleInstances.length > 0) {
-    const relatedVouchers = await VoucherInstance.find({
-      'createdBy.bundleInstance': { $in: bundleInstances },
-    }).populate('exchangeDishTemplate', 'name basePrice')
-
-    // 將 vouchers 附加到訂單對象
-    order.generatedVouchers = relatedVouchers
   }
 
   return order
@@ -195,7 +165,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
   await order.save()
 
   // 處理狀態變為 paid 的後續流程
-  let result = { ...order.toObject(), pointsAwarded: 0, generatedVouchers: [] }
+  let result = { ...order.toObject(), pointsAwarded: 0 }
 
   if (previousStatus !== 'paid' && order.status === 'paid') {
     try {
