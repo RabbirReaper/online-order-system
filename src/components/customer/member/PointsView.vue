@@ -223,7 +223,7 @@ const pointsHistory = ref([])
 // 分頁相關
 const currentHistoryPage = ref(1)
 const hasMoreHistory = ref(false)
-const historyLimit = ref(20)
+const historyLimit = ref(200)
 
 // 獲得點數（按到期時間排序：快到期優先）
 const groupedEarnedPoints = computed(() => {
