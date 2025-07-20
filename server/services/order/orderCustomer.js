@@ -1,6 +1,6 @@
 /**
  * 訂單客戶服務 - 完整版
- * 處理客戶相關的訂單操作（支援 Bundle 購買 + 混合購買）
+ * 處理客戶相關的訂單操作（支援 Bundle 購買 + 混合購買 + Voucher 折扣）
  */
 
 import Order from '../../models/Order/Order.js'
@@ -9,6 +9,8 @@ import BundleInstance from '../../models/Promotion/BundleInstance.js'
 import Bundle from '../../models/Promotion/Bundle.js'
 import VoucherInstance from '../../models/Promotion/VoucherInstance.js'
 import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js'
+import CouponInstance from '../../models/Promotion/CouponInstance.js'
+import DishTemplate from '../../models/Dish/DishTemplate.js'
 import { AppError } from '../../middlewares/error.js'
 import * as inventoryService from '../inventory/stockManagement.js'
 import * as bundleService from '../bundle/bundleService.js'
@@ -18,11 +20,11 @@ import * as pointRuleService from '../promotion/pointRuleService.js'
 import { getTaiwanDateTime, formatDateTime, generateDateCode } from '../../utils/date.js'
 
 /**
- * 創建訂單 - 支援 Bundle 購買 + 預先庫存檢查
+ * 創建訂單 - 支援 Bundle 購買 + 預先庫存檢查 + Voucher 折扣
  */
 export const createOrder = async (orderData) => {
   try {
-    //console.log('Creating order with mixed purchase support...');
+    console.log('Creating order with voucher support...')
 
     // 設置預設手動調整金額
     orderData.manualAdjustment = orderData.manualAdjustment || 0
@@ -35,19 +37,22 @@ export const createOrder = async (orderData) => {
     // 🔍 Step 2: 預先檢查 Bundle 購買資格
     await validateBundlesBeforeOrder(orderData)
 
-    // Step 3: 處理訂單項目
+    // 🔍 Step 3: 預先驗證並處理 Voucher 折扣
+    await validateAndProcessVouchersBeforeOrder(orderData)
+
+    // Step 4: 處理訂單項目
     const items = []
     let dishSubtotal = 0
     let bundleSubtotal = 0
 
     for (const item of orderData.items) {
       if (item.itemType === 'dish') {
-        //console.log(`Processing dish: ${item.name}`);
+        console.log(`Processing dish: ${item.name}`)
         const dishItem = await createDishItem(item, orderData.brand)
         items.push(dishItem)
         dishSubtotal += dishItem.subtotal
       } else if (item.itemType === 'bundle') {
-        //console.log(`Processing bundle: ${item.name}`);
+        console.log(`Processing bundle: ${item.name}`)
         const bundleItem = await createBundleItem(
           item,
           orderData.user,
@@ -59,19 +64,21 @@ export const createOrder = async (orderData) => {
       }
     }
 
-    // Step 4: 更新訂單數據
+    // Step 5: 更新訂單數據
     orderData.items = items
     orderData.dishSubtotal = dishSubtotal
     orderData.bundleSubtotal = bundleSubtotal
 
-    // Step 5: 創建並保存訂單
+    // Step 6: 創建並保存訂單
     const order = new Order(orderData)
     updateOrderAmounts(order)
     await order.save()
 
-    //console.log(`Order created: dishes $${dishSubtotal} + bundles $${bundleSubtotal} = total $${order.total}`);
+    console.log(
+      `Order created: dishes $${dishSubtotal} + bundles $${bundleSubtotal} = total $${order.total}`,
+    )
 
-    // Step 6: 實際扣除庫存 (這時應該不會失敗，因為已經預檢查過)
+    // Step 7: 實際扣除庫存 (這時應該不會失敗，因為已經預檢查過)
     try {
       await inventoryService.reduceInventoryForOrder(order)
     } catch (inventoryError) {
@@ -80,11 +87,11 @@ export const createOrder = async (orderData) => {
       throw new AppError('庫存扣除失敗，請重新下單', 400)
     }
 
-    // Step 7: 如果是即時付款，處理後續流程
+    // Step 8: 如果是即時付款，處理後續流程
     let result = { ...order.toObject(), pointsAwarded: 0 }
 
     if (order.status === 'paid') {
-      //console.log('Processing immediate payment completion...');
+      console.log('Processing immediate payment completion...')
       result = await processOrderPaymentComplete(order)
     }
 
@@ -93,6 +100,74 @@ export const createOrder = async (orderData) => {
     console.error('Failed to create order:', error)
     throw error
   }
+}
+
+/**
+ * 🔍 預先驗證並處理 Voucher 折扣
+ */
+const validateAndProcessVouchersBeforeOrder = async (orderData) => {
+  if (!orderData.discounts || orderData.discounts.length === 0) {
+    return // 沒有折扣，跳過檢查
+  }
+
+  const voucherDiscounts = orderData.discounts.filter(
+    (discount) => discount.discountModel === 'VoucherInstance',
+  )
+
+  if (voucherDiscounts.length === 0) {
+    return // 沒有 voucher 折扣，跳過檢查
+  }
+
+  console.log(`Validating ${voucherDiscounts.length} voucher discounts...`)
+
+  for (const voucherDiscount of voucherDiscounts) {
+    try {
+      // 驗證 voucher 是否存在且可用
+      const voucher = await VoucherInstance.findOne({
+        _id: voucherDiscount.refId,
+        brand: orderData.brand,
+        user: orderData.user,
+        isUsed: false,
+      }).populate('exchangeDishTemplate', 'name basePrice')
+
+      if (!voucher) {
+        throw new AppError(`兌換券不存在或已被使用`, 404)
+      }
+
+      // 檢查 voucher 是否已過期
+      if (voucher.expiryDate < new Date()) {
+        throw new AppError(`兌換券 ${voucher.voucherName} 已過期`, 400)
+      }
+
+      // 驗證訂單中是否有對應的餐點
+      const targetDish = voucher.exchangeDishTemplate
+      const matchingOrderItem = orderData.items.find(
+        (item) => item.itemType === 'dish' && item.templateId === targetDish._id.toString(),
+      )
+
+      if (!matchingOrderItem) {
+        throw new AppError(`訂單中沒有 ${targetDish.name}，無法使用此兌換券`, 400)
+      }
+
+      // 計算並驗證折扣金額（應該等於餐點基礎價格）
+      const expectedDiscountAmount = targetDish.basePrice
+      if (voucherDiscount.amount !== expectedDiscountAmount) {
+        console.log(
+          `Auto-correcting voucher discount amount: ${voucherDiscount.amount} -> ${expectedDiscountAmount}`,
+        )
+        voucherDiscount.amount = expectedDiscountAmount
+      }
+
+      console.log(
+        `✅ Voucher ${voucher.voucherName} validation passed (discount: $${voucherDiscount.amount})`,
+      )
+    } catch (error) {
+      console.error(`Voucher validation failed:`, error)
+      throw error
+    }
+  }
+
+  console.log('✅ All voucher validations passed')
 }
 
 /**
@@ -105,7 +180,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
     return // 沒有餐點項目，跳過檢查
   }
 
-  //console.log(`Validating inventory for ${dishItems.length} dish items...`);
+  console.log(`Validating inventory for ${dishItems.length} dish items...`)
 
   for (const item of dishItems) {
     try {
@@ -117,7 +192,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
 
       // 如果沒有庫存記錄，跳過檢查
       if (!inventoryItem) {
-        //console.log(`Dish ${item.name} has no inventory record, skipping check`);
+        console.log(`Dish ${item.name} has no inventory record, skipping check`)
         continue
       }
 
@@ -128,7 +203,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
 
       // 🔥 核心邏輯：enableAvailableStock 只有在 isInventoryTracked = true 時才有效
       if (inventoryItem.isInventoryTracked) {
-        //console.log(`📊 ${item.name} inventory tracking enabled - will record stock changes`);
+        console.log(`📊 ${item.name} inventory tracking enabled - will record stock changes`)
 
         // 只有在追蹤庫存 + 啟用可用庫存控制時，才檢查庫存限制
         if (inventoryItem.enableAvailableStock) {
@@ -138,12 +213,14 @@ const validateInventoryBeforeOrder = async (orderData) => {
               400,
             )
           }
-          //console.log(`✅ ${item.name} stock limit check passed (need: ${item.quantity}, available: ${inventoryItem.availableStock})`);
+          console.log(
+            `✅ ${item.name} stock limit check passed (need: ${item.quantity}, available: ${inventoryItem.availableStock})`,
+          )
         } else {
-          //console.log(`✅ ${item.name} inventory tracked but no purchase limit`);
+          console.log(`✅ ${item.name} inventory tracked but no purchase limit`)
         }
       } else {
-        //console.log(`📊 ${item.name} inventory tracking disabled - no stock recording or limits`);
+        console.log(`📊 ${item.name} inventory tracking disabled - no stock recording or limits`)
         // isInventoryTracked = false 時，enableAvailableStock 應該也是 false
         if (inventoryItem.enableAvailableStock) {
           console.warn(
@@ -161,7 +238,7 @@ const validateInventoryBeforeOrder = async (orderData) => {
     }
   }
 
-  //console.log('✅ All dish inventory validation passed');
+  console.log('✅ All dish inventory validation passed')
 }
 
 /**
@@ -174,7 +251,7 @@ const validateBundlesBeforeOrder = async (orderData) => {
     return // 沒有Bundle項目，跳過檢查
   }
 
-  //console.log(`Validating bundle purchase eligibility for ${bundleItems.length} bundle items...`);
+  console.log(`Validating bundle purchase eligibility for ${bundleItems.length} bundle items...`)
 
   for (const item of bundleItems) {
     try {
@@ -185,14 +262,14 @@ const validateBundlesBeforeOrder = async (orderData) => {
         orderData.store,
       )
 
-      //console.log(`✅ Bundle ${item.name} purchase eligibility check passed`);
+      console.log(`✅ Bundle ${item.name} purchase eligibility check passed`)
     } catch (error) {
       console.error(`Bundle ${item.name} purchase eligibility check failed:`, error)
       throw error // 直接拋出，因為 bundleService 已經包裝了適當的錯誤訊息
     }
   }
 
-  //console.log('✅ All bundle purchase eligibility validation passed');
+  console.log('✅ All bundle purchase eligibility validation passed')
 }
 
 /**
@@ -200,7 +277,7 @@ const validateBundlesBeforeOrder = async (orderData) => {
  */
 const cleanupFailedOrder = async (orderId, items) => {
   try {
-    //console.log('Cleaning up failed order data...');
+    console.log('Cleaning up failed order data...')
 
     // 刪除已創建的實例
     const dishInstanceIds = items
@@ -213,21 +290,21 @@ const cleanupFailedOrder = async (orderId, items) => {
 
     if (dishInstanceIds.length > 0) {
       await DishInstance.deleteMany({ _id: { $in: dishInstanceIds } })
-      //console.log(`Cleaned up ${dishInstanceIds.length} dish instances`);
+      console.log(`Cleaned up ${dishInstanceIds.length} dish instances`)
     }
 
     if (bundleInstanceIds.length > 0) {
       await BundleInstance.deleteMany({ _id: { $in: bundleInstanceIds } })
-      //console.log(`Cleaned up ${bundleInstanceIds.length} bundle instances`);
+      console.log(`Cleaned up ${bundleInstanceIds.length} bundle instances`)
     }
 
     // 刪除訂單
     if (orderId) {
       await Order.findByIdAndDelete(orderId)
-      //console.log('Cleaned up failed order');
+      console.log('Cleaned up failed order')
     }
 
-    //console.log('✅ Failed order cleanup completed');
+    console.log('✅ Failed order cleanup completed')
   } catch (cleanupError) {
     console.error('❌ Error cleaning up failed order data:', cleanupError)
     // 不拋出錯誤，避免影響主要的錯誤處理
@@ -285,18 +362,18 @@ const createBundleItem = async (item, userId, storeId, brandId) => {
 }
 
 /**
- * 處理訂單付款完成後的流程
+ * 處理訂單付款完成後的流程 - 支援 Voucher 標記
  */
 export const processOrderPaymentComplete = async (order) => {
   let pointsReward = { pointsAwarded: 0 }
 
-  //console.log(`Processing payment completion for order ${order._id}...`);
+  console.log(`Processing payment completion for order ${order._id}...`)
 
   try {
     // 1. 拆解 Bundle 生成 VoucherInstance 給用戶
     for (const item of order.items) {
       if (item.itemType === 'bundle') {
-        //console.log(`Generating vouchers for bundle: ${item.itemName}`);
+        console.log(`Generating vouchers for bundle: ${item.itemName}`)
         await bundleInstanceService.generateVouchersForBundle(
           item.bundleInstance,
           order.brand,
@@ -305,20 +382,26 @@ export const processOrderPaymentComplete = async (order) => {
       }
     }
 
-    // 2. 更新 Bundle 銷售統計
+    // 2. 標記使用的 Voucher 為已使用
+    await markUsedVouchers(order)
+
+    // 3. 標記使用的 Coupon 為已使用
+    await markUsedCoupons(order)
+
+    // 4. 更新 Bundle 銷售統計
     await updateBundleSalesStats(order)
 
-    // 3. 處理點數給予
+    // 5. 處理點數給予
     if (order.user) {
-      //console.log('Processing points reward...');
+      console.log('Processing points reward...')
       pointsReward = await processOrderPointsReward(order)
     }
 
-    // 4. 保存訂單更新
+    // 6. 保存訂單更新
     await order.save()
 
-    //console.log(`✅ Payment completion processed:`);
-    //console.log(`   - Points awarded: ${pointsReward.pointsAwarded}`);
+    console.log(`✅ Payment completion processed:`)
+    console.log(`   - Points awarded: ${pointsReward.pointsAwarded}`)
 
     return {
       ...order.toObject(),
@@ -327,6 +410,72 @@ export const processOrderPaymentComplete = async (order) => {
   } catch (error) {
     console.error('Failed to process payment completion:', error)
     throw error
+  }
+}
+
+/**
+ * 標記使用的 Voucher 為已使用
+ */
+const markUsedVouchers = async (order) => {
+  const voucherDiscounts = order.discounts.filter(
+    (discount) => discount.discountModel === 'VoucherInstance',
+  )
+
+  if (voucherDiscounts.length === 0) {
+    return
+  }
+
+  console.log(`Marking ${voucherDiscounts.length} vouchers as used...`)
+
+  for (const voucherDiscount of voucherDiscounts) {
+    try {
+      const voucher = await VoucherInstance.findById(voucherDiscount.refId)
+
+      if (voucher && !voucher.isUsed) {
+        voucher.isUsed = true
+        voucher.usedAt = new Date()
+        voucher.orderId = order._id // 記錄在哪個訂單中使用
+        await voucher.save()
+
+        console.log(`✅ Marked voucher ${voucher.voucherName} as used`)
+      }
+    } catch (error) {
+      console.error(`Failed to mark voucher ${voucherDiscount.refId} as used:`, error)
+      // 不拋出錯誤，避免影響主要流程
+    }
+  }
+}
+
+/**
+ * 標記使用的 Coupon 為已使用
+ */
+const markUsedCoupons = async (order) => {
+  const couponDiscounts = order.discounts.filter(
+    (discount) => discount.discountModel === 'CouponInstance',
+  )
+
+  if (couponDiscounts.length === 0) {
+    return
+  }
+
+  console.log(`Marking ${couponDiscounts.length} coupons as used...`)
+
+  for (const couponDiscount of couponDiscounts) {
+    try {
+      const coupon = await CouponInstance.findById(couponDiscount.refId)
+
+      if (coupon && !coupon.isUsed) {
+        coupon.isUsed = true
+        coupon.usedAt = new Date()
+        coupon.order = order._id
+        await coupon.save()
+
+        console.log(`✅ Marked coupon as used`)
+      }
+    } catch (error) {
+      console.error(`Failed to mark coupon ${couponDiscount.refId} as used:`, error)
+      // 不拋出錯誤，避免影響主要流程
+    }
   }
 }
 
@@ -341,7 +490,7 @@ const updateBundleSalesStats = async (order) => {
         await Bundle.findByIdAndUpdate(bundleInstance.templateId, {
           $inc: { totalSold: item.quantity },
         })
-        //console.log(`Updated sales stats for bundle: ${bundleInstance.name} (+${item.quantity})`);
+        console.log(`Updated sales stats for bundle: ${bundleInstance.name} (+${item.quantity})`)
       }
     }
   }
@@ -352,10 +501,10 @@ const updateBundleSalesStats = async (order) => {
  */
 export const processOrderPointsReward = async (order) => {
   try {
-    //console.log(`Processing points reward for order ${order._id}`);
+    console.log(`Processing points reward for order ${order._id}`)
 
     if (!order.user) {
-      //console.log('No user found, skipping points reward');
+      console.log('No user found, skipping points reward')
       return { pointsAwarded: 0 }
     }
 
@@ -366,7 +515,7 @@ export const processOrderPointsReward = async (order) => {
     )
 
     if (!pointsCalculation || pointsCalculation.points === 0) {
-      //console.log('No points awarded - rule not met or no active rules');
+      console.log('No points awarded - rule not met or no active rules')
       return { pointsAwarded: 0 }
     }
 
@@ -380,7 +529,7 @@ export const processOrderPointsReward = async (order) => {
     )
 
     if (alreadyRewarded) {
-      //console.log('Points already awarded, skipping duplicate reward');
+      console.log('Points already awarded, skipping duplicate reward')
       return { pointsAwarded: 0 }
     }
 
@@ -409,8 +558,10 @@ export const processOrderPointsReward = async (order) => {
       pointsCalculation.rule.validityDays || 60, // validityDays，預設60天
     )
 
-    //console.log(`✅ Awarded ${pointsCalculation.points} points to user ${order.user}`);
-    //console.log(`💰 Calculation base: ${order.total} (dishes: ${order.dishSubtotal}, bundles: ${order.bundleSubtotal})`);
+    console.log(`✅ Awarded ${pointsCalculation.points} points to user ${order.user}`)
+    console.log(
+      `💰 Calculation base: ${order.total} (dishes: ${order.dishSubtotal}, bundles: ${order.bundleSubtotal})`,
+    )
 
     return {
       pointsAwarded: pointsCalculation.points,
@@ -428,7 +579,7 @@ export const processOrderPointsReward = async (order) => {
  * 🧮 更新訂單金額 (支援混合購買)
  */
 export const updateOrderAmounts = (order) => {
-  //console.log('Updating order amounts...');
+  console.log('Updating order amounts...')
 
   // Step 1: 計算小計 (dishes + bundles)
   order.subtotal = order.dishSubtotal + order.bundleSubtotal
@@ -449,14 +600,14 @@ export const updateOrderAmounts = (order) => {
     order.total = 0
   }
 
-  //console.log(`Order amounts updated:`);
-  //console.log(`   - Dish subtotal: $${order.dishSubtotal}`);
-  //console.log(`   - Bundle subtotal: $${order.bundleSubtotal}`);
-  //console.log(`   - Subtotal: $${order.subtotal}`);
-  //console.log(`   - Service charge: $${order.serviceCharge}`);
-  //console.log(`   - Total discount: $${order.totalDiscount}`);
-  //console.log(`   - Manual adjustment: $${order.manualAdjustment}`);
-  //console.log(`   - Final total: $${order.total}`);
+  console.log(`Order amounts updated:`)
+  console.log(`   - Dish subtotal: $${order.dishSubtotal}`)
+  console.log(`   - Bundle subtotal: $${order.bundleSubtotal}`)
+  console.log(`   - Subtotal: $${order.subtotal}`)
+  console.log(`   - Service charge: $${order.serviceCharge}`)
+  console.log(`   - Total discount: $${order.totalDiscount}`)
+  console.log(`   - Manual adjustment: $${order.manualAdjustment}`)
+  console.log(`   - Final total: $${order.total}`)
 
   return order
 }

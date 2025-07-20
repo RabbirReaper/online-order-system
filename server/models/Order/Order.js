@@ -114,10 +114,16 @@ const orderSchema = new mongoose.Schema(
     }, // 服務費
     discounts: [
       {
-        couponId: {
+        discountModel: {
+          type: String,
+          enum: ['CouponInstance', 'VoucherInstance'],
+          required: true,
+        }, // 折扣類型
+        refId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'CouponInstance',
-        }, // 優惠券 ID
+          refPath: 'discounts.discountModel',
+          required: true,
+        }, // 動態引用 ID
         amount: {
           type: Number,
           required: true,

@@ -1,10 +1,11 @@
 /**
  * 訂單管理員服務
- * 處理管理員相關的訂單操作（支援 Bundle 訂單）
+ * 處理管理員相關的訂單操作（支援 Bundle 訂單 + Voucher 恢復）
  */
 
 import Order from '../../models/Order/Order.js'
 import VoucherInstance from '../../models/Promotion/VoucherInstance.js'
+import CouponInstance from '../../models/Promotion/CouponInstance.js'
 import { AppError } from '../../middlewares/error.js'
 import { parseDateString, getStartOfDay, getEndOfDay } from '../../utils/date.js'
 // 直接導入而非動態導入
@@ -192,7 +193,7 @@ export const updateOrder = async (orderId, updateData, adminId) => {
 }
 
 /**
- * 管理員取消訂單 - 支援 Bundle 訂單
+ * 管理員取消訂單 - 支援 Bundle 訂單 + Voucher/Coupon 恢復
  */
 export const cancelOrder = async (orderId, reason, adminId) => {
   const order = await Order.findById(orderId)
@@ -204,6 +205,14 @@ export const cancelOrder = async (orderId, reason, adminId) => {
   if (order.status === 'cancelled') {
     throw new AppError('訂單已被取消', 400)
   }
+
+  console.log(`Cancelling order ${orderId} - restoring vouchers and coupons...`)
+
+  // 🔧 恢復使用的 Voucher 狀態
+  await restoreUsedVouchers(order)
+
+  // 🔧 恢復使用的 Coupon 狀態
+  await restoreUsedCoupons(order)
 
   // 如果訂單包含已生成的兌換券，需要處理券的狀態
   const bundleInstances = order.items
@@ -223,6 +232,8 @@ export const cancelOrder = async (orderId, reason, adminId) => {
       voucher.invalidReason = 'ORDER_CANCELLED'
       await voucher.save()
     }
+
+    console.log(`Invalidated ${relatedVouchers.length} vouchers from cancelled bundles`)
   }
 
   // 還原庫存（如果有餐點項目）
@@ -257,5 +268,90 @@ export const cancelOrder = async (orderId, reason, adminId) => {
   order.cancelledAt = new Date()
 
   await order.save()
+
+  console.log(`✅ Order ${orderId} cancelled and vouchers/coupons restored`)
+
   return order
+}
+
+/**
+ * 恢復使用的 Voucher 狀態
+ */
+const restoreUsedVouchers = async (order) => {
+  const voucherDiscounts = order.discounts.filter(
+    (discount) => discount.discountModel === 'VoucherInstance',
+  )
+
+  if (voucherDiscounts.length === 0) {
+    return
+  }
+
+  console.log(`Restoring ${voucherDiscounts.length} used vouchers...`)
+
+  for (const voucherDiscount of voucherDiscounts) {
+    try {
+      const voucher = await VoucherInstance.findById(voucherDiscount.refId)
+
+      if (voucher && voucher.isUsed) {
+        // 檢查兌換券是否過期
+        const now = new Date()
+        if (voucher.expiryDate < now) {
+          console.log(`Voucher ${voucher.voucherName} has expired, cannot restore`)
+          continue
+        }
+
+        // 恢復兌換券狀態
+        voucher.isUsed = false
+        voucher.usedAt = null
+        voucher.orderId = null
+        await voucher.save()
+
+        console.log(`✅ Restored voucher ${voucher.voucherName}`)
+      }
+    } catch (error) {
+      console.error(`Failed to restore voucher ${voucherDiscount.refId}:`, error)
+      // 不拋出錯誤，繼續處理其他兌換券
+    }
+  }
+}
+
+/**
+ * 恢復使用的 Coupon 狀態
+ */
+const restoreUsedCoupons = async (order) => {
+  const couponDiscounts = order.discounts.filter(
+    (discount) => discount.discountModel === 'CouponInstance',
+  )
+
+  if (couponDiscounts.length === 0) {
+    return
+  }
+
+  console.log(`Restoring ${couponDiscounts.length} used coupons...`)
+
+  for (const couponDiscount of couponDiscounts) {
+    try {
+      const coupon = await CouponInstance.findById(couponDiscount.refId)
+
+      if (coupon && coupon.isUsed) {
+        // 檢查優惠券是否過期
+        const now = new Date()
+        if (coupon.expiryDate < now) {
+          console.log(`Coupon has expired, cannot restore`)
+          continue
+        }
+
+        // 恢復優惠券狀態
+        coupon.isUsed = false
+        coupon.usedAt = null
+        coupon.order = null
+        await coupon.save()
+
+        console.log(`✅ Restored coupon`)
+      }
+    } catch (error) {
+      console.error(`Failed to restore coupon ${couponDiscount.refId}:`, error)
+      // 不拋出錯誤，繼續處理其他優惠券
+    }
+  }
 }
