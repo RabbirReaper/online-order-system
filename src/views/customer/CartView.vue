@@ -747,15 +747,33 @@ const submitOrder = async () => {
       })
     }
 
-    // 處理折價券
+    // 構建新的discounts結構 - 合併voucher和coupon折扣
+    const discounts = []
+
+    // 添加兌換券折扣
+    if (usedVouchers.value.length > 0) {
+      usedVouchers.value.forEach((voucher) => {
+        discounts.push({
+          discountModel: 'VoucherInstance',
+          refId: voucher.voucherId,
+          amount: voucher.savedAmount,
+        })
+      })
+    }
+
+    // 添加折價券折扣
     if (appliedCoupons.value.length > 0) {
       appliedCoupons.value.forEach((coupon) => {
-        cartStore.applyCoupon({
-          couponId: coupon.couponId,
+        discounts.push({
+          discountModel: 'CouponInstance',
+          refId: coupon.couponId,
           amount: coupon.amount,
         })
       })
     }
+
+    // 設置統一的折扣結構到cartStore
+    cartStore.appliedCoupons = discounts
 
     // 提交訂單
     const result = await cartStore.submitOrder()

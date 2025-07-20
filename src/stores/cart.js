@@ -21,7 +21,7 @@ export const useCartStore = defineStore('cart', () => {
   }) // 內用資訊
   const estimatedPickupTime = ref(null) // Date 對象，預計取餐時間
   const notes = ref('') // 訂單備註
-  const appliedCoupons = ref([]) // 已應用的優惠券列表
+  const appliedCoupons = ref([]) // 已應用的折扣列表（新結構：包含voucher和coupon）
   const paymentType = ref('On-site') // 'On-site', 'Online'
   const paymentMethod = ref('cash') // 'cash', 'credit_card', 'line_pay', 'other'
   const isStaffMode = ref(false) // true=員工點餐模式, false=顧客模式
@@ -42,7 +42,7 @@ export const useCartStore = defineStore('cart', () => {
   })
 
   const discountAmount = computed(() => {
-    return appliedCoupons.value.reduce((total, coupon) => total + coupon.amount, 0)
+    return appliedCoupons.value.reduce((total, discount) => total + discount.amount, 0)
   })
 
   const total = computed(() => {
@@ -302,24 +302,34 @@ export const useCartStore = defineStore('cart', () => {
     notes.value = text
   }
 
-  function applyCoupon(coupon) {
-    if (!coupon || !coupon.couponId) {
-      console.error('無效的優惠券:', coupon)
+  function applyCoupon(couponData) {
+    if (!couponData || (!couponData.couponId && !couponData.refId)) {
+      console.error('無效的優惠券資料:', couponData)
       return
     }
 
-    // 檢查優惠券是否已使用
-    const existingCouponIndex = appliedCoupons.value.findIndex(
-      (c) => c.couponId === coupon.couponId,
+    // 統一處理新舊格式，支援向後兼容
+    const discountItem = {
+      discountModel: couponData.discountModel || 'CouponInstance',
+      refId: couponData.refId || couponData.couponId,
+      amount: couponData.amount,
+      // 保留前端顯示需要的額外資訊
+      name: couponData.name,
+      discountInfo: couponData.discountInfo,
+    }
+
+    // 檢查是否已經應用過相同的折扣
+    const existingIndex = appliedCoupons.value.findIndex(
+      (discount) => discount.refId === discountItem.refId,
     )
 
-    if (existingCouponIndex === -1) {
-      appliedCoupons.value.push(coupon)
+    if (existingIndex === -1) {
+      appliedCoupons.value.push(discountItem)
     }
   }
 
-  function removeCoupon(couponId) {
-    appliedCoupons.value = appliedCoupons.value.filter((coupon) => coupon.couponId !== couponId)
+  function removeCoupon(refId) {
+    appliedCoupons.value = appliedCoupons.value.filter((discount) => discount.refId !== refId)
   }
 
   function setPaymentMethod(method, type = 'On-site') {
@@ -458,10 +468,11 @@ export const useCartStore = defineStore('cart', () => {
         // 手動調整金額
         manualAdjustment: 0,
 
-        // 折扣資訊
-        discounts: appliedCoupons.value.map((coupon) => ({
-          couponId: coupon.couponId,
-          amount: coupon.amount,
+        // 折扣資訊 - 使用新的結構
+        discounts: appliedCoupons.value.map((discount) => ({
+          discountModel: discount.discountModel,
+          refId: discount.refId,
+          amount: discount.amount,
         })),
       }
 
@@ -480,14 +491,6 @@ export const useCartStore = defineStore('cart', () => {
         orderData.dineInInfo = dineInInfo.value
       } else if (orderType.value === 'takeout') {
         orderData.estimatedPickupTime = estimatedPickupTime.value
-      }
-
-      // 處理優惠券
-      if (appliedCoupons.value.length > 0) {
-        orderData.discounts = appliedCoupons.value.map((coupon) => ({
-          couponId: coupon.id,
-          amount: coupon.value,
-        }))
       }
 
       console.log('=== Pinia 提交訂單資料 ===')
