@@ -91,6 +91,17 @@ export default function (apiClient) {
       return apiClient.get(`/bundle/brands/${brandId}/bundles/${bundleId}/purchase-limit`)
     },
 
+    /**
+     * 🆕 使用點數兌換 Bundle (客戶端)
+     * @param {Object} params - 兌換參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.bundleId - Bundle ID（必填）
+     * @returns {Promise} - API 回應，包含兌換結果和剩餘點數
+     */
+    redeemBundleWithPoints({ brandId, bundleId }) {
+      return apiClient.post(`/bundle/brands/${brandId}/bundles/${bundleId}/redeem-with-points`)
+    },
+
     // ========== Bundle 實例相關 ==========
 
     /**

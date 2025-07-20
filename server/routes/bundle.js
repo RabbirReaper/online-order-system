@@ -55,6 +55,15 @@ router.delete(
   bundleController.deleteBundle,
 )
 
+// 自動為兌換券創建Bundle包裝
+router.post(
+  '/brands/:brandId/bundles/auto-create',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  bundleController.autoCreateBundlesForVouchers,
+)
+
 // =============================================================================
 // Bundle 客戶端路由
 // =============================================================================
@@ -64,6 +73,13 @@ router.get(
   '/brands/:brandId/bundles/:bundleId/purchase-limit',
   authenticate('user'),
   bundleController.checkPurchaseLimit,
+)
+
+// 🆕 使用點數兌換 Bundle
+router.post(
+  '/brands/:brandId/bundles/:bundleId/redeem-with-points',
+  authenticate('user'),
+  bundleInstanceController.redeemBundleWithPoints,
 )
 
 // =============================================================================
@@ -93,15 +109,6 @@ router.post(
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   bundleInstanceController.createBundleInstance,
-)
-
-// 自動為兌換券創建Bundle包裝
-router.post(
-  '/brands/:brandId/bundles/auto-create',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  bundleController.autoCreateBundlesForVouchers,
 )
 
 export default router

@@ -299,53 +299,6 @@ export const generateVouchersForBundle = async (bundleInstanceId, brandId, userI
 }
 
 /**
- * 獲取用戶的 Bundle 實例列表
- * @param {String} userId - 用戶ID
- * @param {String} brandId - 品牌ID
- * @param {Object} options - 查詢選項
- * @returns {Promise<Object>} Bundle 實例列表與分頁資訊
- */
-export const getUserBundleInstances = async (userId, brandId, options = {}) => {
-  const { page = 1, limit = 20 } = options
-
-  // 計算分頁
-  const skip = (page - 1) * limit
-
-  // 查詢條件
-  const query = {
-    user: userId,
-    brand: brandId,
-  }
-
-  // 查詢總數
-  const total = await BundleInstance.countDocuments(query)
-
-  // 查詢實例
-  const instances = await BundleInstance.find(query)
-    .populate('templateId', 'name')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-
-  // 處理分頁信息
-  const totalPages = Math.ceil(total / limit)
-  const hasNextPage = page < totalPages
-  const hasPrevPage = page > 1
-
-  return {
-    instances,
-    pagination: {
-      total,
-      totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage,
-      hasPrevPage,
-    },
-  }
-}
-
-/**
  * 更新 Bundle 實例
  * @param {String} instanceId - 實例ID
  * @param {Object} updateData - 更新數據
