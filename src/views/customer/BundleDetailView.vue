@@ -177,7 +177,7 @@
             <div v-if="shouldShowPointPrice" class="col">
               <button
                 class="btn btn-primary w-100"
-                @click="addToCartPoints"
+                @click="confirmPointsRedemption"
                 :disabled="!hasPointPrice || isAddingToCart"
               >
                 <i class="bi bi-star-fill me-2"></i>
@@ -188,12 +188,154 @@
         </div>
       </div>
     </div>
+
+    <!-- 點數兌換確認 Modal -->
+    <BModal
+      v-model="pointsRedemptionModal.show"
+      :title="pointsRedemptionModal.title"
+      @ok="handleModalOk"
+      @cancel="cancelPointsRedemption"
+      :ok-disabled="pointsRedemptionModal.isProcessing || pointsRedemptionModal.showSuccess"
+      :cancel-disabled="pointsRedemptionModal.isProcessing"
+      :ok-title="pointsRedemptionModal.isProcessing ? '處理中...' : '確認兌換'"
+      cancel-title="取消"
+      size="md"
+      centered
+      :hide-footer="
+        pointsRedemptionModal.isProcessing ||
+        pointsRedemptionModal.showSuccess ||
+        pointsRedemptionModal.showError
+      "
+      :no-close-on-backdrop="pointsRedemptionModal.isProcessing"
+      :no-close-on-esc="pointsRedemptionModal.isProcessing"
+    >
+      <!-- 確認內容 -->
+      <div
+        v-if="
+          !pointsRedemptionModal.isProcessing &&
+          !pointsRedemptionModal.showSuccess &&
+          !pointsRedemptionModal.showError
+        "
+        class="redemption-confirm"
+      >
+        <div class="text-center mb-4">
+          <i class="bi bi-star-fill text-warning fs-1 mb-3"></i>
+          <h5 class="mb-3">確認點數兌換</h5>
+        </div>
+
+        <div class="redemption-details">
+          <div class="row mb-3">
+            <div class="col-4">
+              <small class="text-muted">商品名稱：</small>
+            </div>
+            <div class="col-8">
+              <strong>{{ bundle.name }}</strong>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4">
+              <small class="text-muted">所需點數：</small>
+            </div>
+            <div class="col-8">
+              <span class="text-primary fw-bold">{{ currentPointPrice }} 點數</span>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-4">
+              <small class="text-muted">有效期限：</small>
+            </div>
+            <div class="col-8">
+              <span>購買後 {{ bundle.voucherValidityDays || 30 }} 天</span>
+            </div>
+          </div>
+
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <small>
+              兌換後將立即從您的點數餘額中扣除 {{ currentPointPrice }} 點數，
+              並發放相應的兌換券到您的帳戶中。
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- 處理中動畫 -->
+      <div
+        v-else-if="pointsRedemptionModal.isProcessing"
+        class="processing-animation text-center py-4"
+      >
+        <div class="spinner-container mb-3">
+          <div class="spinner-border text-primary" style="width: 3rem; height: 3rem">
+            <span class="visually-hidden">處理中...</span>
+          </div>
+        </div>
+        <h6 class="mb-2">{{ pointsRedemptionModal.processingMessage }}</h6>
+        <small class="text-muted">請稍候，正在為您處理兌換...</small>
+
+        <!-- 進度指示器 -->
+        <div class="progress mt-3" style="height: 6px">
+          <div
+            class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+            :style="{ width: pointsRedemptionModal.progressPercent + '%' }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- 錯誤畫面 -->
+      <div v-else-if="pointsRedemptionModal.showError" class="error-animation text-center py-4">
+        <div class="error-icon mb-3">
+          <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 4rem"></i>
+        </div>
+        <h5 class="text-danger mb-2">兌換失敗</h5>
+        <p class="text-muted mb-4">{{ pointsRedemptionModal.errorMessage }}</p>
+
+        <!-- 錯誤後的操作按鈕 -->
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary" @click="retryRedemption">
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            重新嘗試
+          </button>
+          <button class="btn btn-outline-secondary" @click="closeModal">
+            <i class="bi bi-x-lg me-2"></i>
+            關閉
+          </button>
+        </div>
+      </div>
+
+      <!-- 成功動畫 -->
+      <div v-else-if="pointsRedemptionModal.showSuccess" class="success-animation text-center py-4">
+        <div class="success-icon mb-3">
+          <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem"></i>
+        </div>
+        <h5 class="text-success mb-2">兌換成功！</h5>
+        <p class="text-muted mb-4">您的兌換券已發放到帳戶中，可到「我的票券」查看使用。</p>
+
+        <!-- 成功後的操作按鈕 -->
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary" @click="goToMyVouchers">
+            <i class="bi bi-ticket-perforated me-2"></i>
+            查看我的票券
+          </button>
+          <button class="btn btn-outline-secondary" @click="continueExploring">
+            <i class="bi bi-arrow-left me-2"></i>
+            繼續瀏覽商品
+          </button>
+          <button class="btn btn-outline-danger btn-sm mt-2" @click="closeModal">
+            <i class="bi bi-x-lg me-1"></i>
+            關閉
+          </button>
+        </div>
+      </div>
+    </BModal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { BModal } from 'bootstrap-vue-next'
 import api from '@/api'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/customerAuth'
@@ -217,6 +359,18 @@ const menuType = computed(() => {
 const bundle = ref({})
 const isLoading = ref(true)
 const isAddingToCart = ref(false)
+
+// 點數兌換 Modal 狀態 (修改版)
+const pointsRedemptionModal = reactive({
+  show: false,
+  title: '點數兌換確認',
+  isProcessing: false,
+  showSuccess: false,
+  showError: false,
+  progressPercent: 0,
+  processingMessage: '正在處理您的兌換請求...',
+  errorMessage: '',
+})
 
 // 計算屬性 - 根據菜單類型決定顯示什麼
 const shouldShowCashPrice = computed(() => {
@@ -314,7 +468,7 @@ const bundleImage = computed(() => {
 
 const loadBundleData = async () => {
   try {
-    console.log('載入商品詳情:', bundleId.value)
+    // console.log('載入商品詳情:', bundleId.value)
 
     // 使用真實 API 調用
     const response = await api.bundle.getBundleById({
@@ -407,59 +561,160 @@ const addToCartCash = async () => {
   }
 }
 
-const addToCartPoints = async () => {
+// 確認點數兌換 - 顯示 Modal
+const confirmPointsRedemption = () => {
   // 檢查登入狀態
   if (needsAuth.value && !isLoggedIn.value) {
     goToLogin()
     return
   }
 
-  if (isAddingToCart.value || !hasPointPrice.value) return
+  if (!hasPointPrice.value) return
 
-  isAddingToCart.value = true
+  // 重置 modal 狀態
+  pointsRedemptionModal.isProcessing = false
+  pointsRedemptionModal.showSuccess = false
+  pointsRedemptionModal.showError = false
+  pointsRedemptionModal.progressPercent = 0
+  pointsRedemptionModal.errorMessage = ''
+  pointsRedemptionModal.title = '點數兌換確認'
+  pointsRedemptionModal.show = true
+}
+
+// 處理Modal確認按鈕點擊 (新增)
+const handleModalOk = (event) => {
+  // 阻止modal的預設關閉行為
+  event.preventDefault()
+
+  // 只有在確認狀態時才執行兌換
+  if (
+    !pointsRedemptionModal.isProcessing &&
+    !pointsRedemptionModal.showSuccess &&
+    !pointsRedemptionModal.showError
+  ) {
+    processPointsRedemption()
+  }
+}
+
+// 處理點數兌換 (修改版)
+const processPointsRedemption = async () => {
+  pointsRedemptionModal.isProcessing = true
+  pointsRedemptionModal.title = '正在處理兌換'
+  pointsRedemptionModal.progressPercent = 10
+  pointsRedemptionModal.processingMessage = '正在驗證您的點數餘額...'
 
   try {
-    // 創建點數兌換套餐購物車項目
-    const bundleCartItem = {
-      bundleInstance: {
-        templateId: bundle.value._id,
-        name: `${bundle.value.name} (點數兌換)`,
-        description: bundle.value.description,
-        pointPrice: {
-          original: bundle.value.pointPrice?.original || currentPointPrice.value,
-          selling: bundle.value.pointPrice?.selling || currentPointPrice.value,
-        },
-        bundleItems: bundle.value.bundleItems || [],
-        finalPrice: 0, // 點數兌換現金價格為0
-        pointCost: currentPointPrice.value,
-        voucherValidityDays: bundle.value.voucherValidityDays || 30,
-        purchaseType: 'points',
-      },
-      quantity: 1,
-      note: '點數兌換商品',
-      subtotal: 0,
-    }
+    // 調用點數兌換 API
+    // console.log('開始點數兌換:', {
+    //   brandId: brandId.value,
+    //   bundleId: bundleId.value,
+    //   pointsRequired: currentPointPrice.value,
+    // })
 
-    cartStore.addItem(bundleCartItem)
+    // 模擬處理步驟與進度更新
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    pointsRedemptionModal.progressPercent = 40
+    pointsRedemptionModal.processingMessage = '正在生成您的兌換券...'
 
-    // 返回菜單頁面，確保菜單類型正確
-    if (menuType.value !== menuStore.currentMenuType) {
-      menuStore.setMenuType(menuType.value)
-    }
-
-    router.push({
-      name: 'menu',
-      params: {
-        brandId: brandId.value,
-        storeId: storeId.value,
-      },
+    const response = await api.bundle.redeemBundleWithPoints({
+      brandId: brandId.value,
+      bundleId: bundleId.value,
     })
+
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    pointsRedemptionModal.progressPercent = 80
+    pointsRedemptionModal.processingMessage = '兌換完成，正在更新您的帳戶...'
+
+    if (response.success) {
+      // console.log('點數兌換成功:', response)
+
+      // 完成進度條
+      pointsRedemptionModal.progressPercent = 100
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // 顯示成功畫面
+      pointsRedemptionModal.isProcessing = false
+      pointsRedemptionModal.showSuccess = true
+      pointsRedemptionModal.title = '兌換完成'
+    } else {
+      throw new Error(response.message || '兌換失敗')
+    }
   } catch (error) {
-    console.error('加入購物車失敗:', error)
-    alert('加入購物車失敗，請稍後再試')
-  } finally {
-    isAddingToCart.value = false
+    console.error('點數兌換失敗:', error)
+
+    // 顯示錯誤但不關閉modal
+    pointsRedemptionModal.isProcessing = false
+    pointsRedemptionModal.showError = true
+    pointsRedemptionModal.title = '兌換失敗'
+
+    // 設定錯誤訊息
+    let errorMessage = '兌換失敗，請稍後再試'
+    if (error.response) {
+      errorMessage = error.response.data?.message || `錯誤: ${error.response.status}`
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+
+    pointsRedemptionModal.errorMessage = errorMessage
   }
+}
+
+// 取消點數兌換
+const cancelPointsRedemption = (event) => {
+  // 只有在非處理中狀態才能取消
+  if (!pointsRedemptionModal.isProcessing) {
+    closeModal()
+  } else {
+    // 如果正在處理中，阻止關閉
+    if (event) {
+      event.preventDefault()
+    }
+  }
+}
+
+// 關閉modal (新增)
+const closeModal = () => {
+  pointsRedemptionModal.show = false
+  pointsRedemptionModal.isProcessing = false
+  pointsRedemptionModal.showSuccess = false
+  pointsRedemptionModal.showError = false
+  pointsRedemptionModal.progressPercent = 0
+  pointsRedemptionModal.errorMessage = ''
+}
+
+// 重試兌換 (新增，用於錯誤狀態)
+const retryRedemption = () => {
+  pointsRedemptionModal.showError = false
+  pointsRedemptionModal.errorMessage = ''
+  pointsRedemptionModal.title = '點數兌換確認'
+}
+
+// 成功後跳轉到我的票券頁面 (修改版)
+const goToMyVouchers = () => {
+  closeModal()
+
+  // 跳轉到我的票券頁面
+  router.push({
+    name: 'member-coupons',
+  })
+}
+
+// 繼續瀏覽商品 (修改版)
+const continueExploring = () => {
+  closeModal()
+
+  // 返回菜單頁面，確保菜單類型正確
+  if (menuType.value !== menuStore.currentMenuType) {
+    menuStore.setMenuType(menuType.value)
+  }
+
+  router.push({
+    name: 'menu',
+    params: {
+      brandId: brandId.value,
+      storeId: storeId.value,
+    },
+  })
 }
 
 onMounted(async () => {
@@ -617,10 +872,125 @@ onMounted(async () => {
   display: block;
 }
 
-.member-info {
-  border-left: 3px solid #0dcaf0;
+/* Modal 相關樣式 */
+.redemption-confirm {
+  max-width: 400px;
+  margin: 0 auto;
 }
 
+.redemption-details {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.processing-animation {
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.spinner-container {
+  position: relative;
+}
+
+.success-animation {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.success-icon {
+  animation: successBounce 0.6s ease-out;
+}
+
+.success-animation .d-grid {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* 新增：錯誤動畫樣式 */
+.error-animation {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.error-icon {
+  animation: errorShake 0.6s ease-out;
+}
+
+.error-animation .d-grid {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* 進度條樣式增強 */
+.progress {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+/* 動畫效果 */
+@keyframes successBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* 處理中狀態的脈動效果 */
+.processing-animation .spinner-border {
+  animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.6;
+  }
+}
+
+/* 響應式調整 */
 @media (max-width: 576px) {
   .container-wrapper {
     max-width: 100%;
@@ -646,6 +1016,18 @@ onMounted(async () => {
 
   .auth-required-notice {
     padding: 1rem !important;
+  }
+
+  .redemption-confirm,
+  .success-animation .d-grid,
+  .error-animation .d-grid {
+    max-width: none;
+  }
+
+  .processing-animation,
+  .success-animation,
+  .error-animation {
+    min-height: 220px;
   }
 }
 </style>
