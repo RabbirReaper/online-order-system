@@ -49,17 +49,66 @@
 
         <div class="divider"></div>
 
-        <!-- Member Coupon -->
-        <div class="member-coupon mb-4">
-          <h6 class="mb-3 fw-bold">會員折價券</h6>
-          <!-- <div class="d-flex align-items-center">
-            <select class="form-select" v-model="selectedCoupon">
-              <option value="">不使用優惠券</option>
-              <option v-for="coupon in availableCoupons" :key="coupon.id" :value="coupon.id">
-                {{ coupon.name }} - 折抵 ${{ coupon.value }}
-              </option>
-            </select>
-          </div> -->
+        <!-- 兌換券區塊 -->
+        <div class="voucher-section mb-4" v-if="availableVouchers.length > 0">
+          <h6 class="mb-3 fw-bold">
+            <i class="bi bi-ticket-perforated me-2 text-warning"></i>
+            可用兌換券
+          </h6>
+          <div class="voucher-cards">
+            <VoucherCard
+              v-for="voucher in availableVouchers"
+              :key="voucher._id"
+              :voucher="voucher"
+              :matchedItem="voucher.matchedItem"
+              :isSelected="voucher.isSelected"
+              @use="useVoucher"
+              @cancel="cancelVoucher"
+            />
+          </div>
+        </div>
+
+        <!-- 折價券區塊 -->
+        <div class="coupon-section mb-4" v-if="availableCoupons.length > 0">
+          <h6 class="mb-3 fw-bold">
+            <i class="bi bi-percent me-2 text-primary"></i>
+            會員折價券
+          </h6>
+          <div class="coupon-cards">
+            <CouponCard
+              v-for="coupon in availableCoupons"
+              :key="coupon._id"
+              :coupon="coupon"
+              :isApplied="appliedCoupons.some((c) => c.couponId === coupon._id)"
+              :canUse="canUseCoupon(coupon)"
+              :currentSubtotal="calculateSubtotal()"
+              @apply="applyCoupon"
+              @remove="removeCoupon"
+            />
+          </div>
+        </div>
+
+        <!-- 如果用戶已登入但沒有可用券的提示 -->
+        <div
+          v-if="
+            authStore.isLoggedIn && availableVouchers.length === 0 && availableCoupons.length === 0
+          "
+          class="no-coupons mb-4"
+        >
+          <div class="text-center py-3 text-muted">
+            <i class="bi bi-gift fs-4"></i>
+            <p class="mt-2">目前沒有可用的優惠券</p>
+            <small>購買套餐或參與活動可獲得優惠券</small>
+          </div>
+        </div>
+
+        <!-- 如果用戶未登入的提示 -->
+        <div v-if="!authStore.isLoggedIn" class="login-prompt mb-4">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <span>登入會員享有兌換券和折價券優惠！</span>
+            <button class="btn btn-sm btn-outline-primary ms-2" @click="goToLogin">立即登入</button>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -91,15 +140,31 @@
             <span>小計</span>
             <span>${{ calculateSubtotal() }}</span>
           </div>
-          <div class="d-flex justify-content-between mb-2" v-if="couponDiscount > 0">
-            <span>優惠折扣</span>
+
+          <!-- 兌換券節省顯示 -->
+          <div class="d-flex justify-content-between mb-2 text-success" v-if="voucherSavings > 0">
+            <span>
+              <i class="bi bi-ticket-perforated me-1"></i>
+              兌換券節省
+            </span>
+            <span>-${{ voucherSavings }}</span>
+          </div>
+
+          <!-- 折價券折扣顯示 -->
+          <div class="d-flex justify-content-between mb-2 text-primary" v-if="couponDiscount > 0">
+            <span>
+              <i class="bi bi-percent me-1"></i>
+              優惠折扣
+            </span>
             <span>-${{ couponDiscount }}</span>
           </div>
+
           <div class="d-flex justify-content-between mb-2" v-if="deliveryFee > 0">
             <span>外送費</span>
             <span>${{ deliveryFee }}</span>
           </div>
-          <div class="d-flex justify-content-between fw-bold">
+
+          <div class="d-flex justify-content-between fw-bold fs-5">
             <span>總計</span>
             <span>${{ calculateTotal() }}</span>
           </div>
@@ -125,6 +190,25 @@
         </div>
       </div>
 
+      <!-- Success Message Display -->
+      <div
+        v-if="successMsg"
+        class="success-message-container position-fixed w-100 p-3"
+        style="
+          bottom: 80px;
+          max-width: 540px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1050;
+        "
+      >
+        <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          {{ successMsg }}
+          <button type="button" class="btn-close" aria-label="Close" @click="clearSuccess"></button>
+        </div>
+      </div>
+
       <!-- Fixed Bottom Button -->
       <div
         v-if="cartItems.length > 0"
@@ -138,7 +222,7 @@
         </div>
       </div>
 
-      <!-- Modal Components will be implemented here -->
+      <!-- Modal Components -->
       <!-- 結帳確認框 -->
       <div
         class="modal fade"
@@ -159,9 +243,40 @@
               ></button>
             </div>
             <div class="modal-body">
-              <!-- 確認訂單內容 -->
               <p>請確認您的訂單資訊</p>
-              <!-- 這裡顯示訂單摘要 -->
+              <!-- 訂單摘要 -->
+              <div class="order-summary">
+                <h6>訂單項目：</h6>
+                <ul class="list-unstyled">
+                  <li v-for="item in cartItems" :key="item.key" class="mb-1">
+                    {{ item.dishInstance?.name || item.bundleInstance?.name }} x{{ item.quantity }}
+                  </li>
+                </ul>
+
+                <div v-if="usedVouchers.length > 0">
+                  <h6 class="text-success">使用的兌換券：</h6>
+                  <ul class="list-unstyled text-success">
+                    <li v-for="voucher in usedVouchers" :key="voucher.voucherId">
+                      {{ voucher.dishName }} (省下 ${{ voucher.savedAmount }})
+                    </li>
+                  </ul>
+                </div>
+
+                <div v-if="appliedCoupons.length > 0">
+                  <h6 class="text-primary">使用的折價券：</h6>
+                  <ul class="list-unstyled text-primary">
+                    <li v-for="coupon in appliedCoupons" :key="coupon.couponId">
+                      {{ coupon.name }} (折抵 ${{ coupon.amount }})
+                    </li>
+                  </ul>
+                </div>
+
+                <hr />
+                <div class="d-flex justify-content-between fw-bold">
+                  <span>總計：</span>
+                  <span>${{ calculateTotal() }}</span>
+                </div>
+              </div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -184,6 +299,9 @@ import { useAuthStore } from '@/stores/customerAuth'
 import CartItem from '@/components/customer/cart/CartItem.vue'
 import OrderTypeSelector from '@/components/customer/cart/OrderTypeSelector.vue'
 import CustomerInfoForm from '@/components/customer/cart/CustomerInfoForm.vue'
+import VoucherCard from '@/components/customer/cart/VoucherCard.vue'
+import CouponCard from '@/components/customer/cart/CouponCard.vue'
+import api from '@/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -192,43 +310,39 @@ const authStore = useAuthStore()
 // 購物車內容
 const cartItems = computed(() => cartStore.items)
 
-// 錯誤訊息
+// 訊息狀態
 const errorMsg = ref('')
+const successMsg = ref('')
 
 // 表單資料
 const orderRemarks = ref('')
-const selectedCoupon = ref('')
-const orderType = ref('selfPickup') // 'dineIn', 'selfPickup', 'delivery'
+const orderType = ref('selfPickup')
 const tableNumber = ref('')
 const deliveryAddress = ref('')
-const pickupTime = ref('asap') // 'asap', 'scheduled'
+const pickupTime = ref('asap')
 const scheduledTime = ref('')
 const deliveryFee = ref(0)
-const couponDiscount = ref(0)
 const paymentMethod = ref('現金')
 const customerInfo = ref({
   name: '',
   phone: '',
 })
 
-// 模擬優惠券數據
-const availableCoupons = ref([
-  { id: 'coupon1', name: '新會員折扣', value: 50 },
-  { id: 'coupon2', name: '生日特惠', value: 100 },
-  { id: 'coupon3', name: '滿千折百', value: 100 },
-])
+// 券相關狀態
+const userVouchers = ref([])
+const userCoupons = ref([])
+const usedVouchers = ref([]) // 已選擇的兌換券
+const appliedCoupons = ref([]) // 已應用的折價券
+const isLoadingCoupons = ref(false)
 
-// Modals (會在onMounted中初始化)
 let confirmModal = null
 
-// 計算屬性 - 簡化表單驗證邏輯
+// 計算屬性
 const isFormValid = computed(() => {
-  // 如果是內用，只檢查桌號
   if (orderType.value === 'dineIn') {
     return tableNumber.value && tableNumber.value.trim() !== ''
   }
 
-  // 外帶和外送檢查姓名電話必填
   const name = customerInfo.value?.name || ''
   const phone = customerInfo.value?.phone || ''
 
@@ -236,7 +350,6 @@ const isFormValid = computed(() => {
     return false
   }
 
-  // 根據訂單類型檢查額外字段
   if (orderType.value === 'delivery' && (!deliveryAddress.value || !deliveryAddress.value.trim())) {
     return false
   }
@@ -248,15 +361,112 @@ const isFormValid = computed(() => {
   return true
 })
 
-// 清除錯誤訊息
+// 計算可用兌換券 - 重新設計的簡潔邏輯
+const availableVouchers = computed(() => {
+  if (!authStore.isLoggedIn || !userVouchers.value.length) {
+    return []
+  }
+
+  // 1. 統計購物車中每種餐點的總數量
+  const dishCounts = {}
+  cartItems.value.forEach((cartItem) => {
+    if (cartItem.dishInstance) {
+      const templateId = cartItem.dishInstance.templateId
+      const dishName = cartItem.dishInstance.name
+      const price = cartItem.dishInstance.finalPrice || cartItem.dishInstance.basePrice
+
+      if (!dishCounts[templateId]) {
+        dishCounts[templateId] = {
+          templateId,
+          dishName,
+          price,
+          totalQuantity: 0,
+          cartItems: [],
+        }
+      }
+
+      dishCounts[templateId].totalQuantity += cartItem.quantity
+      dishCounts[templateId].cartItems.push({
+        index: cartItems.value.indexOf(cartItem),
+        quantity: cartItem.quantity,
+      })
+    }
+  })
+
+  // 2. 獲取所有兌換券（包含已選擇和未選擇的）
+  const selectedVoucherIds = new Set(usedVouchers.value.map((v) => v.voucherId))
+  const availableVoucherPool = userVouchers.value.filter(
+    (voucher) => !voucher.isUsed && new Date(voucher.expiryDate) > new Date(),
+  )
+
+  // 3. 為每種餐點匹配對應數量的券
+  const matchedVouchers = []
+
+  Object.values(dishCounts).forEach((dishInfo) => {
+    // 找出可以用於該餐點的所有券
+    const applicableVouchers = availableVoucherPool.filter(
+      (voucher) => voucher.exchangeDishTemplate?._id === dishInfo.templateId,
+    )
+
+    // 根據餐點數量限制券的數量
+    const vouchersToShow = applicableVouchers.slice(0, dishInfo.totalQuantity)
+
+    // 為每個券添加匹配信息和選擇狀態
+    vouchersToShow.forEach((voucher, index) => {
+      const isSelected = selectedVoucherIds.has(voucher._id)
+
+      matchedVouchers.push({
+        ...voucher,
+        isSelected, // 添加選擇狀態
+        matchedItem: {
+          templateId: dishInfo.templateId,
+          dishName: dishInfo.dishName,
+          originalPrice: dishInfo.price,
+          availableQuantity: dishInfo.totalQuantity,
+          voucherIndex: index, // 用於區分同樣餐點的不同券
+        },
+      })
+    })
+  })
+
+  return matchedVouchers
+})
+
+// 可用折價券
+const availableCoupons = computed(() => {
+  if (!authStore.isLoggedIn || !userCoupons.value.length) {
+    return []
+  }
+
+  return userCoupons.value.filter(
+    (coupon) =>
+      !coupon.isUsed &&
+      new Date(coupon.expiryDate) > new Date() &&
+      calculateSubtotal() >= (coupon.discountInfo?.minPurchaseAmount || 0),
+  )
+})
+
+// 計算兌換券節省金額
+const voucherSavings = computed(() => {
+  return usedVouchers.value.reduce((total, voucher) => total + voucher.savedAmount, 0)
+})
+
+// 計算折價券折扣
+const couponDiscount = computed(() => {
+  return appliedCoupons.value.reduce((total, coupon) => total + coupon.amount, 0)
+})
+
+// 方法
 const clearError = () => {
   errorMsg.value = ''
 }
 
-// 顯示錯誤訊息並自動清除
+const clearSuccess = () => {
+  successMsg.value = ''
+}
+
 const showError = (message) => {
   errorMsg.value = message
-  // 5秒後自動清除
   setTimeout(() => {
     if (errorMsg.value === message) {
       clearError()
@@ -264,20 +474,35 @@ const showError = (message) => {
   }, 5000)
 }
 
-// 方法
+const showSuccess = (message) => {
+  successMsg.value = message
+  setTimeout(() => {
+    if (successMsg.value === message) {
+      clearSuccess()
+    }
+  }, 3000)
+}
+
 const goBack = () => {
   router.go(-1)
+}
+
+const goToLogin = () => {
+  router.push({
+    name: 'login',
+    query: {
+      redirect: router.currentRoute.value.fullPath,
+    },
+  })
 }
 
 const removeFromCart = (index) => {
   cartStore.removeItem(index)
 }
 
-// 編輯商品
 const editItem = (index) => {
   const item = cartItems.value[index]
 
-  // 確保有品牌和店鋪ID
   if (!cartStore.currentBrand || !cartStore.currentStore) {
     console.error('缺少品牌或店鋪ID:', {
       brandId: cartStore.currentBrand,
@@ -287,7 +512,6 @@ const editItem = (index) => {
     return
   }
 
-  // 導航到商品詳情頁面進行編輯
   router.push({
     name: 'dish-detail',
     params: {
@@ -309,11 +533,149 @@ const updateDeliveryFee = (fee) => {
 }
 
 const calculateSubtotal = () => {
-  return cartStore.subtotal
+  return cartStore.subtotal - voucherSavings.value
 }
 
 const calculateTotal = () => {
-  return cartStore.subtotal - couponDiscount.value + deliveryFee.value
+  return Math.max(0, calculateSubtotal() - couponDiscount.value + deliveryFee.value)
+}
+
+// 獲取用戶券資料
+const fetchUserCoupons = async () => {
+  if (!authStore.isLoggedIn || !authStore.currentBrandId) {
+    return
+  }
+
+  try {
+    isLoadingCoupons.value = true
+
+    // 並行獲取兌換券和折價券
+    const [vouchersResponse, couponsResponse] = await Promise.all([
+      api.promotion.getUserVouchers(authStore.currentBrandId, {
+        includeUsed: false,
+        includeExpired: false,
+      }),
+      api.promotion.getUserCoupons(authStore.currentBrandId, {
+        includeUsed: false,
+        includeExpired: false,
+      }),
+    ])
+
+    if (vouchersResponse.success) {
+      userVouchers.value = vouchersResponse.vouchers || []
+    }
+
+    if (couponsResponse.success) {
+      userCoupons.value = couponsResponse.coupons || []
+    }
+  } catch (error) {
+    console.error('獲取用戶券資料失敗:', error)
+  } finally {
+    isLoadingCoupons.value = false
+  }
+}
+
+// 使用兌換券的簡化邏輯
+const useVoucher = async (voucher, matchedItem) => {
+  try {
+    // 檢查是否已經選擇過這個券
+    const alreadySelected = usedVouchers.value.some((v) => v.voucherId === voucher._id)
+    if (alreadySelected) {
+      showError('此兌換券已被選用')
+      return
+    }
+
+    // 檢查該餐點類型還能使用幾個券
+    const sameTemplateUsed = usedVouchers.value.filter(
+      (v) => v.templateId === matchedItem.templateId,
+    ).length
+
+    if (sameTemplateUsed >= matchedItem.availableQuantity) {
+      showError('該餐點的兌換券使用數量已達上限')
+      return
+    }
+
+    // 添加到已選擇券列表
+    usedVouchers.value.push({
+      voucherId: voucher._id,
+      voucherInstanceId: voucher._id,
+      dishName: matchedItem.dishName,
+      savedAmount: matchedItem.originalPrice,
+      templateId: matchedItem.templateId,
+      voucherIndex: matchedItem.voucherIndex,
+    })
+
+    showSuccess(`成功選用 ${voucher.voucherName}！`)
+  } catch (error) {
+    console.error('選用兌換券失敗:', error)
+    showError('選用兌換券失敗：' + error.message)
+  }
+}
+
+// 取消選擇兌換券
+const cancelVoucher = (voucherId) => {
+  const index = usedVouchers.value.findIndex((v) => v.voucherId === voucherId)
+  if (index !== -1) {
+    const voucher = usedVouchers.value[index]
+    usedVouchers.value.splice(index, 1)
+    showSuccess(`已取消選用 ${voucher.dishName} 兌換券`)
+  }
+}
+
+// 檢查是否可以使用折價券
+const canUseCoupon = (coupon) => {
+  const currentSubtotal = calculateSubtotal()
+  const minAmount = coupon.discountInfo?.minPurchaseAmount || 0
+  return (
+    currentSubtotal >= minAmount && !appliedCoupons.value.some((c) => c.couponId === coupon._id)
+  )
+}
+
+// 計算折價券折扣金額
+const calculateCouponDiscount = (coupon) => {
+  const subtotal = calculateSubtotal()
+  const discountInfo = coupon.discountInfo
+
+  if (discountInfo.discountType === 'percentage') {
+    let discount = Math.floor(subtotal * (discountInfo.discountValue / 100))
+    if (discountInfo.maxDiscountAmount) {
+      discount = Math.min(discount, discountInfo.maxDiscountAmount)
+    }
+    return discount
+  } else if (discountInfo.discountType === 'fixed') {
+    return Math.min(discountInfo.discountValue, subtotal)
+  }
+
+  return 0
+}
+
+// 應用折價券
+const applyCoupon = (coupon) => {
+  if (!canUseCoupon(coupon)) {
+    showError('無法使用此折價券')
+    return
+  }
+
+  const discountAmount = calculateCouponDiscount(coupon)
+
+  appliedCoupons.value.push({
+    couponId: coupon._id,
+    name: coupon.name,
+    amount: discountAmount,
+    discountInfo: coupon.discountInfo,
+  })
+
+  showSuccess(`已套用 ${coupon.name}！`)
+}
+
+// 移除折價券
+const removeCoupon = (couponId) => {
+  const index = appliedCoupons.value.findIndex((c) => c.couponId === couponId)
+  if (index !== -1) {
+    const coupon = appliedCoupons.value[index]
+    appliedCoupons.value.splice(index, 1)
+    showSuccess(`已移除 ${coupon.name}`)
+  }
 }
 
 const checkout = () => {
@@ -322,19 +684,16 @@ const checkout = () => {
     return
   }
 
-  // 清除之前的錯誤訊息
   clearError()
 
-  // 顯示確認對話框
   if (confirmModal) {
     confirmModal.show()
   }
 }
 
-// 簡化訂單提交邏輯，統一使用 cartStore
+// 提交訂單
 const submitOrder = async () => {
   try {
-    // 清除之前的錯誤訊息
     clearError()
 
     const mappedOrderType = (() => {
@@ -350,7 +709,6 @@ const submitOrder = async () => {
       }
     })()
 
-    // 設置購物車資料
     cartStore.setOrderType(mappedOrderType)
 
     const mappedPaymentMethod = (() => {
@@ -389,23 +747,39 @@ const submitOrder = async () => {
       })
     }
 
-    // 處理優惠券
-    if (selectedCoupon.value) {
-      const coupon = availableCoupons.value.find((c) => c.id === selectedCoupon.value)
-      if (coupon) {
+    // 處理折價券
+    if (appliedCoupons.value.length > 0) {
+      appliedCoupons.value.forEach((coupon) => {
         cartStore.applyCoupon({
-          couponId: coupon.id,
-          amount: coupon.value,
+          couponId: coupon.couponId,
+          amount: coupon.amount,
         })
-      }
+      })
     }
 
-    // 提交訂單 - 使用統一的 cartStore.submitOrder
+    // 提交訂單
     const result = await cartStore.submitOrder()
 
     if (result.success) {
       if (confirmModal) {
         confirmModal.hide()
+      }
+
+      // 如果有使用兌換券，需要調用API標記為已使用
+      if (usedVouchers.value.length > 0) {
+        try {
+          for (const voucher of usedVouchers.value) {
+            await api.promotion.useVoucher({
+              brandId: authStore.currentBrandId,
+              data: {
+                voucherId: voucher.voucherId,
+                orderId: result.orderId,
+              },
+            })
+          }
+        } catch (voucherError) {
+          console.error('標記兌換券使用狀態失敗:', voucherError)
+        }
       }
 
       router.push({
@@ -421,7 +795,7 @@ const submitOrder = async () => {
       throw new Error(result.error || '訂單提交失敗')
     }
   } catch (error) {
-    console.error('提交訂單失敗 - 完整錯誤信息:', error)
+    console.error('提交訂單失敗:', error)
 
     if (confirmModal) {
       confirmModal.hide()
@@ -442,21 +816,25 @@ const submitOrder = async () => {
   }
 }
 
-// 監聽優惠券選擇變更
-watch(selectedCoupon, (newValue) => {
-  if (newValue) {
-    const coupon = availableCoupons.value.find((c) => c.id === newValue)
-    if (coupon) {
-      couponDiscount.value = coupon.value
-      return
+// 監聽用戶登入狀態變化
+watch(
+  () => authStore.isLoggedIn,
+  (newValue) => {
+    if (newValue) {
+      fetchUserCoupons()
+    } else {
+      userVouchers.value = []
+      userCoupons.value = []
+      appliedCoupons.value = []
+      usedVouchers.value = []
     }
-  }
-  couponDiscount.value = 0
-})
+  },
+)
 
-// 生命週期鉤子
+// 生命週期
 onMounted(() => {
   window.scrollTo(0, 0)
+
   // 設置默認預約時間
   const date = new Date()
   date.setMinutes(date.getMinutes() + 30)
@@ -470,6 +848,11 @@ onMounted(() => {
       confirmModal = new Modal(modalElement)
     }
   })
+
+  // 如果用戶已登入，獲取券資料
+  if (authStore.isLoggedIn) {
+    fetchUserCoupons()
+  }
 })
 </script>
 
@@ -478,7 +861,6 @@ onMounted(() => {
   min-height: 100vh;
   background-color: #f8f9fa;
   padding-bottom: 80px;
-  /* Space for the fixed bottom button */
   display: flex;
   justify-content: center;
 }
@@ -526,7 +908,8 @@ onMounted(() => {
   padding: 0 15px;
 }
 
-.error-message-container {
+.error-message-container,
+.success-message-container {
   animation: slideUp 0.3s ease-out;
 }
 
@@ -535,14 +918,22 @@ onMounted(() => {
     transform: translateX(-50%) translateY(100%);
     opacity: 0;
   }
-
   to {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
 }
 
-/* Fix for iOS input styling */
+.no-coupons {
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.login-prompt .alert {
+  border-radius: 8px;
+}
+
 input[type='datetime-local'] {
   appearance: none;
   -webkit-appearance: none;
@@ -554,7 +945,8 @@ input[type='datetime-local'] {
     max-width: 100%;
   }
 
-  .error-message-container {
+  .error-message-container,
+  .success-message-container {
     left: 0 !important;
     right: 0;
     transform: none !important;
