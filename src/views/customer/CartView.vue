@@ -141,22 +141,30 @@
             <span>${{ calculateSubtotal() }}</span>
           </div>
 
-          <!-- 兌換券節省顯示 -->
-          <div class="d-flex justify-content-between mb-2 text-success" v-if="voucherSavings > 0">
+          <!-- 逐行顯示兌換券折扣 -->
+          <div
+            v-for="(voucher, voucherIndex) in usedVouchers"
+            :key="`voucher-${voucher.voucherId}-${voucherIndex}`"
+            class="d-flex justify-content-between mb-2 text-success"
+          >
             <span>
               <i class="bi bi-ticket-perforated me-1"></i>
-              兌換券節省
+              {{ voucher.dishName }} 兌換券
             </span>
-            <span>-${{ voucherSavings }}</span>
+            <span>-${{ voucher.savedAmount }}</span>
           </div>
 
-          <!-- 折價券折扣顯示 -->
-          <div class="d-flex justify-content-between mb-2 text-primary" v-if="couponDiscount > 0">
+          <!-- 逐行顯示折價券折扣 -->
+          <div
+            v-for="(coupon, couponIndex) in appliedCoupons"
+            :key="`coupon-${coupon.couponId}-${couponIndex}`"
+            class="d-flex justify-content-between mb-2 text-primary"
+          >
             <span>
               <i class="bi bi-percent me-1"></i>
-              優惠折扣
+              {{ coupon.name }}
             </span>
-            <span>-${{ couponDiscount }}</span>
+            <span>-${{ coupon.amount }}</span>
           </div>
 
           <div class="d-flex justify-content-between mb-2" v-if="deliveryFee > 0">
@@ -575,7 +583,7 @@ const fetchUserCoupons = async () => {
   }
 }
 
-// 使用兌換券的簡化邏輯
+// 使用兌換券的簡化邏輯 - 修改版
 const useVoucher = async (voucher, matchedItem) => {
   try {
     // 檢查是否已經選擇過這個券
@@ -595,30 +603,44 @@ const useVoucher = async (voucher, matchedItem) => {
       return
     }
 
+    // 🆕 計算兌換券節省金額 - 只計算餐點基本價格，不包含加點費用
+    const baseDishPrice = getBaseDishPrice(matchedItem.templateId)
+    const savedAmount = baseDishPrice || matchedItem.originalPrice
+
     // 添加到已選擇券列表
     usedVouchers.value.push({
       voucherId: voucher._id,
       voucherInstanceId: voucher._id,
       dishName: matchedItem.dishName,
-      savedAmount: matchedItem.originalPrice,
+      savedAmount: savedAmount, // 使用計算後的基本價格
       templateId: matchedItem.templateId,
       voucherIndex: matchedItem.voucherIndex,
     })
-
-    showSuccess(`成功選用 ${voucher.voucherName}！`)
   } catch (error) {
     console.error('選用兌換券失敗:', error)
     showError('選用兌換券失敗：' + error.message)
   }
 }
 
+// 🆕 新增方法：獲取餐點基本價格（不含加點）
+const getBaseDishPrice = (templateId) => {
+  // 從購物車中找到對應的餐點，獲取其基本價格
+  const cartItem = cartItems.value.find(
+    (item) => item.dishInstance && item.dishInstance.templateId === templateId,
+  )
+
+  if (cartItem && cartItem.dishInstance) {
+    // 返回餐點基本價格，不包含選項加價
+    return cartItem.dishInstance.basePrice || cartItem.dishInstance.finalPrice
+  }
+
+  return 0
+}
 // 取消選擇兌換券
 const cancelVoucher = (voucherId) => {
   const index = usedVouchers.value.findIndex((v) => v.voucherId === voucherId)
   if (index !== -1) {
-    const voucher = usedVouchers.value[index]
     usedVouchers.value.splice(index, 1)
-    showSuccess(`已取消選用 ${voucher.dishName} 兌換券`)
   }
 }
 
