@@ -260,9 +260,19 @@
                     <span>配送費:</span>
                     <span>${{ order.deliveryInfo.deliveryFee }}</span>
                   </div>
-                  <div class="d-flex justify-content-between mb-2" v-if="order.totalDiscount > 0">
-                    <span>優惠折扣:</span>
-                    <span class="text-success">-${{ order.totalDiscount }}</span>
+                  <div
+                    v-for="(discount, discountIndex) in order.discounts || []"
+                    :key="discountIndex"
+                    class="d-flex justify-content-between mb-2"
+                  >
+                    <span>
+                      <i
+                        :class="getDiscountIcon(discount.discountModel)"
+                        class="me-1 text-muted"
+                      ></i>
+                      {{ formatDiscountType(discount.discountModel) }}:
+                    </span>
+                    <span class="text-success">-${{ discount.amount || 0 }}</span>
                   </div>
                   <div
                     class="d-flex justify-content-between mb-2"
@@ -290,18 +300,6 @@
                 <div class="alert alert-info">
                   <i class="bi bi-gift-fill me-2"></i>
                   本次消費獲得 <strong>{{ order.pointsEarned }}</strong> 點數獎勵
-                </div>
-              </div>
-            </div>
-
-            <!-- 優惠券信息 -->
-            <div class="card mb-3" v-if="order.discounts && order.discounts.length > 0">
-              <div class="card-header bg-light">
-                <h6 class="mb-0">使用優惠</h6>
-              </div>
-              <div class="card-body">
-                <div v-for="discount in order.discounts" :key="discount._id" class="mb-1">
-                  <span>優惠券折抵: -${{ discount.amount }}</span>
                 </div>
               </div>
             </div>
@@ -389,6 +387,24 @@ const getItemName = (item) => {
   }
 
   return '未知項目'
+}
+
+// 格式化折扣類型顯示文字
+const formatDiscountType = (discountModel) => {
+  const discountTypes = {
+    VoucherInstance: '兌換券優惠',
+    CouponInstance: '折價券優惠',
+  }
+  return discountTypes[discountModel] || '優惠折扣'
+}
+
+// 獲取折扣圖示
+const getDiscountIcon = (discountModel) => {
+  const discountIcons = {
+    VoucherInstance: 'bi-ticket-perforated',
+    CouponInstance: 'bi-percent',
+  }
+  return discountIcons[discountModel] || 'bi-tag'
 }
 
 // 獲取餐點選項

@@ -106,13 +106,15 @@
 
         <!-- 訂單折扣 - 只顯示，不可編輯 -->
         <div
-          v-if="counterStore.calculateOrderTotalDiscount(selectedOrder) > 0"
+          v-for="(discount, discountIndex) in selectedOrder.discounts || []"
+          :key="discountIndex"
           class="d-flex justify-content-between mb-2"
         >
-          <span>訂單折扣</span>
-          <span class="text-danger"
-            >-${{ counterStore.calculateOrderTotalDiscount(selectedOrder) }}</span
-          >
+          <span>
+            <i :class="getDiscountIcon(discount.discountModel)" class="me-1"></i>
+            {{ formatDiscountType(discount.discountModel) }}
+          </span>
+          <span class="text-danger">-${{ discount.amount || 0 }}</span>
         </div>
 
         <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-2">
@@ -217,6 +219,24 @@ const getBundleItemName = (bundleItem) => {
 
   // 備用：使用冗餘儲存的名稱
   return bundleItem.voucherName || bundleItem.dishName || bundleItem.couponName || '未知項目'
+}
+
+// 格式化折扣類型顯示文字
+const formatDiscountType = (discountModel) => {
+  const discountTypes = {
+    VoucherInstance: '兌換券優惠',
+    CouponInstance: '折價券優惠',
+  }
+  return discountTypes[discountModel] || '訂單折扣'
+}
+
+// 獲取折扣圖示
+const getDiscountIcon = (discountModel) => {
+  const discountIcons = {
+    VoucherInstance: 'bi-ticket-perforated',
+    CouponInstance: 'bi-percent',
+  }
+  return discountIcons[discountModel] || 'bi-tag'
 }
 
 // 格式化訂單類型

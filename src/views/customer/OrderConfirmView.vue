@@ -214,9 +214,16 @@
               <span>${{ orderDetails.deliveryInfo.deliveryFee }}</span>
             </div>
 
-            <div class="d-flex justify-content-between mb-2" v-if="totalDiscount > 0">
-              <span class="text-success">優惠折扣</span>
-              <span class="text-success">-${{ totalDiscount }}</span>
+            <div
+              v-for="(discount, discountIndex) in orderDetails.discounts || []"
+              :key="discountIndex"
+              class="d-flex justify-content-between mb-2"
+            >
+              <span class="text-success">
+                <i :class="getDiscountIcon(discount.discountModel)" class="me-1"></i>
+                {{ formatDiscountType(discount.discountModel) }}
+              </span>
+              <span class="text-success">-${{ discount.amount || 0 }}</span>
             </div>
 
             <div
@@ -339,11 +346,23 @@ const orderSubtotal = computed(() => {
   return orderDetails.value.items.reduce((total, item) => total + (item.subtotal || 0), 0)
 })
 
-// 計算總折扣
-const totalDiscount = computed(() => {
-  if (!orderDetails.value.discounts) return 0
-  return orderDetails.value.discounts.reduce((total, discount) => total + (discount.amount || 0), 0)
-})
+// 格式化折扣類型顯示文字
+const formatDiscountType = (discountModel) => {
+  const discountTypes = {
+    VoucherInstance: '兌換券優惠',
+    CouponInstance: '折價券優惠',
+  }
+  return discountTypes[discountModel] || '優惠折扣'
+}
+
+// 獲取折扣圖示
+const getDiscountIcon = (discountModel) => {
+  const discountIcons = {
+    VoucherInstance: 'bi-ticket-perforated',
+    CouponInstance: 'bi-percent',
+  }
+  return discountIcons[discountModel] || 'bi-tag'
+}
 
 // 獲取步驟狀態
 const getStepStatus = (stepId) => {
