@@ -129,7 +129,7 @@
                   <i class="bi bi-dash-circle-fill text-primary"></i>
                 </div>
                 <div class="history-info">
-                  <p class="history-title">{{ formatPointSource(record.source) }}</p>
+                  <!-- <p class="history-title">{{ formatPointSource(record.source) }}</p> -->
                   <p class="history-date">使用時間：{{ formatDateTime(record.usedAt) }}</p>
                   <p class="history-order" v-if="record.usedIn">訂單：{{ record.usedIn.id }}</p>
                 </div>
