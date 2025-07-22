@@ -338,10 +338,18 @@
               <span>外送費</span>
               <span>${{ selectedOrder.deliveryInfo.deliveryFee }}</span>
             </div>
-            <div v-if="selectedOrder.totalDiscount > 0" class="payment-row text-success">
-              <span>優惠折扣</span>
-              <span>-${{ selectedOrder.totalDiscount }}</span>
+            <div
+              v-for="(discount, discountIndex) in selectedOrder.discounts || []"
+              :key="discountIndex"
+              class="d-flex justify-content-between mb-2"
+            >
+              <span>
+                <i :class="getDiscountIcon(discount.discountModel)" class="me-1 text-muted"></i>
+                {{ formatDiscountType(discount.discountModel) }}:
+              </span>
+              <span class="text-success">-${{ discount.amount || 0 }}</span>
             </div>
+
             <div
               v-if="selectedOrder.manualAdjustment && selectedOrder.manualAdjustment !== 0"
               class="payment-row"
@@ -653,6 +661,24 @@ const loadOrdersData = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// 格式化折扣類型顯示文字
+const formatDiscountType = (discountModel) => {
+  const discountTypes = {
+    VoucherInstance: '兌換券優惠',
+    CouponInstance: '折價券優惠',
+  }
+  return discountTypes[discountModel] || '優惠折扣'
+}
+
+// 獲取折扣圖示
+const getDiscountIcon = (discountModel) => {
+  const discountIcons = {
+    VoucherInstance: 'bi-ticket-perforated',
+    CouponInstance: 'bi-percent',
+  }
+  return discountIcons[discountModel] || 'bi-tag'
 }
 
 // 組件掛載後載入資料
