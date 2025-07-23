@@ -6,7 +6,7 @@
 
       <!-- 商品類型標籤 -->
       <div v-if="item.itemType === 'bundle'" class="item-type-badge">
-        <span class="badge bg-warning text-dark">套餐</span>
+        <span class="badge bg-warning text-dark">兌換券</span>
       </div>
 
       <!-- 售完遮罩 -->
