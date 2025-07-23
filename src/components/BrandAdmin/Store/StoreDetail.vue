@@ -1014,7 +1014,7 @@ const updateAnnouncements = async () => {
   try {
     const response = await api.store.updateAnnouncements({
       brandId: brandId.value,
-      id: store.value._id,
+      storeId: store.value._id,
       announcements: editAnnouncements.value,
     })
 

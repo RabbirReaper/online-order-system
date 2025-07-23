@@ -71,7 +71,7 @@ router.put(
 
 // 更新店鋪公告
 router.put(
-  '/brands/:brandId/:id/announcements',
+  '/brands/:brandId/:storeId/announcements',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',

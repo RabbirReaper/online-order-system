@@ -185,7 +185,7 @@ export const updateStoreBusinessHours = asyncHandler(async (req, res) => {
 // 更新店家公告
 export const updateStoreAnnouncements = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
+    const { storeId } = req.params
     const { announcements } = req.body
 
     if (!announcements) {
@@ -195,7 +195,7 @@ export const updateStoreAnnouncements = asyncHandler(async (req, res) => {
       })
     }
 
-    const store = await storeService.updateStoreAnnouncements(id, announcements)
+    const store = await storeService.updateStoreAnnouncements(storeId, announcements)
 
     res.json({
       success: true,

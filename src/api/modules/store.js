@@ -127,8 +127,8 @@ export default function (apiClient) {
      * @param {Array} params.announcements - 公告資料
      * @returns {Promise} - API 回應
      */
-    updateAnnouncements({ brandId, id, announcements }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}/announcements`, { announcements })
+    updateAnnouncements({ brandId, storeId, announcements }) {
+      return apiClient.put(`/store/brands/${brandId}/${storeId}/announcements`, { announcements })
     },
 
     /**
