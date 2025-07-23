@@ -30,7 +30,9 @@ const apiClient = axios.create({
   },
   withCredentials: true, // 確保跨域請求能攜帶cookie
 })
-
+console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
+console.log('Final API_BASE_URL:', API_BASE_URL)
+console.log('apiClient baseURL:', apiClient.defaults.baseURL)
 // 回應攔截器，用於統一處理回應
 apiClient.interceptors.response.use(
   (response) => {
