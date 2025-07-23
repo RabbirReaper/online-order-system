@@ -201,6 +201,7 @@
       cancel-title="取消"
       size="md"
       centered
+      :no-header-close="true"
       :hide-footer="
         pointsRedemptionModal.isProcessing ||
         pointsRedemptionModal.showSuccess ||
@@ -247,7 +248,7 @@
               <small class="text-muted">有效期限：</small>
             </div>
             <div class="col-8">
-              <span>購買後 {{ bundle.voucherValidityDays || 30 }} 天</span>
+              <span>購買後 {{ bundle.voucherValidityDays }} 天</span>
             </div>
           </div>
 
