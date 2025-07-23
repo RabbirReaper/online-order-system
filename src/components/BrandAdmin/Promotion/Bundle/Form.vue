@@ -265,8 +265,9 @@
                       <div class="row">
                         <div class="col-md-8 mb-3">
                           <label class="form-label required">兌換券模板</label>
+
                           <select
-                            v-model="item.voucherTemplate._id"
+                            v-model="item.voucherTemplate"
                             class="form-select"
                             :class="{ 'is-invalid': getItemError(index, 'voucherTemplate') }"
                             @change="updateVoucherName(index)"

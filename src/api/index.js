@@ -21,7 +21,7 @@ import bundleApi from './modules/bundle.js' // 新增 Bundle API 模組
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-console.log('API 基礎 URL:', API_BASE_URL)
+
 // 創建基本 axios 實例，用於整個應用程式
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -30,9 +30,7 @@ const apiClient = axios.create({
   },
   withCredentials: true, // 確保跨域請求能攜帶cookie
 })
-console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
-console.log('Final API_BASE_URL:', API_BASE_URL)
-console.log('apiClient baseURL:', apiClient.defaults.baseURL)
+
 // 回應攔截器，用於統一處理回應
 apiClient.interceptors.response.use(
   (response) => {
