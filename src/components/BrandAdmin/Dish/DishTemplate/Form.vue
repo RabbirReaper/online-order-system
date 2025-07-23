@@ -314,11 +314,7 @@
                 </option>
               </select>
               <div class="form-text" v-if="availableCategories.length === 0">
-                沒有可用的選項類別，請先在
-                <router-link :to="`/admin/${brandId}/option-categories/create`"
-                  >選項類別管理</router-link
-                >
-                頁面中創建
+                沒有可用的選項類別，請先在"選項類別管理"頁面中創建
               </div>
             </div>
           </div>
