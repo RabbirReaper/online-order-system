@@ -60,7 +60,7 @@
               @change="confirmAvailableStock"
             />
             <label class="form-check-label" for="enableAvailableStock">
-              是否自動停售 (是否根據庫存自動切換售完狀態)
+              是否啟用限量功能 (是否根據庫存自動切換售完狀態)
             </label>
           </div>
           <div class="form-text text-muted" v-if="!settingsForm.isInventoryTracked">
