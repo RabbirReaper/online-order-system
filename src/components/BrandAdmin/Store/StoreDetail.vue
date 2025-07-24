@@ -80,6 +80,71 @@
                 <h6 class="text-muted mb-1">最後更新</h6>
                 <p>{{ formatDate(store.updatedAt) }}</p>
               </div>
+
+              <!-- 新增：前端連結區塊 -->
+              <div class="mt-4 pt-3 border-top">
+                <h6 class="text-muted mb-3">前端連結</h6>
+
+                <!-- 菜單連結 -->
+                <div class="mb-3">
+                  <label class="form-label small fw-bold">顧客菜單頁面</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      :value="menuUrl"
+                      readonly
+                    />
+                    <button
+                      class="btn btn-sm"
+                      :class="copyStates.menu ? 'btn-success' : 'btn-outline-secondary'"
+                      type="button"
+                      @click="copyToClipboard(menuUrl, 'menu')"
+                      :title="copyStates.menu ? '已複製' : '複製連結'"
+                    >
+                      <i class="bi" :class="copyStates.menu ? 'bi-check' : 'bi-copy'"></i>
+                    </button>
+                    <a
+                      :href="menuUrl"
+                      target="_blank"
+                      class="btn btn-outline-primary btn-sm"
+                      title="開啟連結"
+                    >
+                      <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- 櫃檯連結 -->
+                <div class="mb-0">
+                  <label class="form-label small fw-bold">櫃檯點餐系統</label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      :value="counterUrl"
+                      readonly
+                    />
+                    <button
+                      class="btn btn-sm"
+                      :class="copyStates.counter ? 'btn-success' : 'btn-outline-secondary'"
+                      type="button"
+                      @click="copyToClipboard(counterUrl, 'counter')"
+                      :title="copyStates.counter ? '已複製' : '複製連結'"
+                    >
+                      <i class="bi" :class="copyStates.counter ? 'bi-check' : 'bi-copy'"></i>
+                    </button>
+                    <a
+                      :href="counterUrl"
+                      target="_blank"
+                      class="btn btn-outline-primary btn-sm"
+                      title="開啟連結"
+                    >
+                      <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="card-footer bg-transparent">
@@ -736,6 +801,10 @@ import api from '@/api'
 const router = useRouter()
 const route = useRoute()
 
+const baseUrl = computed(() => window.location.origin)
+const menuUrl = computed(() => `${baseUrl.value}/stores/${brandId.value}/${storeId.value}`)
+const counterUrl = computed(() => `${baseUrl.value}/counter/${brandId.value}/${storeId.value}`)
+
 // 從路由中獲取品牌ID和店鋪ID
 const brandId = computed(() => route.params.brandId)
 const storeId = computed(() => route.params.id)
@@ -773,6 +842,30 @@ const editServiceSettings = reactive({
   maxDeliveryDistance: 5,
   advanceOrderDays: 0,
 })
+
+// 複製狀態管理
+const copyStates = ref({
+  menu: false,
+  counter: false,
+})
+
+// 複製連結到剪貼簿
+const copyToClipboard = (text, type) => {
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      // 設置對應的複製狀態為 true
+      copyStates.value[type] = true
+
+      // 2秒後恢復原始狀態
+      setTimeout(() => {
+        copyStates.value[type] = false
+      }, 2000)
+    })
+    .catch((err) => {
+      console.error('複製失敗:', err)
+    })
+}
 
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
@@ -1235,5 +1328,25 @@ onMounted(() => {
 .action-icon {
   font-size: 2rem;
   color: #0d6efd;
+}
+
+/* 連結輸入框樣式 */
+.input-group .form-control[readonly] {
+  background-color: #f8f9fa;
+  cursor: default;
+}
+
+.input-group .btn {
+  border-left: 0;
+  transition: all 0.3s ease;
+}
+
+.input-group .btn:not(:last-child) {
+  border-right: 0;
+}
+
+/* 複製按鈕過渡效果 */
+.input-group .btn i {
+  transition: all 0.2s ease;
 }
 </style>
