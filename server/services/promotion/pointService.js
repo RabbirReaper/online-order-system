@@ -89,7 +89,7 @@ export const usePoints = async (userId, brandId, pointsToUse, usageInfo) => {
     throw new AppError(`不支援的使用模型: ${usageInfo.model}`, 400)
   }
 
-  console.log(`Using ${pointsToUse} points for ${usageInfo.model}: ${usageInfo.id}`)
+  // console.log(`Using ${pointsToUse} points for ${usageInfo.model}: ${usageInfo.id}`)
 
   // 1. 檢查用戶是否有足夠點數
   const totalPoints = await getUserPointsBalance(userId, brandId)
@@ -137,7 +137,7 @@ export const usePoints = async (userId, brandId, pointsToUse, usageInfo) => {
     const savePromises = usedPoints.map((p) => p.save())
     await Promise.all(savePromises)
 
-    console.log(`✅ Successfully used ${pointsToUse} points for ${usageInfo.model}`)
+    // console.log(`✅ Successfully used ${pointsToUse} points for ${usageInfo.model}`)
   } catch (saveError) {
     console.error('保存點數使用記錄時發生錯誤:', saveError)
     throw new AppError('點數使用記錄保存失敗', 500)
@@ -224,7 +224,7 @@ export const refundPointsForTransaction = async (relatedModel, relatedId) => {
   // 保存所有更改
   await Promise.all(pointsToRefund.map((p) => p.save()))
 
-  console.log(`✅ Refunded ${pointsToRefund.length} points for ${relatedModel}: ${relatedId}`)
+  // console.log(`✅ Refunded ${pointsToRefund.length} points for ${relatedModel}: ${relatedId}`)
 
   return {
     success: true,
@@ -285,7 +285,7 @@ export const addPointsToUser = async (
   // 批量保存點數實例
   const savedInstances = await PointInstance.insertMany(pointInstances)
 
-  console.log(`✅ Added ${amount} points to user ${userId} from source: ${source}`)
+  // console.log(`✅ Added ${amount} points to user ${userId} from source: ${source}`)
 
   return savedInstances
 }
