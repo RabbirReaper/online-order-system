@@ -100,30 +100,30 @@ export default function (apiClient) {
      * 獲取店鋪營業時間
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.id - 店鋪ID
+     * @param {string} params.storeId - 店鋪ID
      * @returns {Promise} - API 回應
      */
-    getBusinessHours({ brandId, id }) {
-      return apiClient.get(`/store/brands/${brandId}/${id}/business-hours`)
+    getBusinessHours({ brandId, storeId }) {
+      return apiClient.get(`/store/brands/${brandId}/${storeId}/business-hours`)
     },
 
     /**
      * 更新店鋪營業時間
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.id - 店鋪ID
+     * @param {string} params.storeId - 店鋪ID
      * @param {Array} params.businessHours - 營業時間資料
      * @returns {Promise} - API 回應
      */
-    updateBusinessHours({ brandId, id, businessHours }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}/business-hours`, { businessHours })
+    updateBusinessHours({ brandId, storeId, businessHours }) {
+      return apiClient.put(`/store/brands/${brandId}/${storeId}/business-hours`, { businessHours })
     },
 
     /**
      * 更新店鋪公告
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.id - 店鋪ID
+     * @param {string} params.storeId - 店鋪ID
      * @param {Array} params.announcements - 公告資料
      * @returns {Promise} - API 回應
      */
@@ -146,12 +146,14 @@ export default function (apiClient) {
      * 更新店鋪服務設定
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.id - 店鋪ID
+     * @param {string} params.storeId - 店鋪ID
      * @param {Object} params.serviceSettings - 服務設定
      * @returns {Promise} - API 回應
      */
-    updateServiceSettings({ brandId, id, serviceSettings }) {
-      return apiClient.put(`/store/brands/${brandId}/${id}/service-settings`, { serviceSettings })
+    updateServiceSettings({ brandId, storeId, serviceSettings }) {
+      return apiClient.put(`/store/brands/${brandId}/${storeId}/service-settings`, {
+        serviceSettings,
+      })
     },
   }
 }

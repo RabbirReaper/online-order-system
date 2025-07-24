@@ -54,7 +54,7 @@ router.get('/brands/:brandId/:id/business-hours', storeController.getStoreBusine
 
 // 更新店鋪營業時間
 router.put(
-  '/brands/:brandId/:id/business-hours',
+  '/brands/:brandId/:storeId/business-hours',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -91,7 +91,7 @@ router.get('/brands/:brandId/:id/status', storeController.getStoreCurrentStatus)
 
 // 更新店鋪服務設定
 router.put(
-  '/brands/:brandId/:id/service-settings',
+  '/brands/:brandId/:storeId/service-settings',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',

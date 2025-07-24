@@ -156,7 +156,7 @@ export const getStoreBusinessHours = asyncHandler(async (req, res) => {
 // 更新店家營業時間
 export const updateStoreBusinessHours = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
+    const { storeId } = req.params
     const { businessHours } = req.body
 
     if (!businessHours) {
@@ -166,7 +166,7 @@ export const updateStoreBusinessHours = asyncHandler(async (req, res) => {
       })
     }
 
-    const store = await storeService.updateStoreBusinessHours(id, businessHours)
+    const store = await storeService.updateStoreBusinessHours(storeId, businessHours)
 
     res.json({
       success: true,
@@ -233,7 +233,7 @@ export const getStoreCurrentStatus = asyncHandler(async (req, res) => {
 // 更新店家服務設定
 export const updateServiceSettings = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
+    const { storeId } = req.params
     const { serviceSettings } = req.body
 
     if (!serviceSettings) {
@@ -243,7 +243,7 @@ export const updateServiceSettings = asyncHandler(async (req, res) => {
       })
     }
 
-    const store = await storeService.updateStoreServiceSettings(id, serviceSettings)
+    const store = await storeService.updateStoreServiceSettings(storeId, serviceSettings)
 
     res.json({
       success: true,
