@@ -1052,7 +1052,7 @@ const updateBusinessHours = async () => {
   try {
     const response = await api.store.updateBusinessHours({
       brandId: brandId.value,
-      id: store.value._id,
+      storeId: store.value._id,
       businessHours: editBusinessHours.value,
     })
 
@@ -1180,7 +1180,7 @@ const updateServiceSettings = async () => {
   try {
     const response = await api.store.updateServiceSettings({
       brandId: brandId.value,
-      id: store.value._id,
+      storeId: store.value._id,
       serviceSettings: editServiceSettings,
     })
 
