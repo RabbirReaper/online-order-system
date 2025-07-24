@@ -2,11 +2,8 @@
   <div class="order-confirm-view bg-light">
     <div class="container-wrapper">
       <div class="header bg-white p-3 shadow-sm">
-        <div class="d-flex align-items-center">
-          <button class="btn btn-link text-dark p-0" @click="goToMenu">
-            <i class="bi bi-arrow-left fs-4"></i>
-          </button>
-          <h5 class="mb-0 mx-auto">訂單確認</h5>
+        <div class="text-center">
+          <h5 class="mb-0">訂單確認</h5>
         </div>
       </div>
 
@@ -260,7 +257,6 @@
 
         <!-- 操作按鈕 -->
         <div class="d-grid gap-2">
-          <button class="btn btn-primary py-2" @click="goToMenu">返回菜單</button>
           <button
             class="btn btn-outline-secondary py-2"
             @click="checkOrderStatus"
@@ -272,7 +268,7 @@
               role="status"
               aria-hidden="true"
             ></span>
-            {{ isRefreshing ? '更新中...' : '查詢訂單狀態' }}
+            {{ isRefreshing ? '更新中...' : '刷新頁面' }}
           </button>
         </div>
       </div>
@@ -299,13 +295,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/customerAuth'
 import api from '@/api'
 
 const route = useRoute()
-const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
@@ -427,26 +422,6 @@ const formatDateTime = (dateTime) => {
 const formatPickupTime = (time) => {
   if (!time) return '盡快取餐'
   return formatDateTime(time)
-}
-
-// 返回菜單頁面
-const goToMenu = () => {
-  // 優先使用當前品牌和店鋪ID
-  const brandId =
-    cartStore.currentBrandId || authStore.currentBrandId || sessionStorage.getItem('currentBrandId')
-  const storeId = cartStore.currentStoreId || sessionStorage.getItem('currentStoreId')
-
-  if (brandId && storeId) {
-    router.push({
-      name: 'menu',
-      params: { brandId, storeId },
-    })
-  } else {
-    router.push('/')
-  }
-
-  // 清空購物車
-  cartStore.clearCart()
 }
 
 // 查詢訂單狀態
