@@ -977,11 +977,6 @@ onMounted(async () => {
   }
 }
 
-/* 處理中狀態的脈動效果 */
-.processing-animation .spinner-border {
-  animation: pulse 1.5s ease-in-out infinite alternate;
-}
-
 @keyframes pulse {
   from {
     opacity: 1;
