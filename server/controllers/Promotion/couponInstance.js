@@ -6,9 +6,10 @@ import { asyncHandler } from '../../middlewares/error.js'
 // =============================================================================
 
 /**
- * 獲取所有優惠券實例（管理員功能）
+ * 根據模板ID獲取優惠券統計（管理員功能）
  */
-export const getAllCouponInstances = asyncHandler(async (req, res) => {
+export const getCouponInstanceStatsByTemplate = asyncHandler(async (req, res) => {
+  const { templateId } = req.params
   const brandId = req.brandId || req.params.brandId
 
   if (!brandId) {
@@ -18,21 +19,54 @@ export const getAllCouponInstances = asyncHandler(async (req, res) => {
     })
   }
 
-  const options = {
-    page: parseInt(req.query.page, 10) || 1,
-    limit: parseInt(req.query.limit, 10) || 20,
-    status: req.query.status,
-    templateId: req.query.templateId,
-    userId: req.query.userId,
-    includeExpired: req.query.includeExpired === 'true',
+  if (!templateId) {
+    return res.status(400).json({
+      success: false,
+      message: 'templateId 為必須參數',
+    })
   }
 
-  const result = await couponService.coupon.getAllCouponInstances(brandId, options)
+  const result = await couponService.coupon.getCouponInstanceStatsByTemplate(templateId, brandId)
 
   res.json({
     success: true,
-    coupons: result.instances,
-    pagination: result.pagination,
+    ...result,
+  })
+})
+
+/**
+ * 獲取指定用戶的優惠券實例（管理員功能）
+ */
+export const getUserCouponInstancesAdmin = asyncHandler(async (req, res) => {
+  const { userId } = req.params
+  const brandId = req.brandId || req.params.brandId
+
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: 'brandId 為必須參數',
+    })
+  }
+
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: 'userId 為必須參數',
+    })
+  }
+
+  const options = {
+    includeUsed: req.query.includeUsed === 'true',
+    includeExpired: req.query.includeExpired === 'true',
+    page: parseInt(req.query.page, 10) || 1,
+    limit: parseInt(req.query.limit, 10) || 20,
+  }
+
+  const result = await couponService.coupon.getUserCouponsAdmin(userId, brandId, options)
+
+  res.json({
+    success: true,
+    ...result,
   })
 })
 

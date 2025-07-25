@@ -39,6 +39,106 @@ export const getCouponTemplateById = async (templateId, brandId) => {
 }
 
 /**
+ * 根據模板ID獲取優惠券統計
+ * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
+ * @returns {Promise<Object>} 優惠券統計資訊
+ */
+export const getCouponInstanceStatsByTemplate = async (templateId, brandId) => {
+  // 驗證模板是否存在且屬於該品牌
+  const template = await CouponTemplate.findOne({
+    _id: templateId,
+    brand: brandId,
+  })
+
+  if (!template) {
+    throw new AppError('優惠券模板不存在或無權訪問', 404)
+  }
+
+  // 計算統計資訊
+  const stats = await calculateCouponInstanceStats(templateId, brandId)
+
+  return {
+    template: {
+      id: template._id,
+      name: template.name,
+      description: template.description,
+      isActive: template.isActive,
+    },
+    stats,
+  }
+}
+
+/**
+ * 計算優惠券實例統計資訊
+ * @param {String} templateId - 模板ID
+ * @param {String} brandId - 品牌ID
+ * @returns {Promise<Object>} 統計資訊
+ */
+const calculateCouponInstanceStats = async (templateId, brandId) => {
+  const now = new Date()
+
+  // 使用聚合管道來計算統計資訊
+  const stats = await CouponInstance.aggregate([
+    {
+      $match: {
+        template: new mongoose.Types.ObjectId(templateId),
+        brand: new mongoose.Types.ObjectId(brandId),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalIssued: { $sum: 1 },
+        totalUsed: {
+          $sum: {
+            $cond: [{ $eq: ['$isUsed', true] }, 1, 0],
+          },
+        },
+        totalExpired: {
+          $sum: {
+            $cond: [
+              {
+                $and: [{ $eq: ['$isUsed', false] }, { $lt: ['$expiryDate', now] }],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        totalActive: {
+          $sum: {
+            $cond: [
+              {
+                $and: [{ $eq: ['$isUsed', false] }, { $gte: ['$expiryDate', now] }],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ])
+
+  const result =
+    stats.length > 0
+      ? stats[0]
+      : {
+          totalIssued: 0,
+          totalUsed: 0,
+          totalExpired: 0,
+          totalActive: 0,
+        }
+
+  // 計算使用率
+  result.usageRate =
+    result.totalIssued > 0 ? Math.round((result.totalUsed / result.totalIssued) * 100) : 0
+
+  return result
+}
+
+/**
  * 創建優惠券模板
  * @param {Object} templateData - 模板數據
  * @returns {Promise<Object>} 創建的優惠券模板
@@ -126,67 +226,6 @@ export const deleteCouponTemplate = async (templateId, brandId) => {
 }
 
 /**
- * 🆕 獲取所有優惠券實例（管理員功能）
- * @param {String} brandId - 品牌ID
- * @param {Object} options - 查詢選項
- * @returns {Promise<Object>} 優惠券實例列表和分頁資訊
- */
-export const getAllCouponInstances = async (brandId, options = {}) => {
-  const { page = 1, limit = 20, status, templateId, userId, includeExpired = true } = options
-
-  const query = { brand: brandId }
-
-  // 狀態篩選
-  if (status) {
-    if (status === 'used') {
-      query.isUsed = true
-    } else if (status === 'active') {
-      query.isUsed = false
-      query.expiryDate = { $gt: new Date() }
-    } else if (status === 'expired') {
-      query.isUsed = false
-      query.expiryDate = { $lte: new Date() }
-    }
-  } else if (!includeExpired) {
-    // 如果不包含過期的，則只顯示未使用且未過期的
-    query.$or = [
-      { isUsed: true }, // 已使用的
-      { isUsed: false, expiryDate: { $gt: new Date() } }, // 未使用且未過期的
-    ]
-  }
-
-  if (templateId) {
-    query.template = templateId
-  }
-
-  if (userId) {
-    query.user = userId
-  }
-
-  const skip = (page - 1) * limit
-
-  const instances = await CouponInstance.find(query)
-    .populate('template', 'name description')
-    .populate('user', 'name phone')
-    .populate('issuedBy', 'name')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-
-  const total = await CouponInstance.countDocuments(query)
-
-  return {
-    instances,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  }
-}
-
-/**
  * 獲取用戶優惠券
  * @param {String} userId - 用戶ID
  * @param {String} brandId - 品牌ID
@@ -211,6 +250,50 @@ export const getUserCoupons = async (userId, brandId, options = {}) => {
     .sort({ createdAt: -1 })
 
   return coupons
+}
+
+/**
+ * 獲取指定用戶的優惠券實例（管理員功能）
+ * @param {String} userId - 用戶ID
+ * @param {String} brandId - 品牌ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 優惠券實例列表和分頁資訊
+ */
+export const getUserCouponsAdmin = async (userId, brandId, options = {}) => {
+  const { includeUsed = true, includeExpired = true, page = 1, limit = 20 } = options
+
+  const query = { user: userId, brand: brandId }
+
+  if (!includeUsed) {
+    query.isUsed = false
+  }
+
+  if (!includeExpired) {
+    query.expiryDate = { $gt: new Date() }
+  }
+
+  const skip = (page - 1) * limit
+
+  const coupons = await CouponInstance.find(query)
+    .populate('template', 'name description discountInfo')
+    .populate('user', 'name phone email')
+    .populate('issuedBy', 'name')
+    .populate('order', 'orderDateCode sequence total')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+
+  const total = await CouponInstance.countDocuments(query)
+
+  return {
+    coupons,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  }
 }
 
 /**
