@@ -73,6 +73,17 @@ export default function (apiClient) {
       return apiClient.delete(`/promotion/brands/${brandId}/coupons/templates/${id}`)
     },
 
+    /**
+     * 根據模板ID獲取優惠券統計（管理員功能）
+     * @param {Object} params - 參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.templateId - 優惠券模板ID
+     * @returns {Promise} - API 回應
+     */
+    getCouponInstanceStatsByTemplate({ brandId, templateId }) {
+      return apiClient.get(`/promotion/brands/${brandId}/coupons/templates/${templateId}/instances`)
+    },
+
     // =============================================================================
     // 優惠券實例相關 API（後台管理）- Coupon 系統
     // =============================================================================
@@ -89,6 +100,24 @@ export default function (apiClient) {
      */
     issueCouponToUser({ brandId, data }) {
       return apiClient.post(`/promotion/brands/${brandId}/coupons/instances/issue`, data)
+    },
+
+    /**
+     * 獲取指定用戶的優惠券實例（管理員功能）
+     * @param {Object} params - 參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.userId - 用戶ID
+     * @param {Object} [params.options] - 查詢選項
+     * @param {boolean} [params.options.includeUsed=true] - 是否包含已使用的優惠券
+     * @param {boolean} [params.options.includeExpired=true] - 是否包含已過期的優惠券
+     * @param {number} [params.options.page=1] - 頁碼
+     * @param {number} [params.options.limit=20] - 每頁數量
+     * @returns {Promise} - API 回應
+     */
+    getUserCouponInstancesAdmin({ brandId, userId, options = {} }) {
+      return apiClient.get(`/promotion/brands/${brandId}/coupons/instances/users/${userId}`, {
+        params: options,
+      })
     },
 
     // =============================================================================
@@ -218,6 +247,28 @@ export default function (apiClient) {
       return apiClient.get(
         `/promotion/brands/${brandId}/vouchers/templates/${templateId}/instances`,
       )
+    },
+
+    // =============================================================================
+    // 兌換券實例相關 API（後台管理）- Voucher 系統
+    // =============================================================================
+
+    /**
+     * 獲取指定用戶的兌換券實例（管理員功能）
+     * @param {Object} params - 參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.userId - 用戶ID
+     * @param {Object} [params.options] - 查詢選項
+     * @param {boolean} [params.options.includeUsed=true] - 是否包含已使用的兌換券
+     * @param {boolean} [params.options.includeExpired=true] - 是否包含已過期的兌換券
+     * @param {number} [params.options.page=1] - 頁碼
+     * @param {number} [params.options.limit=20] - 每頁數量
+     * @returns {Promise} - API 回應
+     */
+    getUserVoucherInstancesAdmin({ brandId, userId, options = {} }) {
+      return apiClient.get(`/promotion/brands/${brandId}/vouchers/instances/users/${userId}`, {
+        params: options,
+      })
     },
 
     // =============================================================================

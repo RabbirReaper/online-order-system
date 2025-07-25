@@ -722,18 +722,22 @@ const fetchUserData = async () => {
   }
 }
 
-// 獲取用戶優惠券 (管理員查詢)
+// 獲取用戶優惠券 (管理員查詢) - 使用新的API
 const fetchUserCoupons = async () => {
   if (!brandId.value || !customerId.value) return
 
   isLoadingCoupons.value = true
 
   try {
-    // 使用管理員API查詢特定用戶的優惠券
-    const response = await api.promotion.getAllCouponInstances(brandId.value, {
-      customerId: customerId.value,
-      includeExpired: true,
-      limit: 1000,
+    // 使用新的管理員API查詢特定用戶的優惠券
+    const response = await api.promotion.getUserCouponInstancesAdmin({
+      brandId: brandId.value,
+      userId: customerId.value,
+      options: {
+        includeUsed: true,
+        includeExpired: true,
+        limit: 100,
+      },
     })
 
     if (response && response.coupons) {
@@ -741,23 +745,28 @@ const fetchUserCoupons = async () => {
     }
   } catch (error) {
     console.error('獲取用戶優惠券失敗:', error)
-    // 如果管理員API不存在，使用空陣列
     coupons.value = []
   } finally {
     isLoadingCoupons.value = false
   }
 }
 
-// 獲取用戶兌換券
+// 獲取用戶兌換券 - 使用新的管理員API
 const fetchUserVouchers = async () => {
-  if (!brandId.value) return
+  if (!brandId.value || !customerId.value) return
 
   isLoadingVouchers.value = true
 
   try {
-    const response = await api.promotion.getUserVouchers(brandId.value, {
-      includeUsed: true,
-      includeExpired: true,
+    // 使用新的管理員API查詢特定用戶的兌換券
+    const response = await api.promotion.getUserVoucherInstancesAdmin({
+      brandId: brandId.value,
+      userId: customerId.value,
+      options: {
+        includeUsed: true,
+        includeExpired: true,
+        limit: 100,
+      },
     })
 
     if (response && response.vouchers) {
@@ -765,6 +774,7 @@ const fetchUserVouchers = async () => {
     }
   } catch (error) {
     console.error('獲取用戶兌換券失敗:', error)
+    vouchers.value = []
   } finally {
     isLoadingVouchers.value = false
   }
@@ -781,7 +791,7 @@ const fetchUserOrders = async () => {
     // 暫時使用模擬數據結構
     orders.value = []
 
-    // 如果有針對用戶的訂單查詢API，使用該API
+    // TODO: 如果有針對用戶的訂單查詢API，使用該API
     // const response = await api.orderAdmin.getUserOrders({
     //   brandId: brandId.value,
     //   customerId: customerId.value
@@ -808,7 +818,7 @@ const fetchCouponTemplates = async () => {
   }
 }
 
-// 發送優惠券
+// 發送優惠券 - 使用修正後的參數結構
 const sendCoupon = async () => {
   if (!selectedCouponTemplate.value || !user.value) return
 
@@ -818,9 +828,9 @@ const sendCoupon = async () => {
     const response = await api.promotion.issueCouponToUser({
       brandId: brandId.value,
       data: {
-        customerId: user.value._id,
+        userId: user.value._id, // 修正：使用 userId 而不是 customerId
         templateId: selectedCouponTemplate.value,
-        reason: sendReason.value,
+        reason: sendReason.value || '管理員發送',
       },
     })
 

@@ -68,27 +68,20 @@ router.delete(
   couponTemplateController.deleteCouponTemplate,
 )
 
+/**
+ * 根據模板ID獲取優惠券統計（管理員功能）
+ */
+router.get(
+  '/brands/:brandId/coupons/templates/:templateId/instances',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  couponInstanceController.getCouponInstanceStatsByTemplate,
+)
+
 // =============================================================================
 // 優惠券實例路由（後台管理）- Coupon 系統
 // =============================================================================
-
-/**
- * 獲取所有優惠券實例（管理員）
- */
-router.get(
-  '/brands/:brandId/coupons/instances/admin',
-  authenticate('admin'),
-  requireRole(
-    'primary_system_admin',
-    'system_admin',
-    'primary_brand_admin',
-    'brand_admin',
-    'primary_store_admin',
-    'store_admin',
-  ),
-  requireBrandAccess,
-  couponInstanceController.getAllCouponInstances,
-)
 
 /**
  * 發放優惠券給用戶（管理員）
@@ -106,6 +99,24 @@ router.post(
   ),
   requireBrandAccess,
   couponInstanceController.issueCouponToUser,
+)
+
+/**
+ * 獲取指定用戶的優惠券實例（管理員功能）
+ */
+router.get(
+  '/brands/:brandId/coupons/instances/users/:userId',
+  authenticate('admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
+  requireBrandAccess,
+  couponInstanceController.getUserCouponInstancesAdmin,
 )
 
 // =============================================================================
@@ -207,7 +218,7 @@ router.post(
 )
 
 /**
- * 根據模板ID獲取兌換券實例（管理員功能）
+ * 根據模板ID獲取兌換券統計（管理員功能）
  */
 router.get(
   '/brands/:brandId/vouchers/templates/:templateId/instances',
@@ -215,6 +226,28 @@ router.get(
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
   requireBrandAccess,
   voucherTemplateController.getVoucherInstanceStatsByTemplate,
+)
+
+// =============================================================================
+// 兌換券實例路由（後台管理）- Voucher 系統
+// =============================================================================
+
+/**
+ * 獲取指定用戶的兌換券實例（管理員功能）
+ */
+router.get(
+  '/brands/:brandId/vouchers/instances/users/:userId',
+  authenticate('admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
+  requireBrandAccess,
+  voucherInstanceController.getUserVoucherInstancesAdmin,
 )
 
 // =============================================================================
