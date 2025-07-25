@@ -357,8 +357,10 @@
                   <thead class="table-light">
                     <tr>
                       <th>訂單編號</th>
+                      <th>店鋪</th>
                       <th>訂單類型</th>
                       <th>訂單金額</th>
+                      <th>付款方式</th>
                       <th>支付狀態</th>
                       <th>下單時間</th>
                       <th>操作</th>
@@ -367,29 +369,34 @@
                   <tbody>
                     <tr v-for="order in paginatedOrders" :key="order._id">
                       <td>
-                        <code
-                          >{{ order.orderDateCode }}-{{
-                            String(order.sequence).padStart(3, '0')
-                          }}</code
-                        >
+                        <strong v-if="order.platformOrderId">{{ order.platformOrderId }}</strong>
+                        <span v-else>
+                          {{ order.orderDateCode }}-{{ String(order.sequence).padStart(3, '0') }}
+                        </span>
                       </td>
                       <td>
-                        <span class="badge bg-info">{{ getOrderTypeText(order.orderType) }}</span>
+                        <span class="text-muted">{{ getStoreName(order) }}</span>
                       </td>
-                      <td>${{ formatPrice(order.total) }}</td>
+                      <td>
+                        <span :class="getOrderTypeClass(order.orderType)">
+                          {{ getOrderTypeText(order.orderType) }}
+                        </span>
+                      </td>
+                      <td class="text-success fw-bold">${{ formatPrice(order.total) }}</td>
+                      <td>{{ formatPaymentMethod(order) }}</td>
                       <td>
                         <span class="badge" :class="getOrderStatusClass(order.status)">
                           {{ getOrderStatusText(order.status) }}
                         </span>
                       </td>
-                      <td>{{ formatDate(order.createdAt) }}</td>
+                      <td>{{ formatDateTime(order.createdAt) }}</td>
                       <td>
-                        <router-link
-                          :to="`/admin/${brandId}/orders/${order._id}`"
+                        <button
                           class="btn btn-sm btn-outline-primary"
+                          @click="openOrderDetail(order._id)"
                         >
-                          <i class="bi bi-eye me-1"></i>查看
-                        </router-link>
+                          <i class="bi bi-eye me-1"></i>詳情
+                        </button>
                       </td>
                     </tr>
                   </tbody>
@@ -397,13 +404,37 @@
 
                 <!-- 訂單分頁 -->
                 <nav aria-label="訂單列表分頁" v-if="orderTotalPages > 1" class="mt-3">
-                  <b-pagination
-                    v-model="orderCurrentPage"
-                    :total-rows="orders.length"
-                    :per-page="orderPerPage"
-                    align="center"
-                  >
-                  </b-pagination>
+                  <ul class="pagination justify-content-center">
+                    <li class="page-item" :class="{ disabled: orderCurrentPage === 1 }">
+                      <a
+                        class="page-link"
+                        href="#"
+                        @click.prevent="changeOrderPage(orderCurrentPage - 1)"
+                        >上一頁</a
+                      >
+                    </li>
+                    <li
+                      class="page-item"
+                      v-for="page in getOrderPageNumbers()"
+                      :key="page"
+                      :class="{ active: orderCurrentPage === page }"
+                    >
+                      <a class="page-link" href="#" @click.prevent="changeOrderPage(page)">{{
+                        page
+                      }}</a>
+                    </li>
+                    <li
+                      class="page-item"
+                      :class="{ disabled: orderCurrentPage === orderTotalPages }"
+                    >
+                      <a
+                        class="page-link"
+                        href="#"
+                        @click.prevent="changeOrderPage(orderCurrentPage + 1)"
+                        >下一頁</a
+                      >
+                    </li>
+                  </ul>
                 </nav>
               </div>
 
@@ -476,14 +507,23 @@
         {{ isSending ? '發送中...' : '確認發送' }}
       </template>
     </b-modal>
+
+    <!-- 訂單詳情彈窗 -->
+    <OrderDetailModal
+      :visible="showOrderDetail"
+      :order="selectedOrderDetail"
+      :storeName="getOrderStoreName(selectedOrderDetail)"
+      @close="closeOrderDetail"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { BModal, BPagination } from 'bootstrap-vue-next'
+import { BModal } from 'bootstrap-vue-next'
 import api from '@/api'
+import OrderDetailModal from '@/components/BrandAdmin/Order/OrderDetailModal.vue'
 
 // 路由
 const route = useRoute()
@@ -506,6 +546,10 @@ const coupons = ref([])
 const vouchers = ref([])
 const orders = ref([])
 const couponTemplates = ref([])
+
+// 訂單詳情 modal 相關
+const showOrderDetail = ref(false)
+const selectedOrderDetail = ref(null)
 
 // 統計數據
 const statistics = ref({
@@ -581,11 +625,23 @@ const formatPrice = (price) => {
   return price?.toLocaleString('zh-TW') || '0'
 }
 
-// 格式化日期
+// 格式化日期和時間
 const formatDate = (dateString) => {
   if (!dateString) return '無'
   const date = new Date(dateString)
   return date.toLocaleDateString('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// 格式化日期時間（訂單用）
+const formatDateTime = (dateStr) => {
+  const date = new Date(dateStr)
+  return date.toLocaleString('zh-TW', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -671,6 +727,16 @@ const getOrderTypeText = (type) => {
   return typeMap[type] || type
 }
 
+// 獲取訂單類型樣式
+const getOrderTypeClass = (type) => {
+  const classMap = {
+    dine_in: 'badge bg-primary',
+    takeout: 'badge bg-success',
+    delivery: 'badge bg-warning',
+  }
+  return classMap[type] || 'badge bg-secondary'
+}
+
 // 獲取訂單狀態樣式
 const getOrderStatusClass = (status) => {
   const statusMap = {
@@ -689,6 +755,111 @@ const getOrderStatusText = (status) => {
     cancelled: '已取消',
   }
   return statusMap[status] || status
+}
+
+// 格式化付款方式
+const formatPaymentMethod = (order) => {
+  if (order.status === 'unpaid') return '未付款'
+  const method = order.paymentMethod
+  const methodMap = {
+    cash: '現金',
+    credit_card: '信用卡',
+    line_pay: 'LINE Pay',
+    other: '其他',
+  }
+  return methodMap[method] || method || '未設定'
+}
+
+// 獲取店鋪名稱
+const getStoreName = (order) => {
+  if (order.store && typeof order.store === 'object') {
+    return order.store.name
+  }
+  return '未知店鋪'
+}
+
+// 獲取訂單詳情的店鋪名稱
+const getOrderStoreName = (order) => {
+  if (!order) return '未知店鋪'
+  return getStoreName(order)
+}
+
+// 分頁相關方法
+const changeOrderPage = (page) => {
+  if (page < 1 || page > orderTotalPages.value) return
+  orderCurrentPage.value = page
+}
+
+const getOrderPageNumbers = () => {
+  const total = orderTotalPages.value
+  const current = orderCurrentPage.value
+  const pageNumbers = []
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) {
+      pageNumbers.push(i)
+    }
+  } else {
+    if (current <= 3) {
+      for (let i = 1; i <= 5; i++) {
+        pageNumbers.push(i)
+      }
+    } else if (current >= total - 2) {
+      for (let i = total - 4; i <= total; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      for (let i = current - 2; i <= current + 2; i++) {
+        pageNumbers.push(i)
+      }
+    }
+  }
+
+  return pageNumbers
+}
+
+// 訂單詳情 modal 相關方法
+const openOrderDetail = async (orderId) => {
+  try {
+    // 從訂單列表中找到對應的訂單
+    const order = orders.value.find((o) => o._id === orderId)
+    if (!order) {
+      alert('找不到訂單資料')
+      return
+    }
+
+    // 確保有店鋪資訊
+    let storeId = null
+    if (order.store && typeof order.store === 'object') {
+      storeId = order.store._id
+    } else if (order.store) {
+      storeId = order.store
+    }
+
+    if (!storeId) {
+      alert('無法取得店鋪資訊')
+      return
+    }
+
+    const response = await api.orderAdmin.getOrderById({
+      brandId: brandId.value,
+      storeId: storeId,
+      orderId: orderId,
+    })
+
+    if (response.success) {
+      selectedOrderDetail.value = response.order
+      showOrderDetail.value = true
+    }
+  } catch (err) {
+    console.error('獲取訂單詳情失敗:', err)
+    alert('獲取訂單詳情失敗')
+  }
+}
+
+const closeOrderDetail = () => {
+  showOrderDetail.value = false
+  selectedOrderDetail.value = null
 }
 
 // 顯示發送優惠券模態框
@@ -961,6 +1132,12 @@ onMounted(async () => {
   vertical-align: middle;
 }
 
+.table th {
+  border-top: none;
+  font-weight: 600;
+  background-color: #f8f9fa;
+}
+
 .btn-group .btn {
   padding: 0.25rem 0.5rem;
 }
@@ -979,5 +1156,19 @@ onMounted(async () => {
 .card.bg-info .card-title,
 .card.bg-warning .card-title {
   opacity: 0.9;
+}
+
+/* 分頁樣式 */
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.pagination .page-link {
+  color: #0d6efd;
+}
+
+.pagination .page-link:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 </style>
