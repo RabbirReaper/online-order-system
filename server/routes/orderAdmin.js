@@ -28,6 +28,22 @@ router.get(
   orderController.getStoreOrders,
 )
 
+// 🆕 獲取特定用戶的訂單列表（管理員功能）
+router.get(
+  '/brands/:brandId/users/:userId/orders',
+  authenticate('admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
+  requireBrandAccess,
+  orderController.getUserOrders,
+)
+
 // 獲取單個訂單詳情
 router.get(
   '/brands/:brandId/stores/:storeId/orders/:orderId',

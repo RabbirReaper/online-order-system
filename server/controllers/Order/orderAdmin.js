@@ -28,6 +28,28 @@ export const getStoreOrders = asyncHandler(async (req, res) => {
   })
 })
 
+// 🆕 獲取特定用戶的訂單列表（管理員功能）
+export const getUserOrders = asyncHandler(async (req, res) => {
+  const { userId } = req.params
+  const { brandId } = req.params
+
+  const options = {
+    brandId,
+    page: parseInt(req.query.page, 10) || 1,
+    limit: parseInt(req.query.limit, 10) || 10,
+    sortBy: req.query.sortBy || 'createdAt',
+    sortOrder: req.query.sortOrder || 'desc',
+  }
+
+  const result = await orderService.getUserOrders(userId, options)
+
+  res.json({
+    success: true,
+    orders: result.orders,
+    pagination: result.pagination,
+  })
+})
+
 // 獲取訂單詳情（後台）
 export const getOrderById = asyncHandler(async (req, res) => {
   const { storeId, orderId } = req.params

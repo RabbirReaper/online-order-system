@@ -26,6 +26,23 @@ export default function (apiClient) {
     },
 
     /**
+     * 🆕 獲取特定用戶的所有訂單 (管理員功能)
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.userId - 用戶ID（必填）
+     * @param {number} [params.page=1] - 頁碼
+     * @param {number} [params.limit=10] - 每頁數量
+     * @param {string} [params.sortBy='createdAt'] - 排序欄位
+     * @param {string} [params.sortOrder='desc'] - 排序方向 ('asc' 或 'desc')
+     * @returns {Promise} - API 回應
+     */
+    getUserOrders({ brandId, userId, ...queryParams }) {
+      return apiClient.get(`/order-admin/brands/${brandId}/users/${userId}/orders`, {
+        params: queryParams,
+      })
+    },
+
+    /**
      * 獲取訂單詳情 (管理員功能)
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）

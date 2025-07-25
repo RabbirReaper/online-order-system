@@ -341,7 +341,16 @@
         <div class="col-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title mb-3">訂單歷史 ({{ orders.length }})</h5>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">訂單歷史 ({{ orders.length }})</h5>
+                <div
+                  v-if="isLoadingOrders"
+                  class="spinner-border spinner-border-sm text-primary"
+                  role="status"
+                >
+                  <span class="visually-hidden">載入訂單中...</span>
+                </div>
+              </div>
 
               <div v-if="orders.length > 0" class="table-responsive">
                 <table class="table table-hover">
@@ -780,26 +789,117 @@ const fetchUserVouchers = async () => {
   }
 }
 
-// 獲取用戶訂單歷史
+// 🔧 修復的更新統計數據函數
+const updateStatistics = async () => {
+  console.log('=== 開始更新統計數據 ===')
+
+  const now = new Date()
+
+  // 計算優惠券和兌換券統計
+  const activeCoupons = coupons.value.filter(
+    (c) => !c.isUsed && new Date(c.expiryDate) > now,
+  ).length
+  const activeVouchers = vouchers.value.filter(
+    (v) => !v.isUsed && new Date(v.expiryDate) > now,
+  ).length
+
+  console.log('📊 券類統計:', { activeCoupons, activeVouchers })
+  console.log('📦 當前訂單數據:', {
+    length: orders.value.length,
+    firstOrder: orders.value[0] || null,
+    allOrders: orders.value.map((o) => ({ id: o._id, status: o.status, total: o.total })),
+  })
+
+  // 嘗試使用後端統計
+  console.log('📊 使用前端計算...')
+
+  // 前端計算訂單統計
+  const totalOrders = orders.value.length
+  const paidOrders = orders.value.filter((o) => {
+    console.log(`檢查訂單 ${o._id}: status=${o.status}, total=${o.total}`)
+    return o.status === 'paid'
+  })
+
+  const totalSpent = paidOrders.reduce((sum, o) => {
+    const orderTotal = Number(o.total) || 0
+    console.log(`累加訂單 ${o._id}: $${orderTotal}`)
+    return sum + orderTotal
+  }, 0)
+
+  console.log('📊 前端計算結果:', {
+    totalOrders,
+    paidOrdersCount: paidOrders.length,
+    totalSpent,
+  })
+
+  // 更新統計數據
+  statistics.value.totalOrders = totalOrders
+  statistics.value.totalSpent = totalSpent
+
+  // 更新其他統計數據
+  statistics.value.activeCoupons = activeCoupons
+  statistics.value.activeVouchers = activeVouchers
+
+  console.log('✅ 最終統計數據:', {
+    activeCoupons: statistics.value.activeCoupons,
+    activeVouchers: statistics.value.activeVouchers,
+    totalOrders: statistics.value.totalOrders,
+    totalSpent: statistics.value.totalSpent,
+  })
+  console.log('=== 統計數據更新完成 ===')
+}
+
+// 🔧 修復的獲取用戶訂單函數
 const fetchUserOrders = async () => {
   if (!brandId.value || !customerId.value) return
 
   isLoadingOrders.value = true
 
   try {
-    // 注意：這裡可能需要根據實際API調整，可能需要遍歷所有店鋪
-    // 暫時使用模擬數據結構
+    console.log('📦 開始獲取用戶訂單，用戶ID:', customerId.value)
+
+    const response = await api.orderAdmin.getUserOrders({
+      brandId: brandId.value,
+      userId: customerId.value,
+      limit: 100,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    })
+
+    if (response && response.orders) {
+      orders.value = response.orders
+      console.log(`✅ 成功獲取 ${response.orders.length} 筆用戶訂單`)
+      console.log(
+        '📦 訂單詳情:',
+        orders.value.map((o) => ({
+          id: o._id,
+          status: o.status,
+          total: o.total,
+          type: o.orderType,
+          date: o.createdAt,
+        })),
+      )
+    } else {
+      orders.value = []
+      console.warn('⚠️ API回應中沒有訂單數據')
+    }
+  } catch (error) {
+    console.error('❌ 獲取用戶訂單失敗:', error)
     orders.value = []
 
-    // TODO: 如果有針對用戶的訂單查詢API，使用該API
-    // const response = await api.orderAdmin.getUserOrders({
-    //   brandId: brandId.value,
-    //   customerId: customerId.value
-    // })
-  } catch (error) {
-    console.error('獲取用戶訂單失敗:', error)
+    if (error.response?.status === 403) {
+      errorMessage.value = '沒有權限查看訂單資料'
+    } else if (error.response?.status === 404) {
+      errorMessage.value = '找不到相關訂單資料'
+    } else {
+      errorMessage.value = '獲取訂單資料時發生錯誤，請稍後再試'
+    }
   } finally {
     isLoadingOrders.value = false
+
+    // 🔧 關鍵：確保在訂單載入完成後立即更新統計
+    console.log('🔧 訂單載入完成，開始更新統計...')
+    await updateStatistics()
   }
 }
 
@@ -840,7 +940,7 @@ const sendCoupon = async () => {
 
       // 重新載入優惠券數據
       await fetchUserCoupons()
-      updateStatistics()
+      await updateStatistics()
     } else {
       alert('發送失敗：' + (response.message || '未知錯誤'))
     }
@@ -853,34 +953,38 @@ const sendCoupon = async () => {
   }
 }
 
-// 更新統計數據
-const updateStatistics = () => {
-  const now = new Date()
+// 🔧 修復的重新整理函數
+const refreshData = async () => {
+  console.log('🔄 開始重新整理所有數據...')
 
-  statistics.value = {
-    activeCoupons: coupons.value.filter((c) => !c.isUsed && new Date(c.expiryDate) > now).length,
-    activeVouchers: vouchers.value.filter((v) => !v.isUsed && new Date(v.expiryDate) > now).length,
-    totalOrders: orders.value.length,
-    totalSpent: orders.value
-      .filter((o) => o.status === 'paid')
-      .reduce((sum, o) => sum + o.total, 0),
+  try {
+    // 並行載入基本資料
+    await Promise.all([fetchUserData(), fetchUserCoupons(), fetchUserVouchers()])
+
+    // 載入訂單數據（會自動觸發統計更新）
+    await fetchUserOrders()
+
+    console.log('✅ 所有數據重新整理完成')
+  } catch (error) {
+    console.error('❌ 重新整理數據失敗:', error)
   }
 }
 
-// 重新整理數據
-const refreshData = async () => {
-  await Promise.all([fetchUserData(), fetchUserCoupons(), fetchUserVouchers(), fetchUserOrders()])
-  updateStatistics()
-}
-
-// 生命週期鉤子
+// 🔧 修復的生命週期鉤子
 onMounted(async () => {
+  console.log('🚀 組件掛載，開始載入數據...')
   isLoading.value = true
 
   try {
-    await Promise.all([fetchUserData(), fetchUserCoupons(), fetchUserVouchers(), fetchUserOrders()])
+    // 並行載入基本資料
+    await Promise.all([fetchUserData(), fetchUserCoupons(), fetchUserVouchers()])
 
-    updateStatistics()
+    // 載入訂單數據（會自動觸發統計更新）
+    await fetchUserOrders()
+
+    console.log('✅ 所有數據載入完成')
+  } catch (error) {
+    console.error('❌ 載入數據時發生錯誤:', error)
   } finally {
     isLoading.value = false
   }
