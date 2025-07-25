@@ -160,25 +160,43 @@
         <div class="col-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title mb-3">發放統計</h5>
-              <div class="row text-center">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0">發放統計</h5>
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  @click="refreshStatistics"
+                  :disabled="isLoadingStats"
+                >
+                  <i class="bi bi-arrow-clockwise me-1" :class="{ spin: isLoadingStats }"></i>
+                  重新整理
+                </button>
+              </div>
+
+              <!-- 統計載入中 -->
+              <div v-if="isLoadingStats" class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                正在載入統計資料...
+              </div>
+
+              <!-- 統計資料 -->
+              <div v-else class="row text-center">
                 <div class="col-md-4">
                   <div class="border-end">
-                    <h3 class="text-primary mb-1">{{ coupon.totalIssued || 0 }}</h3>
+                    <h3 class="text-primary mb-1">{{ statistics.totalIssued }}</h3>
                     <p class="text-muted mb-0">總發放數</p>
                   </div>
                 </div>
                 <div class="col-md-4">
                   <div class="border-end">
-                    <h3 class="text-success mb-1">-</h3>
+                    <h3 class="text-success mb-1">{{ statistics.totalUsed }}</h3>
                     <p class="text-muted mb-0">已使用</p>
-                    <small class="text-muted d-block">需要實例統計功能</small>
+                    <small class="text-muted d-block"> 使用率: {{ statistics.usageRate }}% </small>
                   </div>
                 </div>
                 <div class="col-md-4">
-                  <h3 class="text-warning mb-1">-</h3>
+                  <h3 class="text-warning mb-1">{{ statistics.totalActive }}</h3>
                   <p class="text-muted mb-0">未使用</p>
-                  <small class="text-muted d-block">需要實例統計功能</small>
+                  <small class="text-muted d-block"> (過期: {{ statistics.totalExpired }}) </small>
                 </div>
               </div>
             </div>
@@ -203,10 +221,18 @@ const couponId = computed(() => route.params.id)
 
 // 狀態
 const isLoading = ref(false)
+const isLoadingStats = ref(false)
 const error = ref('')
 
 // 優惠券資料
 const coupon = ref(null)
+const statistics = ref({
+  totalIssued: 0,
+  totalUsed: 0,
+  totalActive: 0,
+  totalExpired: 0,
+  usageRate: 0,
+})
 
 // 格式化價格
 const formatPrice = (price) => {
@@ -239,14 +265,14 @@ const fetchCouponData = async () => {
       brandId: brandId.value,
     })
 
-    if (response && response.template) {
+    if (response.success && response.template) {
       coupon.value = response.template
     } else {
       error.value = '獲取優惠券資料失敗'
     }
   } catch (err) {
     console.error('獲取優惠券資料時發生錯誤:', err)
-    if (err.response && err.response.data && err.response.data.message) {
+    if (err.response?.data?.message) {
       error.value = err.response.data.message
     } else {
       error.value = '獲取優惠券資料時發生錯誤，請稍後再試'
@@ -256,10 +282,70 @@ const fetchCouponData = async () => {
   }
 }
 
+// 獲取統計資料
+const fetchStatistics = async () => {
+  if (!couponId.value || !brandId.value) return
+
+  isLoadingStats.value = true
+
+  try {
+    // 注意：後端API需要支援管理員獲取優惠券實例的功能
+    // 這裡假設有一個可以按模板ID過濾的API
+    const response = await api.promotion.getAllCouponInstances(brandId.value, {
+      templateId: couponId.value,
+      includeExpired: true,
+      limit: 1000, // 獲取所有實例來計算統計
+    })
+
+    if (response.success && response.coupons) {
+      const instances = response.coupons
+      const now = new Date()
+
+      const totalIssued = instances.length
+      const totalUsed = instances.filter((instance) => instance.isUsed).length
+      const totalExpired = instances.filter(
+        (instance) => !instance.isUsed && new Date(instance.expiryDate) < now,
+      ).length
+      const totalActive = totalIssued - totalUsed - totalExpired
+      const usageRate = totalIssued > 0 ? Math.round((totalUsed / totalIssued) * 100) : 0
+
+      statistics.value = {
+        totalIssued,
+        totalUsed,
+        totalActive,
+        totalExpired,
+        usageRate,
+      }
+    }
+  } catch (err) {
+    console.error('獲取統計資料時發生錯誤:', err)
+    // 如果統計資料獲取失敗，使用模板的基本資料
+    statistics.value = {
+      totalIssued: coupon.value?.totalIssued || 0,
+      totalUsed: 0,
+      totalActive: 0,
+      totalExpired: 0,
+      usageRate: 0,
+    }
+  } finally {
+    isLoadingStats.value = false
+  }
+}
+
+// 重新整理統計資料
+const refreshStatistics = () => {
+  fetchStatistics()
+}
+
 // 生命週期鉤子
-onMounted(() => {
+onMounted(async () => {
   // 獲取優惠券資料
-  fetchCouponData()
+  await fetchCouponData()
+
+  // 獲取統計資料
+  if (coupon.value) {
+    await fetchStatistics()
+  }
 })
 </script>
 
@@ -287,5 +373,18 @@ onMounted(() => {
 
 .border-end:last-child {
   border-right: none !important;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
 }
 </style>
