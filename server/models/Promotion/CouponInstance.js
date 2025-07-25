@@ -58,6 +58,15 @@ const couponInstanceSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    // 🆕 新增發放相關欄位
+    issuedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin',
+    },
+    issueReason: {
+      type: String,
+      default: '活動獎勵',
+    },
   },
   { timestamps: true },
 )

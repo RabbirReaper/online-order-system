@@ -140,7 +140,7 @@
                 <th>類型</th>
                 <th>項目名稱</th>
                 <th>總庫存</th>
-                <th>可販售庫存</th>
+                <th>限量庫存</th>
                 <th>狀態</th>
                 <th>最低警告值</th>
                 <th>補貨目標</th>
@@ -176,25 +176,22 @@
                 <td>{{ item.minStockAlert }}</td>
                 <td>{{ item.targetStockLevel || '-' }}</td>
                 <td>
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="item.isInventoryTracked"
-                      disabled
-                    />
-                  </div>
+                  <span
+                    class="badge"
+                    :class="item.isInventoryTracked ? 'bg-success' : 'bg-secondary'"
+                  >
+                    {{ item.isInventoryTracked ? '啟用' : '未啟用' }}
+                  </span>
                 </td>
                 <td>
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      :checked="item.enableAvailableStock"
-                      disabled
-                    />
-                  </div>
+                  <span
+                    class="badge"
+                    :class="item.enableAvailableStock ? 'bg-success' : 'bg-secondary'"
+                  >
+                    {{ item.enableAvailableStock ? '啟用' : '未啟用' }}
+                  </span>
                 </td>
+
                 <td>
                   <div class="form-check form-switch">
                     <input
@@ -304,6 +301,11 @@
     title="確認變更售完狀態"
     @ok="confirmSoldOutChange"
     @cancel="cancelSoldOutChange"
+    ok-title="確認變更"
+    cancel-title="取消"
+    no-close-on-backdrop
+    no-close-on-esc
+    :no-header-close="true"
   >
     <p v-if="pendingSoldOutItem?.isSoldOut">
       確定要將「{{ pendingSoldOutItem?.itemName }}」設為售完嗎？設為售完後，顧客將無法點餐此項目。

@@ -2,25 +2,10 @@
   <div>
     <!-- 頁面頂部工具列 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="mb-0">{{ isEditMode ? '編輯折價券' : '新增折價券' }}</h4>
+      <h4 class="mb-0">{{ isEditMode ? '編輯優惠券' : '新增優惠券' }}</h4>
       <router-link :to="`/admin/${brandId}/coupons`" class="btn btn-secondary">
         <i class="bi bi-arrow-left me-1"></i>返回列表
       </router-link>
-    </div>
-
-    <!-- 成功訊息 -->
-    <div class="alert alert-success" v-if="successMessage">
-      <i class="bi bi-check-circle-fill me-2"></i>
-      {{ successMessage }}
-    </div>
-
-    <!-- 錯誤訊息 -->
-    <div class="alert alert-danger" v-if="formErrors.length > 0">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      <strong>請修正以下錯誤：</strong>
-      <ul class="mb-0 mt-2">
-        <li v-for="error in formErrors" :key="error">{{ error }}</li>
-      </ul>
     </div>
 
     <!-- 表單 -->
@@ -33,7 +18,7 @@
 
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="name" class="form-label required">折價券名稱</label>
+                <label for="name" class="form-label required">優惠券名稱</label>
                 <input
                   type="text"
                   class="form-control"
@@ -41,41 +26,12 @@
                   v-model="formData.name"
                   :class="{ 'is-invalid': errors.name }"
                   maxlength="50"
-                  placeholder="請輸入折價券名稱"
+                  placeholder="請輸入優惠券名稱"
                 />
                 <div class="invalid-feedback" v-if="errors.name">{{ errors.name }}</div>
                 <div class="form-text">最多50個字元</div>
               </div>
 
-              <div class="col-md-6 mb-3">
-                <label for="pointCost" class="form-label required">兌換點數</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  id="pointCost"
-                  v-model="formData.pointCost"
-                  :class="{ 'is-invalid': errors.pointCost }"
-                  min="1"
-                  placeholder="請輸入所需點數"
-                />
-                <div class="invalid-feedback" v-if="errors.pointCost">{{ errors.pointCost }}</div>
-                <div class="form-text">顧客兌換此折價券需要的點數</div>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="description" class="form-label">描述</label>
-              <textarea
-                class="form-control"
-                id="description"
-                v-model="formData.description"
-                rows="3"
-                placeholder="請輸入折價券描述（選填）"
-              ></textarea>
-              <div class="form-text">向顧客說明此折價券的使用方式和限制</div>
-            </div>
-
-            <div class="row">
               <div class="col-md-6 mb-3">
                 <label for="validityPeriod" class="form-label required">有效期限</label>
                 <div class="input-group">
@@ -95,22 +51,34 @@
                 </div>
                 <div class="form-text">從發放日起計算的有效天數</div>
               </div>
+            </div>
 
-              <div class="col-md-6 mb-3">
-                <label class="form-label">狀態</label>
-                <div class="form-check form-switch">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    id="isActive"
-                    v-model="formData.isActive"
-                  />
-                  <label class="form-check-label" for="isActive">
-                    {{ formData.isActive ? '啟用' : '停用' }}
-                  </label>
-                </div>
-                <div class="form-text">停用後顧客無法兌換此折價券</div>
+            <div class="mb-3">
+              <label for="description" class="form-label">描述</label>
+              <textarea
+                class="form-control"
+                id="description"
+                v-model="formData.description"
+                rows="3"
+                placeholder="請輸入優惠券描述（選填）"
+              ></textarea>
+              <div class="form-text">向用戶說明此優惠券的使用方式和限制</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">狀態</label>
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="isActive"
+                  v-model="formData.isActive"
+                />
+                <label class="form-check-label" for="isActive">
+                  {{ formData.isActive ? '啟用' : '停用' }}
+                </label>
               </div>
+              <div class="form-text">停用後無法發放此優惠券給用戶</div>
             </div>
           </div>
 
@@ -148,7 +116,7 @@
                     type="number"
                     class="form-control"
                     id="discountValue"
-                    v-model="formData.discountInfo.discountValue"
+                    v-model.number="formData.discountInfo.discountValue"
                     :class="{ 'is-invalid': errors['discountInfo.discountValue'] }"
                     min="0.01"
                     step="0.01"
@@ -186,7 +154,7 @@
                     type="number"
                     class="form-control"
                     id="minPurchaseAmount"
-                    v-model="formData.discountInfo.minPurchaseAmount"
+                    v-model.number="formData.discountInfo.minPurchaseAmount"
                     min="0"
                     step="0.01"
                     placeholder="0"
@@ -203,7 +171,7 @@
                     type="number"
                     class="form-control"
                     id="maxDiscountAmount"
-                    v-model="formData.discountInfo.maxDiscountAmount"
+                    v-model.number="formData.discountInfo.maxDiscountAmount"
                     min="0.01"
                     step="0.01"
                     placeholder="不限制"
@@ -214,6 +182,54 @@
             </div>
           </div>
 
+          <!-- 預覽區域 -->
+          <div
+            class="mb-4"
+            v-if="
+              formData.name &&
+              formData.discountInfo.discountType &&
+              formData.discountInfo.discountValue
+            "
+          >
+            <h6 class="border-bottom pb-2 mb-3">優惠券預覽</h6>
+            <div class="card bg-light">
+              <div class="card-body">
+                <h6 class="card-title">{{ formData.name }}</h6>
+                <p class="card-text" v-if="formData.description">{{ formData.description }}</p>
+                <div class="text-primary fw-bold mb-2">
+                  <template v-if="formData.discountInfo.discountType === 'percentage'">
+                    {{ formData.discountInfo.discountValue }}% 折扣
+                    <span v-if="formData.discountInfo.maxDiscountAmount" class="text-muted small">
+                      (最高${{ formatPrice(formData.discountInfo.maxDiscountAmount) }})
+                    </span>
+                  </template>
+                  <template v-else>
+                    折抵 ${{ formatPrice(formData.discountInfo.discountValue) }}
+                  </template>
+                </div>
+                <div class="small text-muted">
+                  <div v-if="formData.discountInfo.minPurchaseAmount > 0">
+                    最低消費：${{ formatPrice(formData.discountInfo.minPurchaseAmount) }}
+                  </div>
+                  <div>有效期限：{{ formData.validityPeriod }} 天</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 成功訊息 -->
+          <div class="alert alert-success" v-if="successMessage">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ successMessage }}
+          </div>
+
+          <!-- 錯誤訊息 -->
+          <div class="alert alert-danger" v-if="formErrors.length > 0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>請修正以下錯誤：</strong>
+            <ul class="mb-0 mt-2">
+              <li v-for="error in formErrors" :key="error">{{ error }}</li>
+            </ul>
+          </div>
           <!-- 提交按鈕 -->
           <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-outline-secondary me-2" @click="resetForm">
@@ -221,7 +237,7 @@
             </button>
             <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
               <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-              {{ isSubmitting ? '處理中...' : isEditMode ? '更新折價券' : '建立折價券' }}
+              {{ isSubmitting ? '處理中...' : isEditMode ? '更新優惠券' : '建立優惠券' }}
             </button>
           </div>
         </form>
@@ -248,10 +264,7 @@ const brandId = computed(() => route.params.brandId)
 // 表單數據
 const formData = reactive({
   name: '',
-  brand: '',
   description: '',
-  couponType: 'discount', // 固定為折價券
-  pointCost: 1,
   discountInfo: {
     discountType: '',
     discountValue: 0,
@@ -260,7 +273,6 @@ const formData = reactive({
   },
   validityPeriod: 30,
   isActive: true,
-  stores: [],
 })
 
 // 錯誤訊息
@@ -279,15 +291,12 @@ const formatPrice = (price) => {
 // 重置表單
 const resetForm = () => {
   if (isEditMode.value) {
-    // 重新獲取折價券資料
+    // 重新獲取優惠券資料
     fetchCouponData()
   } else {
     // 清空表單
     formData.name = ''
-    formData.brand = brandId.value
     formData.description = ''
-    formData.couponType = 'discount'
-    formData.pointCost = 1
     formData.discountInfo = {
       discountType: '',
       discountValue: 0,
@@ -296,7 +305,6 @@ const resetForm = () => {
     }
     formData.validityPeriod = 30
     formData.isActive = true
-    formData.stores = []
   }
 
   // 清除錯誤
@@ -314,19 +322,12 @@ const validateForm = () => {
 
   // 驗證名稱
   if (!formData.name.trim()) {
-    errors.name = '折價券名稱為必填項'
-    formErrors.value.push('折價券名稱為必填項')
+    errors.name = '優惠券名稱為必填項'
+    formErrors.value.push('優惠券名稱為必填項')
     isValid = false
   } else if (formData.name.length > 50) {
-    errors.name = '折價券名稱不能超過 50 個字元'
-    formErrors.value.push('折價券名稱不能超過 50 個字元')
-    isValid = false
-  }
-
-  // 驗證點數成本
-  if (!formData.pointCost || formData.pointCost < 1) {
-    errors.pointCost = '點數成本必須大於 0'
-    formErrors.value.push('點數成本必須大於 0')
+    errors.name = '優惠券名稱不能超過 50 個字元'
+    formErrors.value.push('優惠券名稱不能超過 50 個字元')
     isValid = false
   }
 
@@ -361,7 +362,7 @@ const validateForm = () => {
   return isValid
 }
 
-// 獲取折價券資料 (編輯模式)
+// 獲取優惠券資料 (編輯模式)
 const fetchCouponData = async () => {
   if (!isEditMode.value || !route.params.id) return
 
@@ -374,26 +375,32 @@ const fetchCouponData = async () => {
     if (response && response.template) {
       const template = response.template
 
-      // 確保只處理折價券
-      if (template.couponType !== 'discount') {
-        formErrors.value = ['此項目不是折價券']
-        setTimeout(() => {
-          router.push(`/admin/${brandId.value}/coupons`)
-        }, 2000)
-        return
-      }
-
       // 填充表單資料
-      Object.assign(formData, template)
+      formData.name = template.name || ''
+      formData.description = template.description || ''
+      formData.validityPeriod = template.validityPeriod || 30
+      formData.isActive = template.isActive !== false
+
+      // 處理折扣資訊
+      if (template.discountInfo) {
+        formData.discountInfo.discountType = template.discountInfo.discountType || ''
+        formData.discountInfo.discountValue = template.discountInfo.discountValue || 0
+        formData.discountInfo.maxDiscountAmount = template.discountInfo.maxDiscountAmount || null
+        formData.discountInfo.minPurchaseAmount = template.discountInfo.minPurchaseAmount || 0
+      }
     } else {
-      formErrors.value = ['獲取折價券資料失敗']
+      formErrors.value = ['獲取優惠券資料失敗']
       setTimeout(() => {
         router.push(`/admin/${brandId.value}/coupons`)
       }, 2000)
     }
   } catch (error) {
-    console.error('獲取折價券資料時發生錯誤:', error)
-    formErrors.value = ['獲取折價券資料時發生錯誤，請稍後再試']
+    console.error('獲取優惠券資料時發生錯誤:', error)
+    if (error.response && error.response.data && error.response.data.message) {
+      formErrors.value = [error.response.data.message]
+    } else {
+      formErrors.value = ['獲取優惠券資料時發生錯誤，請稍後再試']
+    }
     setTimeout(() => {
       router.push(`/admin/${brandId.value}/coupons`)
     }, 2000)
@@ -414,34 +421,39 @@ const submitForm = async () => {
   isSubmitting.value = true
 
   try {
-    // 設置品牌ID
-    formData.brand = brandId.value
-
     // 準備提交資料
     const submitData = {
-      ...formData,
+      name: formData.name.trim(),
+      description: formData.description?.trim() || '',
+      discountInfo: {
+        discountType: formData.discountInfo.discountType,
+        discountValue: Number(formData.discountInfo.discountValue),
+        maxDiscountAmount: formData.discountInfo.maxDiscountAmount
+          ? Number(formData.discountInfo.maxDiscountAmount)
+          : null,
+        minPurchaseAmount: Number(formData.discountInfo.minPurchaseAmount) || 0,
+      },
+      validityPeriod: Number(formData.validityPeriod),
+      isActive: formData.isActive,
     }
-
-    // 清理 exchangeInfo（折價券不需要）
-    delete submitData.exchangeInfo
 
     let response
 
     if (isEditMode.value) {
-      // 更新折價券
+      // 更新優惠券
       response = await api.promotion.updateCouponTemplate({
         brandId: brandId.value,
         id: route.params.id,
         data: submitData,
       })
-      successMessage.value = '折價券更新成功！'
+      successMessage.value = '優惠券更新成功！'
     } else {
-      // 創建新折價券
+      // 創建新優惠券
       response = await api.promotion.createCouponTemplate({
-        data: submitData,
         brandId: brandId.value,
+        data: submitData,
       })
-      successMessage.value = '折價券創建成功！'
+      successMessage.value = '優惠券創建成功！'
     }
 
     // 延遲導航，讓用戶看到成功訊息
@@ -449,7 +461,7 @@ const submitForm = async () => {
       router.push(`/admin/${brandId.value}/coupons`)
     }, 1000)
   } catch (error) {
-    console.error('儲存折價券時發生錯誤:', error)
+    console.error('儲存優惠券時發生錯誤:', error)
 
     // 處理 API 錯誤
     if (error.response && error.response.data) {
@@ -466,7 +478,7 @@ const submitForm = async () => {
         formErrors.value = [`錯誤: ${message}`]
       }
     } else {
-      formErrors.value = ['儲存折價券時發生未知錯誤，請稍後再試']
+      formErrors.value = ['儲存優惠券時發生未知錯誤，請稍後再試']
     }
 
     // 滾動到頁面頂部顯示錯誤
@@ -476,9 +488,19 @@ const submitForm = async () => {
   }
 }
 
+// 監聽折扣類型變化，清除不相關的欄位
+watch(
+  () => formData.discountInfo.discountType,
+  (newType) => {
+    if (newType !== 'percentage') {
+      formData.discountInfo.maxDiscountAmount = null
+    }
+  },
+)
+
 // 生命週期鉤子
 onMounted(() => {
-  // 如果是編輯模式，獲取折價券資料
+  // 如果是編輯模式，獲取優惠券資料
   if (isEditMode.value) {
     fetchCouponData()
   }

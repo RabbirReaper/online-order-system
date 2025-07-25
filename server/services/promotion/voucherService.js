@@ -278,6 +278,50 @@ export const getUserVouchers = async (userId, options = {}) => {
 }
 
 /**
+ * 獲取指定用戶的兌換券實例（管理員功能）
+ * @param {String} userId - 用戶ID
+ * @param {String} brandId - 品牌ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 兌換券實例列表和分頁資訊
+ */
+export const getUserVouchersAdmin = async (userId, brandId, options = {}) => {
+  const { includeUsed = true, includeExpired = true, page = 1, limit = 20 } = options
+
+  const query = { user: userId, brand: brandId }
+
+  if (!includeUsed) {
+    query.isUsed = false
+  }
+
+  if (!includeExpired) {
+    query.expiryDate = { $gt: new Date() }
+  }
+
+  const skip = (page - 1) * limit
+
+  const vouchers = await VoucherInstance.find(query)
+    .populate('template', 'name description')
+    .populate('exchangeDishTemplate', 'name basePrice image')
+    .populate('user', 'name phone email')
+    .populate('createdBy', 'name templateId finalPrice')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+
+  const total = await VoucherInstance.countDocuments(query)
+
+  return {
+    vouchers,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  }
+}
+
+/**
  * 使用兌換券
  * @param {String} voucherId - 兌換券ID
  * @param {String} userId - 用戶ID

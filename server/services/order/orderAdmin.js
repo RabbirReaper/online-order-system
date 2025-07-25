@@ -87,6 +87,48 @@ export const getStoreOrders = async (storeId, options = {}) => {
 }
 
 /**
+ * 🆕 獲取特定用戶的訂單列表（管理員功能）
+ * 功能與客戶版本相同，但允許管理員查看任何用戶的訂單
+ */
+export const getUserOrders = async (userId, options = {}) => {
+  const { brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options
+
+  const query = { user: userId }
+  if (brandId) query.brand = brandId
+
+  const skip = (page - 1) * limit
+  const sort = {}
+  sort[sortBy] = sortOrder === 'desc' ? -1 : 1
+
+  const total = await Order.countDocuments(query)
+
+  const orders = await Order.find(query)
+    .populate('store', 'name address')
+    .populate('brand', 'name')
+    .populate('items.dishInstance', 'name finalPrice options')
+    .populate('items.bundleInstance', 'name finalPrice')
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+
+  const totalPages = Math.ceil(total / limit)
+  const hasNextPage = page < totalPages
+  const hasPrevPage = page > 1
+
+  return {
+    orders,
+    pagination: {
+      total,
+      totalPages,
+      currentPage: page,
+      limit,
+      hasNextPage,
+      hasPrevPage,
+    },
+  }
+}
+
+/**
  * 獲取訂單詳情（管理員）
  */
 export const getOrderById = async (orderId, storeId) => {

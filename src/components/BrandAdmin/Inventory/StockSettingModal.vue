@@ -8,6 +8,8 @@
     ok-title="確認變更"
     cancel-title="取消"
     no-close-on-backdrop
+    no-close-on-esc
+    :no-header-close="true"
   >
     <template #default>
       <form @submit.prevent="submitSettings">
@@ -39,7 +41,7 @@
               type="checkbox"
               v-model="settingsForm.isInventoryTracked"
               id="isInventoryTracked"
-              @change="confirmInventoryTracking"
+              @change="handleInventoryTrackingChange"
             />
             <label class="form-check-label" for="isInventoryTracked">
               追蹤庫存 (訂單自動扣除)
@@ -54,11 +56,16 @@
               type="checkbox"
               v-model="settingsForm.enableAvailableStock"
               id="enableAvailableStock"
+              :disabled="!settingsForm.isInventoryTracked"
               @change="confirmAvailableStock"
             />
             <label class="form-check-label" for="enableAvailableStock">
-              啟用可販售庫存 (是否根據庫存自動切換售完狀態)
+              是否啟用限量功能 (是否根據庫存自動切換售完狀態)
             </label>
+          </div>
+          <div class="form-text text-muted" v-if="!settingsForm.isInventoryTracked">
+            <i class="bi bi-info-circle me-1"></i>
+            需要先啟用「追蹤庫存」才能使用此功能
           </div>
         </div>
 
@@ -83,11 +90,18 @@
     title="確認變更"
     @ok="confirmInventoryTrackingChange"
     @cancel="cancelInventoryTrackingChange"
+    ok-title="確認變更"
+    cancel-title="取消"
+    no-close-on-backdrop
+    no-close-on-esc
+    :no-header-close="true"
   >
-    <p v-if="settingsForm.isInventoryTracked">
-      確定要啟用庫存追蹤嗎？啟用後，訂單確認時將自動扣除庫存。
+    <p v-if="pendingInventoryTracked">確定要啟用庫存追蹤嗎？啟用後，訂單確認時將自動扣除庫存。</p>
+    <p v-else>
+      確定要關閉庫存追蹤嗎？關閉後，訂單將不會自動扣除庫存。
+      <br />
+      <strong class="text-warning">注意：同時會關閉「自動停售」功能。</strong>
     </p>
-    <p v-else>確定要關閉庫存追蹤嗎？關閉後，訂單將不會自動扣除庫存。</p>
   </BModal>
 
   <!-- 確認啟用/關閉可販售庫存 Modal -->
@@ -96,6 +110,11 @@
     title="確認變更"
     @ok="confirmAvailableStockChange"
     @cancel="cancelAvailableStockChange"
+    ok-title="確認變更"
+    cancel-title="取消"
+    no-close-on-backdrop
+    no-close-on-esc
+    :no-header-close="true"
   >
     <p v-if="settingsForm.enableAvailableStock">
       確定要啟用可販售庫存功能嗎？啟用後可以設定每日限量販售。
@@ -138,6 +157,7 @@ const error = ref('')
 // 確認 Modal
 const showInventoryTrackingConfirm = ref(false)
 const showAvailableStockConfirm = ref(false)
+const pendingInventoryTracked = ref(false)
 
 // 設定表單
 const settingsForm = reactive({
@@ -157,12 +177,17 @@ const initForm = () => {
   }
 }
 
-// 確認庫存追蹤變更
-const confirmInventoryTracking = () => {
+// 處理庫存追蹤變更
+const handleInventoryTrackingChange = () => {
+  pendingInventoryTracked.value = settingsForm.isInventoryTracked
   showInventoryTrackingConfirm.value = true
 }
 
 const confirmInventoryTrackingChange = () => {
+  // 如果關閉庫存追蹤，同時關閉自動停售
+  if (!settingsForm.isInventoryTracked) {
+    settingsForm.enableAvailableStock = false
+  }
   showInventoryTrackingConfirm.value = false
 }
 
@@ -185,6 +210,17 @@ const cancelAvailableStockChange = () => {
   showAvailableStockConfirm.value = false
 }
 
+// 監聽庫存追蹤變更，確保防呆機制
+watch(
+  () => settingsForm.isInventoryTracked,
+  (newValue) => {
+    // 如果關閉庫存追蹤，自動關閉自動停售
+    if (!newValue) {
+      settingsForm.enableAvailableStock = false
+    }
+  },
+)
+
 // 提交設定
 const submitSettings = async (evt) => {
   if (evt) evt.preventDefault()
@@ -202,6 +238,7 @@ const submitSettings = async (evt) => {
     }
 
     await api.inventory.updateInventory({
+      brandId: props.brandId,
       storeId: props.storeId,
       inventoryId: props.item._id,
       data: {

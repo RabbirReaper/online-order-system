@@ -51,8 +51,10 @@ export const createCouponTemplate = asyncHandler(async (req, res) => {
     })
   }
 
-  const templateData = req.body
-  templateData.brand = brandId
+  const templateData = {
+    ...req.body,
+    brand: brandId,
+  }
 
   const newTemplate = await couponService.coupon.createCouponTemplate(templateData)
 
