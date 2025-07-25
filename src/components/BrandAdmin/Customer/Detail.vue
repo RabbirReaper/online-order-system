@@ -791,8 +791,6 @@ const fetchUserVouchers = async () => {
 
 // 🔧 修復的更新統計數據函數
 const updateStatistics = async () => {
-  console.log('=== 開始更新統計數據 ===')
-
   const now = new Date()
 
   // 計算優惠券和兌換券統計
@@ -803,34 +801,16 @@ const updateStatistics = async () => {
     (v) => !v.isUsed && new Date(v.expiryDate) > now,
   ).length
 
-  console.log('📊 券類統計:', { activeCoupons, activeVouchers })
-  console.log('📦 當前訂單數據:', {
-    length: orders.value.length,
-    firstOrder: orders.value[0] || null,
-    allOrders: orders.value.map((o) => ({ id: o._id, status: o.status, total: o.total })),
-  })
-
-  // 嘗試使用後端統計
-  console.log('📊 使用前端計算...')
-
   // 前端計算訂單統計
   const totalOrders = orders.value.length
   const paidOrders = orders.value.filter((o) => {
-    console.log(`檢查訂單 ${o._id}: status=${o.status}, total=${o.total}`)
     return o.status === 'paid'
   })
 
   const totalSpent = paidOrders.reduce((sum, o) => {
     const orderTotal = Number(o.total) || 0
-    console.log(`累加訂單 ${o._id}: $${orderTotal}`)
     return sum + orderTotal
   }, 0)
-
-  console.log('📊 前端計算結果:', {
-    totalOrders,
-    paidOrdersCount: paidOrders.length,
-    totalSpent,
-  })
 
   // 更新統計數據
   statistics.value.totalOrders = totalOrders
@@ -839,14 +819,6 @@ const updateStatistics = async () => {
   // 更新其他統計數據
   statistics.value.activeCoupons = activeCoupons
   statistics.value.activeVouchers = activeVouchers
-
-  console.log('✅ 最終統計數據:', {
-    activeCoupons: statistics.value.activeCoupons,
-    activeVouchers: statistics.value.activeVouchers,
-    totalOrders: statistics.value.totalOrders,
-    totalSpent: statistics.value.totalSpent,
-  })
-  console.log('=== 統計數據更新完成 ===')
 }
 
 // 🔧 修復的獲取用戶訂單函數
@@ -856,8 +828,6 @@ const fetchUserOrders = async () => {
   isLoadingOrders.value = true
 
   try {
-    console.log('📦 開始獲取用戶訂單，用戶ID:', customerId.value)
-
     const response = await api.orderAdmin.getUserOrders({
       brandId: brandId.value,
       userId: customerId.value,
@@ -868,17 +838,6 @@ const fetchUserOrders = async () => {
 
     if (response && response.orders) {
       orders.value = response.orders
-      console.log(`✅ 成功獲取 ${response.orders.length} 筆用戶訂單`)
-      console.log(
-        '📦 訂單詳情:',
-        orders.value.map((o) => ({
-          id: o._id,
-          status: o.status,
-          total: o.total,
-          type: o.orderType,
-          date: o.createdAt,
-        })),
-      )
     } else {
       orders.value = []
       console.warn('⚠️ API回應中沒有訂單數據')
@@ -898,7 +857,6 @@ const fetchUserOrders = async () => {
     isLoadingOrders.value = false
 
     // 🔧 關鍵：確保在訂單載入完成後立即更新統計
-    console.log('🔧 訂單載入完成，開始更新統計...')
     await updateStatistics()
   }
 }
@@ -955,16 +913,12 @@ const sendCoupon = async () => {
 
 // 🔧 修復的重新整理函數
 const refreshData = async () => {
-  console.log('🔄 開始重新整理所有數據...')
-
   try {
     // 並行載入基本資料
     await Promise.all([fetchUserData(), fetchUserCoupons(), fetchUserVouchers()])
 
     // 載入訂單數據（會自動觸發統計更新）
     await fetchUserOrders()
-
-    console.log('✅ 所有數據重新整理完成')
   } catch (error) {
     console.error('❌ 重新整理數據失敗:', error)
   }
@@ -972,7 +926,6 @@ const refreshData = async () => {
 
 // 🔧 修復的生命週期鉤子
 onMounted(async () => {
-  console.log('🚀 組件掛載，開始載入數據...')
   isLoading.value = true
 
   try {
@@ -981,8 +934,6 @@ onMounted(async () => {
 
     // 載入訂單數據（會自動觸發統計更新）
     await fetchUserOrders()
-
-    console.log('✅ 所有數據載入完成')
   } catch (error) {
     console.error('❌ 載入數據時發生錯誤:', error)
   } finally {
