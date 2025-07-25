@@ -7,7 +7,7 @@
           <input
             type="text"
             class="form-control"
-            placeholder="搜尋折價券..."
+            placeholder="搜尋優惠券..."
             v-model="searchQuery"
             @input="handleSearch"
           />
@@ -27,7 +27,7 @@
 
       <div>
         <router-link :to="`/admin/${brandId}/coupons/create`" class="btn btn-primary">
-          <i class="bi bi-plus-lg me-1"></i>新增折價券
+          <i class="bi bi-plus-lg me-1"></i>新增優惠券
         </router-link>
       </div>
     </div>
@@ -45,7 +45,7 @@
       </div>
     </div>
 
-    <!-- 折價券列表 -->
+    <!-- 優惠券列表 -->
     <div class="card" v-if="!isLoading">
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -53,7 +53,6 @@
             <thead class="table-light">
               <tr>
                 <th>名稱</th>
-                <th>點數</th>
                 <th>折扣內容</th>
                 <th>最低消費</th>
                 <th>有效期限</th>
@@ -64,18 +63,28 @@
             </thead>
             <tbody>
               <tr v-for="coupon in filteredCoupons" :key="coupon._id">
-                <td>{{ coupon.name }}</td>
-                <td>{{ coupon.pointCost }} 點</td>
+                <td>
+                  <div>
+                    <strong>{{ coupon.name }}</strong>
+                    <div v-if="coupon.description" class="text-muted small">
+                      {{ coupon.description }}
+                    </div>
+                  </div>
+                </td>
                 <td>
                   <div v-if="coupon.discountInfo">
                     <span v-if="coupon.discountInfo.discountType === 'percentage'">
                       {{ coupon.discountInfo.discountValue }}% 折扣
-                      <span v-if="coupon.discountInfo.maxDiscountAmount" class="text-muted">
+                      <span
+                        v-if="coupon.discountInfo.maxDiscountAmount"
+                        class="text-muted small d-block"
+                      >
                         (最高${{ formatPrice(coupon.discountInfo.maxDiscountAmount) }})
                       </span>
                     </span>
                     <span v-else> 折抵 ${{ formatPrice(coupon.discountInfo.discountValue) }} </span>
                   </div>
+                  <span v-else class="text-muted">未設定</span>
                 </td>
                 <td>
                   <span v-if="coupon.discountInfo && coupon.discountInfo.minPurchaseAmount > 0">
@@ -123,9 +132,9 @@
                 </td>
               </tr>
               <tr v-if="filteredCoupons.length === 0 && !isLoading">
-                <td colspan="8" class="text-center text-muted py-4">
+                <td colspan="7" class="text-center text-muted py-4">
                   <i class="bi bi-inbox display-4 d-block mb-2"></i>
-                  {{ searchQuery ? '沒有符合條件的折價券' : '尚未建立任何折價券' }}
+                  {{ searchQuery ? '沒有符合條件的優惠券' : '尚未建立任何優惠券' }}
                 </td>
               </tr>
             </tbody>
@@ -148,10 +157,24 @@
                 couponToToggle.name
               }}」嗎？
             </p>
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle-fill me-2"></i>
+              {{
+                couponToToggle?.isActive
+                  ? '停用後將無法繼續發放此優惠券給用戶'
+                  : '啟用後可以重新發放此優惠券'
+              }}
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="confirmToggleStatus">
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="confirmToggleStatus"
+              :disabled="isToggling"
+            >
+              <span v-if="isToggling" class="spinner-border spinner-border-sm me-1"></span>
               確認{{ couponToToggle?.isActive ? '停用' : '啟用' }}
             </button>
           </div>
@@ -172,7 +195,8 @@
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               <strong>警告：</strong>此操作無法復原
             </div>
-            <p v-if="couponToDelete">您確定要刪除折價券「{{ couponToDelete.name }}」嗎？</p>
+            <p v-if="couponToDelete">您確定要刪除優惠券「{{ couponToDelete.name }}」嗎？</p>
+            <p class="text-muted small">刪除後，所有相關的統計資料也會一併移除。</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
@@ -193,7 +217,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Modal } from 'bootstrap'
 import api from '@/api'
@@ -206,6 +230,7 @@ const brandId = computed(() => route.params.brandId)
 
 // 狀態
 const isLoading = ref(false)
+const isToggling = ref(false)
 const isDeleting = ref(false)
 const errorMessage = ref('')
 
@@ -213,7 +238,7 @@ const errorMessage = ref('')
 const searchQuery = ref('')
 const filterStatus = ref('')
 
-// 折價券列表
+// 優惠券列表
 const coupons = ref([])
 
 // 對話框控制
@@ -232,9 +257,9 @@ const handleSearch = () => {
   // 搜尋和篩選邏輯在 computed 中處理
 }
 
-// 篩選後的折價券列表
+// 篩選後的優惠券列表
 const filteredCoupons = computed(() => {
-  let filtered = coupons.value.filter((coupon) => coupon.couponType === 'discount') // 只顯示折價券
+  let filtered = [...coupons.value]
 
   // 搜尋過濾
   if (searchQuery.value) {
@@ -255,7 +280,7 @@ const filteredCoupons = computed(() => {
   return filtered
 })
 
-// 獲取折價券列表
+// 獲取優惠券列表
 const fetchCoupons = async () => {
   if (!brandId.value) return
 
@@ -268,7 +293,7 @@ const fetchCoupons = async () => {
       coupons.value = response.templates
     }
   } catch (error) {
-    console.error('獲取折價券列表失敗:', error)
+    console.error('獲取優惠券列表失敗:', error)
     if (error.response && error.response.data && error.response.data.message) {
       errorMessage.value = error.response.data.message
     } else if (error.message) {
@@ -291,12 +316,14 @@ const toggleStatus = (coupon) => {
 const confirmToggleStatus = async () => {
   if (!couponToToggle.value) return
 
+  isToggling.value = true
+
   try {
     const newStatus = !couponToToggle.value.isActive
     await api.promotion.updateCouponTemplate({
+      brandId: brandId.value,
       id: couponToToggle.value._id,
       data: {
-        brand: brandId.value,
         isActive: newStatus,
       },
     })
@@ -309,6 +336,8 @@ const confirmToggleStatus = async () => {
   } catch (error) {
     console.error('切換狀態失敗:', error)
     alert('切換狀態失敗，請稍後再試')
+  } finally {
+    isToggling.value = false
   }
 }
 
@@ -318,7 +347,7 @@ const confirmDelete = (coupon) => {
   deleteModal.value.show()
 }
 
-// 刪除折價券
+// 刪除優惠券
 const deleteCoupon = async () => {
   if (!couponToDelete.value) return
 
@@ -326,18 +355,22 @@ const deleteCoupon = async () => {
 
   try {
     await api.promotion.deleteCouponTemplate({
-      id: couponToDelete.value._id,
       brandId: brandId.value,
+      id: couponToDelete.value._id,
     })
 
     // 關閉對話框
     deleteModal.value.hide()
 
-    // 從列表中移除已刪除的折價券
+    // 從列表中移除已刪除的優惠券
     coupons.value = coupons.value.filter((coupon) => coupon._id !== couponToDelete.value._id)
   } catch (error) {
-    console.error('刪除折價券失敗:', error)
-    alert('刪除折價券時發生錯誤')
+    console.error('刪除優惠券失敗:', error)
+    if (error.response && error.response.data && error.response.data.message) {
+      alert(`刪除失敗: ${error.response.data.message}`)
+    } else {
+      alert('刪除優惠券時發生錯誤')
+    }
   } finally {
     isDeleting.value = false
   }
@@ -363,7 +396,7 @@ onMounted(() => {
     })
   }
 
-  // 載入折價券列表
+  // 載入優惠券列表
   fetchCoupons()
 
   // 設置刷新列表的事件監聽器

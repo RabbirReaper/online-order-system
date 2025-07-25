@@ -35,6 +35,15 @@ export default function (apiClient) {
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID
      * @param {Object} params.data - 模板數據
+     * @param {string} params.data.name - 優惠券名稱
+     * @param {string} [params.data.description] - 優惠券描述
+     * @param {Object} params.data.discountInfo - 折扣資訊
+     * @param {string} params.data.discountInfo.discountType - 折扣類型 ('percentage' | 'fixed')
+     * @param {number} params.data.discountInfo.discountValue - 折扣值
+     * @param {number} [params.data.discountInfo.maxDiscountAmount] - 最大折扣金額（百分比折扣時）
+     * @param {number} [params.data.discountInfo.minPurchaseAmount] - 最低消費金額
+     * @param {number} params.data.validityPeriod - 有效期（天數）
+     * @param {boolean} [params.data.isActive] - 是否啟用
      * @returns {Promise} - API 回應
      */
     createCouponTemplate({ brandId, data }) {
@@ -69,20 +78,13 @@ export default function (apiClient) {
     // =============================================================================
 
     /**
-     * 獲取所有優惠券實例（管理員）
-     * @param {string} brandId - 品牌ID
-     * @param {Object} params - 查詢參數
-     * @returns {Promise} - API 回應
-     */
-    getAllCouponInstances(brandId, params = {}) {
-      return apiClient.get(`/promotion/brands/${brandId}/coupons/instances/admin`, { params })
-    },
-
-    /**
      * 發放優惠券給用戶
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID
      * @param {Object} params.data - 發放數據
+     * @param {string} params.data.userId - 用戶ID
+     * @param {string} params.data.templateId - 模板ID
+     * @param {string} [params.data.reason] - 發放原因
      * @returns {Promise} - API 回應
      */
     issueCouponToUser({ brandId, data }) {
@@ -97,6 +99,8 @@ export default function (apiClient) {
      * 獲取用戶優惠券
      * @param {string} brandId - 品牌ID
      * @param {Object} params - 查詢參數
+     * @param {boolean} [params.includeUsed=false] - 是否包含已使用的優惠券
+     * @param {boolean} [params.includeExpired=false] - 是否包含已過期的優惠券
      * @returns {Promise} - API 回應
      */
     getUserCoupons(brandId, params = {}) {
@@ -104,14 +108,27 @@ export default function (apiClient) {
     },
 
     /**
-     * 兌換優惠券
+     * 使用優惠券
      * @param {Object} params - 參數
      * @param {string} params.brandId - 品牌ID
-     * @param {Object} params.data - 兌換數據
+     * @param {Object} params.data - 使用數據
+     * @param {string} params.data.couponId - 優惠券ID
+     * @param {string} [params.data.orderId] - 訂單ID
      * @returns {Promise} - API 回應
      */
-    redeemCoupon({ brandId, data }) {
-      return apiClient.post(`/promotion/brands/${brandId}/coupons/redeem`, data)
+    useCoupon({ brandId, data }) {
+      return apiClient.post(`/promotion/brands/${brandId}/coupons/use`, data)
+    },
+
+    /**
+     * 驗證優惠券
+     * @param {Object} params - 參數
+     * @param {string} params.brandId - 品牌ID
+     * @param {string} params.couponId - 優惠券ID
+     * @returns {Promise} - API 回應
+     */
+    validateCoupon({ brandId, couponId }) {
+      return apiClient.get(`/promotion/brands/${brandId}/coupons/${couponId}/validate`)
     },
 
     // =============================================================================
@@ -182,7 +199,7 @@ export default function (apiClient) {
     },
 
     /**
-     * 🆕 自動為餐點創建兌換券模板
+     * 自動為餐點創建兌換券模板
      * @param {string} brandId - 品牌ID
      * @returns {Promise} - API 回應
      */
