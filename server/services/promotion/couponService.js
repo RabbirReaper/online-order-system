@@ -15,9 +15,7 @@ import { AppError } from '../../middlewares/error.js'
  * @returns {Promise<Array>} 所有優惠券模板
  */
 export const getAllCouponTemplates = async (brandId) => {
-  // 移除錯誤的 populate，因為 CouponTemplate 沒有 exchangeInfo 欄位
   const templates = await CouponTemplate.find({ brand: brandId }).sort({ createdAt: -1 })
-
   return templates
 }
 
@@ -28,7 +26,6 @@ export const getAllCouponTemplates = async (brandId) => {
  * @returns {Promise<Object>} 優惠券模板
  */
 export const getCouponTemplateById = async (templateId, brandId) => {
-  // 移除錯誤的 populate
   const template = await CouponTemplate.findOne({
     _id: templateId,
     brand: brandId,
@@ -129,15 +126,77 @@ export const deleteCouponTemplate = async (templateId, brandId) => {
 }
 
 /**
+ * 🆕 獲取所有優惠券實例（管理員功能）
+ * @param {String} brandId - 品牌ID
+ * @param {Object} options - 查詢選項
+ * @returns {Promise<Object>} 優惠券實例列表和分頁資訊
+ */
+export const getAllCouponInstances = async (brandId, options = {}) => {
+  const { page = 1, limit = 20, status, templateId, userId, includeExpired = true } = options
+
+  const query = { brand: brandId }
+
+  // 狀態篩選
+  if (status) {
+    if (status === 'used') {
+      query.isUsed = true
+    } else if (status === 'active') {
+      query.isUsed = false
+      query.expiryDate = { $gt: new Date() }
+    } else if (status === 'expired') {
+      query.isUsed = false
+      query.expiryDate = { $lte: new Date() }
+    }
+  } else if (!includeExpired) {
+    // 如果不包含過期的，則只顯示未使用且未過期的
+    query.$or = [
+      { isUsed: true }, // 已使用的
+      { isUsed: false, expiryDate: { $gt: new Date() } }, // 未使用且未過期的
+    ]
+  }
+
+  if (templateId) {
+    query.template = templateId
+  }
+
+  if (userId) {
+    query.user = userId
+  }
+
+  const skip = (page - 1) * limit
+
+  const instances = await CouponInstance.find(query)
+    .populate('template', 'name description')
+    .populate('user', 'name phone')
+    .populate('issuedBy', 'name')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+
+  const total = await CouponInstance.countDocuments(query)
+
+  return {
+    instances,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  }
+}
+
+/**
  * 獲取用戶優惠券
  * @param {String} userId - 用戶ID
+ * @param {String} brandId - 品牌ID
  * @param {Object} options - 查詢選項
  * @returns {Promise<Array>} 用戶的優惠券列表
  */
-export const getUserCoupons = async (userId, options = {}) => {
+export const getUserCoupons = async (userId, brandId, options = {}) => {
   const { includeUsed = false, includeExpired = false } = options
 
-  const query = { user: userId }
+  const query = { user: userId, brand: brandId }
 
   if (!includeUsed) {
     query.isUsed = false
@@ -205,14 +264,20 @@ export const issueCouponToUser = async (userId, templateId, adminId, reason = '�
 /**
  * 使用優惠券
  * @param {String} couponId - 優惠券ID
+ * @param {String} userId - 用戶ID
+ * @param {String} brandId - 品牌ID
  * @param {String} orderId - 訂單ID（可選）
  * @returns {Promise<Object>} 使用結果
  */
-export const useCoupon = async (couponId, orderId = null) => {
-  const coupon = await CouponInstance.findById(couponId)
+export const useCoupon = async (couponId, userId, brandId, orderId = null) => {
+  const coupon = await CouponInstance.findOne({
+    _id: couponId,
+    user: userId,
+    brand: brandId,
+  })
 
   if (!coupon) {
-    throw new AppError('優惠券不存在', 404)
+    throw new AppError('優惠券不存在或無權使用', 404)
   }
 
   if (coupon.isUsed) {

@@ -10,37 +10,12 @@ import { authenticate, requireRole, requireBrandAccess } from '../middlewares/au
 const router = express.Router()
 
 // =============================================================================
-// 優惠券模板路由（後台）- Coupon 系統（活動獎勵用，只送不賣）
+// 優惠券模板路由（後台管理）- Coupon 系統
 // =============================================================================
 
-// 獲取單個優惠券模板
-router.get(
-  '/brands/:brandId/coupons/templates/:id',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  couponTemplateController.getCouponTemplateById,
-)
-
-// 更新優惠券模板
-router.put(
-  '/brands/:brandId/coupons/templates/:id',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  couponTemplateController.updateCouponTemplate,
-)
-
-// 刪除優惠券模板
-router.delete(
-  '/brands/:brandId/coupons/templates/:id',
-  authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  requireBrandAccess,
-  couponTemplateController.deleteCouponTemplate,
-)
-
-// 獲取所有優惠券模板
+/**
+ * 獲取所有優惠券模板
+ */
 router.get(
   '/brands/:brandId/coupons/templates',
   authenticate('admin'),
@@ -49,7 +24,9 @@ router.get(
   couponTemplateController.getAllCouponTemplates,
 )
 
-// 創建優惠券模板
+/**
+ * 創建優惠券模板
+ */
 router.post(
   '/brands/:brandId/coupons/templates',
   authenticate('admin'),
@@ -58,11 +35,46 @@ router.post(
   couponTemplateController.createCouponTemplate,
 )
 
+/**
+ * 獲取單個優惠券模板
+ */
+router.get(
+  '/brands/:brandId/coupons/templates/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  couponTemplateController.getCouponTemplateById,
+)
+
+/**
+ * 更新優惠券模板
+ */
+router.put(
+  '/brands/:brandId/coupons/templates/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  couponTemplateController.updateCouponTemplate,
+)
+
+/**
+ * 刪除優惠券模板
+ */
+router.delete(
+  '/brands/:brandId/coupons/templates/:id',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  couponTemplateController.deleteCouponTemplate,
+)
+
 // =============================================================================
-// 優惠券實例路由（後台）- Coupon 系統
+// 優惠券實例路由（後台管理）- Coupon 系統
 // =============================================================================
 
-// 獲取所有優惠券實例
+/**
+ * 獲取所有優惠券實例（管理員）
+ */
 router.get(
   '/brands/:brandId/coupons/instances/admin',
   authenticate('admin'),
@@ -78,7 +90,9 @@ router.get(
   couponInstanceController.getAllCouponInstances,
 )
 
-// 發放優惠券給用戶
+/**
+ * 發放優惠券給用戶（管理員）
+ */
 router.post(
   '/brands/:brandId/coupons/instances/issue',
   authenticate('admin'),
@@ -95,25 +109,38 @@ router.post(
 )
 
 // =============================================================================
-// 優惠券路由（用戶）- Coupon 系統
+// 優惠券路由（用戶端）- Coupon 系統
 // =============================================================================
 
-// 兌換優惠券
-router.post(
-  '/brands/:brandId/coupons/redeem',
-  authenticate('user'),
-  couponInstanceController.redeemCoupon,
-)
-
-// 獲取用戶優惠券
+/**
+ * 獲取用戶優惠券
+ */
 router.get(
   '/brands/:brandId/coupons',
   authenticate('user'),
   couponInstanceController.getUserCoupons,
 )
 
+/**
+ * 使用優惠券
+ */
+router.post(
+  '/brands/:brandId/coupons/use',
+  authenticate('user'),
+  couponInstanceController.useCoupon,
+)
+
+/**
+ * 驗證優惠券
+ */
+router.get(
+  '/brands/:brandId/coupons/:couponId/validate',
+  authenticate('user'),
+  couponInstanceController.validateCoupon,
+)
+
 // =============================================================================
-// 兌換券模板路由（後台）- Voucher 系統（透過 Bundle 販賣）
+// 兌換券模板路由（後台）- Voucher 系統
 // =============================================================================
 
 // 🆕 自動為餐點創建兌換券模板
@@ -263,16 +290,6 @@ router.post(
   requireBrandAccess,
   pointRuleController.createPointRule,
 )
-
-// =============================================================================
-// 點數實例路由（後台）
-// =============================================================================
-
-// 獲取所有點數實例
-// router.get('/brands/:brandId/points/instances/admin', authenticate('admin'), requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin', 'store_admin'), requireBrandAccess, pointInstanceController.getAllPointInstances);
-
-// 手動調整點數
-// router.post('/brands/:brandId/points/instances/adjust', authenticate('admin'), requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'), requireBrandAccess, pointInstanceController.adjustUserPoints);
 
 // =============================================================================
 // 點數路由（用戶）
