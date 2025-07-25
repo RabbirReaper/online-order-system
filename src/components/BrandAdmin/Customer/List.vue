@@ -141,7 +141,6 @@
                 <th>電話</th>
                 <th>電子郵件</th>
                 <th>註冊日期</th>
-                <!-- <th>最後登入</th> -->
                 <th>狀態</th>
                 <th>操作</th>
               </tr>
@@ -152,12 +151,6 @@
                 <td>{{ user.phone }}</td>
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ formatDate(user.createdAt) }}</td>
-                <!-- <td>
-                  <span v-if="user.lastLogin">
-                    {{ formatDate(user.lastLogin) }}
-                  </span>
-                  <span v-else class="text-muted">從未登入</span>
-                </td> -->
                 <td>
                   <span class="badge" :class="user.isActive ? 'bg-success' : 'bg-secondary'">
                     {{ user.isActive ? '啟用' : '停用' }}
@@ -165,6 +158,12 @@
                 </td>
                 <td>
                   <div class="btn-group">
+                    <router-link
+                      :to="`/admin/${brandId}/customers/${user._id}`"
+                      class="btn btn-sm btn-outline-info me-1"
+                    >
+                      <i class="bi bi-eye me-1"></i>查看
+                    </router-link>
                     <button
                       type="button"
                       class="btn btn-sm"

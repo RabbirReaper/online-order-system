@@ -320,7 +320,12 @@ export const brandAdminRoutes = [
         component: () => import('@/components/BrandAdmin/Customer/List.vue'),
         meta: { requiresAuth: true, title: '顧客管理' },
       },
-
+      {
+        path: 'customers/:customerId',
+        name: 'brand-admin-customers-detail',
+        component: () => import('@/components/BrandAdmin/Customer/Detail.vue'),
+        meta: { requiresAuth: true, title: '顧客詳細資訊' },
+      },
       // 系統設置
       {
         path: 'settings',
