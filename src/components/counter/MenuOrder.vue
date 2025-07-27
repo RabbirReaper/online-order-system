@@ -710,8 +710,8 @@ watch(menuCategories, async (newCategories) => {
 
 /* 左側類別導航欄樣式 */
 .category-sidebar {
-  width: 180px;
-  min-width: 180px;
+  width: 200px;
+  min-width: 200px;
   background-color: #ffffff;
   border-right: 1px solid #f1f3f4;
   overflow-y: auto;
@@ -723,10 +723,10 @@ watch(menuCategories, async (newCategories) => {
 }
 
 .category-nav-item {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
   transition: all 0.15s ease;
-  margin: 0 0.5rem;
+  margin: 0 0.5rem 0.25rem 0.5rem;
   border-radius: 6px;
 }
 
@@ -749,7 +749,7 @@ watch(menuCategories, async (newCategories) => {
 
 .category-name {
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.2;
   flex: 1;
 }

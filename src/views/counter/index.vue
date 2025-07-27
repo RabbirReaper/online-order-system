@@ -62,7 +62,7 @@
 
             <!-- 冷卻時間圖示 -->
             <i v-else class="bi bi-clock me-1"></i>
-
+            <br />
             <!-- 按鈕文字 -->
             <span v-if="isRefreshing">更新中</span>
             <span v-else-if="isOnCooldown">{{ cooldownSeconds }}s</span>
@@ -438,5 +438,9 @@ onUnmounted(() => {
   width: 400px; /* 固定寬度 */
   min-width: 400px;
   flex-shrink: 0;
+}
+
+.sidebar .btn {
+  aspect-ratio: 1 / 1; /* 1:1 比例 = 正方形 */
 }
 </style>
