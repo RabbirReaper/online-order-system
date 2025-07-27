@@ -131,46 +131,67 @@
 
               <!-- 選項類別 -->
               <div
-                v-for="optionCategory in dishOptionCategories"
+                v-for="(optionCategory, categoryIndex) in dishOptionCategories"
                 :key="optionCategory._id"
                 class="mb-3"
               >
-                <h6 class="option-category-title mb-3" :style="{ borderLeftColor: themeColor }">
-                  {{ optionCategory.name }}
-                </h6>
-
                 <!-- 單選類型 -->
                 <div v-if="optionCategory.inputType === 'single'" class="row g-2">
                   <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
                     <div
-                      class="card p-2 text-center option-card"
+                      class="card option-card position-relative"
                       :class="{
                         selected: isOptionSelected(optionCategory._id, getOptionId(option)),
                       }"
                       @click="selectOption(optionCategory, option, 'single')"
                     >
-                      <div class="option-name">{{ getOptionName(option) }}</div>
-                      <div v-if="getOptionPrice(option) > 0" class="option-price">
-                        +${{ getOptionPrice(option) }}
+                      <div class="card-body d-flex flex-column">
+                        <div class="option-name">{{ getOptionName(option) }}</div>
+                        <!-- 移除 v-if，讓價格區域始終存在 -->
+                        <div class="option-price mt-auto">
+                          <span v-if="getOptionPrice(option) > 0"
+                            >+${{ getOptionPrice(option) }}</span
+                          >
+                          <!-- 沒有價格時保持空白佔位 -->
+                        </div>
+                      </div>
+
+                      <!-- 右下角顏色標識 -->
+                      <div
+                        class="option-category-badge"
+                        :class="getCategoryBadgeClass(categoryIndex)"
+                      >
+                        <span v-if="optionCategory.inputType === 'single'">*</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- 複選類型 -->
                 <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
                   <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
                     <div
-                      class="card p-2 text-center option-card"
+                      class="card option-card position-relative"
                       :class="{
                         selected: isOptionSelected(optionCategory._id, getOptionId(option)),
                       }"
                       @click="selectOption(optionCategory, option, 'multiple')"
                     >
-                      <div class="option-name">{{ getOptionName(option) }}</div>
-                      <div v-if="getOptionPrice(option) > 0" class="option-price">
-                        +${{ getOptionPrice(option) }}
+                      <div class="card-body d-flex flex-column">
+                        <div class="option-name">{{ getOptionName(option) }}</div>
+                        <!-- 移除 v-if，讓價格區域始終存在 -->
+                        <div class="option-price mt-auto">
+                          <span v-if="getOptionPrice(option) > 0"
+                            >+${{ getOptionPrice(option) }}</span
+                          >
+                          <!-- 沒有價格時保持空白佔位 -->
+                        </div>
                       </div>
+
+                      <!-- 右下角顏色標識 -->
+                      <div
+                        class="option-category-badge"
+                        :class="getCategoryBadgeClass(categoryIndex)"
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -638,6 +659,12 @@ const setupEditMode = async (currentItem) => {
   selectedOptions.value = newSelectedOptions
 }
 
+// 獲取選項類別的顏色標識 class
+const getCategoryBadgeClass = (categoryIndex) => {
+  const colors = ['badge-red', 'badge-yellow', 'badge-green', 'badge-blue', 'badge-purple']
+  return colors[categoryIndex % colors.length]
+}
+
 // 生命周期
 onMounted(async () => {
   if (!counterStore.menuData) {
@@ -938,21 +965,57 @@ watch(menuCategories, async (newCategories) => {
   color: #000;
 }
 
-/* 選項相關樣式 */
-.option-category-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-  border-left: 3px solid;
-  padding-left: 0.5rem;
-  margin-bottom: 0.5rem;
+/* 選項相關樣式修改 */
+.option-card {
+  position: relative;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  width: 130px; /* 固定寬度，與menu item card一致 */
 }
 
-.option-card {
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid #e5e7eb;
-  min-width: 80px;
+.option-card .card {
+  height: 120px; /* 固定高度，與menu item card一致 */
+}
+
+.option-card .card-body {
+  padding: 0.75rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 確保內容分佈均勻 */
+}
+
+.option-category-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 20px 0 0 0; /* 1/4圓形朝向內部，充滿右下角 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: white;
+}
+
+.badge-red {
+  background-color: #ef4444;
+}
+.badge-yellow {
+  background-color: #eab308;
+}
+.badge-green {
+  background-color: #22c55e;
+}
+.badge-blue {
+  background-color: #3b82f6;
+}
+.badge-purple {
+  background-color: #a855f7;
 }
 
 .option-card:hover {
@@ -967,16 +1030,26 @@ watch(menuCategories, async (newCategories) => {
 }
 
 .option-name {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #374151;
+  line-height: 1.3;
+  /* 省略號處理 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0; /* 防止被壓縮 */
 }
 
 .option-price {
-  font-size: 0.65rem;
+  font-size: 0.875rem;
   color: #dc2626;
   font-weight: 600;
-  margin-top: 0.25rem;
+  margin: 0;
+  flex-shrink: 0; /* 防止被壓縮 */
+  min-height: 1.25rem; /* 確保即使沒有價格也有固定高度 */
+  display: flex;
+  align-items: flex-end; /* 讓價格文字靠底部對齊 */
 }
 
 /* 響應式設計 */
