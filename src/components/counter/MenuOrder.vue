@@ -1,9 +1,5 @@
 <template>
   <div class="container-fluid p-0">
-    <div class="component-header text-white p-3" :class="headerClass">
-      <h4>{{ title }}</h4>
-    </div>
-
     <!-- 加載提示 -->
     <div v-if="isLoading" class="d-flex justify-content-center align-items-center py-5">
       <div class="spinner-border" :class="spinnerClass" role="status">
