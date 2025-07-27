@@ -58,9 +58,11 @@
                     @click="handleItemClick(item)"
                   >
                     <div class="card h-100">
-                      <div class="card-body">
+                      <div class="card-body d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                          <h6 class="card-title mb-0">{{ getItemName(item) }}</h6>
+                          <h6 class="card-title mb-0 text-truncate flex-grow-1 me-2">
+                            {{ getItemName(item) }}
+                          </h6>
                           <!-- 庫存狀態顯示 (只對餐點顯示) -->
                           <div
                             v-if="
@@ -86,7 +88,7 @@
                             </span>
                           </div>
                         </div>
-                        <p class="card-text price">${{ getItemPrice(item) }}</p>
+                        <p class="card-text price mt-auto">${{ getItemPrice(item) }}</p>
                         <!-- 售完遮罩 -->
                         <div v-if="isItemSoldOut(item)" class="sold-out-overlay">
                           <span
@@ -821,7 +823,7 @@ watch(menuCategories, async (newCategories) => {
 
 .menu-items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 0.75rem;
 }
 
@@ -838,11 +840,7 @@ watch(menuCategories, async (newCategories) => {
 }
 
 .menu-item-card .card {
-  border: 1px solid #1b5a7a;
-  border-radius: 8px;
-  box-shadow: none;
-  transition: all 0.15s ease;
-  position: relative;
+  height: 120px; /* 固定高度 */
 }
 
 .menu-item-card:not(.sold-out):hover .card {
@@ -870,14 +868,18 @@ watch(menuCategories, async (newCategories) => {
 
 .menu-item-card .card-body {
   padding: 0.75rem;
+  height: 100%;
 }
 
 .menu-item-card .card-title {
   font-size: 0.875rem;
   font-weight: 500;
-  margin-bottom: 0.25rem;
   color: #111827;
   line-height: 1.3;
+  /* 省略號處理 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-img-top {
@@ -985,7 +987,7 @@ watch(menuCategories, async (newCategories) => {
   }
 
   .menu-items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }
 
@@ -996,7 +998,7 @@ watch(menuCategories, async (newCategories) => {
   }
 
   .menu-items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   }
 
   .section-content {
