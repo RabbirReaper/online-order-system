@@ -1,11 +1,13 @@
 <template>
-  <div class="container-fluid p-0">
+  <div class="menu-order-container">
     <!-- 加載提示 -->
-    <div v-if="isLoading" class="d-flex justify-content-center align-items-center py-5">
-      <div class="spinner-border" :class="spinnerClass" role="status">
-        <span class="visually-hidden">載入中...</span>
+    <div v-if="isLoading" class="loading-section">
+      <div class="d-flex justify-content-center align-items-center py-5">
+        <div class="spinner-border" :class="spinnerClass" role="status">
+          <span class="visually-hidden">載入中...</span>
+        </div>
+        <span class="ms-2">載入菜單資料中...</span>
       </div>
-      <span class="ms-2">載入菜單資料中...</span>
     </div>
 
     <!-- 錯誤提示 -->
@@ -35,10 +37,10 @@
 
       <!-- 右側內容區域 -->
       <div class="content-area">
-        <div class="row g-0 h-100">
+        <div class="content-sections">
           <!-- 菜單選擇區域 -->
-          <div class="col-12" :class="menuSectionClass">
-            <div class="p-2">
+          <div class="menu-section" :class="menuSectionClass">
+            <div class="section-content">
               <!-- 顯示選中類別的項目 -->
               <div v-if="selectedCategory" class="mb-3">
                 <h5 class="category-title mb-3" :style="{ borderBottomColor: themeColor }">
@@ -116,67 +118,73 @@
           </div>
 
           <!-- 選項設定區域 - 只在編輯模式且選擇餐點時顯示 -->
-          <div v-if="counterStore.isEditMode && selectedDish" class="col-12 options-section p-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h5 class="mb-0 fs-6 fw-semibold">{{ selectedDish.name }} - 選項設定</h5>
-              <div class="d-flex align-items-center">
-                <span class="text-danger fw-semibold">${{ currentPrice }}</span>
+          <div v-if="counterStore.isEditMode && selectedDish" class="options-section">
+            <div class="section-content">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0 fs-6 fw-semibold">{{ selectedDish.name }} - 選項設定</h5>
+                <div class="d-flex align-items-center">
+                  <span class="text-danger fw-semibold">${{ currentPrice }}</span>
+                </div>
               </div>
-            </div>
 
-            <!-- 選項類別 -->
-            <div
-              v-for="optionCategory in dishOptionCategories"
-              :key="optionCategory._id"
-              class="mb-3"
-            >
-              <h6 class="option-category-title mb-3" :style="{ borderLeftColor: themeColor }">
-                {{ optionCategory.name }}
-              </h6>
+              <!-- 選項類別 -->
+              <div
+                v-for="optionCategory in dishOptionCategories"
+                :key="optionCategory._id"
+                class="mb-3"
+              >
+                <h6 class="option-category-title mb-3" :style="{ borderLeftColor: themeColor }">
+                  {{ optionCategory.name }}
+                </h6>
 
-              <!-- 單選類型 -->
-              <div v-if="optionCategory.inputType === 'single'" class="row g-2">
-                <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div
-                    class="card p-2 text-center option-card"
-                    :class="{ selected: isOptionSelected(optionCategory._id, getOptionId(option)) }"
-                    @click="selectOption(optionCategory, option, 'single')"
-                  >
-                    <div class="option-name">{{ getOptionName(option) }}</div>
-                    <div v-if="getOptionPrice(option) > 0" class="option-price">
-                      +${{ getOptionPrice(option) }}
+                <!-- 單選類型 -->
+                <div v-if="optionCategory.inputType === 'single'" class="row g-2">
+                  <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+                    <div
+                      class="card p-2 text-center option-card"
+                      :class="{
+                        selected: isOptionSelected(optionCategory._id, getOptionId(option)),
+                      }"
+                      @click="selectOption(optionCategory, option, 'single')"
+                    >
+                      <div class="option-name">{{ getOptionName(option) }}</div>
+                      <div v-if="getOptionPrice(option) > 0" class="option-price">
+                        +${{ getOptionPrice(option) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 複選類型 -->
+                <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
+                  <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+                    <div
+                      class="card p-2 text-center option-card"
+                      :class="{
+                        selected: isOptionSelected(optionCategory._id, getOptionId(option)),
+                      }"
+                      @click="selectOption(optionCategory, option, 'multiple')"
+                    >
+                      <div class="option-name">{{ getOptionName(option) }}</div>
+                      <div v-if="getOptionPrice(option) > 0" class="option-price">
+                        +${{ getOptionPrice(option) }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- 複選類型 -->
-              <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
-                <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div
-                    class="card p-2 text-center option-card"
-                    :class="{ selected: isOptionSelected(optionCategory._id, getOptionId(option)) }"
-                    @click="selectOption(optionCategory, option, 'multiple')"
-                  >
-                    <div class="option-name">{{ getOptionName(option) }}</div>
-                    <div v-if="getOptionPrice(option) > 0" class="option-price">
-                      +${{ getOptionPrice(option) }}
-                    </div>
-                  </div>
-                </div>
+              <!-- 備註輸入 -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">備註</label>
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  placeholder="特殊要求..."
+                  v-model="itemNote"
+                  @input="updateOptions"
+                ></textarea>
               </div>
-            </div>
-
-            <!-- 備註輸入 -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">備註</label>
-              <textarea
-                class="form-control"
-                rows="2"
-                placeholder="特殊要求..."
-                v-model="itemNote"
-                @input="updateOptions"
-              ></textarea>
             </div>
           </div>
         </div>
@@ -239,7 +247,7 @@ const spinnerClass = computed(() => {
 })
 
 const menuSectionClass = computed(() => {
-  return counterStore.isEditMode ? 'menu-section-edit' : 'menu-section-full'
+  return counterStore.isEditMode ? 'editing-mode' : 'full-mode'
 })
 
 const menuCategories = computed(() => {
@@ -680,15 +688,24 @@ watch(menuCategories, async (newCategories) => {
 </script>
 
 <style scoped>
-.component-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+.menu-order-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.loading-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-content {
+  flex: 1;
   display: flex;
-  height: calc(100vh - 60px);
+  min-height: 0;
 }
 
 /* 左側類別導航欄樣式 */
@@ -698,6 +715,7 @@ watch(menuCategories, async (newCategories) => {
   background-color: #ffffff;
   border-right: 1px solid #f1f3f4;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .category-nav {
@@ -756,22 +774,39 @@ watch(menuCategories, async (newCategories) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-width: 0;
 }
 
-.menu-section-full {
-  height: 100%;
-  overflow-y: auto;
+.content-sections {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.menu-section-edit {
-  height: 50%;
-  overflow-y: auto;
+.menu-section {
+  transition: all 0.3s ease;
+}
+
+.menu-section.full-mode {
+  flex: 1;
+}
+
+.menu-section.editing-mode {
+  flex: 0 0 50%;
   border-bottom: 1px solid #dee2e6;
 }
 
 .options-section {
-  height: 50%;
+  flex: 1;
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  min-height: 0;
+}
+
+.section-content {
+  padding: 1rem;
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -951,6 +986,21 @@ watch(menuCategories, async (newCategories) => {
 
   .menu-items-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .category-sidebar {
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .menu-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .section-content {
+    padding: 0.75rem;
   }
 }
 </style>

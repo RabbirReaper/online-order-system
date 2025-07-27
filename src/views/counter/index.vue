@@ -2,7 +2,7 @@
   <div class="app-container">
     <div class="row h-100 g-0">
       <!-- 左側邊欄 -->
-      <div class="col-md-1 bg-dark text-white sidebar d-flex flex-column">
+      <div class="sidebar-fixed bg-dark text-white sidebar d-flex flex-column">
         <div class="sidebar-content flex-grow-1 d-flex flex-column p-3">
           <div class="time-display text-center mb-3">
             <div class="fs-6">{{ currentTime }}</div>
@@ -420,5 +420,23 @@ onUnmounted(() => {
   .refresh-btn {
     font-size: 0.75rem;
   }
+}
+
+.sidebar-fixed {
+  width: 100px; /* 或你想要的固定寬度 */
+  min-width: 100px;
+  flex-shrink: 0; /* 防止被壓縮 */
+}
+
+/* 同時調整主要內容區 */
+.main-content-wrapper {
+  flex: 1; /* 佔據剩餘空間 */
+}
+
+/* 保持購物車區域 */
+.cart-wrapper {
+  width: 400px; /* 固定寬度 */
+  min-width: 400px;
+  flex-shrink: 0;
 }
 </style>
