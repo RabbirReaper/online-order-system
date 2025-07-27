@@ -161,7 +161,7 @@
                         class="option-category-badge"
                         :class="getCategoryBadgeClass(categoryIndex)"
                       >
-                        <span v-if="optionCategory.inputType === 'single'">*</span>
+                        <span v-if="optionCategory.inputType === 'single'">★</span>
                       </div>
                     </div>
                   </div>
@@ -999,23 +999,23 @@ watch(menuCategories, async (newCategories) => {
   justify-content: center;
   font-size: 0.6rem;
   font-weight: bold;
-  color: white;
+  color: black;
 }
 
 .badge-red {
-  background-color: #ef4444;
+  background-color: #fca5a5; /* 原本 #ef4444 調淺 */
 }
 .badge-yellow {
-  background-color: #eab308;
+  background-color: #fde047; /* 原本 #eab308 調淺 */
 }
 .badge-green {
-  background-color: #22c55e;
+  background-color: #86efac; /* 原本 #22c55e 調淺 */
 }
 .badge-blue {
-  background-color: #3b82f6;
+  background-color: #93c5fd; /* 原本 #3b82f6 調淺 */
 }
 .badge-purple {
-  background-color: #a855f7;
+  background-color: #c4b5fd; /* 原本 #a855f7 調淺 */
 }
 
 .option-card:hover {
