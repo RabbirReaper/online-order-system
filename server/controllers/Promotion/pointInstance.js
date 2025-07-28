@@ -54,7 +54,7 @@ export const getUserPointHistory = asyncHandler(async (req, res) => {
 // 給用戶添加點數 (管理員操作)
 export const addPointsToUser = asyncHandler(async (req, res) => {
   const { userId, brandId, amount, source, validityDays } = req.body
-  const adminId = req.adminId
+  const adminId = req.auth.id
 
   if (!userId || !brandId || !amount || !source) {
     return res.status(400).json({
