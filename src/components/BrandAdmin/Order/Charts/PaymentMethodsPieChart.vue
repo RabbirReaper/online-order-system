@@ -55,7 +55,7 @@ const chartData = computed(() => {
       background: 'rgba(241, 196, 15, 0.8)',
       border: 'rgba(241, 196, 15, 1)',
     },
-    未設定: {
+    未付款: {
       background: 'rgba(149, 165, 166, 0.7)',
       border: 'rgba(149, 165, 166, 1)',
     },

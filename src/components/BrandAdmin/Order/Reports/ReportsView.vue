@@ -640,7 +640,7 @@ const formatPaymentMethod = (method) => {
     line_pay: 'LINE Pay',
     other: '其他',
   }
-  return methodMap[method] || method || '未設定'
+  return methodMap[method] || method || '未付款'
 }
 
 // API 調用
