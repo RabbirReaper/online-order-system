@@ -28,7 +28,7 @@
               <!-- 庫存類型篩選 -->
               <div class="mb-3">
                 <label class="form-label">庫存類型</label>
-                <select v-model="filters.inventoryType" class="form-select" @change="applyFilters">
+                <select v-model="filters.inventoryType" class="form-select">
                   <option value="">全部類型</option>
                   <option value="DishTemplate">餐點</option>
                   <option value="else">其他</option>
@@ -38,7 +38,7 @@
               <!-- 庫存狀態篩選 -->
               <div class="mb-3">
                 <label class="form-label">庫存狀態</label>
-                <select v-model="filters.status" class="form-select" @change="applyFilters">
+                <select v-model="filters.status" class="form-select">
                   <option value="">全部狀態</option>
                   <option value="normal">正常</option>
                   <option value="low">低庫存</option>
@@ -55,7 +55,6 @@
                     type="checkbox"
                     v-model="filters.onlyTracked"
                     id="onlyTracked"
-                    @change="applyFilters"
                   />
                   <label class="form-check-label" for="onlyTracked"> 只顯示追蹤庫存的項目 </label>
                 </div>
@@ -72,9 +71,8 @@
             class="form-control"
             placeholder="搜尋項目名稱..."
             v-model="searchQuery"
-            @input="handleSearch"
           />
-          <button class="btn btn-outline-secondary" type="button" @click="handleSearch">
+          <button class="btn btn-outline-secondary" type="button">
             <i class="bi bi-search"></i>
           </button>
         </div>
@@ -151,7 +149,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in inventories" :key="item._id" :class="getRowClass(item)">
+              <tr v-for="item in paginatedInventories" :key="item._id" :class="getRowClass(item)">
                 <td>
                   <span
                     class="badge"
@@ -224,10 +222,14 @@
               </tr>
 
               <!-- 無資料提示 -->
-              <tr v-if="!inventories || inventories.length === 0">
-                <td colspan="10" class="text-center py-4">
+              <tr v-if="!paginatedInventories || paginatedInventories.length === 0">
+                <td colspan="11" class="text-center py-4">
                   <div class="text-muted">
-                    {{ searchQuery ? '沒有符合搜尋條件的庫存項目' : '尚未建立任何庫存項目' }}
+                    {{
+                      searchQuery || hasActiveFilters
+                        ? '沒有符合條件的庫存項目'
+                        : '尚未建立任何庫存項目'
+                    }}
                   </div>
                 </td>
               </tr>
@@ -238,7 +240,7 @@
     </div>
 
     <!-- 分頁控制 -->
-    <nav v-if="pagination.totalPages > 1" class="mt-4">
+    <nav v-if="totalPages > 1" class="mt-4">
       <ul class="pagination justify-content-center">
         <li class="page-item" :class="{ disabled: currentPage === 1 }">
           <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">上一頁</a>
@@ -251,7 +253,7 @@
         >
           <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
         </li>
-        <li class="page-item" :class="{ disabled: currentPage === pagination.totalPages }">
+        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
           <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">下一頁</a>
         </li>
       </ul>
@@ -337,12 +339,13 @@ const storeId = computed(() => route.params.storeId)
 // 狀態
 const isLoading = ref(true)
 const error = ref('')
-const inventories = ref([])
+const allInventories = ref([]) // 存儲所有原始資料
 const searchQuery = ref('')
 const currentPage = ref(1)
 const storeName = ref('')
 const showSoldOutConfirm = ref(false)
 const pendingSoldOutItem = ref(null)
+const itemsPerPage = 20
 
 // Modal 狀態
 const showInitializeModal = ref(false)
@@ -350,6 +353,7 @@ const showCreateModal = ref(false)
 const showAdjustModal = ref(false)
 const selectedItem = ref(null)
 const showSettingModal = ref(false)
+
 // 篩選條件
 const filters = reactive({
   inventoryType: '',
@@ -357,25 +361,97 @@ const filters = reactive({
   onlyTracked: false,
 })
 
-// 分頁
-const pagination = reactive({
-  total: 0,
-  totalPages: 0,
-  limit: 20,
+// 計算是否有啟用的篩選條件
+const hasActiveFilters = computed(() => {
+  return filters.inventoryType || filters.status || filters.onlyTracked
 })
 
-// 統計數據
-const stats = ref({
-  totalItems: 0,
-  lowStock: 0,
-  outOfStock: 0,
-  soldOut: 0,
-  needsRestock: 0,
+// 篩選後的庫存列表
+const filteredInventories = computed(() => {
+  let filtered = [...allInventories.value]
+
+  // 搜尋篩選
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.trim().toLowerCase()
+    filtered = filtered.filter((item) => item.itemName?.toLowerCase().includes(query))
+  }
+
+  // 庫存類型篩選
+  if (filters.inventoryType) {
+    filtered = filtered.filter((item) => item.inventoryType === filters.inventoryType)
+  }
+
+  // 追蹤狀態篩選
+  if (filters.onlyTracked) {
+    filtered = filtered.filter((item) => item.isInventoryTracked)
+  }
+
+  // 庫存狀態篩選
+  if (filters.status) {
+    filtered = filtered.filter((item) => {
+      const status = getStatusText(item)
+      switch (filters.status) {
+        case 'normal':
+          return status === '正常'
+        case 'low':
+          return status === '低庫存' || status === '需補貨'
+        case 'out':
+          return status === '缺貨'
+        case 'soldOut':
+          return status === '售完'
+        default:
+          return true
+      }
+    })
+  }
+
+  return filtered
+})
+
+// 總頁數
+const totalPages = computed(() => {
+  return Math.ceil(filteredInventories.value.length / itemsPerPage)
+})
+
+// 分頁後的庫存列表
+const paginatedInventories = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredInventories.value.slice(start, end)
+})
+
+// 統計數據 - 基於篩選後的結果
+const stats = computed(() => {
+  const filtered = filteredInventories.value
+
+  if (!filtered || !Array.isArray(filtered)) {
+    return {
+      totalItems: 0,
+      lowStock: 0,
+      outOfStock: 0,
+      soldOut: 0,
+      needsRestock: 0,
+    }
+  }
+
+  return {
+    totalItems: filtered.length,
+    lowStock: filtered.filter((item) => {
+      const status = getStatusText(item)
+      return status === '低庫存'
+    }).length,
+    outOfStock: filtered.filter((item) => {
+      const status = getStatusText(item)
+      return status === '缺貨'
+    }).length,
+    soldOut: filtered.filter((item) => item.isSoldOut).length,
+    needsRestock: filtered.filter((item) => item.needsRestock).length,
+  }
 })
 
 // 計算可見頁碼
 const visiblePages = computed(() => {
-  const total = pagination.totalPages
+  const total = totalPages.value
   const current = currentPage.value
   const pages = []
 
@@ -462,16 +538,23 @@ const confirmSoldOutChange = async () => {
       isSoldOut: pendingSoldOutItem.value.isSoldOut,
     })
 
-    // API 成功，更新統計
-    updateStats()
+    // API 成功，更新本地資料
+    const index = allInventories.value.findIndex(
+      (item) => item._id === pendingSoldOutItem.value._id,
+    )
+    if (index !== -1) {
+      allInventories.value[index].isSoldOut = pendingSoldOutItem.value.isSoldOut
+    }
   } catch (err) {
     console.error('切換售完狀態失敗:', err)
     error.value = err.response?.data?.message || '切換售完狀態時發生錯誤'
 
     // 失敗時恢復原始狀態
-    const index = inventories.value.findIndex((item) => item._id === pendingSoldOutItem.value._id)
+    const index = allInventories.value.findIndex(
+      (item) => item._id === pendingSoldOutItem.value._id,
+    )
     if (index !== -1) {
-      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut
+      allInventories.value[index].isSoldOut = !allInventories.value[index].isSoldOut
     }
   } finally {
     showSoldOutConfirm.value = false
@@ -482,9 +565,11 @@ const confirmSoldOutChange = async () => {
 const cancelSoldOutChange = () => {
   // 取消時恢復原始狀態
   if (pendingSoldOutItem.value) {
-    const index = inventories.value.findIndex((item) => item._id === pendingSoldOutItem.value._id)
+    const index = allInventories.value.findIndex(
+      (item) => item._id === pendingSoldOutItem.value._id,
+    )
     if (index !== -1) {
-      inventories.value[index].isSoldOut = !inventories.value[index].isSoldOut
+      allInventories.value[index].isSoldOut = !allInventories.value[index].isSoldOut
     }
   }
 
@@ -527,7 +612,7 @@ const getRowClass = (item) => {
   return ''
 }
 
-// 獲取庫存列表
+// 獲取庫存列表 - 一次性獲取所有資料
 const fetchInventory = async () => {
   if (!storeId.value) {
     error.value = '請選擇店鋪'
@@ -538,131 +623,56 @@ const fetchInventory = async () => {
   error.value = ''
 
   try {
-    const params = {
+    // 移除篩選參數，一次性獲取所有資料
+    const response = await api.inventory.getStoreInventory({
       storeId: storeId.value,
-      search: searchQuery.value,
-      page: currentPage.value,
-      limit: pagination.limit,
-    }
-
-    if (filters.inventoryType) {
-      params.inventoryType = filters.inventoryType
-    }
-
-    if (filters.onlyTracked) {
-      params.onlyTracked = true
-    }
-
-    const response = await api.inventory.getStoreInventory(params)
+      // 移除所有篩選參數，讓後端返回全部資料
+      page: 1,
+      limit: 9999, // 設定一個很大的 limit 來獲取所有資料
+    })
 
     if (response && response.inventory) {
-      inventories.value = response.inventory
-      pagination.total = response.total || response.inventory.length
-      pagination.totalPages = response.totalPages || Math.ceil(pagination.total / pagination.limit)
-
-      if (filters.status) {
-        inventories.value = inventories.value.filter((item) => {
-          const status = getStatusText(item)
-          switch (filters.status) {
-            case 'normal':
-              return status === '正常'
-            case 'low':
-              return status === '低庫存' || status === '需補貨'
-            case 'out':
-              return status === '缺貨'
-            case 'soldOut':
-              return status === '售完'
-            default:
-              return true
-          }
-        })
-      }
-
-      updateStats()
+      allInventories.value = response.inventory
     } else {
-      inventories.value = []
-      pagination.total = 0
-      pagination.totalPages = 1
-      stats.value = {
-        totalItems: 0,
-        lowStock: 0,
-        outOfStock: 0,
-        soldOut: 0,
-        needsRestock: 0,
-      }
+      allInventories.value = []
     }
   } catch (err) {
     console.error('獲取庫存列表失敗:', err)
     error.value = err.response?.data?.message || '獲取庫存列表時發生錯誤'
-    inventories.value = []
-    pagination.total = 0
-    pagination.totalPages = 1
-    stats.value = {
-      totalItems: 0,
-      lowStock: 0,
-      outOfStock: 0,
-      soldOut: 0,
-      needsRestock: 0,
-    }
+    allInventories.value = []
   } finally {
     isLoading.value = false
   }
 }
 
-// 更新統計數據
-const updateStats = () => {
-  if (!inventories.value || !Array.isArray(inventories.value)) {
-    stats.value = {
-      totalItems: 0,
-      lowStock: 0,
-      outOfStock: 0,
-      soldOut: 0,
-      needsRestock: 0,
-    }
-    return
-  }
-
-  stats.value = {
-    totalItems: inventories.value.length,
-    lowStock: inventories.value.filter((item) => {
-      const status = getStatusText(item)
-      return status === '低庫存'
-    }).length,
-    outOfStock: inventories.value.filter((item) => {
-      const status = getStatusText(item)
-      return status === '缺貨'
-    }).length,
-    soldOut: inventories.value.filter((item) => item.isSoldOut).length,
-    needsRestock: inventories.value.filter((item) => item.needsRestock).length,
-  }
-}
-
-// 搜尋處理
-const handleSearch = () => {
-  currentPage.value = 1
-  fetchInventory()
-}
-
-// 篩選操作
-const applyFilters = () => {
-  currentPage.value = 1
-  fetchInventory()
-}
-
+// 篩選操作 - 不再發送 API 請求
 const resetFilters = () => {
   filters.inventoryType = ''
   filters.status = ''
   filters.onlyTracked = false
+  searchQuery.value = ''
   currentPage.value = 1
-  fetchInventory()
 }
 
-// 換頁
+// 換頁 - 純前端分頁
 const changePage = (page) => {
-  if (page < 1 || page > pagination.totalPages || page === '...') return
+  if (page < 1 || page > totalPages.value || page === '...') return
   currentPage.value = page
-  fetchInventory()
 }
+
+// 監聽篩選條件變化，重置到第一頁
+const resetToFirstPage = () => {
+  currentPage.value = 1
+}
+
+// 監聽搜尋和篩選變化
+import { watch } from 'vue'
+watch(
+  [searchQuery, () => filters.inventoryType, () => filters.status, () => filters.onlyTracked],
+  () => {
+    resetToFirstPage()
+  },
+)
 
 // 獲取店鋪資訊
 const fetchStoreInfo = async () => {
