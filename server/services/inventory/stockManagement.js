@@ -419,7 +419,6 @@ export const reduceInventoryForOrder = async (order) => {
         quantity: item.quantity,
         reason: `訂單消耗: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
         orderId: order._id,
-        adminId: adminId,
       })
     }
 
@@ -526,7 +525,7 @@ export const setAvailableStock = async (setData) => {
  * @param {Object} order - 訂單對象
  * @returns {Promise<Boolean>} 操作是否成功
  */
-export const restoreInventoryForCancelledOrder = async (order) => {
+export const restoreInventoryForCancelledOrder = async (order, adminId = null) => {
   // 確保訂單已取消
   if (order.status !== 'cancelled') {
     throw new AppError('只有已取消的訂單可以還原庫存', 400)
