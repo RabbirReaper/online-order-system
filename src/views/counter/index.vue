@@ -2,7 +2,7 @@
   <div class="app-container">
     <div class="row h-100 g-0">
       <!-- 左側邊欄 -->
-      <div class="col-md-1 bg-dark text-white sidebar d-flex flex-column">
+      <div class="sidebar-fixed bg-dark text-white sidebar d-flex flex-column">
         <div class="sidebar-content flex-grow-1 d-flex flex-column p-3">
           <div class="time-display text-center mb-3">
             <div class="fs-6">{{ currentTime }}</div>
@@ -29,6 +29,15 @@
             @click="counterStore.setActiveComponent('Orders')"
           >
             訂單
+          </button>
+          <button
+            class="btn mb-3"
+            :class="
+              counterStore.activeComponent === 'Inventory' ? 'btn-primary' : 'btn-outline-light'
+            "
+            @click="counterStore.setActiveComponent('Inventory')"
+          >
+            庫存
           </button>
 
           <!-- 增強版更新資料按鈕 -->
@@ -62,7 +71,7 @@
 
             <!-- 冷卻時間圖示 -->
             <i v-else class="bi bi-clock me-1"></i>
-
+            <br />
             <!-- 按鈕文字 -->
             <span v-if="isRefreshing">更新中</span>
             <span v-else-if="isOnCooldown">{{ cooldownSeconds }}s</span>
@@ -96,6 +105,7 @@ import { useCounterStore } from '@/stores/counter'
 import DineIn from '@/components/counter/DineIn.vue'
 import TakeOut from '@/components/counter/TakeOut.vue'
 import OrderList from '@/components/counter/OrderList.vue'
+import Inventory from '@/components/counter/Inventory.vue' // 新增
 import OrderCart from '@/components/counter/OrderCart/index.vue'
 
 // 路由和參數
@@ -132,11 +142,12 @@ let cooldownTimer = null
 let successTimer = null
 let spinTimer = null
 
-// 組件映射
+// 組件映射（新增 Inventory）
 const componentMap = {
   DineIn: markRaw(DineIn),
   TakeOut: markRaw(TakeOut),
   Orders: markRaw(OrderList),
+  Inventory: markRaw(Inventory), // 新增
 }
 
 // 計算屬性獲取當前活動組件
@@ -420,5 +431,27 @@ onUnmounted(() => {
   .refresh-btn {
     font-size: 0.75rem;
   }
+}
+
+.sidebar-fixed {
+  width: 100px; /* 或你想要的固定寬度 */
+  min-width: 100px;
+  flex-shrink: 0; /* 防止被壓縮 */
+}
+
+/* 同時調整主要內容區 */
+.main-content-wrapper {
+  flex: 1; /* 佔據剩餘空間 */
+}
+
+/* 保持購物車區域 */
+.cart-wrapper {
+  width: 400px; /* 固定寬度 */
+  min-width: 400px;
+  flex-shrink: 0;
+}
+
+.sidebar .btn {
+  aspect-ratio: 1 / 1; /* 1:1 比例 = 正方形 */
 }
 </style>

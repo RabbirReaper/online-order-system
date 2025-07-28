@@ -429,6 +429,7 @@ const checkOrderStatus = async () => {
   isRefreshing.value = true
   try {
     await fetchOrderDetails()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     isRefreshing.value = false
   }

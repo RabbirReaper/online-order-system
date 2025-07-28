@@ -1,15 +1,13 @@
 <template>
-  <div class="container-fluid p-0">
-    <div class="component-header text-white p-3" :class="headerClass">
-      <h4>{{ title }}</h4>
-    </div>
-
+  <div class="menu-order-container">
     <!-- 加載提示 -->
-    <div v-if="isLoading" class="d-flex justify-content-center align-items-center py-5">
-      <div class="spinner-border" :class="spinnerClass" role="status">
-        <span class="visually-hidden">載入中...</span>
+    <div v-if="isLoading" class="loading-section">
+      <div class="d-flex justify-content-center align-items-center py-5">
+        <div class="spinner-border" :class="spinnerClass" role="status">
+          <span class="visually-hidden">載入中...</span>
+        </div>
+        <span class="ms-2">載入菜單資料中...</span>
       </div>
-      <span class="ms-2">載入菜單資料中...</span>
     </div>
 
     <!-- 錯誤提示 -->
@@ -39,10 +37,10 @@
 
       <!-- 右側內容區域 -->
       <div class="content-area">
-        <div class="row g-0 h-100">
+        <div class="content-sections">
           <!-- 菜單選擇區域 -->
-          <div class="col-12" :class="menuSectionClass">
-            <div class="p-2">
+          <div class="menu-section" :class="menuSectionClass">
+            <div class="section-content">
               <!-- 顯示選中類別的項目 -->
               <div v-if="selectedCategory" class="mb-3">
                 <h5 class="category-title mb-3" :style="{ borderBottomColor: themeColor }">
@@ -60,9 +58,11 @@
                     @click="handleItemClick(item)"
                   >
                     <div class="card h-100">
-                      <div class="card-body">
+                      <div class="card-body d-flex flex-column">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                          <h6 class="card-title mb-0">{{ getItemName(item) }}</h6>
+                          <h6 class="card-title mb-0 text-truncate flex-grow-1 me-2">
+                            {{ getItemName(item) }}
+                          </h6>
                           <!-- 庫存狀態顯示 (只對餐點顯示) -->
                           <div
                             v-if="
@@ -88,7 +88,7 @@
                             </span>
                           </div>
                         </div>
-                        <p class="card-text price">${{ getItemPrice(item) }}</p>
+                        <p class="card-text price mt-auto">${{ getItemPrice(item) }}</p>
                         <!-- 售完遮罩 -->
                         <div v-if="isItemSoldOut(item)" class="sold-out-overlay">
                           <span
@@ -120,67 +120,94 @@
           </div>
 
           <!-- 選項設定區域 - 只在編輯模式且選擇餐點時顯示 -->
-          <div v-if="counterStore.isEditMode && selectedDish" class="col-12 options-section p-2">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h5 class="mb-0 fs-6 fw-semibold">{{ selectedDish.name }} - 選項設定</h5>
-              <div class="d-flex align-items-center">
-                <span class="text-danger fw-semibold">${{ currentPrice }}</span>
+          <div v-if="counterStore.isEditMode && selectedDish" class="options-section">
+            <div class="section-content">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0 fs-6 fw-semibold">{{ selectedDish.name }} - 選項設定</h5>
+                <div class="d-flex align-items-center">
+                  <span class="text-danger fw-semibold">${{ currentPrice }}</span>
+                </div>
               </div>
-            </div>
 
-            <!-- 選項類別 -->
-            <div
-              v-for="optionCategory in dishOptionCategories"
-              :key="optionCategory._id"
-              class="mb-3"
-            >
-              <h6 class="option-category-title mb-3" :style="{ borderLeftColor: themeColor }">
-                {{ optionCategory.name }}
-              </h6>
+              <!-- 選項類別 -->
+              <div
+                v-for="(optionCategory, categoryIndex) in dishOptionCategories"
+                :key="optionCategory._id"
+                class="mb-3"
+              >
+                <!-- 單選類型 -->
+                <div v-if="optionCategory.inputType === 'single'" class="row g-2">
+                  <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+                    <div
+                      class="card option-card position-relative"
+                      :class="{
+                        selected: isOptionSelected(optionCategory._id, getOptionId(option)),
+                      }"
+                      @click="selectOption(optionCategory, option, 'single')"
+                    >
+                      <div class="card-body d-flex flex-column">
+                        <div class="option-name">{{ getOptionName(option) }}</div>
+                        <!-- 移除 v-if，讓價格區域始終存在 -->
+                        <div class="option-price mt-auto">
+                          <span v-if="getOptionPrice(option) > 0"
+                            >+${{ getOptionPrice(option) }}</span
+                          >
+                          <!-- 沒有價格時保持空白佔位 -->
+                        </div>
+                      </div>
 
-              <!-- 單選類型 -->
-              <div v-if="optionCategory.inputType === 'single'" class="row g-2">
-                <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div
-                    class="card p-2 text-center option-card"
-                    :class="{ selected: isOptionSelected(optionCategory._id, getOptionId(option)) }"
-                    @click="selectOption(optionCategory, option, 'single')"
-                  >
-                    <div class="option-name">{{ getOptionName(option) }}</div>
-                    <div v-if="getOptionPrice(option) > 0" class="option-price">
-                      +${{ getOptionPrice(option) }}
+                      <!-- 右下角顏色標識 -->
+                      <div
+                        class="option-category-badge"
+                        :class="getCategoryBadgeClass(categoryIndex)"
+                      >
+                        <span v-if="optionCategory.inputType === 'single'">★</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
+                  <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+                    <div
+                      class="card option-card position-relative"
+                      :class="{
+                        selected: isOptionSelected(optionCategory._id, getOptionId(option)),
+                      }"
+                      @click="selectOption(optionCategory, option, 'multiple')"
+                    >
+                      <div class="card-body d-flex flex-column">
+                        <div class="option-name">{{ getOptionName(option) }}</div>
+                        <!-- 移除 v-if，讓價格區域始終存在 -->
+                        <div class="option-price mt-auto">
+                          <span v-if="getOptionPrice(option) > 0"
+                            >+${{ getOptionPrice(option) }}</span
+                          >
+                          <!-- 沒有價格時保持空白佔位 -->
+                        </div>
+                      </div>
+
+                      <!-- 右下角顏色標識 -->
+                      <div
+                        class="option-category-badge"
+                        :class="getCategoryBadgeClass(categoryIndex)"
+                      ></div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- 複選類型 -->
-              <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
-                <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
-                  <div
-                    class="card p-2 text-center option-card"
-                    :class="{ selected: isOptionSelected(optionCategory._id, getOptionId(option)) }"
-                    @click="selectOption(optionCategory, option, 'multiple')"
-                  >
-                    <div class="option-name">{{ getOptionName(option) }}</div>
-                    <div v-if="getOptionPrice(option) > 0" class="option-price">
-                      +${{ getOptionPrice(option) }}
-                    </div>
-                  </div>
-                </div>
+              <!-- 備註輸入 -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">備註</label>
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  placeholder="特殊要求..."
+                  v-model="itemNote"
+                  @input="updateOptions"
+                ></textarea>
               </div>
-            </div>
-
-            <!-- 備註輸入 -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">備註</label>
-              <textarea
-                class="form-control"
-                rows="2"
-                placeholder="特殊要求..."
-                v-model="itemNote"
-                @input="updateOptions"
-              ></textarea>
             </div>
           </div>
         </div>
@@ -243,7 +270,7 @@ const spinnerClass = computed(() => {
 })
 
 const menuSectionClass = computed(() => {
-  return counterStore.isEditMode ? 'menu-section-edit' : 'menu-section-full'
+  return counterStore.isEditMode ? 'editing-mode' : 'full-mode'
 })
 
 const menuCategories = computed(() => {
@@ -632,6 +659,12 @@ const setupEditMode = async (currentItem) => {
   selectedOptions.value = newSelectedOptions
 }
 
+// 獲取選項類別的顏色標識 class
+const getCategoryBadgeClass = (categoryIndex) => {
+  const colors = ['badge-red', 'badge-yellow', 'badge-green', 'badge-blue', 'badge-purple']
+  return colors[categoryIndex % colors.length]
+}
+
 // 生命周期
 onMounted(async () => {
   if (!counterStore.menuData) {
@@ -684,24 +717,34 @@ watch(menuCategories, async (newCategories) => {
 </script>
 
 <style scoped>
-.component-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+.menu-order-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.loading-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-content {
+  flex: 1;
   display: flex;
-  height: calc(100vh - 60px);
+  min-height: 0;
 }
 
 /* 左側類別導航欄樣式 */
 .category-sidebar {
-  width: 180px;
-  min-width: 180px;
+  width: 200px;
+  min-width: 200px;
   background-color: #ffffff;
   border-right: 1px solid #f1f3f4;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .category-nav {
@@ -709,10 +752,10 @@ watch(menuCategories, async (newCategories) => {
 }
 
 .category-nav-item {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
   transition: all 0.15s ease;
-  margin: 0 0.5rem;
+  margin: 0 0.5rem 0.25rem 0.5rem;
   border-radius: 6px;
 }
 
@@ -735,7 +778,7 @@ watch(menuCategories, async (newCategories) => {
 
 .category-name {
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.2;
   flex: 1;
 }
@@ -760,22 +803,39 @@ watch(menuCategories, async (newCategories) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-width: 0;
 }
 
-.menu-section-full {
-  height: 100%;
-  overflow-y: auto;
+.content-sections {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.menu-section-edit {
-  height: 50%;
-  overflow-y: auto;
+.menu-section {
+  transition: all 0.3s ease;
+}
+
+.menu-section.full-mode {
+  flex: 1;
+}
+
+.menu-section.editing-mode {
+  flex: 0 0 50%;
   border-bottom: 1px solid #dee2e6;
 }
 
 .options-section {
-  height: 50%;
+  flex: 1;
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  min-height: 0;
+}
+
+.section-content {
+  padding: 1rem;
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -790,7 +850,7 @@ watch(menuCategories, async (newCategories) => {
 
 .menu-items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 0.75rem;
 }
 
@@ -807,11 +867,7 @@ watch(menuCategories, async (newCategories) => {
 }
 
 .menu-item-card .card {
-  border: 1px solid #1b5a7a;
-  border-radius: 8px;
-  box-shadow: none;
-  transition: all 0.15s ease;
-  position: relative;
+  height: 120px; /* 固定高度 */
 }
 
 .menu-item-card:not(.sold-out):hover .card {
@@ -839,14 +895,18 @@ watch(menuCategories, async (newCategories) => {
 
 .menu-item-card .card-body {
   padding: 0.75rem;
+  height: 100%;
 }
 
 .menu-item-card .card-title {
   font-size: 0.875rem;
   font-weight: 500;
-  margin-bottom: 0.25rem;
   color: #111827;
   line-height: 1.3;
+  /* 省略號處理 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-img-top {
@@ -905,21 +965,57 @@ watch(menuCategories, async (newCategories) => {
   color: #000;
 }
 
-/* 選項相關樣式 */
-.option-category-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-  border-left: 3px solid;
-  padding-left: 0.5rem;
-  margin-bottom: 0.5rem;
+/* 選項相關樣式修改 */
+.option-card {
+  position: relative;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  width: 130px; /* 固定寬度，與menu item card一致 */
 }
 
-.option-card {
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid #e5e7eb;
-  min-width: 80px;
+.option-card .card {
+  height: 120px; /* 固定高度，與menu item card一致 */
+}
+
+.option-card .card-body {
+  padding: 0.75rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 確保內容分佈均勻 */
+}
+
+.option-category-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 20px 0 0 0; /* 1/4圓形朝向內部，充滿右下角 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: black;
+}
+
+.badge-red {
+  background-color: #fca5a5; /* 原本 #ef4444 調淺 */
+}
+.badge-yellow {
+  background-color: #fde047; /* 原本 #eab308 調淺 */
+}
+.badge-green {
+  background-color: #86efac; /* 原本 #22c55e 調淺 */
+}
+.badge-blue {
+  background-color: #93c5fd; /* 原本 #3b82f6 調淺 */
+}
+.badge-purple {
+  background-color: #c4b5fd; /* 原本 #a855f7 調淺 */
 }
 
 .option-card:hover {
@@ -934,16 +1030,26 @@ watch(menuCategories, async (newCategories) => {
 }
 
 .option-name {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #374151;
+  line-height: 1.3;
+  /* 省略號處理 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0; /* 防止被壓縮 */
 }
 
 .option-price {
-  font-size: 0.65rem;
+  font-size: 0.875rem;
   color: #dc2626;
   font-weight: 600;
-  margin-top: 0.25rem;
+  margin: 0;
+  flex-shrink: 0; /* 防止被壓縮 */
+  min-height: 1.25rem; /* 確保即使沒有價格也有固定高度 */
+  display: flex;
+  align-items: flex-end; /* 讓價格文字靠底部對齊 */
 }
 
 /* 響應式設計 */
@@ -954,7 +1060,22 @@ watch(menuCategories, async (newCategories) => {
   }
 
   .menu-items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .category-sidebar {
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .menu-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .section-content {
+    padding: 0.75rem;
   }
 }
 </style>

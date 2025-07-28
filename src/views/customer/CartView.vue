@@ -72,7 +72,7 @@
         <div class="coupon-section mb-4" v-if="availableCoupons.length > 0">
           <h6 class="mb-3 fw-bold">
             <i class="bi bi-percent me-2 text-primary"></i>
-            會員折價券
+            會用折價券
           </h6>
           <div class="coupon-cards">
             <CouponCard
@@ -482,15 +482,6 @@ const showError = (message) => {
   }, 5000)
 }
 
-const showSuccess = (message) => {
-  successMsg.value = message
-  setTimeout(() => {
-    if (successMsg.value === message) {
-      clearSuccess()
-    }
-  }, 3000)
-}
-
 const goBack = () => {
   router.go(-1)
 }
@@ -541,11 +532,14 @@ const updateDeliveryFee = (fee) => {
 }
 
 const calculateSubtotal = () => {
-  return cartStore.subtotal - voucherSavings.value
+  return cartStore.subtotal
 }
 
 const calculateTotal = () => {
-  return Math.max(0, calculateSubtotal() - couponDiscount.value + deliveryFee.value)
+  return Math.max(
+    0,
+    calculateSubtotal() - voucherSavings.value - couponDiscount.value + deliveryFee.value,
+  )
 }
 
 // 獲取用戶券資料
@@ -686,8 +680,6 @@ const applyCoupon = (coupon) => {
     amount: discountAmount,
     discountInfo: coupon.discountInfo,
   })
-
-  showSuccess(`已套用 ${coupon.name}！`)
 }
 
 // 移除折價券
@@ -696,7 +688,6 @@ const removeCoupon = (couponId) => {
   if (index !== -1) {
     const coupon = appliedCoupons.value[index]
     appliedCoupons.value.splice(index, 1)
-    showSuccess(`已移除 ${coupon.name}`)
   }
 }
 

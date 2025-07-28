@@ -7,16 +7,6 @@
       'expiring-soon': isExpiringSoon,
     }"
   >
-    <!-- 已套用時的取消按鈕 -->
-    <button
-      v-if="isApplied"
-      class="cancel-btn btn btn-sm btn-outline-secondary"
-      @click="handleRemove"
-      title="取消套用"
-    >
-      <i class="bi bi-x"></i>
-    </button>
-
     <div class="d-flex justify-content-between align-items-start">
       <div class="coupon-info flex-grow-1">
         <div class="d-flex align-items-center mb-2">
@@ -24,7 +14,7 @@
             class="bi bi-percent text-primary fs-5 me-2"
             :class="isApplied ? 'text-success' : 'text-primary'"
           ></i>
-          <h6 class="mb-0 fw-bold">{{ coupon.name }}</h6>
+          <h6 class="mb-0 fw-bold">{{ coupon.couponName }}</h6>
           <span v-if="isApplied" class="badge bg-success ms-2">
             <i class="bi bi-check-circle me-1"></i>
             已套用
