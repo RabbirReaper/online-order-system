@@ -263,7 +263,7 @@ export const toggleSoldOut = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
     const { isSoldOut } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     if (isSoldOut === undefined) {
       return res.status(400).json({

@@ -419,6 +419,7 @@ export const reduceInventoryForOrder = async (order) => {
         quantity: item.quantity,
         reason: `訂單消耗: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
         orderId: order._id,
+        adminId: adminId,
       })
     }
 
@@ -587,6 +588,7 @@ export const restoreInventoryForCancelledOrder = async (order) => {
       changeType: 'system_adjustment',
       reason: `訂單取消還原庫存: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
       order: order._id,
+      admin: adminId,
     })
 
     // 如果啟用可用庫存，創建可用庫存日誌
@@ -603,6 +605,7 @@ export const restoreInventoryForCancelledOrder = async (order) => {
         changeType: 'system_adjustment',
         reason: `訂單取消還原庫存（可用庫存）: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
         order: order._id,
+        admin: adminId,
       })
     }
   }
@@ -670,9 +673,9 @@ export const toggleSoldOut = async (storeId, inventoryId, isSoldOut, adminId) =>
 
   inventoryItem.isSoldOut = isSoldOut
   await inventoryItem.save()
-
+  console.log('adminId:', adminId)
   // 創建庫存日誌記錄此變更
-  await StockLog.create({
+  const test = await StockLog.create({
     brand: inventoryItem.brand,
     store: storeId,
     inventoryType: inventoryItem.inventoryType,
@@ -686,6 +689,7 @@ export const toggleSoldOut = async (storeId, inventoryId, isSoldOut, adminId) =>
     reason: isSoldOut ? '設為售完' : '取消售完',
     admin: adminId,
   })
+  console.log('Toggle Sold Out Log Created:', test)
 
   return inventoryItem
 }
