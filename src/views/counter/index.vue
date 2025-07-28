@@ -39,13 +39,6 @@
           >
             庫存
           </button>
-          <button
-            class="btn mb-3"
-            :class="counterStore.activeComponent === 'Coupon' ? 'btn-primary' : 'btn-outline-light'"
-            @click="counterStore.setActiveComponent('Coupon')"
-          >
-            優惠券
-          </button>
 
           <!-- 增強版更新資料按鈕 -->
           <button
