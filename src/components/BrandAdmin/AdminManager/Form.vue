@@ -186,24 +186,8 @@ const isEditMode = computed(() => !!route.params.id)
 // 從路由中獲取品牌ID
 const brandId = computed(() => route.params.brandId)
 
-// 角色定義
+// 角色定義 (移除系統級角色)
 const roleDefinitions = {
-  primary_system_admin: {
-    label: '系統主管理員',
-    description: '擁有系統最高權限，可管理所有品牌和店鋪',
-    scope: '全系統',
-    level: '最高級',
-    needsBrand: false,
-    needsStore: false,
-  },
-  system_admin: {
-    label: '系統管理員',
-    description: '系統級管理權限，可管理品牌和店鋪（不包含管理員管理）',
-    scope: '全系統',
-    level: '高級',
-    needsBrand: false,
-    needsStore: false,
-  },
   primary_brand_admin: {
     label: '品牌主管理員',
     description: '品牌主管理員，可管理品牌下所有店鋪和管理員',
@@ -300,11 +284,9 @@ const getAvailableRoles = async () => {
     if (response.loggedIn) {
       currentUserRole.value = response.role
 
-      // 角色管理權限矩陣 - 與後端保持一致
+      // 角色管理權限矩陣
       const roleManagementMatrix = {
         primary_system_admin: [
-          'primary_system_admin',
-          'system_admin',
           'primary_brand_admin',
           'brand_admin',
           'primary_store_admin',
