@@ -301,16 +301,78 @@ const storeComparisonData = computed(() => {
   }
 })
 
+// 🔥 根據你的業務邏輯實現客戶留存分析
 const customerRetentionData = computed(() => {
-  // 這裡需要複雜的用戶分析邏輯
-  // 暫時返回模擬數據
+  if (!allOrders.value.length) {
+    return {
+      labels: [],
+      newCustomerRate: [],
+      returnCustomerRate: [],
+    }
+  }
+
   const days = getDaysInRange()
+  const newCustomerRates = []
+  const returnCustomerRates = []
+
+  console.log('開始計算客戶留存數據，日期範圍:', days.length, '天')
+
+  days.forEach((day) => {
+    const dayStart = new Date(day)
+    dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(day)
+    dayEnd.setHours(23, 59, 59, 999)
+
+    // 1. 獲取當天所有訂單
+    const todayOrders = allOrders.value.filter((order) => {
+      const orderDate = new Date(order.createdAt)
+      return orderDate >= dayStart && orderDate <= dayEnd
+    })
+
+    if (todayOrders.length === 0) {
+      newCustomerRates.push(0)
+      returnCustomerRates.push(0)
+      return
+    }
+
+    // 2. 統計有用戶的訂單數量（orderUserCount）
+    const orderUserCount = todayOrders.filter((order) => order.user).length
+
+    // 3. 獲取當天新用戶數量（用你的邏輯：檢查該用戶在當天之前是否有訂單）
+    const newUserCount = getNewUsersCountForDay(dayStart, todayOrders)
+
+    // 4. 計算老用戶訂單數量（你的核心邏輯）
+    const oldUserOrderCount = Math.max(0, orderUserCount - newUserCount)
+
+    // 5. 計算新用戶訂單數量（包含訪客訂單的估算）
+    const newUserOrderCount = todayOrders.length - oldUserOrderCount
+
+    // 6. 計算比例
+    const totalOrderCount = todayOrders.length
+    const returnCustomerRate = totalOrderCount > 0 ? (oldUserOrderCount / totalOrderCount) * 100 : 0
+    const newCustomerRate = totalOrderCount > 0 ? (newUserOrderCount / totalOrderCount) * 100 : 0
+
+    // 記錄計算過程（用於調試）
+    console.log(`${day.toLocaleDateString('zh-TW')}:`, {
+      totalOrders: totalOrderCount,
+      orderUserCount,
+      newUserCount,
+      oldUserOrderCount,
+      newUserOrderCount,
+      returnCustomerRate: returnCustomerRate.toFixed(1),
+      newCustomerRate: newCustomerRate.toFixed(1),
+    })
+
+    newCustomerRates.push(Math.round(newCustomerRate * 10) / 10)
+    returnCustomerRates.push(Math.round(returnCustomerRate * 10) / 10)
+  })
+
   return {
     labels: days.map((day) =>
       day.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' }),
     ),
-    newCustomerRate: days.map(() => Math.random() * 100),
-    returnCustomerRate: days.map(() => Math.random() * 100),
+    newCustomerRate: newCustomerRates,
+    returnCustomerRate: returnCustomerRates,
   }
 })
 
@@ -521,6 +583,37 @@ const getWeeksInRange = () => {
   return weeks
 }
 
+// 🔥 核心函數：獲取當天新用戶數量（根據你的業務邏輯）
+const getNewUsersCountForDay = (dayStart, todayOrders) => {
+  // 從當天有用戶的訂單中提取用戶ID
+  const todayUserIds = new Set()
+  todayOrders.forEach((order) => {
+    if (order.user) {
+      const userId = (order.user._id || order.user).toString()
+      todayUserIds.add(userId)
+    }
+  })
+
+  // 檢查這些用戶在當天之前是否有訂單記錄
+  // 如果沒有，就算是新用戶（符合你的邏輯：用戶通常是點餐時才註冊）
+  let newUserCount = 0
+
+  todayUserIds.forEach((userId) => {
+    const hasHistoryOrder = allOrders.value.some((order) => {
+      if (!order.user) return false
+      const orderUserId = (order.user._id || order.user).toString()
+      const orderDate = new Date(order.createdAt)
+      return orderUserId === userId && orderDate < dayStart
+    })
+
+    if (!hasHistoryOrder) {
+      newUserCount++
+    }
+  })
+
+  return newUserCount
+}
+
 const getDishName = (item) => {
   if (!item || !item.dishInstance) return '未知餐點'
 
@@ -547,7 +640,7 @@ const formatPaymentMethod = (method) => {
     line_pay: 'LINE Pay',
     other: '其他',
   }
-  return methodMap[method] || method || '未設定'
+  return methodMap[method] || method || '未付款'
 }
 
 // API 調用
