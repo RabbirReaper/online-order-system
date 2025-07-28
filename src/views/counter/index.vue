@@ -255,57 +255,22 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 只針對這個組件進行樣式設置 */
-.app-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 100vh;
-  width: 100vw;
-  margin: 0;
-  padding: 0;
-  z-index: 1;
-}
-
-/* 確保 row 填滿容器 */
-.app-container .row {
-  margin: 0 !important;
-  height: 100vh !important;
-  --bs-gutter-x: 0;
-  --bs-gutter-y: 0;
-}
-
 /* 側邊欄樣式 */
 .sidebar {
   height: 100vh;
-  min-height: 100vh;
   overflow-y: auto;
-  position: relative;
 }
 
 .sidebar-content {
   height: 100%;
 }
 
-/* 主要內容區樣式 */
-.main-content-wrapper {
-  height: 100vh;
-  padding: 0;
-  position: relative;
-}
-
-.main-content {
-  height: 100vh;
-  overflow-y: auto;
-}
-
 /* 購物車區樣式 */
 .cart-wrapper {
   height: 100vh;
-  padding: 0;
-  position: relative;
+  width: 400px;
+  min-width: 400px;
+  flex-shrink: 0;
 }
 
 .cart-content {
@@ -313,36 +278,30 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* 覆蓋 Bootstrap 的 col 樣式 */
-.app-container .col-md-1,
+/* 移除Bootstrap預設padding */
 .app-container .col-md-8,
 .app-container .col-md-3 {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
 
-/* ==================== 新增的更新按鈕樣式 ==================== */
-
+/* 更新按鈕樣式 */
 .refresh-btn {
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  white-space: nowrap;
-  font-size: 0.875rem;
   min-height: 38px;
+  font-size: 0.8rem;
+  padding: 0.375rem 0.5rem;
 }
 
-/* 按鈕點擊效果 */
 .refresh-btn:active:not(:disabled) {
   transform: scale(0.95);
 }
 
-/* 更新中狀態 */
-.refresh-btn.refreshing {
-  cursor: wait;
+.refresh-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 冷卻中狀態 */
 .refresh-btn.disabled {
   cursor: not-allowed !important;
   opacity: 0.7;
@@ -357,19 +316,12 @@ onUnmounted(() => {
   from {
     transform: rotate(0deg);
   }
-
   to {
     transform: rotate(360deg);
   }
 }
 
-/* 懸停效果 */
-.refresh-btn:not(:disabled):hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* 成功狀態的閃爍效果 */
+/* 成功狀態閃爍 */
 .refresh-btn.btn-success {
   animation: successFlash 0.5s ease-in-out;
 }
@@ -377,81 +329,45 @@ onUnmounted(() => {
 @keyframes successFlash {
   0% {
     background-color: #ffc107;
-    transform: scale(1);
   }
-
   50% {
     background-color: #28a745;
     transform: scale(1.05);
   }
-
   100% {
     background-color: #28a745;
-    transform: scale(1);
   }
 }
 
-/* 載入動畫的自定義樣式 */
-.spinner-border-sm {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-/* 冷卻時間數字的脈衝效果 */
+/* 冷卻時間脈衝效果 */
 .refresh-btn.disabled span {
   animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-
+  0%,
   100% {
     opacity: 1;
   }
-}
-
-/* 適應側邊欄的緊湊樣式 */
-.sidebar .refresh-btn {
-  font-size: 0.8rem;
-  padding: 0.375rem 0.5rem;
-}
-
-.sidebar .refresh-btn i {
-  font-size: 0.875rem;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .refresh-btn {
-    font-size: 0.75rem;
+  50% {
+    opacity: 0.7;
   }
 }
 
+/* 側邊欄固定寬度 */
 .sidebar-fixed {
-  width: 100px; /* 或你想要的固定寬度 */
+  width: 100px;
   min-width: 100px;
-  flex-shrink: 0; /* 防止被壓縮 */
-}
-
-/* 同時調整主要內容區 */
-.main-content-wrapper {
-  flex: 1; /* 佔據剩餘空間 */
-}
-
-/* 保持購物車區域 */
-.cart-wrapper {
-  width: 400px; /* 固定寬度 */
-  min-width: 400px;
   flex-shrink: 0;
 }
 
+/* 主要內容區 */
+.main-content-wrapper {
+  flex: 1;
+}
+
+/* 正方形按鈕 */
 .sidebar .btn {
-  aspect-ratio: 1 / 1; /* 1:1 比例 = 正方形 */
+  aspect-ratio: 1 / 1;
 }
 </style>
