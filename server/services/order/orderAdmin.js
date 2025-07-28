@@ -282,7 +282,7 @@ export const cancelOrder = async (orderId, reason, adminId) => {
   try {
     // 這裡可以添加庫存還原邏輯，暫時註解
     // const { restoreInventoryForCancelledOrder } = await import('../inventory/stockManagement.js');
-    // await restoreInventoryForCancelledOrder(order);
+    // await restoreInventoryForCancelledOrder(order);//注意adminId 參數
     console.log('訂單取消 - 庫存還原功能待實現')
   } catch (error) {
     console.error('還原庫存失敗:', error)
