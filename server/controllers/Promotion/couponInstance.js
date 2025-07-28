@@ -75,7 +75,7 @@ export const getUserCouponInstancesAdmin = asyncHandler(async (req, res) => {
  */
 export const issueCouponToUser = asyncHandler(async (req, res) => {
   const brandId = req.brandId || req.params.brandId
-  const adminId = req.adminId // 從 auth middleware 獲取
+  const adminId = req.auth.id // 從 auth middleware 獲取
 
   if (!brandId) {
     return res.status(400).json({

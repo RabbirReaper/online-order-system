@@ -82,7 +82,7 @@ export const createInventory = asyncHandler(async (req, res) => {
 export const updateInventory = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     const updateData = {
       ...req.body,
@@ -114,7 +114,7 @@ export const setAvailableStock = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
     const { availableStock, reason } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     const setData = {
       storeId,
@@ -145,7 +145,7 @@ export const reduceStock = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
     const { quantity, reason, orderId } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     const reduceData = {
       storeId,
@@ -177,7 +177,7 @@ export const addStock = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
     const { quantity, reason, stockType = 'totalStock' } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     const addData = {
       storeId,
@@ -209,7 +209,7 @@ export const processDamage = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
     const { quantity, reason, stockType = 'totalStock' } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     const damageData = {
       storeId,
@@ -240,7 +240,7 @@ export const processDamage = asyncHandler(async (req, res) => {
 export const initializeDishInventory = asyncHandler(async (req, res) => {
   try {
     const { storeId } = req.params
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     const result = await inventoryService.management.initializeDishInventory(storeId, adminId)
 
@@ -263,7 +263,7 @@ export const toggleSoldOut = asyncHandler(async (req, res) => {
   try {
     const { storeId, inventoryId } = req.params
     const { isSoldOut } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     if (isSoldOut === undefined) {
       return res.status(400).json({
@@ -407,7 +407,7 @@ export const bulkUpdateInventory = asyncHandler(async (req, res) => {
   try {
     const { storeId } = req.params
     const { items } = req.body
-    const adminId = req.adminId
+    const adminId = req.auth.id
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
