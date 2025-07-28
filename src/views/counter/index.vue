@@ -30,6 +30,22 @@
           >
             訂單
           </button>
+          <button
+            class="btn mb-3"
+            :class="
+              counterStore.activeComponent === 'Inventory' ? 'btn-primary' : 'btn-outline-light'
+            "
+            @click="counterStore.setActiveComponent('Inventory')"
+          >
+            庫存
+          </button>
+          <button
+            class="btn mb-3"
+            :class="counterStore.activeComponent === 'Coupon' ? 'btn-primary' : 'btn-outline-light'"
+            @click="counterStore.setActiveComponent('Coupon')"
+          >
+            優惠券
+          </button>
 
           <!-- 增強版更新資料按鈕 -->
           <button
@@ -96,6 +112,7 @@ import { useCounterStore } from '@/stores/counter'
 import DineIn from '@/components/counter/DineIn.vue'
 import TakeOut from '@/components/counter/TakeOut.vue'
 import OrderList from '@/components/counter/OrderList.vue'
+import Inventory from '@/components/counter/Inventory.vue' // 新增
 import OrderCart from '@/components/counter/OrderCart/index.vue'
 
 // 路由和參數
@@ -132,11 +149,12 @@ let cooldownTimer = null
 let successTimer = null
 let spinTimer = null
 
-// 組件映射
+// 組件映射（新增 Inventory）
 const componentMap = {
   DineIn: markRaw(DineIn),
   TakeOut: markRaw(TakeOut),
   Orders: markRaw(OrderList),
+  Inventory: markRaw(Inventory), // 新增
 }
 
 // 計算屬性獲取當前活動組件

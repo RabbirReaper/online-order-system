@@ -56,6 +56,7 @@ export const useCounterStore = defineStore('counter', () => {
         fetchStoreData(brandId, storeId),
         dishTemplatesStore.fetchMenuData(brandId, storeId),
         ordersStore.fetchTodayOrders(brandId, storeId),
+        inventoryStore.loadInventoryData(brandId, storeId),
       ])
     } catch (error) {
       console.error('刷新資料失敗:', error)
