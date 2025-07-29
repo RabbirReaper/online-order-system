@@ -266,9 +266,6 @@
                                   </div>
                                 </div>
                               </div>
-                              <div class="small text-muted mt-1">
-                                有效期：{{ item.voucherTemplate.validityPeriod }} 天
-                              </div>
                             </div>
                           </div>
                         </div>
