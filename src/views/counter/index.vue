@@ -12,7 +12,8 @@
             :class="counterStore.activeComponent === 'DineIn' ? 'btn-primary' : 'btn-outline-light'"
             @click="counterStore.setActiveComponent('DineIn')"
           >
-            內用
+            <i class="bi bi-house d-block mb-1"></i>
+            <span class="fs-6">內用</span>
           </button>
           <button
             class="btn mb-3"
@@ -21,14 +22,16 @@
             "
             @click="counterStore.setActiveComponent('TakeOut')"
           >
-            外帶
+            <i class="bi bi-bag d-block mb-1"></i>
+            <span class="fs-6">外帶</span>
           </button>
           <button
             class="btn mb-3"
             :class="counterStore.activeComponent === 'Orders' ? 'btn-primary' : 'btn-outline-light'"
             @click="counterStore.setActiveComponent('Orders')"
           >
-            訂單
+            <i class="bi bi-receipt d-block mb-1"></i>
+            <span class="fs-6">訂單</span>
           </button>
           <button
             class="btn mb-3"
@@ -37,7 +40,8 @@
             "
             @click="counterStore.setActiveComponent('Inventory')"
           >
-            庫存
+            <i class="bi bi-boxes d-block mb-1"></i>
+            <span class="fs-6">庫存</span>
           </button>
 
           <!-- 增強版更新資料按鈕 -->
@@ -65,17 +69,17 @@
             <!-- 更新圖示 -->
             <i
               v-else-if="!isOnCooldown"
-              class="bi bi-arrow-clockwise me-1"
+              class="bi bi-arrow-clockwise d-block mb-1"
               :class="{ 'spin-once': showSpinAnimation }"
             ></i>
 
             <!-- 冷卻時間圖示 -->
-            <i v-else class="bi bi-clock me-1"></i>
-            <br />
+            <i v-else class="bi bi-clock d-block mb-1"></i>
+
             <!-- 按鈕文字 -->
-            <span v-if="isRefreshing">更新中</span>
-            <span v-else-if="isOnCooldown">{{ cooldownSeconds }}s</span>
-            <span v-else-if="refreshSuccess && showSuccessMessage">完成!</span>
+            <span v-if="isRefreshing" class="fs-6">更新中</span>
+            <span v-else-if="isOnCooldown" class="fs-6">{{ cooldownSeconds }}s</span>
+            <span v-else-if="refreshSuccess && showSuccessMessage" class="fs-6">完成!</span>
             <span v-else class="fs-6">更新</span>
           </button>
         </div>
@@ -369,5 +373,14 @@ onUnmounted(() => {
 /* 正方形按鈕 */
 .sidebar .btn {
   aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 按鈕圖標樣式 */
+.sidebar .btn i {
+  font-size: 1.5rem;
 }
 </style>
