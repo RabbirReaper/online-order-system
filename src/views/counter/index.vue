@@ -3,8 +3,10 @@
     <div class="row h-100 g-0">
       <!-- 左側邊欄 -->
       <div class="sidebar-fixed bg-dark text-white sidebar d-flex flex-column">
-        <div class="sidebar-content flex-grow-1 d-flex flex-column p-3">
+        <div class="sidebar-content flex-grow-1 d-flex flex-column p-2 pt-4">
           <div class="time-display text-center mb-3">
+            <div class="fs-6">{{ currentWeekday }}</div>
+            <div class="fs-6">{{ currentDate }}</div>
             <div class="fs-6">{{ currentTime }}</div>
           </div>
           <button
@@ -119,11 +121,18 @@ const brandId = route.params.brandId
 const storeId = route.params.storeId
 
 const currentTime = ref('')
+const currentDate = ref('')
+const currentWeekday = ref('')
 
 // 每秒更新一次時間（你也可以改成每 10 秒、60 秒）
 const updateTime = () => {
   const now = new Date()
-  currentTime.value = now.toLocaleTimeString([], {
+  currentDate.value = now.toLocaleDateString([], {
+    month: '2-digit',
+    day: '2-digit',
+  })
+  currentWeekday.value = now.toLocaleDateString([], { weekday: 'long' })
+  currentTime.value = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   })
