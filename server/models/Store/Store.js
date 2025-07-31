@@ -58,6 +58,44 @@ const storeSchema = new mongoose.Schema(
     // 1: 只開放當天點餐
     // 2: 可預訂隔天
     // 以此類推...
+
+    // === 新增：外送平台整合 ===
+    deliveryPlatforms: [
+      {
+        platform: {
+          type: String,
+          enum: ['foodpanda', 'ubereats'],
+          required: true,
+        },
+        storeId: {
+          type: String, // 該平台分配給店家的ID
+          required: true,
+          trim: true,
+        },
+        isEnabled: {
+          type: Boolean,
+          default: false,
+        },
+        // 平台特定設定
+        settings: {
+          // 自動接單設定
+          autoAcceptOrders: { type: Boolean, default: false },
+          // 準備時間（分鐘）- 可覆蓋店家預設值
+          prepTime: { type: Number, min: 0 },
+          // 平台特定的營業狀態
+          isOnline: { type: Boolean, default: false },
+        },
+        // 同步設定（目前測試階段先不啟用）
+        syncSettings: {
+          // syncMenu: { type: Boolean, default: false },
+          // syncInventory: { type: Boolean, default: false },
+          // syncBusinessHours: { type: Boolean, default: false }
+        },
+        lastSyncAt: { type: Date },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true },
 )

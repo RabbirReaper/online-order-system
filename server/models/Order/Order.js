@@ -30,6 +30,31 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: '',
     }, // 外送平台訂單ID
+
+    // === 新增：外送平台詳細資訊 ===
+    platformInfo: {
+      // 平台名稱
+      platform: {
+        type: String,
+        enum: ['direct', 'foodpanda', 'ubereats'],
+        default: 'direct', // direct 表示直接下單（非外送平台）
+      },
+      // 平台訂單ID
+      platformOrderId: { type: String },
+      // 平台訂單狀態
+      platformStatus: { type: String },
+      // 平台顧客資訊
+      platformCustomerInfo: {
+        customerId: { type: String },
+        customerName: { type: String },
+        customerPhone: { type: String },
+      },
+      // 平台特定的訂單資料（原始JSON）
+      rawOrderData: { type: mongoose.Schema.Types.Mixed },
+      // 最後同步時間
+      lastSyncAt: { type: Date },
+    },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -92,6 +117,9 @@ const orderSchema = new mongoose.Schema(
         note: {
           type: String,
         }, // 備註
+
+        // === 新增：外送平台項目對應 ===
+        platformItemId: { type: String }, // 外送平台的商品ID
       },
     ], // 訂單項目
 
@@ -169,6 +197,14 @@ const orderSchema = new mongoose.Schema(
       estimatedTime: { type: Date }, // 預計送達時間
       actualTime: { type: Date }, // 實際送達時間
       deliveryFee: { type: Number, default: 0 }, // 配送費用
+
+      // === 新增：外送平台配送資訊 ===
+      platformDeliveryInfo: {
+        courierName: { type: String }, // 外送員姓名
+        courierPhone: { type: String }, // 外送員電話
+        trackingUrl: { type: String }, // 追蹤連結
+        estimatedArrival: { type: Date }, // 平台預估送達時間
+      },
     }, // 配送信息 (僅適用於外送訂單)
     dineInInfo: {
       tableNumber: { type: String }, // 桌號
