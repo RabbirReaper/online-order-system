@@ -7,6 +7,9 @@ import Store from '../../models/Store/Store.js'
 import { AppError } from '../../middlewares/error.js'
 import * as orderSyncService from './orderSyncService.js'
 import crypto from 'crypto'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 // 🔧 根據環境動態配置 UberEats API 設定
 const ENVIRONMENT = process.env.UBEREATS_ENVIRONMENT || 'sandbox'
