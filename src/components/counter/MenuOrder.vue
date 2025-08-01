@@ -133,11 +133,14 @@
               <div
                 v-for="(optionCategory, categoryIndex) in dishOptionCategories"
                 :key="optionCategory._id"
-                class="mb-3"
               >
                 <!-- 單選類型 -->
-                <div v-if="optionCategory.inputType === 'single'" class="row g-2">
-                  <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+                <div v-if="optionCategory.inputType === 'single'" class="row mb-2">
+                  <div
+                    v-for="option in optionCategory.options"
+                    :key="option._id"
+                    class="col-auto mb-1"
+                  >
                     <div
                       class="card option-card position-relative"
                       :class="{
@@ -147,12 +150,10 @@
                     >
                       <div class="card-body d-flex flex-column">
                         <div class="option-name">{{ getOptionName(option) }}</div>
-                        <!-- 移除 v-if，讓價格區域始終存在 -->
                         <div class="option-price mt-auto">
                           <span v-if="getOptionPrice(option) > 0"
                             >+${{ getOptionPrice(option) }}</span
                           >
-                          <!-- 沒有價格時保持空白佔位 -->
                         </div>
                       </div>
 
@@ -167,8 +168,12 @@
                   </div>
                 </div>
 
-                <div v-else-if="optionCategory.inputType === 'multiple'" class="row g-2">
-                  <div v-for="option in optionCategory.options" :key="option._id" class="col-auto">
+                <div v-else-if="optionCategory.inputType === 'multiple'" class="row mb-2">
+                  <div
+                    v-for="option in optionCategory.options"
+                    :key="option._id"
+                    class="col-auto mb-1"
+                  >
                     <div
                       class="card option-card position-relative"
                       :class="{
@@ -178,12 +183,10 @@
                     >
                       <div class="card-body d-flex flex-column">
                         <div class="option-name">{{ getOptionName(option) }}</div>
-                        <!-- 移除 v-if，讓價格區域始終存在 -->
                         <div class="option-price mt-auto">
                           <span v-if="getOptionPrice(option) > 0"
                             >+${{ getOptionPrice(option) }}</span
                           >
-                          <!-- 沒有價格時保持空白佔位 -->
                         </div>
                       </div>
 
@@ -850,7 +853,7 @@ watch(menuCategories, async (newCategories) => {
 
 .menu-items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 0.75rem;
 }
 
@@ -965,7 +968,7 @@ watch(menuCategories, async (newCategories) => {
   color: #000;
 }
 
-/* 選項相關樣式修改 */
+/* 選項相關樣式 */
 .option-card {
   position: relative;
   cursor: pointer;
@@ -1060,7 +1063,7 @@ watch(menuCategories, async (newCategories) => {
   }
 
   .menu-items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 }
 
@@ -1071,11 +1074,18 @@ watch(menuCategories, async (newCategories) => {
   }
 
   .menu-items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 
   .section-content {
     padding: 0.75rem;
+  }
+}
+
+/* 調整選項卡片的響應式寬度 */
+@media (min-width: 992px) and (max-width: 1400px) {
+  .option-card {
+    width: 110px; /* 在中等螢幕上縮小一點 */
   }
 }
 </style>
