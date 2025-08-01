@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <div class="row h-100 g-0">
+    <div class="layout-wrapper h-100">
       <!-- 左側邊欄 -->
       <div class="sidebar-fixed bg-dark text-white sidebar d-flex flex-column">
         <div class="sidebar-content flex-grow-1 d-flex flex-column p-2 pt-4">
@@ -88,14 +88,14 @@
       </div>
 
       <!-- 中間內容區 -->
-      <div class="col-md-8 main-content-wrapper">
+      <div class="main-content-wrapper">
         <div class="main-content h-100">
           <component :is="currentActiveComponent" :brand-id="brandId" :store-id="storeId" />
         </div>
       </div>
 
       <!-- 右側邊欄 - 購物車 -->
-      <div class="col-md-3 cart-wrapper">
+      <div class="cart-wrapper">
         <div class="cart-content h-100 p-2">
           <OrderCart :active-component="counterStore.activeComponent" />
         </div>
@@ -268,6 +268,19 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 基礎布局 */
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.layout-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
 /* 側邊欄樣式 */
 .sidebar {
   height: 100vh;
@@ -278,24 +291,9 @@ onUnmounted(() => {
   height: 100%;
 }
 
-/* 購物車區樣式 */
-.cart-wrapper {
-  height: 100vh;
-  width: 400px;
-  min-width: 400px;
-  flex-shrink: 0;
-}
-
 .cart-content {
   height: 100vh;
   overflow-y: auto;
-}
-
-/* 移除Bootstrap預設padding */
-.app-container .col-md-8,
-.app-container .col-md-3 {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
 }
 
 /* 更新按鈕樣式 */
@@ -374,11 +372,6 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-/* 主要內容區 */
-.main-content-wrapper {
-  flex: 1;
-}
-
 /* 正方形按鈕 */
 .sidebar .btn {
   aspect-ratio: 1 / 1;
@@ -391,5 +384,48 @@ onUnmounted(() => {
 /* 按鈕圖標樣式 */
 .sidebar .btn i {
   font-size: 1.5rem;
+}
+
+.main-content-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 購物車區樣式 */
+.cart-wrapper {
+  width: 300px;
+  min-width: 300px;
+  flex-shrink: 0;
+  height: 100vh;
+}
+
+/* 響應式調整：在更小的螢幕上 */
+@media (max-width: 768px) {
+  .cart-wrapper {
+    width: 280px;
+    min-width: 280px;
+  }
+}
+
+/* 極小螢幕調整 */
+@media (max-width: 576px) {
+  .sidebar-fixed {
+    width: 80px;
+    min-width: 80px;
+  }
+
+  .cart-wrapper {
+    width: 250px;
+    min-width: 250px;
+  }
+
+  /* 縮小側邊欄按鈕文字 */
+  .sidebar .btn span {
+    font-size: 0.75rem;
+  }
+
+  .sidebar .btn i {
+    font-size: 1.2rem;
+  }
 }
 </style>
