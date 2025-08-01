@@ -14,6 +14,7 @@ import orderAdminRoutes from './orderAdmin.js'
 import inventoryRoutes from './inventory.js'
 import menuRoutes from './menu.js'
 import bundleRoutes from './bundle.js'
+import deliveryPlatformRoutes from './deliveryPlatform.js'
 
 // 創建一個主要的 API 路由器
 const apiRouter = express.Router()
@@ -31,6 +32,7 @@ apiRouter.use('/admin', adminRoutes)
 apiRouter.use('/inventory', inventoryRoutes) // 庫存管理路由
 apiRouter.use('/menu', menuRoutes) // 菜單管理路由
 apiRouter.use('/bundle', bundleRoutes) // 兌換券綑綁路由
+apiRouter.use('/delivery', deliveryPlatformRoutes) // 外送平台路由
 
 // 訂單路由 - 按權限分離
 apiRouter.use('/order-customer', orderCustomerRoutes) // 前台客戶訂單
