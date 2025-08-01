@@ -8,14 +8,43 @@ import { AppError } from '../../middlewares/error.js'
 import * as orderSyncService from './orderSyncService.js'
 import crypto from 'crypto'
 
-// UberEats API 設定（從環境變數讀取）
+// 🔧 根據環境動態配置 UberEats API 設定
+const ENVIRONMENT = process.env.UBEREATS_ENVIRONMENT || 'sandbox'
+
 const UBEREATS_CONFIG = {
-  clientId: process.env.UBEREATS_CLIENT_ID,
-  clientSecret: process.env.UBEREATS_CLIENT_SECRET,
-  apiUrl: process.env.UBEREATS_API_URL || 'https://api.uber.com/v1',
-  webhookSecret: process.env.UBEREATS_WEBHOOK_SECRET,
+  // 根據環境選擇對應的配置
+  clientId:
+    ENVIRONMENT === 'production'
+      ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
+      : process.env.UBEREATS_SANDBOX_CLIENT_ID,
+
+  clientSecret:
+    ENVIRONMENT === 'production'
+      ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
+      : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
+
+  webhookSecret:
+    ENVIRONMENT === 'production'
+      ? process.env.UBEREATS_PRODUCTION_WEBHOOK_SECRET
+      : process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET,
+
+  // API URL 根據環境自動設定
+  apiUrl:
+    ENVIRONMENT === 'production' ? 'https://api.uber.com/v1' : 'https://sandbox-api.uber.com/v1',
+
+  // OAuth URL 固定
+  oauthUrl: 'https://login.uber.com/oauth/v2/token',
+
   scope: 'eats.order',
+  environment: ENVIRONMENT,
 }
+
+// 啟動時記錄配置狀態
+console.log(`🔧 UberEats Service initialized in ${ENVIRONMENT} mode`)
+console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
+console.log(`🔑 Client ID configured: ${!!UBEREATS_CONFIG.clientId}`)
+console.log(`🔐 Client Secret configured: ${!!UBEREATS_CONFIG.clientSecret}`)
+console.log(`🔒 Webhook Secret configured: ${!!UBEREATS_CONFIG.webhookSecret}`)
 
 /**
  * 驗證 UberEats webhook 簽名
@@ -110,19 +139,6 @@ export const receiveOrder = async (ubereatsOrderData, signature = null) => {
       store._id,
     )
 
-    // 註解掉自動接單功能，只接收訂單
-    /*
-    if (ubereatsConfig.settings?.autoAcceptOrders) {
-      try {
-        await acceptOrder(orderId, 'Auto-accepted by system')
-        console.log(`✅ Auto-accepted UberEats order: ${orderId}`)
-      } catch (error) {
-        console.error(`❌ Failed to auto-accept order ${orderId}:`, error)
-        // 不拋出錯誤，讓訂單繼續處理
-      }
-    }
-    */
-
     return internalOrder
   } catch (error) {
     console.error('❌ Failed to process UberEats order:', error)
@@ -156,8 +172,8 @@ const getOrderDetails = async (orderId) => {
     console.error(`❌ Failed to get order details for ${orderId}:`, error)
 
     // 在開發階段，如果 API 失敗，可以返回模擬數據以便測試
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🧪 Development mode: returning mock order data')
+    if (UBEREATS_CONFIG.environment === 'sandbox') {
+      console.log('🧪 Sandbox mode: returning mock order data')
       return createMockOrderData(orderId)
     }
 
@@ -175,7 +191,7 @@ const createMockOrderData = (orderId) => {
     display_id: `TEST-${orderId.slice(-4)}`,
     current_state: 'CREATED',
     store: {
-      id: 'test-store-id',
+      id: process.env.UBEREATS_SANDBOX_STORE_ID || 'test-store-id',
       name: 'Test Restaurant',
     },
     eater: {
@@ -227,26 +243,6 @@ const findStoreByUberEatsId = async (ubereatsStoreId) => {
   return store
 }
 
-// 註解掉接受/拒絕訂單功能
-/*
-export const acceptOrder = async (ubereatsOrderId, reason = 'Accepted by POS system') => {
-  // 接受訂單功能
-}
-
-export const rejectOrder = async (ubereatsOrderId, reason = 'restaurant_too_busy') => {
-  // 拒絕訂單功能
-}
-
-export const updateOrderStatus = async (
-  ubereatsOrderId,
-  ubereatsStoreId,
-  status,
-  additionalData = {},
-) => {
-  // 更新訂單狀態功能
-}
-*/
-
 /**
  * 獲取 UberEats API 存取令牌
  * 實作 OAuth 2.0 Client Credentials 流程
@@ -255,9 +251,9 @@ const getAccessToken = async () => {
   try {
     if (!UBEREATS_CONFIG.clientId || !UBEREATS_CONFIG.clientSecret) {
       // 在開發階段允許使用模擬 token
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🧪 Development mode: using mock access token')
-        return 'mock_access_token_for_development'
+      if (UBEREATS_CONFIG.environment === 'sandbox') {
+        console.log('🧪 Sandbox mode: using mock access token')
+        return 'mock_access_token_for_sandbox'
       }
 
       throw new Error('UberEats client ID and secret are required')
@@ -267,34 +263,40 @@ const getAccessToken = async () => {
       `${UBEREATS_CONFIG.clientId}:${UBEREATS_CONFIG.clientSecret}`,
     ).toString('base64')
 
-    const response = await fetch('https://login.uber.com/oauth/v2/token', {
+    console.log(`🔐 Requesting OAuth token from: ${UBEREATS_CONFIG.oauthUrl}`)
+
+    const response = await fetch(UBEREATS_CONFIG.oauthUrl, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: 'grant_type=client_credentials&scope=eats.order',
+      body: `grant_type=client_credentials&scope=${UBEREATS_CONFIG.scope}`,
     })
 
     if (!response.ok) {
-      // 在開發階段，如果 OAuth 失敗，返回模擬 token
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🧪 Development mode: OAuth failed, using mock token')
-        return 'mock_access_token_for_development'
+      const errorText = await response.text()
+      console.error('❌ OAuth response:', response.status, errorText)
+
+      // 在 sandbox 階段，如果 OAuth 失敗，返回模擬 token
+      if (UBEREATS_CONFIG.environment === 'sandbox') {
+        console.log('🧪 Sandbox mode: OAuth failed, using mock token')
+        return 'mock_access_token_for_sandbox'
       }
 
       throw new Error(`OAuth error: ${response.status} ${response.statusText}`)
     }
 
     const tokenData = await response.json()
+    console.log('✅ Successfully obtained OAuth token')
     return tokenData.access_token
   } catch (error) {
     console.error('❌ Failed to get access token:', error)
 
     // 在開發階段提供後備方案
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🧪 Development mode: returning mock token as fallback')
-      return 'mock_access_token_for_development'
+    if (UBEREATS_CONFIG.environment === 'sandbox') {
+      console.log('🧪 Sandbox mode: returning mock token as fallback')
+      return 'mock_access_token_for_sandbox'
     }
 
     throw error
@@ -307,18 +309,25 @@ const getAccessToken = async () => {
  */
 export const checkUberEatsConfig = () => {
   const config = {
+    environment: UBEREATS_CONFIG.environment,
     clientId: !!UBEREATS_CONFIG.clientId,
     clientSecret: !!UBEREATS_CONFIG.clientSecret,
     webhookSecret: !!UBEREATS_CONFIG.webhookSecret,
     apiUrl: !!UBEREATS_CONFIG.apiUrl,
   }
 
-  const isComplete = Object.values(config).every(Boolean)
+  const isComplete = Object.values(config).slice(1).every(Boolean) // 排除 environment
+
+  const missing = Object.keys(config)
+    .slice(1) // 排除 environment
+    .filter((key) => !config[key])
 
   return {
     isComplete,
     config,
-    missing: Object.keys(config).filter((key) => !config[key]),
+    missing,
+    environment: UBEREATS_CONFIG.environment,
+    apiUrl: UBEREATS_CONFIG.apiUrl,
   }
 }
 
@@ -328,11 +337,12 @@ export const checkUberEatsConfig = () => {
  */
 export const testUberEatsConnection = async () => {
   try {
+    console.log(`🧪 Testing UberEats API connection in ${UBEREATS_CONFIG.environment} mode`)
     const accessToken = await getAccessToken()
-    console.log('✅ UberEats API connection test passed')
+    console.log(`✅ UberEats API connection test passed (${UBEREATS_CONFIG.environment})`)
     return true
   } catch (error) {
-    console.error('❌ UberEats API connection test failed:', error)
+    console.error(`❌ UberEats API connection test failed (${UBEREATS_CONFIG.environment}):`, error)
     return false
   }
 }
