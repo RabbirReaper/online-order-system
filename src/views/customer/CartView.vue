@@ -162,7 +162,7 @@
           >
             <span>
               <i class="bi bi-percent me-1"></i>
-              {{ coupon.name }}
+              折價券優惠
             </span>
             <span>-${{ coupon.amount }}</span>
           </div>
