@@ -23,10 +23,16 @@ const UBEREATS_CONFIG = {
       ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
       : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
 
+  // 🔐 支援主要和次要簽名密鑰（用於密鑰輪換）
   webhookSecret:
     ENVIRONMENT === 'production'
       ? process.env.UBEREATS_PRODUCTION_WEBHOOK_SECRET
       : process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET,
+
+  webhookSecretSecondary:
+    ENVIRONMENT === 'production'
+      ? process.env.UBEREATS_PRODUCTION_WEBHOOK_SECRET_SECONDARY
+      : process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET_SECONDARY,
 
   // API URL 根據環境自動設定
   apiUrl:
@@ -44,41 +50,79 @@ console.log(`🔧 UberEats Service initialized in ${ENVIRONMENT} mode`)
 console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
 console.log(`🔑 Client ID configured: ${!!UBEREATS_CONFIG.clientId}`)
 console.log(`🔐 Client Secret configured: ${!!UBEREATS_CONFIG.clientSecret}`)
-console.log(`🔒 Webhook Secret configured: ${!!UBEREATS_CONFIG.webhookSecret}`)
+console.log(`🔒 Primary Webhook Secret configured: ${!!UBEREATS_CONFIG.webhookSecret}`)
+console.log(`🔒 Secondary Webhook Secret configured: ${!!UBEREATS_CONFIG.webhookSecretSecondary}`)
+
+// 檢查簽名驗證能力
+if (UBEREATS_CONFIG.webhookSecret && UBEREATS_CONFIG.webhookSecretSecondary) {
+  console.log(`✅ Key rotation supported: Both primary and secondary keys available`)
+} else if (UBEREATS_CONFIG.webhookSecret || UBEREATS_CONFIG.webhookSecretSecondary) {
+  console.log(`⚠️  Single key mode: Key rotation not supported`)
+} else {
+  console.log(`❌ No webhook secrets configured: Signature verification disabled`)
+}
 
 /**
- * 驗證 UberEats webhook 簽名
+ * 驗證 UberEats webhook 簽名（支援主要和次要密鑰）
  * @param {String} payload - 請求內容
  * @param {String} signature - UberEats 簽名
  */
 const verifyWebhookSignature = (payload, signature) => {
-  if (!UBEREATS_CONFIG.webhookSecret) {
-    console.warn('⚠️  UberEats webhook secret not configured, skipping signature verification')
+  // 如果沒有配置任何簽名密鑰，跳過驗證（僅開發環境）
+  if (!UBEREATS_CONFIG.webhookSecret && !UBEREATS_CONFIG.webhookSecretSecondary) {
+    console.warn('⚠️  No UberEats webhook secrets configured, skipping signature verification')
     return true
   }
 
   try {
-    // UberEats 使用 HMAC-SHA256 簽名
-    const expectedSignature = crypto
-      .createHmac('sha256', UBEREATS_CONFIG.webhookSecret)
-      .update(payload, 'utf8')
-      .digest('hex')
-      .toLowerCase()
-
-    // 移除 'sha256=' 前綴（如果有）
+    // 移除簽名前綴（如果有的話）
     const cleanSignature = signature.startsWith('sha256=')
       ? signature.substring(7).toLowerCase()
       : signature.toLowerCase()
 
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, 'hex'),
-      Buffer.from(cleanSignature, 'hex'),
-    )
+    // 🔐 嘗試主要密鑰驗證
+    if (UBEREATS_CONFIG.webhookSecret) {
+      const expectedSignaturePrimary = crypto
+        .createHmac('sha256', UBEREATS_CONFIG.webhookSecret)
+        .update(payload, 'utf8')
+        .digest('hex')
+        .toLowerCase()
 
-    console.log('🔐 Webhook signature verification:', isValid ? 'VALID' : 'INVALID')
-    return isValid
+      const isPrimaryValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignaturePrimary, 'hex'),
+        Buffer.from(cleanSignature, 'hex'),
+      )
+
+      if (isPrimaryValid) {
+        console.log('🔐 Webhook signature verified with PRIMARY key')
+        return true
+      }
+    }
+
+    // 🔐 嘗試次要密鑰驗證（密鑰輪換支援）
+    if (UBEREATS_CONFIG.webhookSecretSecondary) {
+      const expectedSignatureSecondary = crypto
+        .createHmac('sha256', UBEREATS_CONFIG.webhookSecretSecondary)
+        .update(payload, 'utf8')
+        .digest('hex')
+        .toLowerCase()
+
+      const isSecondaryValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignatureSecondary, 'hex'),
+        Buffer.from(cleanSignature, 'hex'),
+      )
+
+      if (isSecondaryValid) {
+        console.log('🔐 Webhook signature verified with SECONDARY key')
+        console.warn('⚠️  Consider promoting secondary key to primary for better performance')
+        return true
+      }
+    }
+
+    console.log('❌ Webhook signature verification FAILED with both keys')
+    return false
   } catch (error) {
-    console.error('❌ Signature verification failed:', error)
+    console.error('❌ Signature verification error:', error)
     return false
   }
 }
@@ -313,14 +357,24 @@ export const checkUberEatsConfig = () => {
     clientId: !!UBEREATS_CONFIG.clientId,
     clientSecret: !!UBEREATS_CONFIG.clientSecret,
     webhookSecret: !!UBEREATS_CONFIG.webhookSecret,
+    webhookSecretSecondary: !!UBEREATS_CONFIG.webhookSecretSecondary,
     apiUrl: !!UBEREATS_CONFIG.apiUrl,
   }
 
-  const isComplete = Object.values(config).slice(1).every(Boolean) // 排除 environment
+  // 基本配置檢查（不包含 secondary secret，因為它是可選的）
+  const requiredFields = ['clientId', 'clientSecret', 'webhookSecret', 'apiUrl']
+  const isComplete = requiredFields.every((field) => config[field])
 
   const missing = Object.keys(config)
-    .slice(1) // 排除 environment
+    .filter((key) => key !== 'environment' && key !== 'webhookSecretSecondary') // 排除環境和次要密鑰
     .filter((key) => !config[key])
+
+  // 簽名驗證能力評估
+  const signatureCapability = {
+    canVerify: config.webhookSecret || config.webhookSecretSecondary,
+    hasKeyRotationSupport: config.webhookSecret && config.webhookSecretSecondary,
+    recommendedSetup: config.webhookSecret && config.webhookSecretSecondary,
+  }
 
   return {
     isComplete,
@@ -328,6 +382,7 @@ export const checkUberEatsConfig = () => {
     missing,
     environment: UBEREATS_CONFIG.environment,
     apiUrl: UBEREATS_CONFIG.apiUrl,
+    signatureCapability,
   }
 }
 
