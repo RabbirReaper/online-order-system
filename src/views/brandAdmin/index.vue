@@ -1,19 +1,22 @@
 <template>
-  <div class="d-flex vh-100 overflow-hidden">
+  <div class="d-flex app-container">
     <!-- 側邊欄 -->
     <aside class="sidebar bg-dark" :class="{ show: showSidebar }">
-      <div class="d-flex flex-column h-100">
+      <div class="sidebar-wrapper">
         <div class="sidebar-header p-3 d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
             <img src="@/assets/logo.svg" alt="Logo" class="me-2" width="32" height="32" />
-            <h1 class="h5 mb-0 text-white d-none d-md-block">品牌管理系統</h1>
+            <h1 class="h5 mb-0 text-white d-none d-lg-block sidebar-title">品牌管理系統</h1>
+            <h1 class="h6 mb-0 text-white d-none d-md-block d-lg-none sidebar-title-compact">
+              品牌系統
+            </h1>
           </div>
           <button class="btn btn-link text-white d-md-none" @click="toggleSidebar">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
 
-        <nav class="pt-2 pb-2 flex-grow-1 sidebar-nav">
+        <nav class="sidebar-nav flex-grow-1">
           <!-- 儀表板區塊 -->
           <div class="mb-1">
             <router-link
@@ -191,7 +194,8 @@
           </div>
         </nav>
 
-        <div class="border-top p-3">
+        <!-- 固定在底部的登出按鈕 -->
+        <div class="sidebar-footer">
           <button class="btn btn-danger w-100" @click="handleLogout">
             <i class="bi bi-box-arrow-right me-2"></i>
             登出系統
@@ -212,7 +216,6 @@
           </button>
           <h1 class="h5 mb-0">品牌管理系統</h1>
         </div>
-        <!-- 使用 b-dropdown 替代原生的 dropdown -->
         <BDropdown variant="link" no-caret class="text-white">
           <template #button-content>
             <i class="bi bi-person-circle"></i>
@@ -230,7 +233,6 @@
           class="d-none d-md-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
         >
           <h2>{{ getPageTitle() }}</h2>
-          <!-- 使用 b-dropdown 替代原生的 dropdown -->
           <BDropdown text="" size="sm" variant="outline-secondary">
             <template #button-content>
               <i class="bi bi-person-circle me-1"></i>
@@ -252,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { BDropdown, BDropdownItem, BDropdownDivider } from 'bootstrap-vue-next'
 import api from '@/api'
@@ -276,6 +278,12 @@ const isLoading = ref(true)
 
 // 已展開的折疊項目ID列表
 const expandedItems = ref([])
+
+// 設置動態視窗高度
+const setViewportHeight = () => {
+  const vh = window.innerHeight * 0.01
+  document.documentElement.style.setProperty('--vh', `${vh}px`)
+}
 
 // 角色標籤對應
 const getRoleLabel = (role) => {
@@ -301,20 +309,18 @@ const handleSectionToggle = (sectionId, isExpanded) => {
   const index = expandedItems.value.indexOf(sectionId)
 
   if (isExpanded && index === -1) {
-    // 展開該區段
     expandedItems.value.push(sectionId)
   } else if (!isExpanded && index !== -1) {
-    // 折疊該區段
     expandedItems.value.splice(index, 1)
   }
 }
 
-// 切換側邊欄顯示 (用於移動版)
+// 切換側邊欄顯示
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
 }
 
-// 關閉側邊欄當選擇一個項目時 (移動版)
+// 關閉側邊欄當選擇一個項目時
 const closeSidebarOnMobile = () => {
   if (window.innerWidth < 768) {
     showSidebar.value = false
@@ -323,36 +329,13 @@ const closeSidebarOnMobile = () => {
 
 // 根據當前路由名稱獲取頁面標題
 const getPageTitle = () => {
-  const routeName = route.name
   const routePath = route.path
 
-  // 根據路由路徑或名稱返回相應標題
   if (routePath.includes('/stores/create')) return '新增店鋪'
   if (routePath.includes('/stores/edit')) return '編輯店鋪'
   if (routePath.includes('/stores/detail')) return '店鋪詳情'
   if (routePath.includes('/stores')) return '店鋪管理'
 
-  if (routePath.includes('/inventory/logs')) return '庫存變更記錄'
-  if (routePath.includes('/inventory')) return '庫存管理'
-
-  if (routePath.includes('/menus')) return '菜單管理'
-  if (routePath.includes('/dishes')) return '餐點管理'
-  if (routePath.includes('/option-categories')) return '選項類別'
-  if (routePath.includes('/options')) return '選項管理'
-
-  if (routePath.includes('/orders/reports')) return '銷售報表'
-  if (routePath.includes('/orders')) return '訂單管理'
-
-  if (routePath.includes('/coupons')) return '優惠券管理'
-  if (routePath.includes('/point-rules')) return '點數規則'
-
-  if (routePath.includes('/store-admins')) return '店鋪管理員'
-  if (routePath.includes('/customers')) return '顧客管理'
-
-  if (routePath.includes('/settings')) return '品牌設置'
-  if (routePath.includes('/account-settings')) return '帳號設置'
-
-  // 預設標題
   return '品牌儀表板'
 }
 
@@ -364,7 +347,6 @@ const fetchCurrentUserRole = async () => {
       currentUserRole.value = response.role
       currentUserRoleLabel.value = getRoleLabel(response.role)
     } else {
-      // 如果未登入，重定向到登入頁面
       router.push('/admin/login')
     }
   } catch (error) {
@@ -407,7 +389,6 @@ watch(
   () => route.path,
   () => {
     closeSidebarOnMobile()
-    // 不再重設折疊狀態，只在初始化時設定一次
   },
 )
 
@@ -423,6 +404,15 @@ watch(
 
 // 生命週期鉤子
 onMounted(() => {
+  // 設置動態視窗高度
+  setViewportHeight()
+
+  // 監聽視窗大小變化
+  window.addEventListener('resize', setViewportHeight)
+  window.addEventListener('orientationchange', () => {
+    setTimeout(setViewportHeight, 100)
+  })
+
   // 載入用戶角色和品牌資訊
   fetchCurrentUserRole()
   fetchBrandInfo()
@@ -430,45 +420,70 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* CSS 自定義屬性用於動態視窗高度 */
+:root {
+  --vh: 1vh;
+}
+
 /* 全局布局 */
-.d-flex.vh-100 {
+.app-container {
   width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
   overflow: hidden;
 }
 
 /* 側邊欄樣式 */
 .sidebar {
   width: 280px;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   position: fixed;
   left: 0;
   top: 0;
   bottom: 0;
   background-color: #212529;
   z-index: 1030;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s ease-in-out;
+  transition:
+    transform 0.3s ease-in-out,
+    width 0.3s ease-in-out;
 }
 
-.sidebar-nav {
-  overflow-y: auto;
-  scrollbar-width: thin;
+.sidebar-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: calc(var(--vh, 1vh) * 100);
 }
 
 .sidebar-header {
+  flex-shrink: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 0.5rem 0;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  background-color: #212529;
 }
 
 /* 主要內容區域 */
 .main-content {
   flex: 1;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   margin-left: 280px;
-  /* 與sidebar寬度相同 */
   display: flex;
   flex-direction: column;
   width: calc(100% - 280px);
+  transition:
+    margin-left 0.3s ease-in-out,
+    width 0.3s ease-in-out;
 }
 
 .content-wrapper {
@@ -481,12 +496,18 @@ onMounted(() => {
   min-height: calc(100vh - 70px);
 }
 
+/* 側邊欄標題樣式 */
+.sidebar-title-compact {
+  display: none;
+}
+
 /* 導航菜單樣式 */
 .nav-link {
   color: rgba(255, 255, 255, 0.7);
   transition: all 0.2s;
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
+  margin: 0.125rem 0.5rem;
 }
 
 .nav-link:hover {
@@ -502,6 +523,49 @@ onMounted(() => {
 /* 移動版樣式 */
 .mobile-top-nav {
   z-index: 1020;
+}
+
+/* 中等屏幕優化 (1400px以下) */
+@media (max-width: 1399.98px) and (min-width: 768px) {
+  .sidebar {
+    width: 220px;
+  }
+
+  .main-content {
+    margin-left: 220px;
+    width: calc(100% - 220px);
+  }
+
+  /* 側邊欄標題調整 */
+  .sidebar-title {
+    display: none !important;
+  }
+
+  .sidebar-title-compact {
+    display: block !important;
+    font-size: 0.95rem;
+  }
+
+  .sidebar-footer {
+    padding: 0.75rem;
+  }
+
+  .sidebar-footer .btn {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+  }
+
+  /* CollapsibleSection 標題調整 */
+  :deep(.collapsible-section .section-title) {
+    font-size: 0.9rem;
+  }
+}
+
+/* 大屏幕樣式 (1400px以上) */
+@media (min-width: 1400px) {
+  .sidebar-title-compact {
+    display: none !important;
+  }
 }
 
 /* 移動裝置側邊欄 */
@@ -520,21 +584,91 @@ onMounted(() => {
     margin-left: 0;
     width: 100%;
   }
+
+  /* 移動版恢復完整標題 */
+  .sidebar-title {
+    display: block !important;
+  }
+
+  .sidebar-title-compact {
+    display: none !important;
+  }
 }
 
-/* 桌面版側邊欄 */
-@media (min-width: 768px) {
+/* 平板橫向模式優化 */
+@media (max-width: 1024px) and (min-width: 768px) and (orientation: landscape) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .main-content {
+    margin-left: 200px;
+    width: calc(100% - 200px);
+  }
+
+  .sidebar-title-compact {
+    font-size: 0.9rem;
+  }
+}
+
+/* 桌面版側邊欄 (1400px以上) */
+@media (min-width: 1400px) {
+  .sidebar {
+    transform: none !important;
+    width: 280px;
+  }
+
+  .main-content {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+  }
+
+  .sidebar-title-compact {
+    display: none !important;
+  }
+}
+
+/* 中大型桌面版側邊欄 (768px-1399px) */
+@media (min-width: 768px) and (max-width: 1399.98px) {
   .sidebar {
     transform: none !important;
   }
 }
 
-/* 調整 Bootstrap Vue Next dropdown 在黑色背景上的樣式 */
-:deep(.text-white .btn-link) {
-  color: rgba(255, 255, 255, 0.8) !important;
+/* 滾動條樣式 */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
 }
 
-:deep(.text-white .btn-link:hover) {
-  color: #fff !important;
+.sidebar-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 確保在所有平板設備上都能正確顯示 */
+@media (max-width: 1024px) and (orientation: portrait) {
+  .app-container,
+  .sidebar,
+  .main-content {
+    height: calc(var(--vh, 1vh) * 100);
+    max-height: calc(var(--vh, 1vh) * 100);
+  }
+}
+
+@media (max-width: 1024px) and (orientation: landscape) {
+  .app-container,
+  .sidebar,
+  .main-content {
+    height: calc(var(--vh, 1vh) * 100);
+    max-height: calc(var(--vh, 1vh) * 100);
+  }
 }
 </style>
