@@ -75,36 +75,6 @@
                   </button>
                 </div>
               </form>
-
-              <div class="mt-4 text-center">
-                <p class="text-secondary mb-0">快速登入 (測試用)</p>
-                <div class="btn-group-vertical mt-2 w-100">
-                  <button
-                    class="btn btn-sm btn-outline-secondary mb-1"
-                    @click="loginAs('admin', '12345678')"
-                  >
-                    系統主管理員
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-secondary mb-1"
-                    @click="loginAs('test_brand_admin', 'password123')"
-                  >
-                    品牌主管理員
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-secondary mb-1"
-                    @click="loginAs('test_store_admin', 'password123')"
-                  >
-                    店鋪主管理員
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-secondary"
-                    @click="loginAs('test_employee', 'password123')"
-                  >
-                    員工
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -153,8 +123,6 @@ const handleLogin = async () => {
 
     // 檢查登入是否成功
     if (response.success) {
-      console.log('登入成功:', response)
-
       // 根據角色和品牌/店鋪資訊決定重定向路徑
       const redirectPath = getRedirectPath(response.role, response.brand, response.store)
       const finalPath = route.query.redirect || redirectPath
@@ -203,13 +171,6 @@ const getRedirectPath = (role, brand, store) => {
   // 默認返回登入頁面
   return '/admin/login'
 }
-
-// 快速登入功能
-const loginAs = async (username, password) => {
-  formData.username = username
-  formData.password = password
-  await handleLogin()
-}
 </script>
 
 <style scoped>
@@ -257,9 +218,5 @@ img {
   100% {
     transform: scale(1);
   }
-}
-
-.btn-group-vertical .btn {
-  font-size: 0.875rem;
 }
 </style>
