@@ -29,7 +29,7 @@
               :alt="store.name"
             />
             <div class="store-status" :class="store.isActive ? 'bg-success' : 'bg-secondary'">
-              {{ store.isActive ? '營業中' : '已停用' }}
+              {{ store.isActive ? '啟用中' : '已停用' }}
             </div>
           </div>
 
