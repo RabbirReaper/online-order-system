@@ -393,10 +393,17 @@ onUnmounted(() => {
 
 /* 購物車區樣式 */
 .cart-wrapper {
-  width: 300px;
+  width: 400px;
   min-width: 300px;
   flex-shrink: 0;
   height: 100vh;
+}
+
+@media (max-width: 1200px) {
+  .cart-wrapper {
+    width: 300px;
+    min-width: 300px;
+  }
 }
 
 /* 響應式調整：在更小的螢幕上 */
