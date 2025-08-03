@@ -21,7 +21,7 @@
     <!-- 店鋪列表 -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xxl-4 g-4" v-if="!isLoading">
       <div class="col" v-for="store in stores" :key="store._id">
-        <div class="card h-100 store-card" @mouseenter="fetchStoreStats(store)">
+        <div class="card h-100 store-card">
           <div class="card-img-top position-relative overflow-hidden" style="height: 180px">
             <img
               :src="store.image?.url || '/placeholder.jpg'"
@@ -35,39 +35,6 @@
 
           <div class="card-body">
             <h5 class="card-title mb-2">{{ store.name }}</h5>
-
-            <!-- 庫存快速統計 -->
-            <div class="mb-3" style="min-height: 48px">
-              <div v-if="storeStats[store._id]">
-                <div class="d-flex justify-content-between text-muted small">
-                  <span>
-                    <i class="bi bi-box-seam me-1"></i>
-                    總項目: {{ storeStats[store._id].totalItems }}
-                  </span>
-                  <span :class="storeStats[store._id].lowStock > 0 ? 'text-dark' : ''">
-                    <i class="bi bi-exclamation-triangle me-1"></i>
-                    低庫存: {{ storeStats[store._id].lowStock }}
-                  </span>
-                </div>
-                <div class="d-flex justify-content-between text-muted small">
-                  <span :class="storeStats[store._id].outOfStock > 0 ? 'text-danger' : ''">
-                    <i class="bi bi-x-circle me-1"></i>
-                    缺貨: {{ storeStats[store._id].outOfStock }}
-                  </span>
-                  <span>
-                    <i class="bi bi-check-circle me-1"></i>
-                    正常: {{ storeStats[store._id].normal }}
-                  </span>
-                </div>
-              </div>
-              <div v-else-if="loadingStats[store._id]" class="text-center text-muted small">
-                <div class="spinner-border spinner-border-sm me-1" role="status">
-                  <span class="visually-hidden">載入中...</span>
-                </div>
-                載入統計中...
-              </div>
-              <div v-else class="text-center text-muted small">將滑鼠移到卡片上查看統計</div>
-            </div>
           </div>
 
           <div class="card-footer bg-transparent">
@@ -118,8 +85,6 @@ const brandId = computed(() => route.params.brandId)
 const isLoading = ref(true)
 const error = ref('')
 const stores = ref([])
-const storeStats = ref({})
-const loadingStats = ref({}) // 記錄哪些店鋪正在載入統計
 
 // 獲取店鋪列表
 const fetchStores = async () => {
@@ -143,67 +108,6 @@ const fetchStores = async () => {
     error.value = err.response?.data?.message || '獲取店鋪列表時發生錯誤'
   } finally {
     isLoading.value = false
-  }
-}
-
-// 獲取單個店鋪的庫存統計
-const fetchStoreStats = async (store) => {
-  // 如果已經在載入或已經有資料，則不重複載入
-  if (loadingStats.value[store._id] || storeStats.value[store._id]) {
-    return
-  }
-  loadingStats.value[store._id] = true
-
-  try {
-    // 使用獲取店鋪庫存列表的 API 來計算統計
-    const response = await api.inventory.getStoreInventory({
-      storeId: store._id,
-      inventoryType: 'dish',
-      onlyTracked: true,
-    })
-
-    if (response && response.inventory) {
-      // 手動計算統計數據
-      const items = response.inventory
-      const stats = {
-        totalItems: items.length,
-        lowStock: 0,
-        outOfStock: 0,
-        normal: 0,
-      }
-
-      // 計算各種狀態的數量
-      items.forEach((item) => {
-        if (!item.isInventoryTracked) {
-          stats.normal++
-        } else if (item.availableStock === 0) {
-          stats.outOfStock++
-        } else if (item.availableStock <= item.minStockAlert) {
-          stats.lowStock++
-        } else {
-          stats.normal++
-        }
-      })
-
-      storeStats.value[store._id] = stats
-    } else {
-      storeStats.value[store._id] = {
-        totalItems: 0,
-        lowStock: 0,
-        outOfStock: 0,
-        normal: 0,
-      }
-    }
-  } catch (err) {
-    console.error(`獲取店鋪 ${store.name} 的庫存統計失敗:`, err)
-    storeStats.value[store._id] = {
-      totalItems: 0,
-      lowStock: 0,
-      outOfStock: 0,
-      normal: 0,
-    }
-  } finally {
-    loadingStats.value[store._id] = false
   }
 }
 
