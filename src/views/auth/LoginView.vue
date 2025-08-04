@@ -8,7 +8,13 @@
               <div class="text-center mb-4">
                 <img src="@/assets/logo.svg" alt="Logo" width="60" height="60" class="mb-3" />
                 <h2 class="font-weight-bold">管理系統登入</h2>
-                <p class="text-muted">請輸入您的帳號和密碼</p>
+
+                <div v-if="isSystemAdmin">
+                  <p class="text-muted">系統管理員登入</p>
+                </div>
+                <div v-else>
+                  <p class="text-muted">品牌管理員登入</p>
+                </div>
               </div>
 
               <form @submit.prevent="handleLogin">
@@ -84,18 +90,22 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/api'
 
 const router = useRouter()
 const route = useRoute()
 
+// 從路由參數中獲取 brandId 和登入類型
+const brandId = computed(() => route.params.brandId)
+const loginType = computed(() => route.meta?.loginType || 'system')
+const isSystemAdmin = computed(() => loginType.value === 'system' || !brandId.value)
+
 // 表單資料
 const formData = reactive({
   username: '',
   password: '',
-  remember: false,
 })
 
 // 狀態
@@ -115,16 +125,23 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    // 調用管理員認證 API
-    const response = await api.adminAuth.login({
+    // 調用管理員認證 API，傳入品牌上下文
+    const loginData = {
       name: formData.username,
       password: formData.password,
-    })
+    }
+
+    // 如果有 brandId，加入到登入資料中
+    if (brandId.value) {
+      loginData.brandId = brandId.value
+    }
+
+    const response = await api.adminAuth.login(loginData)
 
     // 檢查登入是否成功
     if (response.success) {
-      // 根據角色和品牌/店鋪資訊決定重定向路徑
-      const redirectPath = getRedirectPath(response.role, response.brand, response.store)
+      // 簡化的重定向邏輯
+      const redirectPath = getRedirectPath()
       const finalPath = route.query.redirect || redirectPath
 
       router.push(finalPath)
@@ -146,30 +163,15 @@ const handleLogin = async () => {
   }
 }
 
-// 根據角色和品牌/店鋪資訊決定重定向路徑
-const getRedirectPath = (role, brand, store) => {
-  if (!role) return '/admin/login'
-
-  // 系統級管理員導向 boss 頁面
-  if (role === 'primary_system_admin' || role === 'system_admin') {
-    return '/boss'
+// 根據有沒有 brandId 決定重定向路徑
+const getRedirectPath = () => {
+  // 有 brandId → 品牌管理頁面
+  if (brandId.value) {
+    return `/admin/${brandId.value}`
   }
 
-  // 品牌級管理員導向品牌管理頁面
-  if ((role === 'primary_brand_admin' || role === 'brand_admin') && brand?._id) {
-    return `/admin/${brand._id}`
-  }
-
-  // 店鋪級管理員和員工導向品牌管理頁面（具體店鋪權限由後端控制）
-  if (
-    (role === 'primary_store_admin' || role === 'store_admin' || role === 'employee') &&
-    brand?._id
-  ) {
-    return `/admin/${brand._id}`
-  }
-
-  // 默認返回登入頁面
-  return '/admin/login'
+  // 沒有 brandId → 系統管理頁面
+  return '/boss'
 }
 </script>
 
@@ -196,9 +198,15 @@ const getRedirectPath = (role, brand, store) => {
   transition: all 0.3s ease;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(78, 115, 223, 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Logo 動畫 */

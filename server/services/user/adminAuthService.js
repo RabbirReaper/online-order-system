@@ -12,11 +12,12 @@ import { AppError } from '../../middlewares/error.js'
  * @param {Object} credentials - 登入憑證
  * @param {String} credentials.name - 用戶名
  * @param {String} credentials.password - 密碼
+ * @param {String} [credentials.brandId] - 品牌ID（用於驗證）
  * @param {Object} session - 會話對象
  * @returns {Promise<Object>} 管理員信息
  */
 export const adminLogin = async (credentials, session) => {
-  const { name, password } = credentials
+  const { name, password, brandId } = credentials
 
   if (!name || !password) {
     throw new AppError('用戶名和密碼為必填欄位', 400)
@@ -25,8 +26,8 @@ export const adminLogin = async (credentials, session) => {
   // 查找管理員，包含新的字段
   const admin = await Admin.findOne({ name })
     .select('+password')
-    .populate('brand', 'name')
-    .populate('store', 'name')
+    .populate('brand', 'name isActive')
+    .populate('store', 'name isActive')
 
   if (!admin) {
     throw new AppError('用戶名或密碼錯誤', 401)
@@ -42,6 +43,36 @@ export const adminLogin = async (credentials, session) => {
 
   if (!isPasswordValid) {
     throw new AppError('用戶名或密碼錯誤', 401)
+  }
+
+  // 品牌上下文驗證（如果提供了 brandId）
+  if (brandId) {
+    // 系統管理員可以登入任何品牌的管理介面
+    const isSystemAdmin = ['primary_system_admin', 'system_admin'].includes(admin.role)
+
+    if (!isSystemAdmin) {
+      // 非系統管理員需要驗證品牌權限
+      if (!admin.brand || admin.brand._id.toString() !== brandId) {
+        throw new AppError('您沒有權限管理此品牌', 403)
+      }
+
+      // 檢查品牌是否啟用
+      if (!admin.brand.isActive) {
+        throw new AppError('此品牌已停用，無法登入', 403)
+      }
+    }
+  } else {
+    // 如果沒有提供 brandId，檢查是否為系統管理員
+    const isSystemAdmin = ['primary_system_admin', 'system_admin'].includes(admin.role)
+
+    if (!isSystemAdmin) {
+      throw new AppError('品牌管理員必須透過品牌登入頁面登入', 400)
+    }
+  }
+
+  // 店鋪權限額外檢查
+  if (admin.store && !admin.store.isActive) {
+    throw new AppError('您管理的店鋪已停用，請聯繫品牌管理員', 403)
   }
 
   // 更新最後登入時間

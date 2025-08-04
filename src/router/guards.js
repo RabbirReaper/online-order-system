@@ -62,9 +62,29 @@ export const requireNoAuth = async (to, from, next) => {
   }
 }
 
+// 取得管理員登入頁面路徑的輔助函數
+const getAdminLoginPath = (brandId = null, role = null) => {
+  // 系統管理員使用不包含 brandId 的登入路由（如果有的話）
+  if (role === 'primary_system_admin' || role === 'system_admin') {
+    // 系統管理員可能需要特殊的登入路由，這裡暫時使用預設品牌
+    // 或者你可以創建一個專門的系統管理員登入路由
+    return brandId ? `/admin/${brandId}/login` : '/admin/login' // 需要一個預設的處理方式
+  }
+
+  // 其他管理員需要 brandId
+  if (brandId) {
+    return `/admin/${brandId}/login`
+  }
+
+  // 如果沒有 brandId，需要有一個預設處理方式
+  // 可能需要重定向到品牌選擇頁面或使用預設品牌
+  return '/admin/login' // 這裡需要你決定預設行為
+}
+
 // 全局前置守衛邏輯
 export const globalBeforeEach = async (to, from, next) => {
-  if (to.path === '/admin/login') {
+  // 處理管理員登入路由（允許訪問）
+  if (to.path.includes('/admin/') && to.path.includes('/login')) {
     return next()
   }
 
@@ -73,8 +93,12 @@ export const globalBeforeEach = async (to, from, next) => {
     const { loggedIn, role, brand, store } = await checkAdminAuth()
 
     if (!loggedIn) {
+      // 優先使用路由中的 brandId，否則嘗試從當前用戶的品牌獲取
+      const targetBrandId = to.params.brandId || brand?._id
+      const loginPath = getAdminLoginPath(targetBrandId, role)
+
       return next({
-        path: '/admin/login',
+        path: loginPath,
         query: { redirect: to.fullPath },
       })
     }
@@ -85,7 +109,7 @@ export const globalBeforeEach = async (to, from, next) => {
 
       if (!allowedRoles.includes(role)) {
         // 根據角色選擇重定向路徑
-        let redirectPath = '/admin/login'
+        let redirectPath = getAdminLoginPath(brand?._id, role)
 
         if (role === 'primary_system_admin' || role === 'system_admin') {
           redirectPath = '/boss'
@@ -102,7 +126,8 @@ export const globalBeforeEach = async (to, from, next) => {
     if (to.params.brandId && role !== 'primary_system_admin' && role !== 'system_admin') {
       if (!brand || brand._id !== to.params.brandId) {
         alert('您沒有權限管理此品牌')
-        return next('/admin/login')
+        const loginPath = getAdminLoginPath(to.params.brandId, role)
+        return next(loginPath)
       }
     }
 

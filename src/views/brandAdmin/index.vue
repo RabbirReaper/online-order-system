@@ -470,10 +470,12 @@ const fetchBrandInfo = async () => {
 const handleLogout = async () => {
   try {
     await api.adminAuth.logout()
-    router.push('/admin/login')
+    // 登出後重定向到當前品牌的登入頁面
+    router.push(`/admin/${brandId.value}/login`)
   } catch (error) {
     console.error('登出失敗', error)
-    router.push('/admin/login')
+    // 即使登出 API 失敗，也重定向到登入頁面
+    router.push(`/admin/${brandId.value}/login`)
   }
 }
 

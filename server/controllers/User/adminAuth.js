@@ -6,14 +6,22 @@ import { asyncHandler } from '../../middlewares/error.js'
  */
 export const adminLogin = asyncHandler(async (req, res) => {
   const { name, password } = req.body
+  const { brandId } = req.params
 
-  const result = await adminAuthService.adminLogin({ name, password }, req.session)
+  const credentials = {
+    name,
+    password,
+    brandId,
+  }
+
+  const result = await adminAuthService.adminLogin(credentials, req.session)
 
   res.json({
     success: true,
     message: '登入成功',
     role: result.role,
-    manage: result.manage,
+    brand: result.brand,
+    store: result.store,
   })
 })
 

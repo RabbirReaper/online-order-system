@@ -251,9 +251,11 @@ const fetchCurrentUserRole = async () => {
 const handleLogout = async () => {
   try {
     await api.adminAuth.logout()
+    // 系統管理員登出後重定向到系統管理員登入頁面（不包含 brandId）
     router.push('/admin/login')
   } catch (error) {
     console.error('登出失敗', error)
+    // 即使登出 API 失敗，也重定向到登入頁面
     router.push('/admin/login')
   }
 }
