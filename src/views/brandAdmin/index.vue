@@ -29,8 +29,8 @@
             </router-link>
           </div>
 
-          <!-- 店鋪管理 -->
-          <div class="mb-1">
+          <!-- 店鋪管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
             <CollapsibleSection
               title="店鋪管理"
               :initialExpanded="isExpanded('storeManagement')"
@@ -38,19 +38,30 @@
             >
               <template #icon><i class="bi bi-shop me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/stores`">
+              <!-- 店鋪列表 - 權限等級 2 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/stores`"
+                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+              >
                 <i class="bi bi-list-ul me-2"></i>
                 店鋪列表
               </router-link>
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/inventory`">
+
+              <!-- 庫存狀態 - 權限等級 2 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/inventory`"
+                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+              >
                 <i class="bi bi-box2 me-2"></i>
                 庫存狀態
               </router-link>
             </CollapsibleSection>
           </div>
 
-          <!-- 菜單管理 -->
-          <div class="mb-1">
+          <!-- 菜單管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
             <CollapsibleSection
               title="菜單管理"
               :initialExpanded="isExpanded('menuManagement')"
@@ -58,15 +69,20 @@
             >
               <template #icon><i class="bi bi-menu-button-wide me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/menus`">
+              <!-- 菜單列表 - 權限等級 2 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/menus`"
+                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+              >
                 <i class="bi bi-list-check me-2"></i>
                 菜單列表
               </router-link>
             </CollapsibleSection>
           </div>
 
-          <!-- 餐點管理 -->
-          <div class="mb-1">
+          <!-- 餐點管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
             <CollapsibleSection
               title="餐點管理"
               :initialExpanded="isExpanded('dishManagement')"
@@ -74,33 +90,50 @@
             >
               <template #icon><i class="bi bi-cup-hot me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/dishes/template`">
+              <!-- 餐點列表 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/dishes/template`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-grid me-2"></i>
                 餐點列表
               </router-link>
 
+              <!-- 建立餐點模板 - 權限等級 4 -->
               <router-link
                 class="nav-link ps-4 py-2"
                 :to="`/admin/${brandId}/dishes/template/create`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
               >
                 <i class="bi bi-card-list me-2"></i>
                 建立餐點模板
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/option-categories`">
+              <!-- 選項類別 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/option-categories`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-tags me-2"></i>
                 選項類別
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/options`">
+              <!-- 選項管理 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/options`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-list-check me-2"></i>
                 選項管理
               </router-link>
             </CollapsibleSection>
           </div>
 
-          <!-- 訂單管理 -->
-          <div class="mb-1">
+          <!-- 訂單管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
             <CollapsibleSection
               title="訂單管理"
               :initialExpanded="isExpanded('orderManagement')"
@@ -108,20 +141,30 @@
             >
               <template #icon><i class="bi bi-receipt me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/orders`">
+              <!-- 訂單列表 - 權限等級 2 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/orders`"
+                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+              >
                 <i class="bi bi-list-ul me-2"></i>
                 訂單列表
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/orders/reports`">
+              <!-- 銷售報表 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/orders/reports`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-bar-chart me-2"></i>
                 銷售報表
               </router-link>
             </CollapsibleSection>
           </div>
 
-          <!-- 促銷管理 -->
-          <div class="mb-1">
+          <!-- 促銷管理 - 需要品牌管理員(4)以上權限才顯示整個區塊 -->
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.BRAND_ADMIN)">
             <CollapsibleSection
               title="促銷管理"
               :initialExpanded="isExpanded('promotionManagement')"
@@ -129,30 +172,50 @@
             >
               <template #icon><i class="bi bi-megaphone me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/coupons`">
+              <!-- 優惠券 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/coupons`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-percent me-2"></i>
                 優惠券
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/vouchers`">
+              <!-- 兌換券 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/vouchers`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-ticket-detailed me-2"></i>
                 兌換券
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/bundles`">
+              <!-- 包裝商品 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/bundles`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-box-seam me-2"></i>
                 包裝商品
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/point-rules`">
+              <!-- 點數規則 - 權限等級 4 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/point-rules`"
+                v-if="hasRole(PERMISSIONS.BRAND_ADMIN)"
+              >
                 <i class="bi bi-coin me-2"></i>
                 點數規則
               </router-link>
             </CollapsibleSection>
           </div>
 
-          <!-- 用戶管理 -->
-          <div class="mb-1">
+          <!-- 用戶管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
             <CollapsibleSection
               title="用戶管理"
               :initialExpanded="isExpanded('userManagement')"
@@ -160,14 +223,40 @@
             >
               <template #icon><i class="bi bi-people me-2"></i></template>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/store-admins`">
+              <!-- 店鋪管理員 - 權限等級 3 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/store-admins`"
+                v-if="hasRole(PERMISSIONS.PRIMARY_STORE_ADMIN)"
+              >
                 <i class="bi bi-person-workspace me-2"></i>
                 店鋪管理員
               </router-link>
 
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/customers`">
+              <!-- 顧客管理 - 權限等級 2 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/customers`"
+                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+              >
                 <i class="bi bi-person-vcard me-2"></i>
                 顧客管理
+              </router-link>
+            </CollapsibleSection>
+          </div>
+
+          <!-- 系統設置 -->
+          <div class="mb-1">
+            <CollapsibleSection
+              title="系統設置"
+              :initialExpanded="isExpanded('systemSettings')"
+              @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)"
+            >
+              <template #icon><i class="bi bi-gear me-2"></i></template>
+
+              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/account-settings`">
+                <i class="bi bi-person-gear me-2"></i>
+                帳號設置
               </router-link>
             </CollapsibleSection>
           </div>
@@ -233,15 +322,25 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { BDropdown, BDropdownItem, BDropdownDivider } from 'bootstrap-vue-next'
 import api from '@/api'
 import CollapsibleSection from '@/components/common/CollapsibleSection.vue'
+import { usePermissions } from '@/composables/usePermissions'
 
 // 路由
 const router = useRouter()
 const route = useRoute()
+
+// 引入權限管理功能
+const {
+  hasRole,
+  PERMISSIONS,
+  fetchUserPermissions,
+  getRoleDisplayName: getPermissionRoleLabel,
+  currentUserRole: permissionUserRole,
+} = usePermissions()
 
 // 品牌 ID 從路由中獲取
 const brandId = computed(() => route.params.brandId)
@@ -249,8 +348,8 @@ const brandId = computed(() => route.params.brandId)
 // 側邊欄是否顯示 (用於移動版)
 const showSidebar = ref(false)
 
-// 狀態變數
-const currentUserRole = ref('')
+// 狀態變數 (避免與 usePermissions 衝突，使用不同的變數名)
+const localUserRole = ref('')
 const currentUserRoleLabel = ref('載入中...')
 const currentBrandName = ref('載入中...')
 const isLoading = ref(true)
@@ -264,8 +363,8 @@ const setViewportHeight = () => {
   document.documentElement.style.setProperty('--vh', `${vh}px`)
 }
 
-// 角色標籤對應
-const getRoleLabel = (role) => {
+// 角色標籤對應 (保持原有的邏輯，但使用不同的函數名避免衝突)
+const getLocalRoleLabel = (role) => {
   const labels = {
     primary_system_admin: '系統主管理員',
     system_admin: '系統管理員',
@@ -314,17 +413,32 @@ const getPageTitle = () => {
   if (routePath.includes('/stores/edit')) return '編輯店鋪'
   if (routePath.includes('/stores/detail')) return '店鋪詳情'
   if (routePath.includes('/stores')) return '店鋪管理'
+  if (routePath.includes('/inventory')) return '庫存管理'
+  if (routePath.includes('/menus')) return '菜單管理'
+  if (routePath.includes('/dishes')) return '餐點管理'
+  if (routePath.includes('/orders/reports')) return '銷售報表'
+  if (routePath.includes('/orders')) return '訂單管理'
+  if (routePath.includes('/coupons')) return '優惠券管理'
+  if (routePath.includes('/vouchers')) return '兌換券管理'
+  if (routePath.includes('/bundles')) return '包裝商品管理'
+  if (routePath.includes('/point-rules')) return '點數規則管理'
+  if (routePath.includes('/store-admins')) return '店鋪管理員'
+  if (routePath.includes('/customers')) return '顧客管理'
+  if (routePath.includes('/account-settings')) return '帳號設置'
 
   return '品牌儀表板'
 }
 
-// 獲取當前用戶角色
+// 獲取當前用戶角色 (整合兩個權限系統)
 const fetchCurrentUserRole = async () => {
   try {
     const response = await api.adminAuth.checkStatus()
     if (response.loggedIn) {
-      currentUserRole.value = response.role
-      currentUserRoleLabel.value = getRoleLabel(response.role)
+      localUserRole.value = response.role
+      currentUserRoleLabel.value = getLocalRoleLabel(response.role)
+
+      // 同時更新 usePermissions 的狀態
+      await fetchUserPermissions()
     } else {
       router.push('/admin/login')
     }
@@ -382,7 +496,7 @@ watch(
 )
 
 // 生命週期鉤子
-onMounted(() => {
+onMounted(async () => {
   // 設置動態視窗高度
   setViewportHeight()
 
@@ -393,8 +507,8 @@ onMounted(() => {
   })
 
   // 載入用戶角色和品牌資訊
-  fetchCurrentUserRole()
-  fetchBrandInfo()
+  await fetchCurrentUserRole()
+  await fetchBrandInfo()
 })
 </script>
 
