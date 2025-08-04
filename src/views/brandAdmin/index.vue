@@ -42,11 +42,6 @@
                 <i class="bi bi-list-ul me-2"></i>
                 店鋪列表
               </router-link>
-
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/stores/create`">
-                <i class="bi bi-plus-circle me-2"></i>
-                新增店鋪
-              </router-link>
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/inventory`">
                 <i class="bi bi-box2 me-2"></i>
                 庫存狀態
@@ -173,22 +168,6 @@
               <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/customers`">
                 <i class="bi bi-person-vcard me-2"></i>
                 顧客管理
-              </router-link>
-            </CollapsibleSection>
-          </div>
-
-          <!-- 系統設置 -->
-          <div class="mb-1">
-            <CollapsibleSection
-              title="系統設置"
-              :initialExpanded="isExpanded('systemSettings')"
-              @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)"
-            >
-              <template #icon><i class="bi bi-gear me-2"></i></template>
-
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/account-settings`">
-                <i class="bi bi-person-gear me-2"></i>
-                帳號設置
               </router-link>
             </CollapsibleSection>
           </div>
