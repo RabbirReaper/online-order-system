@@ -5,8 +5,7 @@ import { asyncHandler } from '../../middlewares/error.js'
  * 管理員登入
  */
 export const adminLogin = asyncHandler(async (req, res) => {
-  const { name, password } = req.body
-  const { brandId } = req.params
+  const { name, password, brandId } = req.body // 改為從 body 獲取 brandId
 
   const credentials = {
     name,
