@@ -2,24 +2,28 @@ import * as storeService from '../../services/store/storeManagement.js'
 import { asyncHandler } from '../../middlewares/error.js'
 
 // 獲取所有店家
-export const getAllStores = asyncHandler(async (req, res) => {
-  try {
-    const options = {
-      brandId: req.brandId,
-      activeOnly: req.query.activeOnly === 'true',
-    }
-
-    const stores = await storeService.getAllStores(options)
-
-    res.json({
-      success: true,
-      stores,
-    })
-  } catch (error) {
-    console.error('Error getting stores:', error)
-    res.status(500).json({ success: false, message: 'Internal server error' })
+export const getAllStores = async (req, res, next) => {
+  const options = {
+    brandId: req.params.brandId,
+    activeOnly: req.query.activeOnly === 'true',
+    search: req.query.search,
   }
-})
+
+  // ✅ 新增：傳入管理員資訊進行權限過濾
+  const adminInfo = {
+    role: req.auth.role,
+    brand: req.auth.brand,
+    store: req.auth.store,
+  }
+
+  const stores = await storeService.getAllStores(options, adminInfo)
+
+  res.status(200).json({
+    success: true,
+    message: '獲取店鋪列表成功',
+    stores,
+  })
+}
 
 // 獲取單個店家
 export const getStoreById = asyncHandler(async (req, res) => {

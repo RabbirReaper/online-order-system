@@ -10,10 +10,11 @@ export default function (apiClient) {
      * @param {Object} params - 登入參數
      * @param {string} params.name - 管理員用戶名
      * @param {string} params.password - 密碼
+     * @param {string} [params.brandId] - 品牌 ID（可選）
      * @returns {Promise} - API 回應
      */
-    login({ name, password }) {
-      return apiClient.post('/admin-auth/login', { name, password })
+    login({ name, password, brandId }) {
+      return apiClient.post('/admin-auth/login', { name, password, brandId })
     },
 
     /**

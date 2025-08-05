@@ -246,7 +246,34 @@ const cleanup = () => {
   if (timer) {
     clearInterval(timer)
   }
+
+  // 新增：清理事件監聽器
+  window.removeEventListener('resize', throttledSetVhProperty)
+  window.removeEventListener('orientationchange', setVhProperty)
 }
+
+// 動態設置視窗高度變數
+const setVhProperty = () => {
+  const vh = window.innerHeight * 0.01
+  document.documentElement.style.setProperty('--vh', `${vh}px`)
+}
+
+// 節流函數，避免過度頻繁觸發
+const throttle = (func, limit) => {
+  let inThrottle
+  return function () {
+    const args = arguments
+    const context = this
+    if (!inThrottle) {
+      func.apply(context, args)
+      inThrottle = true
+      setTimeout(() => (inThrottle = false), limit)
+    }
+  }
+}
+
+// 創建節流版本的設置函數
+const throttledSetVhProperty = throttle(setVhProperty, 100)
 
 // 生命周期鉤子
 onMounted(async () => {
@@ -255,6 +282,16 @@ onMounted(async () => {
 
   updateTime()
   timer = setInterval(updateTime, 1000 * 60) // 每分鐘更新
+
+  // 初始設置視窗高度
+  setVhProperty()
+
+  // 新增：監聽視窗大小變化和方向變化
+  window.addEventListener('resize', throttledSetVhProperty)
+  window.addEventListener('orientationchange', () => {
+    // 方向變化時稍微延遲，等待瀏覽器調整完成
+    setTimeout(setVhProperty, 100)
+  })
 
   // 載入初始數據
   await counterStore.fetchStoreData(brandId, storeId)
@@ -268,22 +305,27 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* CSS 自定義屬性用於動態視窗高度 */
+:root {
+  --vh: 1vh;
+}
+
 /* 基礎布局 */
 .app-container {
   width: 100vw;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   overflow: hidden;
 }
 
 .layout-wrapper {
   display: flex;
   width: 100%;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
 }
 
 /* 側邊欄樣式 */
 .sidebar {
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   overflow-y: auto;
 }
 
@@ -292,7 +334,7 @@ onUnmounted(() => {
 }
 
 .cart-content {
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
   overflow-y: auto;
 }
 
@@ -393,10 +435,17 @@ onUnmounted(() => {
 
 /* 購物車區樣式 */
 .cart-wrapper {
-  width: 300px;
+  width: 400px;
   min-width: 300px;
   flex-shrink: 0;
-  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+@media (max-width: 1200px) {
+  .cart-wrapper {
+    width: 300px;
+    min-width: 300px;
+  }
 }
 
 /* 響應式調整：在更小的螢幕上 */

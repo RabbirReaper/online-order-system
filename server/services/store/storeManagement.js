@@ -11,16 +11,15 @@ import * as imageHelper from '../imageHelper.js'
 import { DateTime } from 'luxon'
 
 /**
- * 獲取所有店鋪
+ * 獲取所有店鋪（支援基於權限的過濾）
  * @param {Object} options - 查詢選項
- * @param {String} options.brandId - 按品牌篩選
- * @param {Boolean} options.activeOnly - 是否只顯示啟用的店鋪
+ * @param {Object} adminInfo - 管理員資訊，用於權限過濾
  * @returns {Promise<Array>} 店鋪列表
  */
-export const getAllStores = async (options = {}) => {
-  const { brandId, activeOnly = false } = options
+export const getAllStores = async (options = {}, adminInfo = null) => {
+  const { brandId, activeOnly = false, search } = options
 
-  // 構建查詢條件
+  // 構建基本查詢條件
   const queryConditions = {}
 
   if (brandId) {
@@ -31,13 +30,72 @@ export const getAllStores = async (options = {}) => {
     queryConditions.isActive = true
   }
 
-  // 查詢店鋪，移除分頁
+  if (search) {
+    queryConditions.name = { $regex: search, $options: 'i' }
+  }
+
+  // ✅ 新增：基於管理員權限的過濾
+  if (adminInfo) {
+    const permissionFilters = buildStorePermissionFilters(adminInfo, brandId)
+
+    if (permissionFilters === false) {
+      throw new AppError('沒有權限查看店鋪資料', 403)
+    }
+
+    // 合併權限過濾條件
+    Object.assign(queryConditions, permissionFilters)
+  }
+
+  // console.log('🔍 Store 查詢條件 (包含權限過濾):', queryConditions)
+
+  // 查詢店鋪
   const stores = await Store.find(queryConditions)
     .populate('brand', 'name')
     .populate('menuId', 'name')
     .sort({ name: 1 })
 
+  // console.log(`📊 權限過濾後查詢到 ${stores.length} 個店鋪`)
+
   return stores
+}
+
+/**
+ * 建立店鋪權限過濾條件
+ * @param {Object} adminInfo - 管理員資訊
+ * @param {String} requestedBrandId - 請求的品牌ID
+ * @returns {Object|false} 過濾條件或 false（無權限）
+ */
+function buildStorePermissionFilters(adminInfo, requestedBrandId) {
+  const { role, brand, store } = adminInfo
+
+  switch (role) {
+    case 'primary_system_admin':
+    case 'system_admin':
+      // 系統管理員可以看所有品牌的店鋪
+      return requestedBrandId ? { brand: requestedBrandId } : {}
+
+    case 'primary_brand_admin':
+    case 'brand_admin':
+      // 品牌管理員只能看自己品牌的店鋪
+      if (brand.toString() !== requestedBrandId) {
+        return false // 沒有權限
+      }
+      return { brand: brand }
+
+    case 'primary_store_admin':
+    case 'store_admin':
+      // 店鋪管理員只能看自己管理的店鋪
+      if (brand.toString() !== requestedBrandId) {
+        return false
+      }
+      return {
+        brand: brand,
+        _id: store, // ✅ 關鍵：只能看自己的店鋪
+      }
+
+    default:
+      return false
+  }
 }
 
 /**
