@@ -411,13 +411,20 @@ const fetchStores = async () => {
   networkError.value = ''
 
   try {
-    // 獲取店鋪列表
+    // ✅ API 調用保持不變
     const response = await api.store.getAllStores({
       brandId: brandId.value,
     })
 
     if (response && response.stores) {
       allStores.value = response.stores
+
+      // ✅ 新增：處理空店鋪列表的情況
+      if (allStores.value.length === 0) {
+        console.log('⚠️ 當前管理員沒有權限管理任何店鋪')
+        networkError.value = '您目前沒有權限管理任何店鋪，請聯繫系統管理員'
+        return
+      }
 
       // 為每個店鋪獲取菜單統計
       const storesWithStats = await Promise.all(
@@ -431,8 +438,6 @@ const fetchStores = async () => {
       )
 
       allStores.value = storesWithStats
-
-      // 應用篩選
       applyFilters()
     } else {
       allStores.value = []
@@ -440,7 +445,15 @@ const fetchStores = async () => {
     }
   } catch (error) {
     console.error('獲取店鋪列表失敗:', error)
-    networkError.value = '網路連線有問題，無法獲取店鋪資料'
+
+    // ✅ 改善錯誤處理
+    if (error.response?.status === 403) {
+      networkError.value = '沒有權限查看店鋪資料，請聯繫管理員'
+    } else if (error.response?.data?.message) {
+      networkError.value = error.response.data.message
+    } else {
+      networkError.value = '網路連線有問題，無法獲取店鋪資料'
+    }
   } finally {
     isLoading.value = false
   }
