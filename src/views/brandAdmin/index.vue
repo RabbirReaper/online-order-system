@@ -244,22 +244,6 @@
               </router-link>
             </CollapsibleSection>
           </div>
-
-          <!-- 系統設置 -->
-          <div class="mb-1">
-            <CollapsibleSection
-              title="系統設置"
-              :initialExpanded="isExpanded('systemSettings')"
-              @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)"
-            >
-              <template #icon><i class="bi bi-gear me-2"></i></template>
-
-              <router-link class="nav-link ps-4 py-2" :to="`/admin/${brandId}/account-settings`">
-                <i class="bi bi-person-gear me-2"></i>
-                帳號設置
-              </router-link>
-            </CollapsibleSection>
-          </div>
         </nav>
 
         <!-- 固定在底部的登出按鈕 -->
@@ -307,7 +291,7 @@
               {{ currentUserRoleLabel }}
             </template>
             <h6 class="dropdown-header">{{ currentBrandName }}</h6>
-            <b-dropdown-item :to="`/admin/${brandId}/account-settings`">設置</b-dropdown-item>
+            <b-dropdown-item :to="`/admin/${brandId}/account-settings`">帳號設置</b-dropdown-item>
             <b-dropdown-divider></b-dropdown-divider>
             <b-dropdown-item @click="handleLogout">登出</b-dropdown-item>
           </BDropdown>
@@ -433,6 +417,7 @@ const getPageTitle = () => {
 const fetchCurrentUserRole = async () => {
   try {
     const response = await api.adminAuth.checkStatus()
+
     if (response.loggedIn) {
       localUserRole.value = response.role
       currentUserRoleLabel.value = getLocalRoleLabel(response.role)

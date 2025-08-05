@@ -16,7 +16,14 @@ router.get('/', authenticate('admin'), requireSystemLevel, brandController.getAl
 router.get(
   '/:brandId',
   authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
   requireBrandAccess,
   brandController.getBrandById,
 )
