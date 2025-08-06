@@ -82,7 +82,7 @@
           </div>
 
           <!-- 餐點管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
-          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.BRAND_ADMIN)">
             <CollapsibleSection
               title="餐點管理"
               :initialExpanded="isExpanded('dishManagement')"
