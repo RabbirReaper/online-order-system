@@ -9,6 +9,7 @@ import { customerRoutes } from './routes/customer.js'
 import { authRoutes } from './routes/auth.js'
 import { memberRoutes } from './routes/member.js'
 import { commonRoutes } from './routes/common.js'
+import { landingRoutes } from './routes/landing.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,7 @@ const router = createRouter({
     ...authRoutes,
     ...memberRoutes,
     ...commonRoutes,
+    ...landingRoutes,
   ],
   // 添加滾動行為配置
   scrollBehavior(to, from, savedPosition) {
