@@ -495,7 +495,7 @@ const goBack = () => {
   if (menuType.value !== menuStore.currentMenuType) {
     menuStore.setMenuType(menuType.value)
   }
-  router.go(-1)
+  router.back()
 }
 
 // 跳轉到登入頁面

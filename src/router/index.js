@@ -1,3 +1,5 @@
+// router/index.js - 簡化的 scrollBehavior 配置
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { globalBeforeEach } from './guards.js'
 
@@ -23,29 +25,31 @@ const router = createRouter({
     ...commonRoutes,
     ...landingRoutes,
   ],
-  // 添加滾動行為配置
+
+  // 簡化的滾動行為 - 依賴瀏覽器自動機制
   scrollBehavior(to, from, savedPosition) {
-    // 如果有保存的位置（瀏覽器前進/後退）
+    // 開發環境調試信息
+
+    // 1. 優先使用瀏覽器提供的 savedPosition
     if (savedPosition) {
       return savedPosition
     }
 
-    // 如果是從詳情頁返回菜單頁，恢復之前的滾動位置
-    if (from.name?.includes('detail') && to.name === 'menu') {
-      const savedScrollPosition = sessionStorage.getItem(
-        `scroll_${to.name}_${to.params.brandId}_${to.params.storeId}`,
-      )
-      if (savedScrollPosition) {
-        return { top: parseInt(savedScrollPosition), behavior: 'instant' }
+    // 2. MenuView 使用 KeepAlive，完全依賴瀏覽器處理
+    if (to.name === 'menu') {
+      if (from.name === 'dish-detail' || from.name === 'bundle-detail') {
+        // 從詳情頁返回菜單頁 - 讓瀏覽器自動處理
+        return false // 不執行路由級別的滾動控制
+      } else {
+        return { top: 0 }
       }
     }
 
-    // 如果是菜單頁面，不自動滾動到頂部
-    if (to.name === 'menu') {
-      return false // 保持當前位置
+    // 3. 進入詳情頁 - 滾動到頂部
+    if (to.name === 'dish-detail' || to.name === 'bundle-detail') {
+      return { top: 0 }
     }
 
-    // 其他情況滾動到頂部
     return { top: 0 }
   },
 })

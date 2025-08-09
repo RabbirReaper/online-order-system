@@ -149,7 +149,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 import MenuHeader from '@/components/customer/menu/MenuHeader.vue'
@@ -157,13 +157,13 @@ import CategoryNavigator from '@/components/customer/menu/CategoryNavigator.vue'
 import MenuCategoryList from '@/components/customer/menu/MenuCategoryList.vue'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/customerAuth'
-import { useMenuStore } from '@/stores/menu' // 新增
+import { useMenuStore } from '@/stores/menu'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
-const menuStore = useMenuStore() // 新增
+const menuStore = useMenuStore()
 
 // 路由參數
 const brandId = computed(() => route.params.brandId)
@@ -178,7 +178,6 @@ const store = ref({
   address: '',
 })
 
-// 使用 menuStore 的狀態，而不是本地狀態
 const currentMenuType = computed({
   get: () => menuStore.currentMenuType,
   set: (value) => menuStore.setMenuType(value),
@@ -188,15 +187,19 @@ const currentMenu = ref({ categories: [] })
 const isLoadingStore = ref(true)
 const isLoadingMenu = ref(false)
 const menuError = ref(null)
+const hasInitialized = ref(false)
 
-// 計算屬性
+// === 移除所有手動滾動相關的代碼 ===
+// const lastScrollPosition = ref(0) // 刪除
+// 不再需要 lastScrollPosition
+
+// 計算屬性保持不變
 const hasMenuCategories = computed(() => {
   return currentMenu.value.categories && currentMenu.value.categories.length > 0
 })
 
 const navigationCategories = computed(() => {
   if (!hasMenuCategories.value) return []
-
   return currentMenu.value.categories
     .map((category) => ({
       categoryName: category.name,
@@ -207,19 +210,11 @@ const navigationCategories = computed(() => {
     .sort((a, b) => a.order - b.order)
 })
 
-const hasCartItems = computed(() => {
-  return cartStore.itemCount > 0
-})
+const hasCartItems = computed(() => cartStore.itemCount > 0)
+const cartItemCount = computed(() => cartStore.itemCount)
+const cartTotal = computed(() => cartStore.total)
 
-const cartItemCount = computed(() => {
-  return cartStore.itemCount
-})
-
-const cartTotal = computed(() => {
-  return cartStore.total
-})
-
-// 方法
+// 方法保持不變
 const getMenuTypeText = (type) => {
   const typeMap = {
     food: '餐點菜單',
@@ -231,12 +226,14 @@ const getMenuTypeText = (type) => {
 
 const switchMenuType = async (type) => {
   if (currentMenuType.value === type || isLoadingMenu.value) return
-
-  currentMenuType.value = type // 這會自動調用 menuStore.setMenuType
+  currentMenuType.value = type
   await loadMenuData()
 }
 
+// 其他業務邏輯方法保持不變...
 const loadStoreData = async () => {
+  if (store.value.name && hasInitialized.value) return
+
   try {
     const storeData = await api.store.getStoreById({
       brandId: brandId.value,
@@ -264,7 +261,6 @@ const loadMenuData = async () => {
   menuError.value = null
 
   try {
-    // 獲取指定類型的啟用菜單
     const response = await api.menu.getAllStoreMenus({
       brandId: brandId.value,
       storeId: storeId.value,
@@ -274,14 +270,10 @@ const loadMenuData = async () => {
     })
 
     if (response.success && response.menus && response.menus.length > 0) {
-      // 取第一個啟用的菜單（同類型應該只有一個啟用）
       currentMenu.value = response.menus[0]
 
-      // 確保分類按順序排列
       if (currentMenu.value.categories) {
         currentMenu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0))
-
-        // 確保每個分類的商品按順序排列
         currentMenu.value.categories.forEach((category) => {
           if (category.items) {
             category.items.sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -301,9 +293,8 @@ const loadMenuData = async () => {
   }
 }
 
-// 處理項目選擇 - 修改為傳遞菜單類型
 const handleItemSelect = (item) => {
-  // 根據商品類型導航到不同的詳情頁面，並帶上菜單類型
+  // 不再需要保存滾動位置，瀏覽器會自動處理
   if (item.itemType === 'dish' && item.dishTemplate) {
     router.push({
       name: 'dish-detail',
@@ -313,7 +304,7 @@ const handleItemSelect = (item) => {
         dishId: item.dishTemplate._id,
       },
       query: {
-        menuType: menuStore.currentMenuType, // 新增菜單類型參數
+        menuType: menuStore.currentMenuType,
       },
     })
   } else if (item.itemType === 'bundle' && item.bundle) {
@@ -325,7 +316,7 @@ const handleItemSelect = (item) => {
         bundleId: item.bundle._id,
       },
       query: {
-        menuType: menuStore.currentMenuType, // 新增菜單類型參數
+        menuType: menuStore.currentMenuType,
       },
     })
   } else {
@@ -333,7 +324,6 @@ const handleItemSelect = (item) => {
   }
 }
 
-// 登入相關方法
 const handleLogin = () => {
   router.push({ name: 'customer-login' })
 }
@@ -347,12 +337,11 @@ const handleLogout = async () => {
   }
 }
 
-// 購物車相關方法
 const goToCart = () => {
   router.push({ name: 'cart' })
 }
 
-// 監聽 brandId 變化
+// 監聽器保持不變
 watch(
   () => brandId.value,
   (newBrandId) => {
@@ -363,22 +352,16 @@ watch(
   { immediate: true },
 )
 
-// 生命周期
-onMounted(async () => {
-  // 設置菜單狀態 - 新增
+// 初始化邏輯
+const initialize = async () => {
+  if (hasInitialized.value) return
+
   menuStore.setBrandAndStore(brandId.value, storeId.value)
-
-  // 恢復菜單狀態 - 新增
   menuStore.restoreState()
-
-  // 設置購物車的品牌和店鋪ID
   cartStore.setBrandAndStore(brandId.value, storeId.value)
 
-  // 設置 authStore 的 brandId 並檢查登入狀態
   if (brandId.value) {
     authStore.setBrandId(brandId.value)
-
-    // 檢查並更新登入狀態
     try {
       await authStore.checkAuthStatus()
     } catch (error) {
@@ -386,10 +369,27 @@ onMounted(async () => {
     }
   }
 
-  // 載入數據
   await loadStoreData()
   isLoadingStore.value = false
   await loadMenuData()
+
+  hasInitialized.value = true
+}
+
+// === 簡化的生命週期鉤子 ===
+onMounted(async () => {
+  await initialize()
+})
+
+// KeepAlive 生命週期 - 只處理業務邏輯，不處理滾動
+onActivated(() => {
+  document.documentElement.style.scrollBehavior = 'auto'
+  document.body.style.scrollBehavior = 'auto'
+
+  // 只處理業務邏輯
+  if (cartStore.currentBrand !== brandId.value || cartStore.currentStore !== storeId.value) {
+    cartStore.setBrandAndStore(brandId.value, storeId.value)
+  }
 })
 </script>
 
@@ -673,18 +673,5 @@ onMounted(async () => {
   .menu-type-btn .me-2 {
     margin-right: 0.25rem !important;
   }
-}
-
-/* ===== 平滑圖片載入 ===== */
-:deep(.menu-item-image) {
-  transition: opacity 0.3s ease;
-}
-
-:deep(.menu-item-image[data-loading]) {
-  opacity: 0.5;
-}
-
-:deep(.menu-item-image[data-loaded]) {
-  opacity: 1;
 }
 </style>
