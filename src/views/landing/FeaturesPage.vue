@@ -36,10 +36,9 @@
                   有效提升顧客忠誠度與回購率。
                 </p>
                 <ul class="feature-benefits">
-                  <li><i class="bi bi-check-circle"></i>消費自動累積積分，無需人工操作</li>
-                  <li><i class="bi bi-check-circle"></i>多層級會員制度，精準行銷</li>
+                  <li><i class="bi bi-check-circle"></i>消費自動累積點數，無需人工操作</li>
+                  <li><i class="bi bi-check-circle"></i>會員制度，精準分析個別需求</li>
                   <li><i class="bi bi-check-circle"></i>個人化優惠推送，提升轉換率</li>
-                  <li><i class="bi bi-check-circle"></i>生日優惠自動發送，增加黏著度</li>
                   <li><i class="bi bi-check-circle"></i>點數兌換機制，促進消費</li>
                 </ul>
               </div>
@@ -50,7 +49,6 @@
                   <i class="bi bi-star-fill"></i>
                   <p>會員積點系統展示區域</p>
                   <div class="demo-stats">
-                    <div class="stat">會員等級: VIP</div>
                     <div class="stat">目前積分: 1,250</div>
                     <div class="stat">本月消費: $3,580</div>
                   </div>
@@ -190,7 +188,7 @@
             <div class="component-card">
               <div class="component-header">
                 <div class="component-icon">
-                  <i class="bi bi-cash-register"></i>
+                  <i class="bi bi-calculator"></i>
                 </div>
                 <h4>櫃檯 POS 系統</h4>
                 <p>高效率的收銀點餐系統</p>
