@@ -93,7 +93,7 @@
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
                             <strong>24/7 技術支援</strong>
-                            <span>全天候客服協助</span>
+                            <span>24/7 接收客服需求，專人儘快處理</span>
                           </div>
                         </li>
                         <li>

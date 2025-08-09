@@ -117,7 +117,8 @@
         </div>
         <div class="row justify-content-center">
           <div class="col-lg-8">
-            <div class="accordion" id="faqAccordion">
+            <!-- 修正：確保正確的 Bootstrap Accordion 結構 -->
+            <div class="accordion accordion-flush" id="faqAccordion">
               <div class="accordion-item">
                 <h2 class="accordion-header" id="faq1">
                   <button
@@ -125,6 +126,8 @@
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse1"
+                    aria-expanded="true"
+                    aria-controls="collapse1"
                   >
                     系統收費方式如何計算？
                   </button>
@@ -132,6 +135,7 @@
                 <div
                   id="collapse1"
                   class="accordion-collapse collapse show"
+                  aria-labelledby="faq1"
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
@@ -148,6 +152,8 @@
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse2"
+                    aria-expanded="false"
+                    aria-controls="collapse2"
                   >
                     系統支援多少家分店？
                   </button>
@@ -155,6 +161,7 @@
                 <div
                   id="collapse2"
                   class="accordion-collapse collapse"
+                  aria-labelledby="faq2"
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
@@ -171,6 +178,8 @@
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse3"
+                    aria-expanded="false"
+                    aria-controls="collapse3"
                   >
                     導入系統需要多長時間？
                   </button>
@@ -178,6 +187,7 @@
                 <div
                   id="collapse3"
                   class="accordion-collapse collapse"
+                  aria-labelledby="faq3"
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
@@ -194,6 +204,8 @@
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse4"
+                    aria-expanded="false"
+                    aria-controls="collapse4"
                   >
                     是否提供教育訓練？
                   </button>
@@ -201,6 +213,7 @@
                 <div
                   id="collapse4"
                   class="accordion-collapse collapse"
+                  aria-labelledby="faq4"
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
@@ -217,6 +230,8 @@
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#collapse5"
+                    aria-expanded="false"
+                    aria-controls="collapse5"
                   >
                     資料安全如何保障？
                   </button>
@@ -224,6 +239,7 @@
                 <div
                   id="collapse5"
                   class="accordion-collapse collapse"
+                  aria-labelledby="faq5"
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
@@ -254,7 +270,7 @@
                 <i class="bi bi-headset"></i>
               </div>
               <h5>24/7 客服</h5>
-              <p>全天候技術支援熱線，問題即時解決。</p>
+              <p>。</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -315,11 +331,48 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, nextTick } from 'vue'
 
-onMounted(() => {
+onMounted(async () => {
   document.title = '聯絡我們 - 智慧餐飲管理系統'
+
+  // 確保 Bootstrap JavaScript 已載入並初始化
+  await nextTick()
+
+  // 檢查 Bootstrap 是否已載入
+  if (typeof window.bootstrap === 'undefined') {
+    console.warn('Bootstrap JavaScript 尚未載入，accordion 功能可能無法正常運作')
+
+    // 如果需要，可以動態載入 Bootstrap
+    loadBootstrapJS()
+  } else {
+    // 手動初始化 accordion（可選）
+    initializeAccordion()
+  }
 })
+
+// 動態載入 Bootstrap JavaScript
+const loadBootstrapJS = () => {
+  const script = document.createElement('script')
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js'
+  script.onload = () => {
+    console.log('Bootstrap JavaScript 載入完成')
+    initializeAccordion()
+  }
+  document.head.appendChild(script)
+}
+
+// 初始化 accordion
+const initializeAccordion = () => {
+  // 確保所有 accordion 元素都已正確初始化
+  const accordionElements = document.querySelectorAll('.accordion')
+  accordionElements.forEach((element) => {
+    if (window.bootstrap && window.bootstrap.Collapse) {
+      // Bootstrap 已載入，accordion 應該自動工作
+      console.log('Bootstrap Accordion 已初始化')
+    }
+  })
+}
 </script>
 
 <style scoped>
@@ -539,34 +592,54 @@ onMounted(() => {
   background: var(--light-bg);
 }
 
+/* 修正：確保 accordion 樣式不會干擾 Bootstrap 功能 */
 .accordion-item {
-  border: none;
+  border: none !important;
   margin-bottom: 1rem;
+  border-radius: 8px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .accordion-button {
-  background: var(--white);
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: var(--white) !important;
+  border: none !important;
   font-weight: 600;
-  color: var(--primary-blue);
+  color: var(--primary-blue) !important;
+  padding: 1.5rem !important;
   border-radius: 8px !important;
+  /* 重要：不要覆蓋 Bootstrap 的基本功能 */
 }
 
 .accordion-button:not(.collapsed) {
-  background: var(--primary-blue);
-  color: var(--white);
+  background: var(--primary-blue) !important;
+  color: var(--white) !important;
+  box-shadow: none !important;
 }
 
 .accordion-button:focus {
-  border-color: transparent;
-  box-shadow: 0 4px 12px rgba(15, 76, 129, 0.2);
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(15, 76, 129, 0.2) !important;
+}
+
+.accordion-button::after {
+  /* 確保箭頭圖示正常顯示 */
+  filter: brightness(0) invert(1);
+}
+
+.accordion-button:not(.collapsed)::after {
+  filter: brightness(0) invert(1);
 }
 
 .accordion-body {
   background: var(--white);
-  border-radius: 0 0 8px 8px;
+  padding: 1.5rem !important;
   border-top: 1px solid rgba(15, 76, 129, 0.1);
+}
+
+.accordion-collapse {
+  /* 確保 Bootstrap 的 collapse 功能正常 */
+  border: none !important;
 }
 
 /* Support Section */

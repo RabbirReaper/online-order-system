@@ -4,8 +4,8 @@
     <section class="hero-section">
       <div class="container">
         <div class="row align-items-center min-vh-100">
-          <div class="col-lg-6">
-            <div class="hero-content">
+          <div class="col-12">
+            <div class="hero-content text-center">
               <h1 class="hero-title">
                 智慧餐飲管理
                 <span class="highlight">新時代</span>
@@ -29,56 +29,14 @@
                 </div>
               </div>
               <div class="hero-actions">
-                <button class="btn btn-cta btn-lg me-3">
+                <router-link to="/features" class="btn btn-cta btn-lg me-3">
                   <i class="bi bi-play-circle me-2"></i>
-                  立即體驗 Demo
-                </button>
-                <button class="btn btn-outline-primary btn-lg">
+                  立即了解功能
+                </router-link>
+                <router-link to="/contact" class="btn btn-outline-primary btn-lg">
                   <i class="bi bi-telephone me-2"></i>
                   聯絡我們
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-6">
-            <div class="hero-image">
-              <div class="demo-screens">
-                <div class="screen screen-pos">
-                  <div class="screen-header">POS 收銀系統</div>
-                  <div class="screen-content">
-                    <div class="pos-interface">
-                      <div class="menu-grid">
-                        <div class="menu-item">牛肉漢堡</div>
-                        <div class="menu-item">雞肉沙拉</div>
-                        <div class="menu-item">薯條</div>
-                        <div class="menu-item">可樂</div>
-                      </div>
-                      <div class="order-summary">
-                        <div class="order-item">牛肉漢堡 x1</div>
-                        <div class="order-total">$150</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="screen screen-mobile">
-                  <div class="screen-header">顧客點餐 App</div>
-                  <div class="screen-content">
-                    <div class="mobile-menu">
-                      <div class="menu-category">今日推薦</div>
-                      <div class="dish-item">
-                        <div class="dish-image"></div>
-                        <div class="dish-info">
-                          <div class="dish-name">招牌牛肉堡</div>
-                          <div class="dish-price">$150</div>
-                        </div>
-                      </div>
-                      <div class="member-points">
-                        <i class="bi bi-star-fill"></i>
-                        可獲得 15 點積分
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </router-link>
               </div>
             </div>
           </div>
@@ -162,24 +120,7 @@
                   <i class="bi bi-phone"></i>
                 </div>
                 <h4>顧客點餐系統</h4>
-              </div>
-              <div class="demo-preview">
-                <div class="mobile-preview">
-                  <div class="mobile-screen">
-                    <div class="mobile-header">菜單瀏覽</div>
-                    <div class="mobile-content">
-                      <div class="menu-tabs">
-                        <span class="tab active">餐點</span>
-                        <span class="tab">預購券</span>
-                        <span class="tab">點數兌換</span>
-                      </div>
-                      <div class="cart-info">
-                        <i class="bi bi-cart3"></i>
-                        2 項商品 - $300
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <p class="demo-description">直觀易用的點餐介面，支援多種訂餐模式</p>
               </div>
               <div class="demo-features">
                 <div class="demo-feature">
@@ -194,6 +135,10 @@
                   <i class="bi bi-check-circle"></i>
                   多元付款方式
                 </div>
+                <div class="demo-feature">
+                  <i class="bi bi-check-circle"></i>
+                  會員積點整合
+                </div>
               </div>
             </div>
           </div>
@@ -204,28 +149,7 @@
                   <i class="bi bi-laptop"></i>
                 </div>
                 <h4>品牌管理後台</h4>
-              </div>
-              <div class="demo-preview">
-                <div class="dashboard-preview">
-                  <div class="dashboard-nav">
-                    <div class="nav-item">儀表板</div>
-                    <div class="nav-item">店鋪管理</div>
-                    <div class="nav-item">菜單管理</div>
-                    <div class="nav-item">促銷管理</div>
-                  </div>
-                  <div class="dashboard-content">
-                    <div class="stat-cards">
-                      <div class="stat-card">
-                        <div class="stat-value">12</div>
-                        <div class="stat-label">總店數</div>
-                      </div>
-                      <div class="stat-card">
-                        <div class="stat-value">1,234</div>
-                        <div class="stat-label">會員數</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <p class="demo-description">全方位的營運管理平台，掌握每個營運細節</p>
               </div>
               <div class="demo-features">
                 <div class="demo-feature">
@@ -240,6 +164,10 @@
                   <i class="bi bi-check-circle"></i>
                   促銷活動設計
                 </div>
+                <div class="demo-feature">
+                  <i class="bi bi-check-circle"></i>
+                  會員資料分析
+                </div>
               </div>
             </div>
           </div>
@@ -247,31 +175,10 @@
             <div class="demo-card">
               <div class="demo-header">
                 <div class="demo-icon">
-                  <i class="bi bi-cash-register"></i>
+                  <i class="bi bi-calculator"></i>
                 </div>
                 <h4>櫃檯 POS 系統</h4>
-              </div>
-              <div class="demo-preview">
-                <div class="pos-preview">
-                  <div class="pos-screen">
-                    <div class="pos-header">櫃檯點餐</div>
-                    <div class="pos-layout">
-                      <div class="menu-section">
-                        <div class="menu-category">主餐</div>
-                        <div class="menu-items">
-                          <div class="menu-button">牛肉堡</div>
-                          <div class="menu-button">雞肉堡</div>
-                        </div>
-                      </div>
-                      <div class="order-section">
-                        <div class="order-list">
-                          <div class="order-item">牛肉堡 x1</div>
-                        </div>
-                        <div class="order-total">$150</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <p class="demo-description">高效率的收銀點餐系統，提升服務速度</p>
               </div>
               <div class="demo-features">
                 <div class="demo-feature">
@@ -285,6 +192,10 @@
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
                   會員資料查詢
+                </div>
+                <div class="demo-feature">
+                  <i class="bi bi-check-circle"></i>
+                  訂單管理追蹤
                 </div>
               </div>
             </div>
@@ -341,7 +252,9 @@
                 </div>
               </div>
               <div class="pricing-footer">
-                <button class="btn btn-cta btn-lg w-100">立即開始使用</button>
+                <router-link to="/pricing" class="btn btn-cta btn-lg w-100"
+                  >了解更多收費詳情</router-link
+                >
                 <p class="pricing-note">30 天免費試用，無需信用卡</p>
               </div>
             </div>
@@ -358,14 +271,10 @@
             <h2 class="cta-title">準備開始數位轉型？</h2>
             <p class="cta-subtitle">立即聯絡我們，讓專業團隊為您量身打造最適合的餐飲管理解決方案</p>
             <div class="cta-actions">
-              <button class="btn btn-cta btn-lg me-3">
+              <router-link to="/contact" class="btn btn-cta btn-lg">
                 <i class="bi bi-calendar-check me-2"></i>
                 預約諮詢
-              </button>
-              <button class="btn btn-outline-light btn-lg">
-                <i class="bi bi-download me-2"></i>
-                下載資料
-              </button>
+              </router-link>
             </div>
           </div>
         </div>
@@ -386,9 +295,9 @@
             <div class="footer-links">
               <h6>產品功能</h6>
               <ul>
-                <li><a href="#demo">系統展示</a></li>
-                <li><a href="#features">核心功能</a></li>
-                <li><a href="#pricing">收費方案</a></li>
+                <li><router-link to="/features">核心功能</router-link></li>
+                <li><router-link to="/pricing">收費方案</router-link></li>
+                <li><router-link to="/about">關於我們</router-link></li>
               </ul>
             </div>
           </div>
@@ -396,9 +305,9 @@
             <div class="footer-links">
               <h6>支援服務</h6>
               <ul>
-                <li><a href="#contact">技術支援</a></li>
-                <li><a href="#contact">使用教學</a></li>
-                <li><a href="#contact">常見問題</a></li>
+                <li><router-link to="/contact">技術支援</router-link></li>
+                <li><router-link to="/contact">使用教學</router-link></li>
+                <li><router-link to="/contact">常見問題</router-link></li>
               </ul>
             </div>
           </div>
@@ -567,6 +476,7 @@ onMounted(() => {
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
+  justify-content: center;
 }
 
 .stat-item {
@@ -582,140 +492,14 @@ onMounted(() => {
 
 .stat-label {
   font-size: 0.9rem;
-  opacity: 0.8;
+  color: var(--white);
 }
 
 .hero-actions {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-}
-
-/* Demo Screens */
-.demo-screens {
-  position: relative;
-  height: 500px;
-}
-
-.screen {
-  position: absolute;
-  background: var(--white);
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  color: var(--text-blue);
-}
-
-.screen-pos {
-  width: 320px;
-  height: 240px;
-  top: 50px;
-  left: 0;
-  transform: rotate(-5deg);
-}
-
-.screen-mobile {
-  width: 200px;
-  height: 360px;
-  top: 20px;
-  right: 50px;
-  transform: rotate(8deg);
-}
-
-.screen-header {
-  background: var(--primary-blue);
-  color: var(--white);
-  padding: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-.screen-content {
-  padding: 1rem;
-  height: calc(100% - 2.4rem);
-}
-
-.pos-interface {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.menu-item {
-  background: var(--light-bg);
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  text-align: center;
-}
-
-.order-summary {
-  margin-top: auto;
-  border-top: 1px solid #eee;
-  padding-top: 0.5rem;
-}
-
-.order-item {
-  font-size: 0.7rem;
-  margin-bottom: 0.25rem;
-}
-
-.order-total {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--cta-red);
-}
-
-.mobile-menu {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.menu-category {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-}
-
-.dish-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.dish-image {
-  width: 30px;
-  height: 30px;
-  background: var(--accent-orange);
-  border-radius: 4px;
-  margin-right: 0.5rem;
-}
-
-.dish-name {
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.dish-price {
-  font-size: 0.7rem;
-  color: var(--cta-red);
-  font-weight: 600;
-}
-
-.member-points {
-  margin-top: auto;
-  font-size: 0.6rem;
-  color: var(--accent-yellow);
-  font-weight: 600;
+  justify-content: center;
 }
 
 /* Features Section */
@@ -800,7 +584,7 @@ onMounted(() => {
 }
 
 .demo-header {
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
   text-align: center;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -821,182 +605,10 @@ onMounted(() => {
   color: var(--white);
 }
 
-.demo-preview {
-  padding: 1.5rem;
-  background: var(--light-bg);
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mobile-preview {
-  width: 120px;
-}
-
-.mobile-screen {
-  background: var(--white);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.mobile-header {
-  background: var(--primary-blue);
-  color: var(--white);
-  padding: 0.5rem;
-  font-size: 0.7rem;
-  text-align: center;
-}
-
-.mobile-content {
-  padding: 0.75rem;
-}
-
-.menu-tabs {
-  display: flex;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.tab {
-  font-size: 0.6rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  background: #f0f0f0;
-}
-
-.tab.active {
-  background: var(--accent-yellow);
+.demo-description {
   color: var(--text-blue);
-}
-
-.cart-info {
-  background: var(--cta-red);
-  color: var(--white);
-  padding: 0.5rem;
-  border-radius: 6px;
-  font-size: 0.6rem;
-  text-align: center;
-}
-
-.dashboard-preview {
-  width: 200px;
-}
-
-.dashboard-nav {
-  background: var(--primary-blue);
-  color: var(--white);
-  padding: 0.75rem;
-}
-
-.nav-item {
-  font-size: 0.7rem;
-  padding: 0.25rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.nav-item:last-child {
-  border-bottom: none;
-}
-
-.dashboard-content {
-  padding: 0.75rem;
-  background: var(--white);
-}
-
-.stat-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.stat-card {
-  background: var(--light-bg);
-  padding: 0.5rem;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.stat-value {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--primary-blue);
-}
-
-.stat-label {
-  font-size: 0.6rem;
-  color: var(--text-blue);
-  opacity: 0.7;
-}
-
-.pos-preview {
-  width: 180px;
-}
-
-.pos-screen {
-  background: var(--white);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.pos-header {
-  background: var(--primary-blue);
-  color: var(--white);
-  padding: 0.5rem;
-  font-size: 0.7rem;
-  text-align: center;
-}
-
-.pos-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  padding: 0.75rem;
-  gap: 0.5rem;
-}
-
-.menu-category {
-  font-size: 0.6rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: var(--primary-blue);
-}
-
-.menu-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.menu-button {
-  background: var(--accent-yellow);
-  padding: 0.25rem;
-  border-radius: 4px;
-  font-size: 0.6rem;
-  text-align: center;
-  font-weight: 600;
-}
-
-.order-section {
-  border-left: 1px solid #eee;
-  padding-left: 0.5rem;
-}
-
-.order-list {
-  margin-bottom: 0.5rem;
-}
-
-.order-item {
-  font-size: 0.6rem;
-  margin-bottom: 0.25rem;
-}
-
-.order-total {
-  font-weight: 700;
-  font-size: 0.7rem;
-  color: var(--cta-red);
-  text-align: center;
+  opacity: 0.8;
+  margin-bottom: 1rem;
 }
 
 .demo-features {
@@ -1214,21 +826,6 @@ onMounted(() => {
     font-size: 2rem;
   }
 
-  .demo-screens {
-    height: 300px;
-  }
-
-  .screen-pos {
-    width: 250px;
-    height: 180px;
-  }
-
-  .screen-mobile {
-    width: 150px;
-    height: 270px;
-    right: 20px;
-  }
-
   .cta-title {
     font-size: 2rem;
   }
@@ -1254,22 +851,6 @@ onMounted(() => {
 
   .stat-number {
     font-size: 1.5rem;
-  }
-
-  .demo-screens {
-    height: 250px;
-  }
-
-  .screen-pos {
-    width: 200px;
-    height: 150px;
-    left: -20px;
-  }
-
-  .screen-mobile {
-    width: 120px;
-    height: 220px;
-    right: 10px;
   }
 }
 </style>
