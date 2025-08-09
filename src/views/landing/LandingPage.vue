@@ -33,7 +33,7 @@
                   <i class="bi bi-play-circle me-2"></i>
                   立即了解功能
                 </router-link>
-                <router-link to="/contact" class="btn btn-outline-primary btn-lg">
+                <router-link to="/contact" class="btn btn-outline-light btn-lg">
                   <i class="bi bi-telephone me-2"></i>
                   聯絡我們
                 </router-link>
