@@ -1,13 +1,16 @@
 <template>
   <div class="about-page">
+    <!-- Navbar -->
+    <Navbar />
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="container">
         <div class="row align-items-center min-vh-75">
           <div class="col-lg-6">
-            <h1 class="hero-title">關於我們</h1>
+            <h1 class="hero-title">{{ $t('about.title') }}</h1>
             <p class="hero-subtitle">
-              致力於為餐飲業者提供最專業的數位化解決方案，協助您提升營運效率、增加營收。
+              {{ $t('about.subtitle') }}
             </p>
           </div>
           <div class="col-lg-6">
@@ -27,8 +30,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">我們的使命</h2>
-            <p class="section-subtitle">透過科技創新，讓餐飲業營運更智慧、更高效</p>
+            <h2 class="section-title">{{ $t('about.mission.title') }}</h2>
+            <p class="section-subtitle">{{ $t('about.mission.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
@@ -37,8 +40,8 @@
               <div class="mission-icon">
                 <i class="bi bi-lightbulb"></i>
               </div>
-              <h4>創新技術</h4>
-              <p>持續投入研發，提供最前沿的餐飲管理技術解決方案。</p>
+              <h4>{{ $t('about.mission.innovation.title') }}</h4>
+              <p>{{ $t('about.mission.innovation.description') }}</p>
             </div>
           </div>
           <div class="col-md-4">
@@ -46,8 +49,8 @@
               <div class="mission-icon">
                 <i class="bi bi-heart"></i>
               </div>
-              <h4>用心服務</h4>
-              <p>以客戶需求為中心，提供貼心、專業的技術支援與服務。</p>
+              <h4>{{ $t('about.mission.service.title') }}</h4>
+              <p>{{ $t('about.mission.service.description') }}</p>
             </div>
           </div>
           <div class="col-md-4">
@@ -55,8 +58,8 @@
               <div class="mission-icon">
                 <i class="bi bi-graph-up"></i>
               </div>
-              <h4>共同成長</h4>
-              <p>與合作夥伴攜手並進，在數位轉型的道路上共創佳績。</p>
+              <h4>{{ $t('about.mission.growth.title') }}</h4>
+              <p>{{ $t('about.mission.growth.description') }}</p>
             </div>
           </div>
         </div>
@@ -68,23 +71,23 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">核心價值</h2>
+            <h2 class="section-title">{{ $t('about.values.title') }}</h2>
           </div>
         </div>
         <div class="row align-items-center">
           <div class="col-lg-6">
             <div class="values-content">
               <div class="value-item">
-                <h5>專業至上</h5>
-                <p>以專業的技術能力和豐富的行業經驗，為客戶提供最優質的解決方案。</p>
+                <h5>{{ $t('about.values.professional.title') }}</h5>
+                <p>{{ $t('about.values.professional.description') }}</p>
               </div>
               <div class="value-item">
-                <h5>誠信經營</h5>
-                <p>秉持誠信原則，建立與客戶間的信任關係，創造長期合作價值。</p>
+                <h5>{{ $t('about.values.integrity.title') }}</h5>
+                <p>{{ $t('about.values.integrity.description') }}</p>
               </div>
               <div class="value-item">
-                <h5>持續創新</h5>
-                <p>不斷追求技術突破與服務創新，為餐飲業帶來更多可能性。</p>
+                <h5>{{ $t('about.values.innovation.title') }}</h5>
+                <p>{{ $t('about.values.innovation.description') }}</p>
               </div>
             </div>
           </div>
@@ -105,8 +108,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">專業團隊</h2>
-            <p class="section-subtitle">由經驗豐富的技術專家與行業顧問組成</p>
+            <h2 class="section-title">{{ $t('about.team.title') }}</h2>
+            <p class="section-subtitle">{{ $t('about.team.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
@@ -115,8 +118,8 @@
               <div class="team-avatar">
                 <i class="bi bi-person-circle"></i>
               </div>
-              <h5>技術總監</h5>
-              <p class="team-role">負責系統架構設計與技術方向</p>
+              <h5>{{ $t('about.team.cto') }}</h5>
+              <p class="team-role">{{ $t('about.team.ctoRole') }}</p>
             </div>
           </div>
           <div class="col-md-4">
@@ -124,8 +127,8 @@
               <div class="team-avatar">
                 <i class="bi bi-person-circle"></i>
               </div>
-              <h5>產品經理</h5>
-              <p class="team-role">負責產品規劃與用戶體驗設計</p>
+              <h5>{{ $t('about.team.pm') }}</h5>
+              <p class="team-role">{{ $t('about.team.pmRole') }}</p>
             </div>
           </div>
           <div class="col-md-4">
@@ -133,8 +136,8 @@
               <div class="team-avatar">
                 <i class="bi bi-person-circle"></i>
               </div>
-              <h5>客戶成功經理</h5>
-              <p class="team-role">負責客戶服務與技術支援</p>
+              <h5>{{ $t('about.team.csm') }}</h5>
+              <p class="team-role">{{ $t('about.team.csmRole') }}</p>
             </div>
           </div>
         </div>
@@ -146,16 +149,16 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center">
-            <h2 class="cta-title">想了解更多？</h2>
-            <p class="cta-subtitle">聯絡我們的專業團隊，獲得個人化的解決方案建議</p>
+            <h2 class="cta-title">{{ $t('about.cta.title') }}</h2>
+            <p class="cta-subtitle">{{ $t('about.cta.subtitle') }}</p>
             <div class="cta-actions">
               <router-link to="/contact" class="btn btn-cta btn-lg me-3">
                 <i class="bi bi-telephone me-2"></i>
-                立即聯絡
+                {{ $t('common.contact') }}
               </router-link>
               <router-link to="/demo" class="btn btn-outline-light btn-lg">
                 <i class="bi bi-play-circle me-2"></i>
-                產品展示
+                {{ $t('common.bookDemo') }}
               </router-link>
             </div>
           </div>
@@ -167,8 +170,13 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import Navbar from '@/components/landing/Navbar.vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { initializeLanguage } = useLanguage()
 
 onMounted(() => {
+  initializeLanguage()
   document.title = '關於我們 - 智慧餐飲管理系統'
 })
 </script>

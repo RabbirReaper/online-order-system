@@ -1,16 +1,19 @@
 <template>
   <div class="pricing-page">
+    <!-- Navbar -->
+    <Navbar />
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="container">
         <div class="row align-items-center min-vh-75">
           <div class="col-12 text-center">
-            <h1 class="hero-title">透明收費制度</h1>
-            <p class="hero-subtitle">成功才收費，與您共同成長。僅收取營業額 0.3%，無其他隱藏費用</p>
+            <h1 class="hero-title">{{ $t('pricing.title') }}</h1>
+            <p class="hero-subtitle">{{ $t('pricing.subtitle') }}</p>
             <div class="hero-highlight">
               <div class="highlight-card">
                 <span class="highlight-number">0.3%</span>
-                <span class="highlight-text">營業額收費</span>
+                <span class="highlight-text">{{ $t('home.stats.feeLabel') }}</span>
               </div>
             </div>
           </div>
@@ -24,62 +27,62 @@
         <div class="row justify-content-center">
           <div class="col-lg-10">
             <div class="pricing-card-main">
-              <div class="pricing-badge">推薦方案</div>
+              <div class="pricing-badge">{{ $t('pricing.plan.badge') }}</div>
               <div class="pricing-header">
-                <h2>營業額分潤制</h2>
+                <h2>{{ $t('pricing.plan.title') }}</h2>
                 <div class="pricing-value">
                   <span class="pricing-number">0.3</span>
                   <span class="pricing-unit">%</span>
                 </div>
-                <p class="pricing-description">僅收取營業額的 0.3%，無設定費、無月費、無隱藏費用</p>
+                <p class="pricing-description">{{ $t('pricing.plan.description') }}</p>
               </div>
 
               <div class="pricing-content">
                 <div class="row">
                   <div class="col-lg-6">
                     <div class="features-included">
-                      <h4>完整功能包含：</h4>
+                      <h4>{{ $t('pricing.plan.features.title') }}</h4>
                       <ul class="pricing-features">
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>顧客點餐系統</strong>
-                            <span>內用/外帶/外送全支援</span>
+                            <strong>{{ $t('pricing.plan.features.customer') }}</strong>
+                            <span>{{ $t('pricing.plan.features.customerDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>品牌管理後台</strong>
-                            <span>多店統一管理平台</span>
+                            <strong>{{ $t('pricing.plan.features.management') }}</strong>
+                            <span>{{ $t('pricing.plan.features.managementDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>櫃檯 POS 系統</strong>
-                            <span>高效收銀點餐介面</span>
+                            <strong>{{ $t('pricing.plan.features.pos') }}</strong>
+                            <span>{{ $t('pricing.plan.features.posDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>會員積點系統</strong>
-                            <span>提升顧客忠誠度</span>
+                            <strong>{{ $t('pricing.plan.features.membership') }}</strong>
+                            <span>{{ $t('pricing.plan.features.membershipDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>預購券機制</strong>
-                            <span>增加現金流創新功能</span>
+                            <strong>{{ $t('pricing.plan.features.voucher') }}</strong>
+                            <span>{{ $t('pricing.plan.features.voucherDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>多層級管理</strong>
-                            <span>彈性權限控制</span>
+                            <strong>{{ $t('pricing.plan.features.multilevel') }}</strong>
+                            <span>{{ $t('pricing.plan.features.multilevelDesc') }}</span>
                           </div>
                         </li>
                       </ul>
@@ -87,48 +90,48 @@
                   </div>
                   <div class="col-lg-6">
                     <div class="service-included">
-                      <h4>服務支援：</h4>
+                      <h4>{{ $t('pricing.plan.services.title') }}</h4>
                       <ul class="pricing-features">
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>專屬客戶經理</strong>
-                            <span>專屬服務，深度了解營運需求</span>
+                            <strong>{{ $t('pricing.plan.services.manager') }}</strong>
+                            <span>{{ $t('pricing.plan.services.managerDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>免費系統更新</strong>
-                            <span>持續功能優化</span>
+                            <strong>{{ $t('pricing.plan.services.updates') }}</strong>
+                            <span>{{ $t('pricing.plan.services.updatesDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>教育訓練</strong>
-                            <span>完整操作教學</span>
+                            <strong>{{ $t('pricing.plan.services.training') }}</strong>
+                            <span>{{ $t('pricing.plan.services.trainingDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>資料備份</strong>
-                            <span>安全可靠保護</span>
+                            <strong>{{ $t('pricing.plan.services.backup') }}</strong>
+                            <span>{{ $t('pricing.plan.services.backupDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>系統導入協助</strong>
-                            <span>專業團隊支援</span>
+                            <strong>{{ $t('pricing.plan.services.setup') }}</strong>
+                            <span>{{ $t('pricing.plan.services.setupDesc') }}</span>
                           </div>
                         </li>
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>客製化調整</strong>
-                            <span>符合營運需求</span>
+                            <strong>{{ $t('pricing.plan.services.customization') }}</strong>
+                            <span>{{ $t('pricing.plan.services.customizationDesc') }}</span>
                           </div>
                         </li>
                       </ul>
@@ -140,11 +143,11 @@
               <div class="pricing-cta">
                 <button class="btn btn-cta btn-lg w-100 mb-3">
                   <i class="bi bi-rocket me-2"></i>
-                  立即開始 30 天免費試用
+                  {{ $t('pricing.plan.cta') }}
                 </button>
                 <p class="pricing-note">
                   <i class="bi bi-shield-check me-1"></i>
-                  30 天免費試用，無需信用卡，隨時可取消
+                  {{ $t('pricing.plan.note') }}
                 </p>
               </div>
             </div>
@@ -158,8 +161,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">為什麼選擇分潤制？</h2>
-            <p class="section-subtitle">我們與您的成功息息相關，共同成長才是長久之道</p>
+            <h2 class="section-title">{{ $t('pricing.benefits.title') }}</h2>
+            <p class="section-subtitle">{{ $t('pricing.benefits.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
@@ -168,8 +171,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-cash-coin"></i>
               </div>
-              <h5>降低初期投資</h5>
-              <p>無需高額設定費用，讓您將資金投入在更重要的營運發展上。</p>
+              <h5>{{ $t('pricing.benefits.lowCost.title') }}</h5>
+              <p>{{ $t('pricing.benefits.lowCost.description') }}</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -177,8 +180,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-graph-up-arrow"></i>
               </div>
-              <h5>共同承擔風險</h5>
-              <p>我們與您一起承擔營運風險，您的成功就是我們的成功。</p>
+              <h5>{{ $t('pricing.benefits.sharedRisk.title') }}</h5>
+              <p>{{ $t('pricing.benefits.sharedRisk.description') }}</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -186,8 +189,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-speedometer2"></i>
               </div>
-              <h5>持續優化動力</h5>
-              <p>我們有動力持續改善系統，幫助您提升營運效率與營收。</p>
+              <h5>{{ $t('pricing.benefits.optimization.title') }}</h5>
+              <p>{{ $t('pricing.benefits.optimization.description') }}</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -195,8 +198,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-shield-check"></i>
               </div>
-              <h5>透明無隱藏費</h5>
-              <p>完全透明的收費機制，絕無額外費用或隱藏條款。</p>
+              <h5>{{ $t('pricing.benefits.transparency.title') }}</h5>
+              <p>{{ $t('pricing.benefits.transparency.description') }}</p>
             </div>
           </div>
         </div>
@@ -208,15 +211,15 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">費用試算</h2>
-            <p class="section-subtitle">輸入您的月營業額，了解實際費用</p>
+            <h2 class="section-title">{{ $t('pricing.calculator.title') }}</h2>
+            <p class="section-subtitle">{{ $t('pricing.calculator.subtitle') }}</p>
           </div>
         </div>
         <div class="row justify-content-center">
           <div class="col-lg-6">
             <div class="calculator-card">
               <div class="calculator-input">
-                <label for="revenue">月營業額 (新台幣)</label>
+                <label for="revenue">{{ $t('pricing.calculator.label') }}</label>
                 <div class="input-group">
                   <span class="input-group-text">$</span>
                   <input
@@ -224,7 +227,7 @@
                     class="form-control"
                     id="revenue"
                     v-model="monthlyRevenue"
-                    placeholder="請輸入月營業額"
+                    :placeholder="$t('pricing.calculator.placeholder')"
                     @input="calculateFee"
                   />
                 </div>
@@ -232,15 +235,15 @@
 
               <div class="calculator-result" v-if="calculatedFee">
                 <div class="result-row">
-                  <span class="result-label">月營業額：</span>
+                  <span class="result-label">{{ $t('pricing.calculator.monthlyRevenue') }}</span>
                   <span class="result-value">${{ formatNumber(monthlyRevenue) }}</span>
                 </div>
                 <div class="result-row highlight">
-                  <span class="result-label">系統費用 (0.3%)：</span>
+                  <span class="result-label">{{ $t('pricing.calculator.systemFee') }}</span>
                   <span class="result-value">${{ formatNumber(calculatedFee) }}</span>
                 </div>
                 <div class="result-row">
-                  <span class="result-label">您的淨收入：</span>
+                  <span class="result-label">{{ $t('pricing.calculator.netIncome') }}</span>
                   <span class="result-value"
                     >${{ formatNumber(monthlyRevenue - calculatedFee) }}</span
                   >
@@ -248,7 +251,7 @@
               </div>
 
               <div class="calculator-example">
-                <h6>試算範例：</h6>
+                <h6>{{ $t('pricing.calculator.examples') }}</h6>
                 <div class="example-item" @click="setRevenue(100000)">
                   <span>月營業額 $100,000</span>
                   <span class="example-fee">→ 系統費用 $300</span>
@@ -273,8 +276,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">與傳統收費方式比較</h2>
-            <p class="section-subtitle">看看我們的優勢在哪裡</p>
+            <h2 class="section-title">{{ $t('pricing.comparison.title') }}</h2>
+            <p class="section-subtitle">{{ $t('pricing.comparison.subtitle') }}</p>
           </div>
         </div>
         <div class="row justify-content-center">
@@ -285,14 +288,16 @@
                   <thead>
                     <tr>
                       <th>比較項目</th>
-                      <th class="our-solution">我們的方案</th>
-                      <th>傳統 POS 系統</th>
-                      <th>其他雲端系統</th>
+                      <th class="our-solution">{{ $t('pricing.comparison.ourSolution') }}</th>
+                      <th>{{ $t('pricing.comparison.traditional') }}</th>
+                      <th>{{ $t('pricing.comparison.cloud') }}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>初期費用</strong></td>
+                      <td>
+                        <strong>{{ $t('pricing.comparison.initialCost') }}</strong>
+                      </td>
                       <td class="our-solution">
                         <i class="bi bi-check-circle text-success me-2"></i>
                         $0 設定費
@@ -307,7 +312,9 @@
                       </td>
                     </tr>
                     <tr>
-                      <td><strong>月費</strong></td>
+                      <td>
+                        <strong>{{ $t('pricing.comparison.monthlyFee') }}</strong>
+                      </td>
                       <td class="our-solution">
                         <i class="bi bi-check-circle text-success me-2"></i>
                         $0 固定月費
@@ -322,7 +329,9 @@
                       </td>
                     </tr>
                     <tr>
-                      <td><strong>系統更新</strong></td>
+                      <td>
+                        <strong>{{ $t('pricing.comparison.updates') }}</strong>
+                      </td>
                       <td class="our-solution">
                         <i class="bi bi-check-circle text-success me-2"></i>
                         免費自動更新
@@ -337,7 +346,9 @@
                       </td>
                     </tr>
                     <tr>
-                      <td><strong>技術支援</strong></td>
+                      <td>
+                        <strong>{{ $t('pricing.comparison.support') }}</strong>
+                      </td>
                       <td class="our-solution">
                         <i class="bi bi-check-circle text-success me-2"></i>
                         24/7 免費支援
@@ -352,7 +363,9 @@
                       </td>
                     </tr>
                     <tr>
-                      <td><strong>風險承擔</strong></td>
+                      <td>
+                        <strong>{{ $t('pricing.comparison.risk') }}</strong>
+                      </td>
                       <td class="our-solution">
                         <i class="bi bi-check-circle text-success me-2"></i>
                         與您共同承擔
@@ -380,8 +393,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">收費相關問題</h2>
-            <p class="section-subtitle">關於費用的常見疑問</p>
+            <h2 class="section-title">{{ $t('pricing.faq.title') }}</h2>
+            <p class="section-subtitle">{{ $t('pricing.faq.subtitle') }}</p>
           </div>
         </div>
         <div class="row justify-content-center">
@@ -395,7 +408,7 @@
                     data-bs-toggle="collapse"
                     data-bs-target="#pricingCollapse1"
                   >
-                    0.3% 的費用是如何計算的？
+                    {{ $t('pricing.faq.q1') }}
                   </button>
                 </h2>
                 <div
@@ -404,8 +417,7 @@
                   data-bs-parent="#pricingFaqAccordion"
                 >
                   <div class="accordion-body">
-                    費用是以您每月透過系統產生的實際營業額為計算基準，收取 0.3%。 例如：月營業額
-                    $100,000，系統費用為 $300。計算完全透明，無其他隱藏費用。
+                    {{ $t('pricing.faq.a1') }}
                   </div>
                 </div>
               </div>
@@ -418,7 +430,7 @@
                     data-bs-toggle="collapse"
                     data-bs-target="#pricingCollapse2"
                   >
-                    是否有最低收費標準？
+                    {{ $t('pricing.faq.q2') }}
                   </button>
                 </h2>
                 <div
@@ -427,8 +439,7 @@
                   data-bs-parent="#pricingFaqAccordion"
                 >
                   <div class="accordion-body">
-                    我們沒有設定最低收費標準。真正做到與您共同成長，
-                    營業額低時費用低，營業額高時我們才收取相對應的費用。
+                    {{ $t('pricing.faq.a2') }}
                   </div>
                 </div>
               </div>
@@ -441,7 +452,7 @@
                     data-bs-toggle="collapse"
                     data-bs-target="#pricingCollapse3"
                   >
-                    免費試用期結束後如何收費？
+                    {{ $t('pricing.faq.q3') }}
                   </button>
                 </h2>
                 <div
@@ -450,8 +461,7 @@
                   data-bs-parent="#pricingFaqAccordion"
                 >
                   <div class="accordion-body">
-                    30 天免費試用期結束後，將按照 0.3% 營業額收費。
-                    試用期間完全免費，無需提供信用卡資訊，可隨時取消。
+                    {{ $t('pricing.faq.a3') }}
                   </div>
                 </div>
               </div>
@@ -464,7 +474,7 @@
                     data-bs-toggle="collapse"
                     data-bs-target="#pricingCollapse4"
                   >
-                    多店鋪是否有額外費用？
+                    {{ $t('pricing.faq.q4') }}
                   </button>
                 </h2>
                 <div
@@ -473,8 +483,7 @@
                   data-bs-parent="#pricingFaqAccordion"
                 >
                   <div class="accordion-body">
-                    不論您有幾家分店，都是統一收取 0.3% 營業額。
-                    無店鋪數量限制，無額外的分店管理費用。
+                    {{ $t('pricing.faq.a4') }}
                   </div>
                 </div>
               </div>
@@ -489,30 +498,30 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center">
-            <h2 class="cta-title">準備開始了嗎？</h2>
-            <p class="cta-subtitle">立即開始 30 天免費試用，體驗我們的完整功能，無風險、無負擔</p>
+            <h2 class="cta-title">{{ $t('pricing.cta.title') }}</h2>
+            <p class="cta-subtitle">{{ $t('pricing.cta.subtitle') }}</p>
             <div class="cta-actions">
               <button class="btn btn-cta btn-lg me-3">
                 <i class="bi bi-rocket me-2"></i>
-                開始免費試用
+                {{ $t('common.startTrial') }}
               </button>
               <router-link to="/contact" class="btn btn-outline-light btn-lg">
                 <i class="bi bi-telephone me-2"></i>
-                聯絡諮詢
+                {{ $t('common.consultation') }}
               </router-link>
             </div>
             <div class="cta-guarantees mt-4">
               <div class="guarantee-item">
                 <i class="bi bi-shield-check"></i>
-                <span>30 天免費試用</span>
+                <span>{{ $t('pricing.cta.guarantees.trial') }}</span>
               </div>
               <div class="guarantee-item">
                 <i class="bi bi-credit-card"></i>
-                <span>無需信用卡</span>
+                <span>{{ $t('pricing.cta.guarantees.noCard') }}</span>
               </div>
               <div class="guarantee-item">
                 <i class="bi bi-x-circle"></i>
-                <span>隨時可取消</span>
+                <span>{{ $t('pricing.cta.guarantees.cancel') }}</span>
               </div>
             </div>
           </div>
@@ -524,6 +533,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import Navbar from '@/components/landing/Navbar.vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { initializeLanguage } = useLanguage()
 
 const monthlyRevenue = ref(100000)
 const calculatedFee = computed(() => {
@@ -546,6 +559,7 @@ const setRevenue = (amount) => {
 }
 
 onMounted(() => {
+  initializeLanguage()
   document.title = '收費方案 - 智慧餐飲管理系統'
 })
 </script>

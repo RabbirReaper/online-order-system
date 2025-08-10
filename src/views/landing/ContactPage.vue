@@ -1,13 +1,16 @@
 <template>
   <div class="contact-page">
+    <!-- Navbar -->
+    <Navbar />
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="container">
         <div class="row align-items-center min-vh-75">
           <div class="col-12 text-center">
-            <h1 class="hero-title">聯絡我們</h1>
+            <h1 class="hero-title">{{ $t('contact.title') }}</h1>
             <p class="hero-subtitle">
-              專業團隊隨時為您服務，立即聯絡我們獲得個人化的餐飲管理解決方案
+              {{ $t('contact.subtitle') }}
             </p>
           </div>
         </div>
@@ -19,8 +22,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">留下您的需求</h2>
-            <p class="section-subtitle">我們將在24小時內與您聯絡，提供專業的解決方案建議</p>
+            <h2 class="section-title">{{ $t('contact.form.title') }}</h2>
+            <p class="section-subtitle">{{ $t('contact.form.subtitle') }}</p>
           </div>
         </div>
         <div class="row justify-content-center">
@@ -30,15 +33,15 @@
               <div class="google-form-placeholder">
                 <div class="form-header">
                   <i class="bi bi-clipboard-check"></i>
-                  <h4>諮詢表單</h4>
-                  <p>請填寫以下資訊，我們將盡快與您聯絡</p>
+                  <h4>{{ $t('contact.form.header') }}</h4>
+                  <p>{{ $t('contact.form.instruction') }}</p>
                 </div>
 
                 <!-- 這裡可以嵌入 Google 表單的 iframe -->
                 <div class="form-embed-area">
                   <p class="embed-instruction">
                     <i class="bi bi-info-circle me-2"></i>
-                    此區域可嵌入 Google 表單或其他線上表單服務
+                    {{ $t('contact.form.embedNote') }}
                   </p>
                   <code class="embed-code">
                     &lt;iframe
@@ -58,8 +61,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">常見問題</h2>
-            <p class="section-subtitle">快速找到您關心的問題答案</p>
+            <h2 class="section-title">{{ $t('contact.faq.title') }}</h2>
+            <p class="section-subtitle">{{ $t('contact.faq.subtitle') }}</p>
           </div>
         </div>
         <div class="row justify-content-center">
@@ -76,7 +79,7 @@
                     aria-expanded="true"
                     aria-controls="collapse1"
                   >
-                    系統收費方式如何計算？
+                    {{ $t('contact.faq.q1') }}
                   </button>
                 </h2>
                 <div
@@ -86,8 +89,7 @@
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
-                    我們採用營業額分潤制，僅收取 0.3% 的營業額作為服務費用，無其他隱藏費用。
-                    包含完整系統功能、不限店鋪數量、24/7 技術支援等所有服務。
+                    {{ $t('contact.faq.a1') }}
                   </div>
                 </div>
               </div>
@@ -102,7 +104,7 @@
                     aria-expanded="false"
                     aria-controls="collapse2"
                   >
-                    系統支援多少家分店？
+                    {{ $t('contact.faq.q2') }}
                   </button>
                 </h2>
                 <div
@@ -112,8 +114,7 @@
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
-                    系統支援無限制的分店數量，從單店到數百家連鎖店皆可使用。
-                    每家分店都可以獨立管理，同時總部可以統一掌控所有數據。
+                    {{ $t('contact.faq.a2') }}
                   </div>
                 </div>
               </div>
@@ -128,7 +129,7 @@
                     aria-expanded="false"
                     aria-controls="collapse3"
                   >
-                    導入系統需要多長時間？
+                    {{ $t('contact.faq.q3') }}
                   </button>
                 </h2>
                 <div
@@ -138,8 +139,7 @@
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
-                    一般情況下，單店導入約需 1-2 週，包含系統設定、資料匯入、員工教育訓練等。
-                    多店導入時間視店鋪數量而定，我們會提供詳細的導入時程規劃。
+                    {{ $t('contact.faq.a3') }}
                   </div>
                 </div>
               </div>
@@ -154,7 +154,7 @@
                     aria-expanded="false"
                     aria-controls="collapse4"
                   >
-                    是否提供教育訓練？
+                    {{ $t('contact.faq.q4') }}
                   </button>
                 </h2>
                 <div
@@ -164,8 +164,7 @@
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
-                    是的，我們提供完整的教育訓練服務，包含現場教學、線上教學影片、
-                    操作手冊等。確保您的員工能夠熟練使用系統的所有功能。
+                    {{ $t('contact.faq.a4') }}
                   </div>
                 </div>
               </div>
@@ -180,7 +179,7 @@
                     aria-expanded="false"
                     aria-controls="collapse5"
                   >
-                    資料安全如何保障？
+                    {{ $t('contact.faq.q5') }}
                   </button>
                 </h2>
                 <div
@@ -190,8 +189,7 @@
                   data-bs-parent="#faqAccordion"
                 >
                   <div class="accordion-body">
-                    我們採用企業級資安標準，包含 SSL 加密傳輸、定期資料備份、
-                    多重身份驗證等機制，確保您的營業資料安全無虞。
+                    {{ $t('contact.faq.a5') }}
                   </div>
                 </div>
               </div>
@@ -206,8 +204,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">技術支援</h2>
-            <p class="section-subtitle">多種管道提供協助，確保您的系統順暢運行</p>
+            <h2 class="section-title">{{ $t('contact.support.title') }}</h2>
+            <p class="section-subtitle">{{ $t('contact.support.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
@@ -216,8 +214,8 @@
               <div class="support-icon">
                 <i class="bi bi-headset"></i>
               </div>
-              <h5>專屬客戶經理</h5>
-              <p>專屬服務，深度了解營運需求。</p>
+              <h5>{{ $t('contact.support.manager.title') }}</h5>
+              <p>{{ $t('contact.support.manager.description') }}</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -225,8 +223,8 @@
               <div class="support-icon">
                 <i class="bi bi-chat-dots"></i>
               </div>
-              <h5>線上客服</h5>
-              <p>即時通訊系統，快速回應您的疑問。</p>
+              <h5>{{ $t('contact.support.chat.title') }}</h5>
+              <p>{{ $t('contact.support.chat.description') }}</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -234,8 +232,8 @@
               <div class="support-icon">
                 <i class="bi bi-tools"></i>
               </div>
-              <h5>遠端協助</h5>
-              <p>技術人員遠端協助，直接解決操作問題。</p>
+              <h5>{{ $t('contact.support.remote.title') }}</h5>
+              <p>{{ $t('contact.support.remote.description') }}</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -243,8 +241,8 @@
               <div class="support-icon">
                 <i class="bi bi-book"></i>
               </div>
-              <h5>教學資源</h5>
-              <p>完整的操作手冊與教學影片資源。</p>
+              <h5>{{ $t('contact.support.resources.title') }}</h5>
+              <p>{{ $t('contact.support.resources.description') }}</p>
             </div>
           </div>
         </div>
@@ -256,9 +254,9 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center">
-            <h2 class="cta-title">立即開始您的數位轉型</h2>
+            <h2 class="cta-title">{{ $t('contact.cta.title') }}</h2>
             <p class="cta-subtitle">
-              填寫表單或直接聯絡我們，專業顧問將為您量身打造最適合的解決方案
+              {{ $t('contact.cta.subtitle') }}
             </p>
           </div>
         </div>
@@ -269,8 +267,13 @@
 
 <script setup>
 import { onMounted, nextTick } from 'vue'
+import Navbar from '@/components/landing/Navbar.vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { initializeLanguage } = useLanguage()
 
 onMounted(async () => {
+  initializeLanguage()
   document.title = '聯絡我們 - 智慧餐飲管理系統'
 
   // 確保 Bootstrap JavaScript 已載入並初始化

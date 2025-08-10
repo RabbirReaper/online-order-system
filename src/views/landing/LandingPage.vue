@@ -1,5 +1,8 @@
 <template>
   <div class="landing-page">
+    <!-- Navbar -->
+    <Navbar />
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="container">
@@ -7,35 +10,34 @@
           <div class="col-12">
             <div class="hero-content text-center">
               <h1 class="hero-title">
-                智慧餐飲管理
-                <span class="highlight">新時代</span>
+                {{ $t('home.title') }}
+                <span class="highlight">{{ $t('home.titleHighlight') }}</span>
               </h1>
               <p class="hero-subtitle">
-                從小型餐廳到連鎖品牌，我們提供完整的數位化解決方案。
-                會員積點、預購券、多店管理，一站式餐飲科技服務。
+                {{ $t('home.subtitle') }}
               </p>
               <div class="hero-stats mb-4">
                 <div class="stat-item">
-                  <span class="stat-number">0.3%</span>
-                  <span class="stat-label">營業額收費</span>
+                  <span class="stat-number">{{ $t('home.stats.fee') }}</span>
+                  <span class="stat-label">{{ $t('home.stats.feeLabel') }}</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-number">全方位</span>
-                  <span class="stat-label">管理系統</span>
+                  <span class="stat-number">{{ $t('home.stats.system') }}</span>
+                  <span class="stat-label">{{ $t('home.stats.systemLabel') }}</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-number">24/7</span>
-                  <span class="stat-label">技術支援</span>
+                  <span class="stat-number">{{ $t('home.stats.support') }}</span>
+                  <span class="stat-label">{{ $t('home.stats.supportLabel') }}</span>
                 </div>
               </div>
               <div class="hero-actions">
                 <router-link to="/features" class="btn btn-cta btn-lg me-3">
                   <i class="bi bi-play-circle me-2"></i>
-                  立即了解功能
+                  {{ $t('common.learnMore') }}
                 </router-link>
                 <router-link to="/contact" class="btn btn-outline-light btn-lg">
                   <i class="bi bi-telephone me-2"></i>
-                  聯絡我們
+                  {{ $t('common.contact') }}
                 </router-link>
               </div>
             </div>
@@ -49,8 +51,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">核心競爭優勢</h2>
-            <p class="section-subtitle">專為現代餐飲業設計的創新功能</p>
+            <h2 class="section-title">{{ $t('home.features.title') }}</h2>
+            <p class="section-subtitle">{{ $t('home.features.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
@@ -59,13 +61,13 @@
               <div class="feature-icon">
                 <i class="bi bi-star-fill"></i>
               </div>
-              <h4>會員積點系統</h4>
-              <p>自動積分累積、等級制度、個人化優惠推送，提升顧客黏著度與回購率。</p>
+              <h4>{{ $t('home.features.membership.title') }}</h4>
+              <p>{{ $t('home.features.membership.description') }}</p>
               <ul class="feature-list">
-                <li>消費自動累積積分</li>
-                <li>多層級會員制度</li>
-                <li>個人化推薦</li>
-                <li>生日優惠自動發送</li>
+                <li>{{ $t('home.features.membership.features.0') }}</li>
+                <li>{{ $t('home.features.membership.features.1') }}</li>
+                <li>{{ $t('home.features.membership.features.2') }}</li>
+                <li>{{ $t('home.features.membership.features.3') }}</li>
               </ul>
             </div>
           </div>
@@ -74,13 +76,13 @@
               <div class="feature-icon">
                 <i class="bi bi-ticket-perforated"></i>
               </div>
-              <h4>預購券系統</h4>
-              <p>創新的預購券機制，增加現金流，提高顧客忠誠度，創造額外收益。</p>
+              <h4>{{ $t('home.features.voucher.title') }}</h4>
+              <p>{{ $t('home.features.voucher.description') }}</p>
               <ul class="feature-list">
-                <li>彈性預購券設計</li>
-                <li>兌換券批量管理</li>
-                <li>優惠組合包裝</li>
-                <li>到期提醒通知</li>
+                <li>{{ $t('home.features.voucher.features.0') }}</li>
+                <li>{{ $t('home.features.voucher.features.1') }}</li>
+                <li>{{ $t('home.features.voucher.features.2') }}</li>
+                <li>{{ $t('home.features.voucher.features.3') }}</li>
               </ul>
             </div>
           </div>
@@ -89,13 +91,13 @@
               <div class="feature-icon">
                 <i class="bi bi-diagram-3"></i>
               </div>
-              <h4>多層級管理</h4>
-              <p>完整的權限管理系統，從品牌總部到各分店，靈活的管理架構。</p>
+              <h4>{{ $t('home.features.management.title') }}</h4>
+              <p>{{ $t('home.features.management.description') }}</p>
               <ul class="feature-list">
-                <li>品牌總部統一管理</li>
-                <li>分店獨立營運</li>
-                <li>階層式權限控制</li>
-                <li>即時數據同步</li>
+                <li>{{ $t('home.features.management.features.0') }}</li>
+                <li>{{ $t('home.features.management.features.1') }}</li>
+                <li>{{ $t('home.features.management.features.2') }}</li>
+                <li>{{ $t('home.features.management.features.3') }}</li>
               </ul>
             </div>
           </div>
@@ -108,8 +110,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">完整產品展示</h2>
-            <p class="section-subtitle">三大核心系統，滿足餐飲業所有需求</p>
+            <h2 class="section-title">{{ $t('home.demo.title') }}</h2>
+            <p class="section-subtitle">{{ $t('home.demo.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
@@ -119,25 +121,25 @@
                 <div class="demo-icon">
                   <i class="bi bi-phone"></i>
                 </div>
-                <h4>顧客點餐系統</h4>
-                <p class="demo-description">直觀易用的點餐介面，支援多種訂餐模式</p>
+                <h4>{{ $t('home.demo.customer.title') }}</h4>
+                <p class="demo-description">{{ $t('home.demo.customer.description') }}</p>
               </div>
               <div class="demo-features">
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  內用 / 外帶 / 外送
+                  {{ $t('home.demo.customer.features.0') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  即時菜單更新
+                  {{ $t('home.demo.customer.features.1') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  多元付款方式
+                  {{ $t('home.demo.customer.features.2') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  會員積點整合
+                  {{ $t('home.demo.customer.features.3') }}
                 </div>
               </div>
             </div>
@@ -148,25 +150,25 @@
                 <div class="demo-icon">
                   <i class="bi bi-laptop"></i>
                 </div>
-                <h4>品牌管理後台</h4>
-                <p class="demo-description">全方位的營運管理平台，掌握每個營運細節</p>
+                <h4>{{ $t('home.demo.management.title') }}</h4>
+                <p class="demo-description">{{ $t('home.demo.management.description') }}</p>
               </div>
               <div class="demo-features">
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  多店統一管理
+                  {{ $t('home.demo.management.features.0') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  即時營業數據
+                  {{ $t('home.demo.management.features.1') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  促銷活動設計
+                  {{ $t('home.demo.management.features.2') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  會員資料分析
+                  {{ $t('home.demo.management.features.3') }}
                 </div>
               </div>
             </div>
@@ -177,25 +179,25 @@
                 <div class="demo-icon">
                   <i class="bi bi-calculator"></i>
                 </div>
-                <h4>櫃檯 POS 系統</h4>
-                <p class="demo-description">高效率的收銀點餐系統，提升服務速度</p>
+                <h4>{{ $t('home.demo.pos.title') }}</h4>
+                <p class="demo-description">{{ $t('home.demo.pos.description') }}</p>
               </div>
               <div class="demo-features">
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  快速點餐介面
+                  {{ $t('home.demo.pos.features.0') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  庫存即時同步
+                  {{ $t('home.demo.pos.features.1') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  會員資料查詢
+                  {{ $t('home.demo.pos.features.2') }}
                 </div>
                 <div class="demo-feature">
                   <i class="bi bi-check-circle"></i>
-                  訂單管理追蹤
+                  {{ $t('home.demo.pos.features.3') }}
                 </div>
               </div>
             </div>
@@ -209,53 +211,53 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">透明收費制度</h2>
-            <p class="section-subtitle">成功才收費，與您共同成長</p>
+            <h2 class="section-title">{{ $t('home.pricing.title') }}</h2>
+            <p class="section-subtitle">{{ $t('home.pricing.subtitle') }}</p>
           </div>
         </div>
         <div class="row justify-content-center">
           <div class="col-lg-8">
             <div class="pricing-card">
               <div class="pricing-header">
-                <div class="pricing-badge">推薦方案</div>
-                <h3>營業額分潤制</h3>
+                <div class="pricing-badge">{{ $t('pricing.plan.badge') }}</div>
+                <h3>{{ $t('home.pricing.planTitle') }}</h3>
                 <div class="pricing-value">
                   <span class="pricing-number">0.3</span>
                   <span class="pricing-unit">%</span>
                 </div>
-                <p class="pricing-desc">僅收取營業額的 0.3%，無其他隱藏費用</p>
+                <p class="pricing-desc">{{ $t('home.pricing.planDescription') }}</p>
               </div>
               <div class="pricing-features">
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>完整系統功能</span>
+                  <span>{{ $t('home.pricing.features.0') }}</span>
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>不限店鋪數量</span>
+                  <span>{{ $t('home.pricing.features.1') }}</span>
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>不限用戶數量</span>
+                  <span>{{ $t('home.pricing.features.2') }}</span>
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>專屬客戶經理</span>
+                  <span>{{ $t('home.pricing.features.3') }}</span>
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>免費系統更新</span>
+                  <span>{{ $t('home.pricing.features.4') }}</span>
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>資料備份保護</span>
+                  <span>{{ $t('home.pricing.features.5') }}</span>
                 </div>
               </div>
               <div class="pricing-footer">
-                <router-link to="/pricing" class="btn btn-cta btn-lg w-100"
-                  >了解更多收費詳情</router-link
-                >
-                <p class="pricing-note">30 天免費試用，無需信用卡</p>
+                <router-link to="/pricing" class="btn btn-cta btn-lg w-100">
+                  {{ $t('common.learnMore') }}
+                </router-link>
+                <p class="pricing-note">{{ $t('home.pricing.note') }}</p>
               </div>
             </div>
           </div>
@@ -268,12 +270,12 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center">
-            <h2 class="cta-title">準備開始數位轉型？</h2>
-            <p class="cta-subtitle">立即聯絡我們，讓專業團隊為您量身打造最適合的餐飲管理解決方案</p>
+            <h2 class="cta-title">{{ $t('home.cta.title') }}</h2>
+            <p class="cta-subtitle">{{ $t('home.cta.subtitle') }}</p>
             <div class="cta-actions">
               <router-link to="/contact" class="btn btn-cta btn-lg">
                 <i class="bi bi-calendar-check me-2"></i>
-                預約諮詢
+                {{ $t('common.schedule') }}
               </router-link>
             </div>
           </div>
@@ -284,55 +286,10 @@
     <!-- Footer -->
     <footer class="footer-section">
       <div class="container">
-        <!-- <div class="row">
-          <div class="col-lg-4 mb-4">
-            <div class="footer-brand">
-              <h5>智慧餐飲管理系統</h5>
-              <p>專業的餐飲科技解決方案提供商，致力於為餐飲業者提供最優質的數位化服務。</p>
-            </div>
-          </div>
-          <div class="col-lg-2 col-md-6 mb-4">
-            <div class="footer-links">
-              <h6>產品功能</h6>
-              <ul>
-                <li><router-link to="/features">核心功能</router-link></li>
-                <li><router-link to="/pricing">收費方案</router-link></li>
-                <li><router-link to="/about">關於我們</router-link></li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-lg-2 col-md-6 mb-4">
-            <div class="footer-links">
-              <h6>支援服務</h6>
-              <ul>
-                <li><router-link to="/contact">技術支援</router-link></li>
-                <li><router-link to="/contact">使用教學</router-link></li>
-                <li><router-link to="/contact">常見問題</router-link></li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-lg-4 mb-4">
-            <div class="footer-contact">
-              <h6>聯絡我們</h6>
-              <div class="contact-item">
-                <i class="bi bi-telephone"></i>
-                <span>+886-9-79999412</span>
-              </div>
-              <div class="contact-item">
-                <i class="bi bi-envelope"></i>
-                <span>info@restaurant-system.com</span>
-              </div>
-              <div class="contact-item">
-                <i class="bi bi-geo-alt"></i>
-                <span>台北市信義區信義路五段7號</span>
-              </div>
-            </div>
-          </div>
-        </div> -->
         <hr class="footer-divider" />
         <div class="row">
           <div class="col-12 text-center">
-            <p class="footer-copyright">&copy; 2025 智慧餐飲管理系統. All rights reserved.</p>
+            <p class="footer-copyright">{{ $t('common.copyright') }}</p>
           </div>
         </div>
       </div>
@@ -342,6 +299,10 @@
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
+import Navbar from '@/components/landing/Navbar.vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { initializeLanguage } = useLanguage()
 
 // SEO Meta
 const setMetaTags = () => {
@@ -383,6 +344,7 @@ const setMetaTags = () => {
 }
 
 onMounted(() => {
+  initializeLanguage()
   setMetaTags()
 })
 </script>

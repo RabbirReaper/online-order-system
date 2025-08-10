@@ -1,13 +1,16 @@
 <template>
   <div class="about-page">
+    <!-- Navbar -->
+    <Navbar />
+
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="container">
         <div class="row align-items-center min-vh-75">
           <div class="col-12 text-center">
-            <h1 class="hero-title">產品功能</h1>
+            <h1 class="hero-title">{{ $t('features.title') }}</h1>
             <p class="hero-subtitle">
-              完整的餐飲管理解決方案，從顧客點餐到後台管理，一站式滿足所有需求
+              {{ $t('features.subtitle') }}
             </p>
           </div>
         </div>
@@ -19,8 +22,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">核心功能特色</h2>
-            <p class="section-subtitle">領先業界的創新功能，助您超越競爭對手</p>
+            <h2 class="section-title">{{ $t('features.coreFeatures.title') }}</h2>
+            <p class="section-subtitle">{{ $t('features.coreFeatures.subtitle') }}</p>
           </div>
         </div>
 
@@ -29,17 +32,24 @@
           <div class="row align-items-center">
             <div class="col-lg-6">
               <div class="feature-content">
-                <div class="feature-badge">核心優勢</div>
-                <h3>會員積點系統</h3>
+                <div class="feature-badge">{{ $t('features.membership.badge') }}</div>
+                <h3>{{ $t('features.membership.title') }}</h3>
                 <p class="feature-description">
-                  智慧化的會員管理系統，自動累積點數、分級管理、個人化推薦，
-                  有效提升顧客忠誠度與回購率。
+                  {{ $t('features.membership.description') }}
                 </p>
                 <ul class="feature-benefits">
-                  <li><i class="bi bi-check-circle"></i>消費自動累積點數，無需人工操作</li>
-                  <li><i class="bi bi-check-circle"></i>會員制度，精準分析個別需求</li>
-                  <li><i class="bi bi-check-circle"></i>個人化優惠推送，提升轉換率</li>
-                  <li><i class="bi bi-check-circle"></i>點數兌換機制，促進消費</li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.membership.benefits.0') }}
+                  </li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.membership.benefits.1') }}
+                  </li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.membership.benefits.2') }}
+                  </li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.membership.benefits.3') }}
+                  </li>
                 </ul>
               </div>
             </div>
@@ -52,9 +62,9 @@
                       <nav class="demo-navbar">
                         <div class="demo-nav-content">
                           <a class="demo-navbar-brand" href="#">
-                            <i class="bi bi-arrow-left me-2"></i>返回
+                            <i class="bi bi-arrow-left me-2"></i>{{ $t('nav.home') }}
                           </a>
-                          <div class="demo-navbar-title">會員中心</div>
+                          <div class="demo-navbar-title">{{ $t('nav.home') }}</div>
                           <div class="demo-nav-placeholder"></div>
                         </div>
                       </nav>
@@ -123,17 +133,16 @@
           <div class="row align-items-center">
             <div class="col-lg-6 order-lg-2">
               <div class="feature-content">
-                <div class="feature-badge">創新功能</div>
-                <h3>預購券系統</h3>
+                <div class="feature-badge">{{ $t('features.voucher.badge') }}</div>
+                <h3>{{ $t('features.voucher.title') }}</h3>
                 <p class="feature-description">
-                  革命性的預購券機制，顧客可預先購買餐點券，享受優惠價格，
-                  幫助餐廳穩定現金流，提升營運效率。
+                  {{ $t('features.voucher.description') }}
                 </p>
                 <ul class="feature-benefits">
-                  <li><i class="bi bi-check-circle"></i>預購享優惠，吸引顧客提前消費</li>
-                  <li><i class="bi bi-check-circle"></i>穩定現金流，改善經營資金週轉</li>
-                  <li><i class="bi bi-check-circle"></i>智慧核銷系統，防止重複使用</li>
-                  <li><i class="bi bi-check-circle"></i>彈性設定有效期限與使用條件</li>
+                  <li><i class="bi bi-check-circle"></i>{{ $t('features.voucher.benefits.0') }}</li>
+                  <li><i class="bi bi-check-circle"></i>{{ $t('features.voucher.benefits.1') }}</li>
+                  <li><i class="bi bi-check-circle"></i>{{ $t('features.voucher.benefits.2') }}</li>
+                  <li><i class="bi bi-check-circle"></i>{{ $t('features.voucher.benefits.3') }}</li>
                 </ul>
               </div>
             </div>
@@ -146,7 +155,7 @@
                       <nav class="demo-navbar">
                         <div class="demo-nav-content">
                           <a class="demo-navbar-brand" href="#">
-                            <i class="bi bi-arrow-left me-2"></i>返回
+                            <i class="bi bi-arrow-left me-2"></i>{{ $t('nav.home') }}
                           </a>
                           <div class="demo-navbar-title">我的優惠券</div>
                           <div class="demo-nav-placeholder"></div>
@@ -206,17 +215,24 @@
           <div class="row align-items-center">
             <div class="col-lg-6">
               <div class="feature-content">
-                <div class="feature-badge">管理優勢</div>
-                <h3>多層級管理系統</h3>
+                <div class="feature-badge">{{ $t('features.multilevel.badge') }}</div>
+                <h3>{{ $t('features.multilevel.title') }}</h3>
                 <p class="feature-description">
-                  完善的多層級管理架構，從總部、區域到單店，
-                  各層級都有對應的管理權限與報表分析功能。
+                  {{ $t('features.multilevel.description') }}
                 </p>
                 <ul class="feature-benefits">
-                  <li><i class="bi bi-check-circle"></i>總部統一管理，掌握全局營運狀況</li>
-                  <li><i class="bi bi-check-circle"></i>區域權限分工，提升管理效率</li>
-                  <li><i class="bi bi-check-circle"></i>單店自主營運，保持經營彈性</li>
-                  <li><i class="bi bi-check-circle"></i>階層式報表，清晰呈現營運數據</li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.multilevel.benefits.0') }}
+                  </li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.multilevel.benefits.1') }}
+                  </li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.multilevel.benefits.2') }}
+                  </li>
+                  <li>
+                    <i class="bi bi-check-circle"></i>{{ $t('features.multilevel.benefits.3') }}
+                  </li>
                 </ul>
               </div>
             </div>
@@ -229,7 +245,7 @@
                       <nav class="demo-navbar">
                         <div class="demo-nav-content">
                           <a class="demo-navbar-brand" href="#">
-                            <i class="bi bi-arrow-left me-2"></i>返回
+                            <i class="bi bi-arrow-left me-2"></i>{{ $t('nav.home') }}
                           </a>
                           <div class="demo-navbar-title">我的點數</div>
                           <div class="demo-nav-placeholder"></div>
@@ -294,8 +310,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">系統組件</h2>
-            <p class="section-subtitle">模組化設計，彈性搭配使用</p>
+            <h2 class="section-title">{{ $t('features.components.title') }}</h2>
+            <p class="section-subtitle">{{ $t('features.components.subtitle') }}</p>
           </div>
         </div>
 
@@ -306,15 +322,15 @@
                 <div class="component-icon">
                   <i class="bi bi-shop"></i>
                 </div>
-                <h4>點餐系統</h4>
+                <h4>{{ $t('features.components.ordering.title') }}</h4>
               </div>
               <div class="component-features">
                 <h6>核心功能</h6>
                 <ul>
-                  <li>線上點餐</li>
-                  <li>菜單管理</li>
-                  <li>庫存控制</li>
-                  <li>支付整合</li>
+                  <li>{{ $t('features.components.ordering.features.0') }}</li>
+                  <li>{{ $t('features.components.ordering.features.1') }}</li>
+                  <li>{{ $t('features.components.ordering.features.2') }}</li>
+                  <li>{{ $t('features.components.ordering.features.3') }}</li>
                 </ul>
               </div>
             </div>
@@ -326,15 +342,15 @@
                 <div class="component-icon">
                   <i class="bi bi-people"></i>
                 </div>
-                <h4>會員系統</h4>
+                <h4>{{ $t('features.components.membership.title') }}</h4>
               </div>
               <div class="component-features">
                 <h6>核心功能</h6>
                 <ul>
-                  <li>會員註冊</li>
-                  <li>點數管理</li>
-                  <li>等級制度</li>
-                  <li>個人化推薦</li>
+                  <li>{{ $t('features.components.membership.features.0') }}</li>
+                  <li>{{ $t('features.components.membership.features.1') }}</li>
+                  <li>{{ $t('features.components.membership.features.2') }}</li>
+                  <li>{{ $t('features.components.membership.features.3') }}</li>
                 </ul>
               </div>
             </div>
@@ -346,15 +362,15 @@
                 <div class="component-icon">
                   <i class="bi bi-graph-up"></i>
                 </div>
-                <h4>數據分析</h4>
+                <h4>{{ $t('features.components.analytics.title') }}</h4>
               </div>
               <div class="component-features">
                 <h6>核心功能</h6>
                 <ul>
-                  <li>銷售報表</li>
-                  <li>會員分析</li>
-                  <li>營運指標</li>
-                  <li>趨勢預測</li>
+                  <li>{{ $t('features.components.analytics.features.0') }}</li>
+                  <li>{{ $t('features.components.analytics.features.1') }}</li>
+                  <li>{{ $t('features.components.analytics.features.2') }}</li>
+                  <li>{{ $t('features.components.analytics.features.3') }}</li>
                 </ul>
               </div>
             </div>
@@ -368,8 +384,8 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">系統優勢</h2>
-            <p class="section-subtitle">為什麼選擇我們的解決方案</p>
+            <h2 class="section-title">{{ $t('features.benefits.title') }}</h2>
+            <p class="section-subtitle">{{ $t('features.benefits.subtitle') }}</p>
           </div>
         </div>
 
@@ -379,8 +395,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-lightning"></i>
               </div>
-              <h5>快速部署</h5>
-              <p>7天內完成系統建置，快速上線營運</p>
+              <h5>{{ $t('features.benefits.deployment.title') }}</h5>
+              <p>{{ $t('features.benefits.deployment.description') }}</p>
             </div>
           </div>
 
@@ -389,8 +405,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-shield-check"></i>
               </div>
-              <h5>安全可靠</h5>
-              <p>銀行級安全防護，保障資料隱私</p>
+              <h5>{{ $t('features.benefits.security.title') }}</h5>
+              <p>{{ $t('features.benefits.security.description') }}</p>
             </div>
           </div>
 
@@ -399,8 +415,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-headset"></i>
               </div>
-              <h5>專業支援</h5>
-              <p>24/7 技術支援，確保系統穩定運行</p>
+              <h5>{{ $t('features.benefits.support.title') }}</h5>
+              <p>{{ $t('features.benefits.support.description') }}</p>
             </div>
           </div>
 
@@ -409,8 +425,8 @@
               <div class="benefit-icon">
                 <i class="bi bi-currency-dollar"></i>
               </div>
-              <h5>成本效益</h5>
-              <p>僅收營收0.3%，與您共同成長</p>
+              <h5>{{ $t('features.benefits.cost.title') }}</h5>
+              <p>{{ $t('features.benefits.cost.description') }}</p>
             </div>
           </div>
         </div>
@@ -422,16 +438,16 @@
       <div class="container">
         <div class="row">
           <div class="col-12 text-center">
-            <h2 class="cta-title">開始您的數位轉型之旅</h2>
-            <p class="cta-subtitle">立即聯絡我們，獲得專屬的解決方案規劃</p>
+            <h2 class="cta-title">{{ $t('features.cta.title') }}</h2>
+            <p class="cta-subtitle">{{ $t('features.cta.subtitle') }}</p>
             <div class="cta-actions">
               <router-link to="/contact" class="btn btn-cta btn-lg me-3">
                 <i class="bi bi-telephone me-2"></i>
-                免費諮詢
+                {{ $t('common.consultation') }}
               </router-link>
               <router-link to="/demo" class="btn btn-outline-light btn-lg">
                 <i class="bi bi-play-circle me-2"></i>
-                預約展示
+                {{ $t('common.bookDemo') }}
               </router-link>
             </div>
           </div>
@@ -443,8 +459,13 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import Navbar from '@/components/landing/Navbar.vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { initializeLanguage } = useLanguage()
 
 onMounted(() => {
+  initializeLanguage()
   document.title = '產品功能 - 智慧餐飲管理系統'
 })
 </script>
