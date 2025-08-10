@@ -141,10 +141,10 @@
               </div>
 
               <div class="pricing-cta">
-                <button class="btn btn-cta btn-lg w-100 mb-3">
-                  <i class="bi bi-rocket me-2"></i>
+                <router-link to="/contact" class="btn btn-cta btn-lg w-100 mb-3">
+                  <i class="bi bi-telephone me-2"></i>
                   {{ $t('pricing.plan.cta') }}
-                </button>
+                </router-link>
                 <p class="pricing-note">
                   <i class="bi bi-shield-check me-1"></i>
                   {{ $t('pricing.plan.note') }}
@@ -501,13 +501,9 @@
             <h2 class="cta-title">{{ $t('pricing.cta.title') }}</h2>
             <p class="cta-subtitle">{{ $t('pricing.cta.subtitle') }}</p>
             <div class="cta-actions">
-              <button class="btn btn-cta btn-lg me-3">
-                <i class="bi bi-rocket me-2"></i>
-                {{ $t('common.startTrial') }}
-              </button>
-              <router-link to="/contact" class="btn btn-outline-light btn-lg">
+              <router-link to="/contact" class="btn btn-cta btn-lg me-3">
                 <i class="bi bi-telephone me-2"></i>
-                {{ $t('common.consultation') }}
+                {{ $t('common.startTrial') }}
               </router-link>
             </div>
             <div class="cta-guarantees mt-4">

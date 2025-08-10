@@ -237,67 +237,10 @@
               </div>
             </div>
             <div class="col-lg-6">
-              <div class="feature-demo">
-                <!-- 點數頁面實際布局展示 -->
-                <div class="mobile-demo-frame">
-                  <div class="demo-nav-container">
-                    <div class="demo-nav-wrapper">
-                      <nav class="demo-navbar">
-                        <div class="demo-nav-content">
-                          <a class="demo-navbar-brand" href="#">
-                            <i class="bi bi-arrow-left me-2"></i>{{ $t('nav.home') }}
-                          </a>
-                          <div class="demo-navbar-title">我的點數</div>
-                          <div class="demo-nav-placeholder"></div>
-                        </div>
-                      </nav>
-                      <div class="demo-nav-border"></div>
-                    </div>
-                  </div>
-
-                  <div class="demo-content">
-                    <!-- 點數總覽卡片 -->
-                    <div class="demo-points-overview">
-                      <div class="demo-points-card">
-                        <div class="demo-points-header">
-                          <h5>目前可用點數</h5>
-                          <div class="demo-points-balance">
-                            <span class="demo-points-number">1,250</span>
-                            <span class="demo-points-unit">點</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- 點數明細 -->
-                    <div class="demo-points-section">
-                      <h6 class="demo-section-title">近期異動</h6>
-                      <div class="demo-points-list">
-                        <div class="demo-point-item">
-                          <div class="demo-point-amount">
-                            <span class="demo-amount">+25</span>
-                            <span class="demo-unit">點</span>
-                          </div>
-                          <div class="demo-point-details">
-                            <div class="demo-point-source">滿額贈送</div>
-                            <div class="demo-point-date">2025/01/15 14:30</div>
-                          </div>
-                        </div>
-
-                        <div class="demo-point-item">
-                          <div class="demo-point-amount">
-                            <span class="demo-amount">-100</span>
-                            <span class="demo-unit">點</span>
-                          </div>
-                          <div class="demo-point-details">
-                            <div class="demo-point-source">兌換兌換券</div>
-                            <div class="demo-point-date">2025/01/10 16:45</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="chart-demo-container">
+                <h6 class="chart-title">週營業額趨勢分析</h6>
+                <WeeklyRevenueTrendChart :chart-data="weeklyTrendData" :height="350" />
+                <p class="chart-description">即時追蹤各週營業表現，清楚掌握業績趨勢變化</p>
               </div>
             </div>
           </div>
@@ -445,10 +388,10 @@
                 <i class="bi bi-telephone me-2"></i>
                 {{ $t('common.consultation') }}
               </router-link>
-              <router-link to="/demo" class="btn btn-outline-light btn-lg">
+              <!-- <router-link to="/demo" class="btn btn-outline-light btn-lg">
                 <i class="bi bi-play-circle me-2"></i>
                 {{ $t('common.bookDemo') }}
-              </router-link>
+              </router-link> -->
             </div>
           </div>
         </div>
@@ -458,11 +401,77 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Navbar from '@/components/landing/Navbar.vue'
 import { useLanguage } from '@/composables/useLanguage'
+import WeeklyRevenueTrendChart from '@/components/BrandAdmin/Order/Charts/WeeklyRevenueTrendChart.vue'
 
 const { initializeLanguage } = useLanguage()
+
+// 生成模擬的週營業額趨勢資料
+const weeklyTrendData = computed(() => {
+  // 模擬過去5週的資料
+  const weeks = [
+    { label: '4週前', start: new Date('2024-12-09'), end: new Date('2024-12-15') },
+    { label: '3週前', start: new Date('2024-12-16'), end: new Date('2024-12-22') },
+    { label: '2週前', start: new Date('2024-12-23'), end: new Date('2024-12-29') },
+    { label: '上週', start: new Date('2024-12-30'), end: new Date('2025-01-05') },
+    { label: '本週', start: new Date('2025-01-06'), end: new Date('2025-01-12') },
+  ]
+
+  // 模擬一週7天的營業額資料 (週一到週日)
+  const datasets = weeks.map((week, index) => {
+    // 為不同週生成不同的營業額模式
+    let baseRevenue = 15000 + index * 2000 // 基礎營業額逐週增長
+
+    const weekData = [
+      baseRevenue * 0.7, // 週一
+      baseRevenue * 0.8, // 週二
+      baseRevenue * 0.9, // 週三
+      baseRevenue * 1.0, // 週四
+      baseRevenue * 1.3, // 週五
+      baseRevenue * 1.5, // 週六
+      baseRevenue * 1.2, // 週日
+    ]
+
+    // 添加一些隨機變化使資料更真實
+    const randomizedData = weekData.map((value) =>
+      Math.round(value + (Math.random() - 0.5) * value * 0.2),
+    )
+
+    return {
+      label: week.label,
+      data: randomizedData,
+      borderColor: getWeekColor(index),
+      backgroundColor: getWeekColor(index, 0.1),
+      tension: 0.4,
+      fill: false,
+      pointBackgroundColor: getWeekColor(index),
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      weekInfo: week,
+    }
+  })
+
+  return {
+    datasets,
+    // 添加 X 軸標籤 (週一到週日)
+    labels: ['週一', '週二', '週三', '週四', '週五', '週六', '週日'],
+  }
+})
+
+// 為不同週次生成不同顏色
+const getWeekColor = (index, alpha = 1) => {
+  const colors = [
+    `rgba(52, 152, 219, ${alpha})`, // 藍色 - 4週前
+    `rgba(155, 89, 182, ${alpha})`, // 紫色 - 3週前
+    `rgba(230, 126, 34, ${alpha})`, // 橙色 - 2週前
+    `rgba(149, 165, 166, ${alpha})`, // 灰色 - 上週
+    `rgba(46, 204, 113, ${alpha})`, // 綠色 - 本週
+  ]
+  return colors[index] || colors[0]
+}
 
 onMounted(() => {
   initializeLanguage()
@@ -584,6 +593,30 @@ onMounted(() => {
 
 .feature-demo {
   padding: 2rem;
+}
+
+/* Chart Demo Container */
+.chart-demo-container {
+  padding: 2rem;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.chart-title {
+  color: var(--primary-blue);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.chart-description {
+  text-align: center;
+  color: var(--text-blue);
+  opacity: 0.8;
+  margin-top: 1rem;
+  font-size: 0.9rem;
 }
 
 /* Mobile Demo Frame - 模擬真實系統設計 */
@@ -836,114 +869,6 @@ onMounted(() => {
   padding: 0.25rem 0.75rem;
 }
 
-/* Demo Points - 模擬點數頁面 */
-.demo-points-overview {
-  margin-bottom: 1rem;
-}
-
-.demo-points-card {
-  background-color: white;
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  text-align: center;
-}
-
-.demo-points-header h5 {
-  margin-bottom: 1rem;
-  color: #333;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.demo-points-balance {
-  margin-bottom: 1rem;
-}
-
-.demo-points-number {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #d35400;
-}
-
-.demo-points-unit {
-  font-size: 1rem;
-  color: #6c757d;
-  margin-left: 0.25rem;
-}
-
-.demo-points-note {
-  margin: 0;
-  color: #6c757d;
-  font-size: 0.75rem;
-}
-
-.demo-points-section {
-  background-color: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.demo-section-title {
-  background-color: #f8f9fa;
-  padding: 0.75rem 1rem;
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #333;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.demo-points-list {
-  padding: 0;
-}
-
-.demo-point-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #f1f1f1;
-}
-
-.demo-point-item:last-child {
-  border-bottom: none;
-}
-
-.demo-point-amount {
-  margin-right: 0.75rem;
-  text-align: center;
-  min-width: 60px;
-}
-
-.demo-amount {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #d35400;
-}
-
-.demo-unit {
-  font-size: 0.75rem;
-  color: #6c757d;
-  margin-left: 0.25rem;
-}
-
-.demo-point-details {
-  flex: 1;
-}
-
-.demo-point-source {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-  color: #333;
-  font-size: 0.8rem;
-}
-
-.demo-point-date {
-  font-size: 0.7rem;
-  color: #6c757d;
-}
-
 /* Components Section */
 .components-section {
   padding: 5rem 0;
@@ -1146,6 +1071,10 @@ onMounted(() => {
   .demo-stat-icon {
     margin-right: 0.75rem;
     margin-bottom: 0;
+  }
+
+  .chart-demo-container {
+    padding: 1rem;
   }
 }
 </style>

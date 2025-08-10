@@ -173,15 +173,22 @@ export default {
           'Continuously pursuing technological breakthroughs and service innovation to bring more possibilities to the restaurant industry.',
       },
     },
-    team: {
-      title: 'Professional Team',
-      subtitle: 'Comprised of experienced technical experts and industry consultants',
-      cto: 'Chief Technology Officer',
-      ctoRole: 'Responsible for system architecture design and technical direction',
-      pm: 'Product Manager',
-      pmRole: 'Responsible for product planning and user experience design',
-      csm: 'Customer Success Manager',
-      csmRole: 'Responsible for customer service and technical support',
+    servicePromise: {
+      title: 'Service Promise',
+      subtitle: 'Professional service, innovative thinking',
+      fastResponse: {
+        title: 'Rapid Response',
+        description: 'Startup team flexibility, respond to requests within 24 hours',
+      },
+      customized: {
+        title: 'Customized Solutions',
+        description:
+          'Deep understanding of restaurant industry pain points, providing tailored solutions',
+      },
+      quality: {
+        title: 'Quality Assurance',
+        description: 'Continuous product optimization to ensure stable and reliable systems',
+      },
     },
     cta: {
       title: 'Want to Learn More?',
@@ -409,7 +416,7 @@ export default {
       header: 'Consultation Form',
       instruction:
         'Please fill in the following information, and we will contact you as soon as possible',
-      embedNote: 'This area can embed Google Forms or other online form services',
+      embedNote: 'Not open for applications yet',
     },
     faq: {
       title: 'Frequently Asked Questions',

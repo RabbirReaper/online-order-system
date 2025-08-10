@@ -130,15 +130,21 @@ export default {
         description: '不斷追求技術突破與服務創新，為餐飲業帶來更多可能性。',
       },
     },
-    team: {
-      title: '專業團隊',
-      subtitle: '由經驗豐富的技術專家與行業顧問組成',
-      cto: '技術總監',
-      ctoRole: '負責系統架構設計與技術方向',
-      pm: '產品經理',
-      pmRole: '負責產品規劃與用戶體驗設計',
-      csm: '客戶成功經理',
-      csmRole: '負責客戶服務與技術支援',
+    servicePromise: {
+      title: '服務承諾',
+      subtitle: '專業服務，創新思維',
+      fastResponse: {
+        title: '快速響應',
+        description: '創業團隊的靈活性，24小時內回應需求',
+      },
+      customized: {
+        title: '量身定制',
+        description: '深度了解餐飲業痛點，提供客製化解決方案',
+      },
+      quality: {
+        title: '品質保證',
+        description: '持續優化產品，確保系統穩定可靠',
+      },
     },
     cta: {
       title: '想了解更多？',
@@ -347,7 +353,7 @@ export default {
       subtitle: '我們將在24小時內與您聯絡，提供專業的解決方案建議',
       header: '諮詢表單',
       instruction: '請填寫以下資訊，我們將盡快與您聯絡',
-      embedNote: '此區域可嵌入 Google 表單或其他線上表單服務',
+      embedNote: '尚未開放申請',
     },
     faq: {
       title: '常見問題',
