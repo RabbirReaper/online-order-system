@@ -347,7 +347,7 @@ export default {
       subtitle: '我們將在24小時內與您聯絡，提供專業的解決方案建議',
       header: '諮詢表單',
       instruction: '請填寫以下資訊，我們將盡快與您聯絡',
-      embedNote: '此區域可嵌入 Google 表單或其他線上表單服務',
+      embedNote: '尚未開放申請',
     },
     faq: {
       title: '常見問題',

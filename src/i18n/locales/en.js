@@ -409,7 +409,7 @@ export default {
       header: 'Consultation Form',
       instruction:
         'Please fill in the following information, and we will contact you as soon as possible',
-      embedNote: 'This area can embed Google Forms or other online form services',
+      embedNote: 'Not open for applications yet',
     },
     faq: {
       title: 'Frequently Asked Questions',
