@@ -103,41 +103,41 @@
       </div>
     </section>
 
-    <!-- Team Section (預留) -->
-    <section class="team-section">
+    <!-- Service Promise Section -->
+    <section class="service-promise-section">
       <div class="container">
         <div class="row">
           <div class="col-12 text-center mb-5">
-            <h2 class="section-title">{{ $t('about.team.title') }}</h2>
-            <p class="section-subtitle">{{ $t('about.team.subtitle') }}</p>
+            <h2 class="section-title">{{ $t('about.servicePromise.title') }}</h2>
+            <p class="section-subtitle">{{ $t('about.servicePromise.subtitle') }}</p>
           </div>
         </div>
         <div class="row g-4">
           <div class="col-md-4">
-            <div class="team-card">
-              <div class="team-avatar">
-                <i class="bi bi-person-circle"></i>
+            <div class="promise-card">
+              <div class="promise-icon">
+                <i class="bi bi-lightning-charge"></i>
               </div>
-              <h5>{{ $t('about.team.cto') }}</h5>
-              <p class="team-role">{{ $t('about.team.ctoRole') }}</p>
+              <h5>{{ $t('about.servicePromise.fastResponse.title') }}</h5>
+              <p class="promise-desc">{{ $t('about.servicePromise.fastResponse.description') }}</p>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="team-card">
-              <div class="team-avatar">
-                <i class="bi bi-person-circle"></i>
+            <div class="promise-card">
+              <div class="promise-icon">
+                <i class="bi bi-star"></i>
               </div>
-              <h5>{{ $t('about.team.pm') }}</h5>
-              <p class="team-role">{{ $t('about.team.pmRole') }}</p>
+              <h5>{{ $t('about.servicePromise.customized.title') }}</h5>
+              <p class="promise-desc">{{ $t('about.servicePromise.customized.description') }}</p>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="team-card">
-              <div class="team-avatar">
-                <i class="bi bi-person-circle"></i>
+            <div class="promise-card">
+              <div class="promise-icon">
+                <i class="bi bi-shield-check"></i>
               </div>
-              <h5>{{ $t('about.team.csm') }}</h5>
-              <p class="team-role">{{ $t('about.team.csmRole') }}</p>
+              <h5>{{ $t('about.servicePromise.quality.title') }}</h5>
+              <p class="promise-desc">{{ $t('about.servicePromise.quality.description') }}</p>
             </div>
           </div>
         </div>
@@ -156,10 +156,10 @@
                 <i class="bi bi-telephone me-2"></i>
                 {{ $t('common.contact') }}
               </router-link>
-              <router-link to="/demo" class="btn btn-outline-light btn-lg">
+              <!-- <router-link to="/demo" class="btn btn-outline-light btn-lg">
                 <i class="bi bi-play-circle me-2"></i>
                 {{ $t('common.bookDemo') }}
-              </router-link>
+              </router-link> -->
             </div>
           </div>
         </div>
@@ -325,37 +325,49 @@ onMounted(() => {
   opacity: 0.7;
 }
 
-/* Team Section */
-.team-section {
+/* Service Promise Section */
+.service-promise-section {
   padding: 5rem 0;
   background: var(--light-bg);
 }
 
-.team-card {
+.promise-card {
   text-align: center;
   padding: 2rem;
   background: var(--white);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   height: 100%;
+  transition: transform 0.3s ease;
 }
 
-.team-avatar {
-  margin-bottom: 1.5rem;
+.promise-card:hover {
+  transform: translateY(-5px);
 }
 
-.team-avatar i {
-  font-size: 3rem;
-  color: var(--primary-blue);
+.promise-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
 }
 
-.team-card h5 {
+.promise-icon i {
+  font-size: 1.5rem;
+  color: var(--white);
+}
+
+.promise-card h5 {
   color: var(--primary-blue);
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.team-role {
+.promise-desc {
   color: var(--text-blue);
   opacity: 0.8;
 }
