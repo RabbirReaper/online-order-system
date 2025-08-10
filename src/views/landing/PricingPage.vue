@@ -92,8 +92,8 @@
                         <li>
                           <i class="bi bi-check-circle-fill"></i>
                           <div>
-                            <strong>24/7 技術支援</strong>
-                            <span>24/7 接收客服需求，專人儘快處理</span>
+                            <strong>專屬客戶經理</strong>
+                            <span>專屬服務，深度了解營運需求</span>
                           </div>
                         </li>
                         <li>
@@ -299,11 +299,11 @@
                       </td>
                       <td>
                         <i class="bi bi-x-circle text-danger me-2"></i>
-                        $50,000 - $200,000
+                        $30,000-$60,000
                       </td>
                       <td>
                         <i class="bi bi-x-circle text-danger me-2"></i>
-                        $10,000 - $50,000
+                        初期費用低，硬體如平板需額外購買
                       </td>
                     </tr>
                     <tr>
@@ -314,11 +314,11 @@
                       </td>
                       <td>
                         <i class="bi bi-x-circle text-danger me-2"></i>
-                        $3,000 - $8,000
+                        無月租，後續維護需額外付費
                       </td>
                       <td>
                         <i class="bi bi-x-circle text-danger me-2"></i>
-                        $2,000 - $5,000
+                        月租約 $500 - $4,000 新台幣（視功能方案而異）
                       </td>
                     </tr>
                     <tr>
@@ -329,11 +329,11 @@
                       </td>
                       <td>
                         <i class="bi bi-x-circle text-danger me-2"></i>
-                        額外付費升級
+                        升級多需額外付費，且需原廠技術人員現場維護
                       </td>
                       <td>
                         <i class="bi bi-dash-circle text-warning me-2"></i>
-                        部分免費
+                        多為系統自動並免費更新，但高級功能有時需付費
                       </td>
                     </tr>
                     <tr>
@@ -344,7 +344,7 @@
                       </td>
                       <td>
                         <i class="bi bi-x-circle text-danger me-2"></i>
-                        有限時間/額外收費
+                        支援有限，且多為額外付費
                       </td>
                       <td>
                         <i class="bi bi-dash-circle text-warning me-2"></i>

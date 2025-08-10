@@ -14,44 +14,6 @@
       </div>
     </section>
 
-    <!-- Contact Info Section -->
-    <section class="contact-info-section">
-      <div class="container">
-        <div class="row g-4">
-          <div class="col-lg-4">
-            <div class="contact-card">
-              <div class="contact-icon">
-                <i class="bi bi-telephone"></i>
-              </div>
-              <h4>客服專線</h4>
-              <p class="contact-detail">+886-2-1234-5678</p>
-              <p class="contact-note">週一至週五 09:00-18:00</p>
-            </div>
-          </div>
-          <div class="col-lg-4">
-            <div class="contact-card">
-              <div class="contact-icon">
-                <i class="bi bi-envelope"></i>
-              </div>
-              <h4>電子信箱</h4>
-              <p class="contact-detail">info@restaurant-system.com</p>
-              <p class="contact-note">24小時內回覆</p>
-            </div>
-          </div>
-          <div class="col-lg-4">
-            <div class="contact-card">
-              <div class="contact-icon">
-                <i class="bi bi-geo-alt"></i>
-              </div>
-              <h4>公司地址</h4>
-              <p class="contact-detail">台北市信義區信義路五段7號</p>
-              <p class="contact-note">歡迎預約參觀</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Contact Form Section -->
     <section class="contact-form-section">
       <div class="container">
@@ -83,21 +45,6 @@
                     src="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true"
                     width="100%" height="600" frameborder="0"&gt;&lt;/iframe&gt;
                   </code>
-
-                  <!-- 替代聯絡方式 -->
-                  <div class="alternative-contact mt-4">
-                    <h6>或直接聯絡我們：</h6>
-                    <div class="contact-methods">
-                      <a href="tel:+886212345678" class="contact-method">
-                        <i class="bi bi-telephone"></i>
-                        直接撥打: +886-2-1234-5678
-                      </a>
-                      <a href="mailto:info@restaurant-system.com" class="contact-method">
-                        <i class="bi bi-envelope"></i>
-                        發送郵件: info@restaurant-system.com
-                      </a>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -269,8 +216,8 @@
               <div class="support-icon">
                 <i class="bi bi-headset"></i>
               </div>
-              <h5>24/7 客服</h5>
-              <p>。</p>
+              <h5>專屬客戶經理</h5>
+              <p>專屬服務，深度了解營運需求。</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3">
@@ -313,16 +260,6 @@
             <p class="cta-subtitle">
               填寫表單或直接聯絡我們，專業顧問將為您量身打造最適合的解決方案
             </p>
-            <div class="cta-actions">
-              <a href="tel:+886212345678" class="btn btn-cta btn-lg me-3">
-                <i class="bi bi-telephone me-2"></i>
-                立即致電
-              </a>
-              <router-link to="/demo" class="btn btn-outline-light btn-lg">
-                <i class="bi bi-play-circle me-2"></i>
-                預約展示
-              </router-link>
-            </div>
           </div>
         </div>
       </div>

@@ -240,7 +240,7 @@
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
-                  <span>24/7 技術支援</span>
+                  <span>專屬客戶經理</span>
                 </div>
                 <div class="pricing-feature">
                   <i class="bi bi-check-circle-fill"></i>
@@ -284,7 +284,7 @@
     <!-- Footer -->
     <footer class="footer-section">
       <div class="container">
-        <div class="row">
+        <!-- <div class="row">
           <div class="col-lg-4 mb-4">
             <div class="footer-brand">
               <h5>智慧餐飲管理系統</h5>
@@ -316,7 +316,7 @@
               <h6>聯絡我們</h6>
               <div class="contact-item">
                 <i class="bi bi-telephone"></i>
-                <span>+886-2-1234-5678</span>
+                <span>+886-9-79999412</span>
               </div>
               <div class="contact-item">
                 <i class="bi bi-envelope"></i>
@@ -328,7 +328,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
         <hr class="footer-divider" />
         <div class="row">
           <div class="col-12 text-center">
