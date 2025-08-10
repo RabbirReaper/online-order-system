@@ -201,10 +201,10 @@
                     <i class="bi bi-check-circle-fill me-1 text-success"></i>
                     於 {{ formatDate(item.usedAt) }} 使用
                   </div>
-                  <div class="coupon-order" v-if="item.order">
+                  <!-- <div class="coupon-order" v-if="item.order">
                     <i class="bi bi-bag me-1"></i>
                     訂單ID：{{ item.order }}
-                  </div>
+                  </div> -->
                 </div>
                 <div class="coupon-status">
                   <span class="badge bg-success">已使用</span>
