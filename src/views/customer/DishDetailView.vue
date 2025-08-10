@@ -204,13 +204,13 @@ const loadExistingItem = () => {
 }
 
 const goBack = () => {
-  router.go(-1)
+  router.back()
 }
 
 const addToCart = (dishInstance) => {
   cartStore.addItem(dishInstance)
 
-  router.go(-1)
+  router.back()
   // 返回菜單頁面
   // router.push({
   //   name: 'menu',
