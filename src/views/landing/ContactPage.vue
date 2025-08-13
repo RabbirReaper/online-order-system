@@ -296,7 +296,6 @@ const loadBootstrapJS = () => {
   const script = document.createElement('script')
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js'
   script.onload = () => {
-    console.log('Bootstrap JavaScript 載入完成')
     initializeAccordion()
   }
   document.head.appendChild(script)
@@ -309,7 +308,6 @@ const initializeAccordion = () => {
   accordionElements.forEach((element) => {
     if (window.bootstrap && window.bootstrap.Collapse) {
       // Bootstrap 已載入，accordion 應該自動工作
-      console.log('Bootstrap Accordion 已初始化')
     }
   })
 }
