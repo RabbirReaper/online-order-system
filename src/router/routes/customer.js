@@ -1,4 +1,16 @@
 export const customerRoutes = [
+  // LINE Entry 頁面 - 處理 LINE 進入點自動跳轉
+  {
+    path: '/line-entry',
+    name: 'line-entry',
+    component: () => import('@/views/customer/LineEntry.vue'),
+    meta: {
+      title: 'LINE 登入中...',
+      requiresAuth: false,
+      layout: 'minimal', // 使用最簡潔的布局
+    },
+  },
+
   // 櫃檯點餐系統路由
   {
     path: '/counter/:brandId/:storeId',
