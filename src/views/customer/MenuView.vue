@@ -352,6 +352,32 @@ watch(
   { immediate: true },
 )
 
+// 監聽路由查詢參數變化，處理桌號參數
+watch(
+  () => route.query.tableNumber,
+  (newTableNumber) => {
+    if (newTableNumber) {
+      console.log('檢測到桌號參數變化:', newTableNumber)
+      cartStore.setOrderType('dine_in')
+      cartStore.setDineInInfo({ tableNumber: String(newTableNumber) })
+      console.log('已更新為內用模式，桌號:', newTableNumber)
+    }
+  },
+  { immediate: true }
+)
+
+// 檢查並處理桌號參數
+const handleTableNumber = () => {
+  const tableNumber = route.query.tableNumber
+  if (tableNumber) {
+    console.log('檢測到桌號參數:', tableNumber)
+    // 自動設置為內用模式
+    cartStore.setOrderType('dine_in')
+    cartStore.setDineInInfo({ tableNumber: String(tableNumber) })
+    console.log('已自動設置為內用模式，桌號:', tableNumber)
+  }
+}
+
 // 初始化邏輯
 const initialize = async () => {
   if (hasInitialized.value) return
@@ -359,6 +385,9 @@ const initialize = async () => {
   menuStore.setBrandAndStore(brandId.value, storeId.value)
   menuStore.restoreState()
   cartStore.setBrandAndStore(brandId.value, storeId.value)
+
+  // 處理桌號參數（在設置品牌店鋪後）
+  handleTableNumber()
 
   if (brandId.value) {
     authStore.setBrandId(brandId.value)
@@ -390,6 +419,9 @@ onActivated(() => {
   if (cartStore.currentBrand !== brandId.value || cartStore.currentStore !== storeId.value) {
     cartStore.setBrandAndStore(brandId.value, storeId.value)
   }
+  
+  // 重新檢查桌號參數（頁面重新激活時）
+  handleTableNumber()
 })
 </script>
 

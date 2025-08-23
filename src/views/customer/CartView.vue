@@ -324,16 +324,27 @@ const successMsg = ref('')
 
 // 表單資料
 const orderRemarks = ref('')
-const orderType = ref('selfPickup')
-const tableNumber = ref('')
-const deliveryAddress = ref('')
+// 從 cartStore 初始化訂單類型和相關資訊
+const getInitialOrderType = () => {
+  // 將後端格式轉換為前端格式
+  const storeOrderType = cartStore.orderType
+  switch (storeOrderType) {
+    case 'dine_in': return 'dineIn'
+    case 'takeout': return 'selfPickup' 
+    case 'delivery': return 'delivery'
+    default: return 'selfPickup'
+  }
+}
+const orderType = ref(getInitialOrderType())
+const tableNumber = ref(cartStore.dineInInfo?.tableNumber || '')
+const deliveryAddress = ref(cartStore.deliveryInfo?.address || '')
 const pickupTime = ref('asap')
 const scheduledTime = ref('')
-const deliveryFee = ref(0)
+const deliveryFee = ref(cartStore.deliveryInfo?.deliveryFee || 0)
 const paymentMethod = ref('現金')
 const customerInfo = ref({
-  name: '',
-  phone: '',
+  name: cartStore.customerInfo?.name || '',
+  phone: cartStore.customerInfo?.phone || '',
 })
 
 // 券相關狀態
@@ -865,6 +876,36 @@ watch(
 // 生命週期
 onMounted(() => {
   window.scrollTo(0, 0)
+
+  // 從 cartStore 同步訂單類型和相關資訊
+  const storeOrderType = cartStore.orderType
+  if (storeOrderType) {
+    // 將後端格式轉換為前端格式
+    switch (storeOrderType) {
+      case 'dine_in': 
+        orderType.value = 'dineIn'
+        tableNumber.value = cartStore.dineInInfo?.tableNumber || ''
+        break
+      case 'takeout': 
+        orderType.value = 'selfPickup'
+        break
+      case 'delivery': 
+        orderType.value = 'delivery'
+        deliveryAddress.value = cartStore.deliveryInfo?.address || ''
+        deliveryFee.value = cartStore.deliveryInfo?.deliveryFee || 0
+        break
+    }
+  }
+  
+  // 同步客戶資訊
+  if (cartStore.customerInfo) {
+    customerInfo.value = {
+      name: cartStore.customerInfo.name || '',
+      phone: cartStore.customerInfo.phone || '',
+    }
+  }
+
+  console.log('購物車頁面初始化 - 訂單類型:', orderType.value, '桌號:', tableNumber.value)
 
   // 設置默認預約時間
   const date = new Date()
