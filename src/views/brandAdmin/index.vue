@@ -500,11 +500,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* CSS 自定義屬性用於動態視窗高度 */
-:root {
-  --vh: 1vh;
-}
-
 /* 全局布局 */
 .app-container {
   width: 100%;

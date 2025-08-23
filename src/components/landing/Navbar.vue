@@ -91,8 +91,37 @@
 
 <script setup>
 import { useLanguage } from '@/composables/useLanguage'
+import { onMounted, nextTick } from 'vue'
 
 const { currentLanguage, currentLanguageInfo, availableLanguages, switchLanguage } = useLanguage()
+// 動態載入 Bootstrap JavaScript
+const loadBootstrapJS = () => {
+  const script = document.createElement('script')
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js'
+  script.onload = () => {
+    initializeAccordion()
+  }
+  document.head.appendChild(script)
+}
+
+// 初始化 accordion
+const initializeAccordion = () => {
+  // 確保所有 accordion 元素都已正確初始化
+  const accordionElements = document.querySelectorAll('.accordion')
+}
+
+onMounted(async () => {
+  // 確保語言切換器在組件掛載後正確初始化
+  await nextTick()
+  // 檢查 Bootstrap 是否已載入
+  if (typeof window.bootstrap === 'undefined') {
+    // 如果需要，可以動態載入 Bootstrap
+    loadBootstrapJS()
+  } else {
+    // 手動初始化 accordion（可選）
+    initializeAccordion()
+  }
+})
 </script>
 
 <style scoped>

@@ -31,3 +31,5 @@ coverage
 
 .env
 new.tree
+CLAUDE.md
+/.claude

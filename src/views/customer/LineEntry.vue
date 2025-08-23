@@ -1,0 +1,289 @@
+<template>
+  <div class="line-entry-page">
+    <!-- 載入狀態 -->
+    <div v-if="isLoading" class="loading-container">
+      <div class="spinner"></div>
+      <p class="loading-text">{{ loadingMessage }}</p>
+    </div>
+
+    <!-- 錯誤狀態 -->
+    <div v-else-if="error" class="error-container">
+      <div class="error-icon">⚠️</div>
+      <h3>連接失敗</h3>
+      <p class="error-message">{{ error }}</p>
+      <div class="error-actions">
+        <button @click="retry" class="retry-btn">重新嘗試</button>
+        <button @click="goHome" class="home-btn">返回首頁</button>
+      </div>
+    </div>
+
+    <!-- 成功狀態（通常不會顯示，會直接跳轉） -->
+    <div v-else-if="success" class="success-container">
+      <div class="success-icon">✅</div>
+      <p>處理成功，正在跳轉...</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useLineParams } from '@/composables/useLineParams'
+import { useCartStore } from '@/stores/cart'
+
+// 組合式 API
+const router = useRouter()
+const { getCleanParams } = useLineParams()
+const cartStore = useCartStore()
+
+// 響應式狀態
+const isLoading = ref(true)
+const error = ref(null)
+const success = ref(false)
+const currentStep = ref('init')
+
+// 載入訊息
+const loadingMessage = computed(() => {
+  const messages = {
+    init: '正在初始化...',
+    params: '正在解析參數...',
+    context: '正在設定上下文...',
+    redirect: '處理成功，準備跳轉...',
+  }
+  return messages[currentStep.value] || '處理中...'
+})
+
+// 主要處理邏輯
+const processLineEntry = async () => {
+  try {
+    // Step 1: 解析參數
+    currentStep.value = 'params'
+    const params = getCleanParams()
+    console.log('📋 解析到的參數:', params)
+
+    // 短暫延遲，讓用戶看到載入過程
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // Step 2: 設定購物車上下文
+    currentStep.value = 'context'
+    cartStore.setBrandAndStore(params.brandId, params.storeId)
+    console.log('🛒 設定購物車上下文:', {
+      brandId: params.brandId,
+      storeId: params.storeId,
+    })
+
+    // Step 3: 準備跳轉
+    currentStep.value = 'redirect'
+    success.value = true
+
+    // 構建目標 URL
+    const targetRoute = {
+      name: 'menu',
+      params: {
+        brandId: params.brandId,
+        storeId: params.storeId,
+      },
+      query: {
+        fromLine: 'true',
+        source: params.source,
+        ...(params.tableNo && { tableNo: params.tableNo }),
+        ...(params.campaign && { campaign: params.campaign }),
+        ...(params.promo && { promo: params.promo }),
+        timestamp: Date.now(),
+      },
+    }
+
+    console.log('🔄 準備跳轉到:', targetRoute)
+
+    // 延遲跳轉，讓用戶看到成功訊息
+    setTimeout(() => {
+      router.replace(targetRoute)
+    }, 800)
+  } catch (err) {
+    console.error('❌ LINE Entry 處理失敗:', err)
+    error.value = err.message || '處理失敗，請重新嘗試'
+    isLoading.value = false
+  }
+}
+
+// 重試邏輯
+const retry = () => {
+  error.value = null
+  success.value = false
+  isLoading.value = true
+  currentStep.value = 'init'
+  processLineEntry()
+}
+
+// 返回首頁
+const goHome = () => {
+  router.replace({ name: 'landing-home' })
+}
+
+// 生命週期
+onMounted(() => {
+  // 記錄來源資訊（用於除錯）
+  const userAgent = navigator.userAgent
+  const isInLineApp = userAgent.includes('Line/')
+  
+  console.log('📱 環境資訊:', {
+    userAgent,
+    isInLineApp,
+    url: window.location.href,
+  })
+
+  if (!isInLineApp) {
+    console.warn('⚠️ 不在 LINE App 環境中')
+  }
+
+  // 開始處理
+  processLineEntry()
+})
+
+// 錯誤邊界處理
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('未處理的 Promise 錯誤:', event.reason)
+  if (isLoading.value) {
+    error.value = '系統錯誤，請重新嘗試'
+    isLoading.value = false
+  }
+})
+</script>
+
+<style scoped>
+.line-entry-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 20px;
+}
+
+.loading-container,
+.error-container,
+.success-container {
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 載入動畫 */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f0f0f0;
+  border-top: 4px solid #00c851;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* 錯誤狀態 */
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.error-container h3 {
+  color: #e74c3c;
+  margin: 0 0 12px 0;
+  font-size: 20px;
+}
+
+.error-message {
+  color: #666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.retry-btn,
+.home-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn {
+  background: #00c851;
+  color: white;
+}
+
+.retry-btn:hover {
+  background: #007e33;
+}
+
+.home-btn {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #dee2e6;
+}
+
+.home-btn:hover {
+  background: #e9ecef;
+}
+
+/* 成功狀態 */
+.success-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.success-container p {
+  color: #00c851;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* 響應式設計 */
+@media (max-width: 480px) {
+  .line-entry-page {
+    padding: 16px;
+  }
+
+  .loading-container,
+  .error-container,
+  .success-container {
+    padding: 32px 16px;
+  }
+
+  .error-actions {
+    flex-direction: column;
+  }
+
+  .retry-btn,
+  .home-btn {
+    width: 100%;
+  }
+}
+</style>

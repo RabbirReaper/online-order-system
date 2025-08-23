@@ -571,6 +571,7 @@ const getSelectedVoucher = (voucherId) => {
   return voucherTemplates.value.find((voucher) => voucher._id === voucherId)
 }
 
+// ✅ 簡化：直接使用 v-model，這是正確的做法
 const updateVoucherName = (index) => {
   const voucher = getSelectedVoucher(formData.bundleItems[index].voucherTemplate)
   if (voucher) {
@@ -613,12 +614,15 @@ const removeImage = () => {
   }
 }
 
+// 🔥 修正：為每個項目分配唯一的 ID
 const addBundleItem = () => {
-  formData.bundleItems.push({
+  const newItem = {
+    id: `item_${++itemIdCounter}_${Date.now()}`, // 唯一 ID 作為 key
     voucherTemplate: '',
     quantity: 1,
     voucherName: '',
-  })
+  }
+  formData.bundleItems.push(newItem)
 }
 
 const removeBundleItem = (index) => {
@@ -794,6 +798,19 @@ const fetchBundleData = async () => {
     if (response && response.bundle) {
       const bundle = response.bundle
 
+      // ✅ 關鍵修正：確保 voucherTemplate 是 ID 字串而不是對象
+      const bundleItemsWithIds = (bundle.bundleItems || []).map((item, index) => ({
+        ...item,
+        id: `existing_${index}_${Date.now()}`,
+        // 🎯 核心修正：如果 voucherTemplate 是對象，只取 _id
+        voucherTemplate:
+          typeof item.voucherTemplate === 'object' && item.voucherTemplate?._id
+            ? item.voucherTemplate._id
+            : item.voucherTemplate || '',
+        quantity: item.quantity || 1,
+        voucherName: item.voucherName || '',
+      }))
+
       // 填充表單資料（移除時間相關欄位）
       Object.assign(formData, {
         name: bundle.name,
@@ -801,7 +818,7 @@ const fetchBundleData = async () => {
         image: bundle.image,
         cashPrice: bundle.cashPrice || { original: null, selling: null },
         pointPrice: bundle.pointPrice || { original: null, selling: null },
-        bundleItems: bundle.bundleItems || [],
+        bundleItems: bundleItemsWithIds,
         voucherValidityDays: bundle.voucherValidityDays || 30,
         isActive: bundle.isActive,
         purchaseLimitPerUser: bundle.purchaseLimitPerUser,
@@ -844,7 +861,7 @@ const submitForm = async () => {
       ...formData,
     }
 
-    // ✅ 明確告訴後端要清除或保留價格欄位
+    // 明確告訴後端要清除或保留價格欄位
     if (!hasCashPrice.value) {
       submitData.cashPrice = null // 明確傳送 null 表示要清除
     }
