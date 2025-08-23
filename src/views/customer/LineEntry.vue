@@ -86,7 +86,7 @@ const processLineEntry = async () => {
       query: {
         fromLine: 'true',
         source: params.source,
-        ...(params.tableNo && { tableNo: params.tableNo }),
+        ...(params.tableNumber && { tableNumber: params.tableNumber }),
         ...(params.campaign && { campaign: params.campaign }),
         ...(params.promo && { promo: params.promo }),
         timestamp: Date.now(),

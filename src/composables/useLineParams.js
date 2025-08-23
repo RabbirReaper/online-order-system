@@ -80,7 +80,7 @@ export function useLineParams() {
 
         // 可選參數
         source: params.source?.toLowerCase() || 'direct',
-        tableNo: params.tableNo?.toUpperCase(),
+        tableNumber: params.tableNumber || params.tableNo, // 支援兩種參數名稱
         area: params.area?.toLowerCase(),
         campaign: params.campaign?.toLowerCase(),
         promo: params.promo?.toUpperCase(),
