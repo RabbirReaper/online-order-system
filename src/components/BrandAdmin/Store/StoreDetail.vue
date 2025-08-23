@@ -522,6 +522,22 @@
                     </div>
                   </router-link>
                 </div>
+
+                <div class="col-md-6">
+                  <div
+                    class="card action-card h-100"
+                    style="cursor: pointer"
+                    @click="store && (showTableCardModal = true)"
+                  >
+                    <div
+                      class="card-body d-flex flex-column align-items-center justify-content-center p-3"
+                    >
+                      <i class="bi bi-qr-code action-icon mb-2"></i>
+                      <h6 class="mb-1">生成桌牌</h6>
+                      <p class="small text-muted text-center mb-0">生成 QR Code 桌牌供顧客掃描點餐</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -817,6 +833,15 @@
         </BButton>
       </template>
     </BModal>
+
+    <!-- QR Code 桌牌生成器 -->
+    <QRTableCardGenerator 
+      v-if="store"
+      v-model:show="showTableCardModal"
+      :brandId="brandId"
+      :storeId="storeId"
+      :store="store"
+    />
   </div>
 </template>
 
@@ -832,6 +857,7 @@ import {
   BFormText,
 } from 'bootstrap-vue-next'
 import api from '@/api'
+import QRTableCardGenerator from './QRTableCardGenerator.vue'
 
 // 路由
 const router = useRouter()
@@ -864,6 +890,7 @@ const showDeleteModal = ref(false)
 const showBusinessHoursModal = ref(false)
 const showAnnouncementsModal = ref(false)
 const showServiceSettingsModal = ref(false)
+const showTableCardModal = ref(false)
 
 // 編輯用的數據
 const editBusinessHours = ref([])
@@ -1302,6 +1329,13 @@ onMounted(() => {
       })
     }
   })
+})
+
+// 確保組件正確註冊
+defineOptions({
+  components: {
+    QRTableCardGenerator
+  }
 })
 </script>
 
