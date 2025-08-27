@@ -376,6 +376,56 @@
             </div>
           </div>
 
+          <!-- 外送平台整合卡片 -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
+                <span>外送平台整合</span>
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  @click="showDeliveryPlatformsModal = true"
+                >
+                  <i class="bi bi-pencil me-1"></i>快速編輯
+                </button>
+              </h5>
+
+              <div v-if="store.deliveryPlatforms && store.deliveryPlatforms.length > 0">
+                <div class="row g-3">
+                  <div
+                    v-for="(platform, index) in store.deliveryPlatforms"
+                    :key="index"
+                    class="col-md-6"
+                  >
+                    <div class="card border-light">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center mb-2">
+                          <i class="bi bi-truck me-2 text-primary"></i>
+                          <h6 class="mb-0">{{ getPlatformDisplayName(platform.platform) }}</h6>
+                        </div>
+                        <div class="small text-muted">店家 ID</div>
+                        <div class="fw-bold mb-2">{{ platform.storeId }}</div>
+                        <div class="small text-muted" v-if="platform.lastSyncAt">
+                          最後同步：{{ formatDate(platform.lastSyncAt) }}
+                        </div>
+                        <div class="small text-muted" v-else>尚未同步</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else class="alert alert-light text-center py-3">
+                <div class="text-muted mb-2">
+                  <i class="bi bi-truck me-1"></i>
+                  尚未設置外送平台整合
+                </div>
+                <div class="small text-muted">
+                  整合外送平台後，系統可自動接收來自 foodpanda、Uber Eats 等平台的訂單
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- 營業時間卡片 -->
           <div class="card mb-4">
             <div class="card-body">
@@ -702,6 +752,87 @@
       </template>
     </BModal>
 
+    <!-- 外送平台整合快速編輯對話框 -->
+    <BModal v-model:show="showDeliveryPlatformsModal" title="編輯外送平台整合" size="lg" centered>
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0">外送平台設定</h6>
+          <BButton size="sm" variant="outline-primary" @click="addModalDeliveryPlatform">
+            <i class="bi bi-plus-circle me-1"></i>新增平台
+          </BButton>
+        </div>
+
+        <div v-if="editDeliveryPlatforms.length > 0">
+          <div v-for="(platform, index) in editDeliveryPlatforms" :key="index" class="card mb-3">
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label :for="`modal-platform-type-${index}`" class="form-label required"
+                    >外送平台</label
+                  >
+                  <BFormSelect
+                    :id="`modal-platform-type-${index}`"
+                    v-model="platform.platform"
+                    :options="platformOptions"
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label :for="`modal-platform-storeId-${index}`" class="form-label required"
+                    >店家 ID</label
+                  >
+                  <BFormInput
+                    :id="`modal-platform-storeId-${index}`"
+                    v-model="platform.storeId"
+                    placeholder="請輸入平台分配的店家 ID"
+                  />
+                  <BFormText>請輸入該外送平台分配給店家的唯一識別碼</BFormText>
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                  <BButton
+                    size="sm"
+                    variant="outline-danger"
+                    @click="removeModalDeliveryPlatform(index)"
+                    class="w-100"
+                  >
+                    <i class="bi bi-trash me-1"></i>移除
+                  </BButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-light text-center py-3" v-else>
+          <div class="text-muted mb-2">
+            <i class="bi bi-truck me-1"></i>
+            尚未設置外送平台整合
+          </div>
+          <BButton size="sm" variant="primary" @click="addModalDeliveryPlatform">
+            <i class="bi bi-plus-circle me-1"></i>新增平台整合
+          </BButton>
+        </div>
+      </div>
+
+      <template #footer>
+        <BButton variant="secondary" @click="showDeliveryPlatformsModal = false">取消</BButton>
+        <BButton
+          variant="primary"
+          @click="updateDeliveryPlatforms"
+          :disabled="isUpdatingDeliveryPlatforms"
+        >
+          <span
+            v-if="isUpdatingDeliveryPlatforms"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          {{ isUpdatingDeliveryPlatforms ? '更新中...' : '保存變更' }}
+        </BButton>
+      </template>
+    </BModal>
+
     <!-- 服務設定快速編輯對話框 -->
     <BModal v-model:show="showServiceSettingsModal" title="編輯服務設定" size="lg" centered>
       <div class="mb-4">
@@ -855,6 +986,7 @@ import {
   BFormInput,
   BFormTextarea,
   BFormText,
+  BFormSelect,
 } from 'bootstrap-vue-next'
 import api from '@/api'
 import QRTableCardGenerator from './QRTableCardGenerator.vue'
@@ -884,17 +1016,20 @@ const isDeleting = ref(false)
 const isUpdatingHours = ref(false)
 const isUpdatingAnnouncements = ref(false)
 const isUpdatingServiceSettings = ref(false)
+const isUpdatingDeliveryPlatforms = ref(false)
 
 // Modal 顯示狀態
 const showDeleteModal = ref(false)
 const showBusinessHoursModal = ref(false)
 const showAnnouncementsModal = ref(false)
 const showServiceSettingsModal = ref(false)
+const showDeliveryPlatformsModal = ref(false)
 const showTableCardModal = ref(false)
 
 // 編輯用的數據
 const editBusinessHours = ref([])
 const editAnnouncements = ref([])
+const editDeliveryPlatforms = ref([])
 const editServiceSettings = reactive({
   enableLineOrdering: false,
   showTaxId: false,
@@ -939,9 +1074,25 @@ const copyToClipboard = (text, type) => {
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
 
+// 外送平台選項
+const platformOptions = [
+  { value: '', text: '請選擇外送平台', disabled: true },
+  { value: 'foodpanda', text: 'foodpanda' },
+  { value: 'ubereats', text: 'Uber Eats' },
+]
+
 // 取得星期幾名稱
 const getDayName = (day) => {
   return dayNames[day] || `未知 (${day})`
+}
+
+// 取得平台顯示名稱
+const getPlatformDisplayName = (platform) => {
+  const platformMap = {
+    foodpanda: 'foodpanda',
+    ubereats: 'Uber Eats',
+  }
+  return platformMap[platform] || platform
 }
 
 // 按照星期順序排序的營業時間
@@ -983,6 +1134,70 @@ const fetchStoreData = async () => {
   }
 }
 
+// 新增模態窗中的外送平台
+const addModalDeliveryPlatform = () => {
+  editDeliveryPlatforms.value.push({
+    platform: '',
+    storeId: '',
+  })
+}
+
+// 移除模態窗中的外送平台
+const removeModalDeliveryPlatform = (index) => {
+  editDeliveryPlatforms.value.splice(index, 1)
+}
+
+// 更新外送平台設定
+const updateDeliveryPlatforms = async () => {
+  if (!store.value) return
+
+  // 驗證表單
+  let isValid = true
+  for (const platform of editDeliveryPlatforms.value) {
+    if (!platform.platform.trim() || !platform.storeId.trim()) {
+      isValid = false
+      break
+    }
+  }
+
+  if (!isValid) {
+    alert('外送平台和店家 ID 都不能為空')
+    return
+  }
+
+  // 檢查是否有重複的平台
+  const platforms = editDeliveryPlatforms.value.map(p => p.platform)
+  const uniquePlatforms = new Set(platforms)
+  if (platforms.length !== uniquePlatforms.size) {
+    alert('不能重複新增相同的外送平台')
+    return
+  }
+
+  isUpdatingDeliveryPlatforms.value = true
+
+  try {
+    // 這裡需要實作對應的 API 方法
+    const response = await api.store.updateStore({
+      brandId: brandId.value,
+      id: store.value._id,
+      data: { deliveryPlatforms: editDeliveryPlatforms.value }
+    })
+
+    if (response && response.store) {
+      // 更新數據
+      store.value.deliveryPlatforms = response.store.deliveryPlatforms
+
+      // 關閉模態窗口
+      showDeliveryPlatformsModal.value = false
+    }
+  } catch (err) {
+    console.error('更新外送平台設定失敗:', err)
+    alert('更新外送平台設定時發生錯誤')
+  } finally {
+    isUpdatingDeliveryPlatforms.value = false
+  }
+}
+
 // 初始化編輯用數據
 const initEditData = () => {
   // 深複製營業時間數據
@@ -1002,6 +1217,12 @@ const initEditData = () => {
 
   // 深複製公告數據
   editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []))
+
+  // 深複製外送平台數據
+  editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || [])).map(platform => ({
+    platform: platform.platform || '',
+    storeId: platform.storeId || '',
+  }))
 
   // 初始化服務設定
   Object.assign(editServiceSettings, {
@@ -1297,6 +1518,16 @@ onMounted(() => {
   watch(showAnnouncementsModal, (newValue) => {
     if (newValue) {
       editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []))
+    }
+  })
+
+  // 當外送平台編輯模態框開啟時重新初始化數據
+  watch(showDeliveryPlatformsModal, (newValue) => {
+    if (newValue) {
+      editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || [])).map(platform => ({
+        platform: platform.platform || '',
+        storeId: platform.storeId || '',
+      }))
     }
   })
 

@@ -229,6 +229,83 @@
             </div>
             <BFormText>設定店鋪的其他功能選項</BFormText>
           </div>
+
+          <!-- 外送平台整合設定 -->
+          <div class="mb-3">
+            <h6 class="border-bottom pb-2 mb-3 d-flex justify-content-between">
+              <span>外送平台整合</span>
+              <BButton size="sm" variant="outline-primary" @click="addDeliveryPlatform">
+                <i class="bi bi-plus-circle me-1"></i>新增平台
+              </BButton>
+            </h6>
+
+            <div v-if="formData.deliveryPlatforms && formData.deliveryPlatforms.length > 0">
+              <div
+                v-for="(platform, index) in formData.deliveryPlatforms"
+                :key="index"
+                class="card mb-3"
+              >
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label :for="`platform-type-${index}`" class="form-label required"
+                        >外送平台</label
+                      >
+                      <BFormSelect
+                        :id="`platform-type-${index}`"
+                        v-model="platform.platform"
+                        :options="platformOptions"
+                        :state="getDeliveryPlatformError(index, 'platform') ? false : null"
+                      />
+                      <BFormInvalidFeedback v-if="getDeliveryPlatformError(index, 'platform')">
+                        {{ getDeliveryPlatformError(index, 'platform') }}
+                      </BFormInvalidFeedback>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label :for="`platform-storeId-${index}`" class="form-label required"
+                        >店家 ID</label
+                      >
+                      <BFormInput
+                        :id="`platform-storeId-${index}`"
+                        v-model="platform.storeId"
+                        :state="getDeliveryPlatformError(index, 'storeId') ? false : null"
+                        placeholder="請輸入平台分配的店家 ID"
+                      />
+                      <BFormInvalidFeedback v-if="getDeliveryPlatformError(index, 'storeId')">
+                        {{ getDeliveryPlatformError(index, 'storeId') }}
+                      </BFormInvalidFeedback>
+                      <BFormText>請輸入該外送平台分配給店家的唯一識別碼</BFormText>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                      <BButton
+                        variant="outline-danger"
+                        size="sm"
+                        @click="removeDeliveryPlatform(index)"
+                        class="w-100"
+                      >
+                        <i class="bi bi-trash me-1"></i>移除
+                      </BButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert alert-light text-center py-3" v-else>
+              <div class="text-muted mb-2">
+                <i class="bi bi-truck me-1"></i>
+                尚未設置外送平台整合
+              </div>
+              <div class="small text-muted mb-2">
+                整合外送平台後，系統可自動接收來自 foodpanda、Uber Eats 等平台的訂單
+              </div>
+              <BButton size="sm" variant="primary" @click="addDeliveryPlatform">
+                <i class="bi bi-plus-circle me-1"></i>新增平台整合
+              </BButton>
+            </div>
+          </div>
         </div>
 
         <!-- 營業時間區塊 -->
@@ -476,6 +553,7 @@ import {
   BFormText,
   BInputGroup,
   BAlert,
+  BFormSelect,
 } from 'bootstrap-vue-next'
 import api from '@/api'
 
@@ -515,6 +593,7 @@ const formData = reactive({
   minDeliveryQuantity: 1,
   maxDeliveryDistance: 5,
   advanceOrderDays: 0,
+  deliveryPlatforms: [], // 外送平台整合
 })
 
 // 錯誤訊息
@@ -525,6 +604,7 @@ const errors = reactive({
   image: '',
   businessHours: [],
   announcements: [],
+  deliveryPlatforms: [],
 })
 
 // 狀態
@@ -535,6 +615,13 @@ const fileInputRef = ref(null)
 
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+// 外送平台選項
+const platformOptions = [
+  { value: '', text: '請選擇外送平台', disabled: true },
+  { value: 'foodpanda', text: 'foodpanda' },
+  { value: 'ubereats', text: 'Uber Eats' },
+]
 
 // 取得星期幾名稱
 const getDayName = (day) => {
@@ -645,6 +732,27 @@ const getAnnouncementError = (index, field) => {
   return errors.announcements[index][field] || ''
 }
 
+// 新增外送平台
+const addDeliveryPlatform = () => {
+  formData.deliveryPlatforms.push({
+    platform: '',
+    storeId: '',
+  })
+}
+
+// 移除外送平台
+const removeDeliveryPlatform = (index) => {
+  formData.deliveryPlatforms.splice(index, 1)
+}
+
+// 獲取外送平台錯誤訊息
+const getDeliveryPlatformError = (index, field) => {
+  if (!errors.deliveryPlatforms || !errors.deliveryPlatforms[index]) {
+    return ''
+  }
+  return errors.deliveryPlatforms[index][field] || ''
+}
+
 // 處理圖片上傳
 const handleImageChange = (event) => {
   const file = event.target.files[0]
@@ -710,6 +818,7 @@ const resetForm = () => {
     formData.minDeliveryQuantity = 1
     formData.maxDeliveryDistance = 5
     formData.advanceOrderDays = 0
+    formData.deliveryPlatforms = []
   }
   clearImage()
 
@@ -720,6 +829,7 @@ const resetForm = () => {
   errors.image = ''
   errors.businessHours = []
   errors.announcements = []
+  errors.deliveryPlatforms = []
   formErrors.value = []
   successMessage.value = ''
 }
@@ -732,6 +842,7 @@ const validateForm = () => {
   errors.phone = ''
   errors.businessHours = []
   errors.announcements = []
+  errors.deliveryPlatforms = []
   formErrors.value = []
   let isValid = true
 
@@ -868,6 +979,43 @@ const validateForm = () => {
     isValid = false
   }
 
+  // 驗證外送平台設定
+  errors.deliveryPlatforms = []
+  for (let i = 0; i < formData.deliveryPlatforms.length; i++) {
+    const platform = formData.deliveryPlatforms[i]
+    const platformErrors = {}
+
+    // 檢查是否選擇了平台
+    if (!platform.platform || platform.platform.trim() === '') {
+      platformErrors.platform = '請選擇外送平台'
+      formErrors.value.push(`外送平台 #${i + 1} 請選擇平台類型`)
+      isValid = false
+    }
+
+    // 檢查 storeId
+    if (!platform.storeId || platform.storeId.trim() === '') {
+      platformErrors.storeId = '店家 ID 為必填項'
+      formErrors.value.push(`外送平台 #${i + 1} 店家 ID 為必填項`)
+      isValid = false
+    } else if (platform.storeId.length > 100) {
+      platformErrors.storeId = '店家 ID 不能超過 100 個字元'
+      formErrors.value.push(`外送平台 #${i + 1} 店家 ID 不能超過 100 個字元`)
+      isValid = false
+    }
+
+    // 檢查是否有重複的平台
+    for (let j = i + 1; j < formData.deliveryPlatforms.length; j++) {
+      if (platform.platform && formData.deliveryPlatforms[j].platform === platform.platform) {
+        platformErrors.platform = '不能重複新增相同的外送平台'
+        formErrors.value.push(`外送平台 #${i + 1} 不能重複新增相同的外送平台`)
+        isValid = false
+        break
+      }
+    }
+
+    errors.deliveryPlatforms[i] = Object.keys(platformErrors).length > 0 ? platformErrors : null
+  }
+
   return isValid
 }
 
@@ -927,6 +1075,14 @@ const fetchStoreData = async () => {
         store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 5
       formData.advanceOrderDays = store.advanceOrderDays !== undefined ? store.advanceOrderDays : 0
 
+      // 處理外送平台設定
+      formData.deliveryPlatforms =
+        store.deliveryPlatforms && store.deliveryPlatforms.length > 0 ? 
+        store.deliveryPlatforms.map(platform => ({
+          platform: platform.platform || '',
+          storeId: platform.storeId || '',
+        })) : []
+
       formData._id = store._id
     } else {
       // 顯示錯誤訊息
@@ -984,6 +1140,7 @@ const submitForm = async () => {
       minDeliveryQuantity: formData.minDeliveryQuantity,
       maxDeliveryDistance: formData.maxDeliveryDistance,
       advanceOrderDays: formData.advanceOrderDays,
+      deliveryPlatforms: formData.deliveryPlatforms,
     }
 
     // 直接使用已轉換的base64圖片，不需要再次轉換
