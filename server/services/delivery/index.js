@@ -30,7 +30,29 @@ export const {
   receiveOrder, // 接收 UberEats 訂單
   checkUberEatsConfig, // 檢查 UberEats 配置
   testUberEatsConnection, // 測試 UberEats API 連接
+  // Phase 1: 優先實作的訂單同步功能
+  getStoreOrders, // 獲取店鋪訂單列表
+  cancelStoreOrder, // 取消店鋪訂單
 } = ubereatsService
+
+// === 便捷別名導出（方便控制器調用）===
+export const getUberEatsStoreOrders = ubereatsService.getStoreOrders
+export const cancelUberEatsOrder = ubereatsService.cancelStoreOrder
+
+// === TODO: Phase 2 功能（註解待實作）===
+/*
+export const {
+  updateStoreStatus, // TODO: 更新店鋪營業狀態
+  getStoreStatus, // TODO: 獲取店鋪營業狀態
+  getStoreInfo, // TODO: 獲取店鋪資訊
+  configurePOSIntegration, // TODO: POS 系統配置
+  getStoreReports, // TODO: 獲取營運報表
+} = ubereatsService
+
+export const updateUberEatsStoreStatus = ubereatsService.updateStoreStatus
+export const getUberEatsStoreStatus = ubereatsService.getStoreStatus
+export const getUberEatsStoreInfo = ubereatsService.getStoreInfo
+*/
 
 // === 訂單同步服務導出 ===
 export const {

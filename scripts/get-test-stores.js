@@ -44,7 +44,7 @@ const UBEREATS_CONFIG = {
     ENVIRONMENT === 'production' ? 'https://api.uber.com/v1' : 'https://sandbox-api.uber.com/v1',
 
   oauthUrl: 'https://auth.uber.com/oauth/v2/token',
-  scope: 'eats.store.orders.read eats.store.orders.write',
+  scope: 'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
   environment: ENVIRONMENT,
 }
 

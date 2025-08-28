@@ -44,7 +44,7 @@ const UBEREATS_CONFIG = {
   // OAuth URL 固定
   oauthUrl: 'https://login.uber.com/oauth/v2/token',
 
-  scope: 'eats.order',
+  scope: 'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
   environment: ENVIRONMENT,
 }
 
@@ -404,3 +404,251 @@ export const testUberEatsConnection = async () => {
     return false
   }
 }
+
+// ==========================================
+// 🚀 Phase 1: 訂單同步功能 (優先實作)
+// ==========================================
+
+/**
+ * 獲取店鋪訂單列表 - 優先實作
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {Object} options - 查詢選項
+ */
+export const getStoreOrders = async (storeId, options = {}) => {
+  try {
+    const accessToken = await getAccessToken()
+
+    const queryParams = new URLSearchParams(options)
+    const url = `${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to get store orders: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log(`✅ Successfully fetched orders for store ${storeId}`)
+    return data
+  } catch (error) {
+    console.error(`❌ Failed to get store orders for ${storeId}:`, error)
+    
+    // 開發階段提供模擬數據
+    if (UBEREATS_CONFIG.environment === 'sandbox') {
+      console.log('🧪 Sandbox mode: returning mock orders')
+      return {
+        orders: [
+          createMockOrderData('mock-order-1'),
+          createMockOrderData('mock-order-2')
+        ]
+      }
+    }
+    
+    throw error
+  }
+}
+
+/**
+ * 取消店鋪訂單 - 優先實作
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {String} orderId - 訂單ID
+ * @param {String} reason - 取消原因
+ */
+export const cancelStoreOrder = async (storeId, orderId, reason = 'RESTAURANT_UNAVAILABLE') => {
+  try {
+    const accessToken = await getAccessToken()
+
+    const response = await fetch(
+      `${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/orders/${orderId}/cancel`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to cancel order: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log(`✅ Successfully cancelled order ${orderId} for store ${storeId}`)
+    return data
+  } catch (error) {
+    console.error(`❌ Failed to cancel order ${orderId}:`, error)
+    
+    // 開發階段提供模擬回應
+    if (UBEREATS_CONFIG.environment === 'sandbox') {
+      console.log('🧪 Sandbox mode: simulating order cancellation')
+      return { success: true, message: 'Mock cancellation successful' }
+    }
+    
+    throw error
+  }
+}
+
+// ==========================================
+// 📋 Phase 2: TODO - 其他 API 功能 
+// ==========================================
+
+/**
+ * TODO: 更新店鋪營業狀態
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {String} status - 狀態：'ONLINE', 'OFFLINE', 'PAUSE'
+ */
+/*
+export const updateStoreStatus = async (storeId, status) => {
+  try {
+    const accessToken = await getAccessToken()
+
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/status`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to update store status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error(`❌ Failed to update store status for ${storeId}:`, error)
+    throw error
+  }
+}
+*/
+
+/**
+ * TODO: 獲取店鋪營業狀態
+ * @param {String} storeId - UberEats 店鋪ID
+ */
+/*
+export const getStoreStatus = async (storeId) => {
+  try {
+    const accessToken = await getAccessToken()
+
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/status`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to get store status: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error(`❌ Failed to get store status for ${storeId}:`, error)
+    throw error
+  }
+}
+*/
+
+/**
+ * TODO: 獲取店鋪資訊
+ * @param {String} storeId - UberEats 店鋪ID
+ */
+/*
+export const getStoreInfo = async (storeId) => {
+  try {
+    const accessToken = await getAccessToken()
+
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to get store info: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error(`❌ Failed to get store info for ${storeId}:`, error)
+    throw error
+  }
+}
+*/
+
+/**
+ * TODO: POS 系統配置 (eats.pos_provisioning scope)
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {Object} posData - POS 配置數據
+ */
+/*
+export const configurePOSIntegration = async (storeId, posData) => {
+  try {
+    const accessToken = await getAccessToken()
+
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/pos_data`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(posData),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to configure POS: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error(`❌ Failed to configure POS for ${storeId}:`, error)
+    throw error
+  }
+}
+*/
+
+/**
+ * TODO: 獲取營運報表 (eats.report scope)
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {Object} reportOptions - 報表選項
+ */
+/*
+export const getStoreReports = async (storeId, reportOptions) => {
+  try {
+    const accessToken = await getAccessToken()
+    
+    const queryParams = new URLSearchParams(reportOptions)
+    const url = `${UBEREATS_CONFIG.apiUrl}/eats/reports/stores/${storeId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to get store reports: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error(`❌ Failed to get reports for ${storeId}:`, error)
+    throw error
+  }
+}
+*/

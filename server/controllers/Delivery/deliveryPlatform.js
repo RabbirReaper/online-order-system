@@ -172,3 +172,136 @@ export const checkUberEatsConfig = asyncHandler(async (req, res) => {
     configStatus,
   })
 })
+
+// ==========================================
+// 🚀 Phase 1: UberEats 訂單同步功能 (優先實作)
+// ==========================================
+
+/**
+ * 獲取 UberEats 店鋪訂單列表
+ */
+export const getUberEatsStoreOrders = asyncHandler(async (req, res) => {
+  const { storeId } = req.params
+  const options = req.query
+
+  if (!storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪ID為必填欄位',
+    })
+  }
+
+  const orders = await deliveryService.getUberEatsStoreOrders(storeId, options)
+
+  res.json({
+    success: true,
+    message: '成功獲取店鋪訂單列表',
+    storeId,
+    orders,
+  })
+})
+
+/**
+ * 取消 UberEats 店鋪訂單
+ */
+export const cancelUberEatsOrder = asyncHandler(async (req, res) => {
+  const { storeId, orderId } = req.params
+  const { reason } = req.body
+
+  if (!storeId || !orderId) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪ID和訂單ID為必填欄位',
+    })
+  }
+
+  const result = await deliveryService.cancelUberEatsOrder(storeId, orderId, reason)
+
+  res.json({
+    success: true,
+    message: '訂單取消成功',
+    storeId,
+    orderId,
+    result,
+  })
+})
+
+// ==========================================
+// 📋 Phase 2: TODO - 其他 UberEats API 功能
+// ==========================================
+
+/**
+ * TODO: 更新 UberEats 店鋪營業狀態
+ */
+/*
+export const updateUberEatsStoreStatus = asyncHandler(async (req, res) => {
+  const { storeId, status } = req.body
+
+  if (!storeId || !status) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪ID和狀態為必填欄位',
+    })
+  }
+
+  const result = await deliveryService.updateUberEatsStoreStatus(storeId, status)
+
+  res.json({
+    success: true,
+    message: '店鋪狀態更新成功',
+    storeId,
+    status,
+    result,
+  })
+})
+*/
+
+/**
+ * TODO: 獲取 UberEats 店鋪營業狀態
+ */
+/*
+export const getUberEatsStoreStatus = asyncHandler(async (req, res) => {
+  const { storeId } = req.params
+
+  if (!storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪ID為必填欄位',
+    })
+  }
+
+  const status = await deliveryService.getUberEatsStoreStatus(storeId)
+
+  res.json({
+    success: true,
+    message: '成功獲取店鋪狀態',
+    storeId,
+    status,
+  })
+})
+*/
+
+/**
+ * TODO: 獲取 UberEats 店鋪資訊
+ */
+/*
+export const getUberEatsStoreInfo = asyncHandler(async (req, res) => {
+  const { storeId } = req.params
+
+  if (!storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪ID為必填欄位',
+    })
+  }
+
+  const storeInfo = await deliveryService.getUberEatsStoreInfo(storeId)
+
+  res.json({
+    success: true,
+    message: '成功獲取店鋪資訊',
+    storeId,
+    storeInfo,
+  })
+})
+*/
