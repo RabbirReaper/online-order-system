@@ -590,6 +590,80 @@ export const getStoreInfo = async (storeId) => {
 */
 
 /**
+ * 自動 Provisioning 店鋪 - 實作版本
+ * @param {String} ubereatsStoreId - UberEats 店鋪ID
+ * @param {String} userAccessToken - 用戶存取令牌
+ */
+export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
+  try {
+    console.log(`🔄 Auto-provisioning store: ${ubereatsStoreId}`)
+
+    // 找出內部店鋪
+    const internalStore = await Store.findOne({
+      'deliveryPlatforms.platform': 'ubereats',
+      'deliveryPlatforms.storeId': ubereatsStoreId,
+    })
+
+    if (!internalStore) {
+      throw new Error(`找不到對應的店鋪設定: ${ubereatsStoreId}`)
+    }
+
+    // 使用環境變數中的 SERVER_URL，如果沒有則使用預設值
+    const serverUrl = process.env.SERVER_URL || process.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8700'
+    const webhookUrl = `${serverUrl}/api/delivery/webhook/ubereats`
+    
+    const response = await fetch(
+      `${UBEREATS_CONFIG.apiUrl}/eats/stores/${ubereatsStoreId}/pos_data`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${userAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          integration_enabled: true,
+          external_store_id: internalStore._id.toString(),
+          webhook_url: webhookUrl,
+          pos_provider: process.env.COMPANY_NAME || 'Online Order System',
+        }),
+      },
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Provisioning failed: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    
+    // 更新內部店鋪的整合狀態
+    await Store.updateOne(
+      {
+        _id: internalStore._id,
+        'deliveryPlatforms.platform': 'ubereats',
+        'deliveryPlatforms.storeId': ubereatsStoreId,
+      },
+      {
+        $set: {
+          'deliveryPlatforms.$.isEnabled': true,
+          'deliveryPlatforms.$.lastSyncAt': new Date(),
+        },
+      },
+    )
+    
+    console.log(`✅ Store ${ubereatsStoreId} auto-provisioned successfully`)
+    return {
+      ...data,
+      internalStoreId: internalStore._id.toString(),
+      webhookUrl,
+    }
+  } catch (error) {
+    console.error(`❌ Auto-provisioning failed for ${ubereatsStoreId}:`, error)
+    throw error
+  }
+}
+
+/**
  * TODO: POS 系統配置 (eats.pos_provisioning scope)
  * @param {String} storeId - UberEats 店鋪ID
  * @param {Object} posData - POS 配置數據

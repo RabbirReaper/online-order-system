@@ -97,6 +97,18 @@ router.post(
 // =============================================================================
 
 /**
+ * 自動 Provisioning UberEats 店鋪整合
+ * POST /api/delivery/ubereats/stores/:storeId/auto-provision
+ * Body: { userAccessToken: string }
+ */
+router.post(
+  '/ubereats/stores/:storeId/auto-provision',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  deliveryController.autoProvisionUberEatsStore,
+)
+
+/**
  * 獲取 UberEats 店鋪訂單列表
  * GET /api/delivery/ubereats/stores/:storeId/orders
  * Query params: limit, offset, status, etc.

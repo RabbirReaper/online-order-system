@@ -72,6 +72,14 @@ const storeSchema = new mongoose.Schema(
           required: true,
           trim: true,
         },
+        isEnabled: {
+          type: Boolean,
+          default: false, // 預設未啟用，需要經過 provisioning 後才啟用
+        },
+        settings: {
+          autoAcceptOrders: { type: Boolean, default: true },
+          prepTime: { type: Number, default: 30 }, // 準備時間（分鐘）
+        },
         lastSyncAt: { type: Date },
         createdAt: { type: Date, default: Date.now },
         updatedAt: { type: Date, default: Date.now },

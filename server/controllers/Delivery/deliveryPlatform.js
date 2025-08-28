@@ -226,6 +226,40 @@ export const cancelUberEatsOrder = asyncHandler(async (req, res) => {
   })
 })
 
+/**
+ * 自動 Provisioning UberEats 店鋪
+ */
+export const autoProvisionUberEatsStore = asyncHandler(async (req, res) => {
+  const { storeId } = req.params
+  const { userAccessToken } = req.body
+
+  if (!storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪ID為必填欄位',
+    })
+  }
+
+  if (!userAccessToken) {
+    return res.status(400).json({
+      success: false,
+      message: '用戶存取令牌為必填欄位',
+    })
+  }
+
+  const result = await deliveryService.autoProvisionUberEatsStore(
+    storeId,
+    userAccessToken
+  )
+
+  res.json({
+    success: true,
+    message: '店鋪自動整合成功',
+    storeId,
+    result,
+  })
+})
+
 // ==========================================
 // 📋 Phase 2: TODO - 其他 UberEats API 功能
 // ==========================================
