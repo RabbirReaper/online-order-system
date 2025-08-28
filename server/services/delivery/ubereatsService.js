@@ -6,6 +6,7 @@
 import Store from '../../models/Store/Store.js'
 import { AppError } from '../../middlewares/error.js'
 import * as orderSyncService from './orderSyncService.js'
+import { UberEatsTokenManager, getTokenForOperation, getUserToken, getAppToken } from './tokenManager.js'
 import crypto from 'crypto'
 import dotenv from 'dotenv'
 
@@ -199,7 +200,7 @@ export const receiveOrder = async (ubereatsOrderData, signature = null) => {
  */
 const getOrderDetails = async (orderId) => {
   try {
-    const accessToken = await getAccessToken()
+    const accessToken = getTokenForOperation('orders')
 
     const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/order/${orderId}`, {
       method: 'GET',
@@ -291,59 +292,34 @@ const findStoreByUberEatsId = async (ubereatsStoreId) => {
 }
 
 /**
- * 獲取 UberEats API 存取令牌
- * 實作 OAuth 2.0 Client Credentials 流程
+ * 獲取 UberEats API 存取令牌 - 使用 App Token
+ * 日常 API 操作使用 App Access Token
+ * @param {String} operation - 操作類型，用於自動選擇 token
  */
-const getAccessToken = async () => {
+const getAccessToken = async (operation = 'api') => {
   try {
-    if (!UBEREATS_CONFIG.clientId || !UBEREATS_CONFIG.clientSecret) {
-      // 在開發階段允許使用模擬 token
+    // 使用 Token Manager 自動選擇合適的 token
+    const token = getTokenForOperation(operation)
+    
+    if (!token) {
+      // 在開發階段提供模擬 token
       if (UBEREATS_CONFIG.environment === 'sandbox') {
         console.log('🧪 Sandbox mode: using mock access token')
-        return 'mock_access_token_for_sandbox'
+        return UberEatsTokenManager.getMockToken('app')
       }
-
-      throw new Error('UberEats client ID and secret are required')
+      
+      throw new Error('No valid access token available')
     }
-
-    const credentials = Buffer.from(
-      `${UBEREATS_CONFIG.clientId}:${UBEREATS_CONFIG.clientSecret}`,
-    ).toString('base64')
-
-    console.log(`🔐 Requesting OAuth token from: ${UBEREATS_CONFIG.oauthUrl}`)
-
-    const response = await fetch(UBEREATS_CONFIG.oauthUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `grant_type=client_credentials&scope=${UBEREATS_CONFIG.scope}`,
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ OAuth response:', response.status, errorText)
-
-      // 在 sandbox 階段，如果 OAuth 失敗，返回模擬 token
-      if (UBEREATS_CONFIG.environment === 'sandbox') {
-        console.log('🧪 Sandbox mode: OAuth failed, using mock token')
-        return 'mock_access_token_for_sandbox'
-      }
-
-      throw new Error(`OAuth error: ${response.status} ${response.statusText}`)
-    }
-
-    const tokenData = await response.json()
-    console.log('✅ Successfully obtained OAuth token')
-    return tokenData.access_token
+    
+    console.log(`🔑 Using ${operation.includes('provision') ? 'User' : 'App'} token for ${operation}`)
+    return token
   } catch (error) {
     console.error('❌ Failed to get access token:', error)
 
     // 在開發階段提供後備方案
     if (UBEREATS_CONFIG.environment === 'sandbox') {
       console.log('🧪 Sandbox mode: returning mock token as fallback')
-      return 'mock_access_token_for_sandbox'
+      return UberEatsTokenManager.getMockToken('app')
     }
 
     throw error
@@ -416,7 +392,7 @@ export const testUberEatsConnection = async () => {
  */
 export const getStoreOrders = async (storeId, options = {}) => {
   try {
-    const accessToken = await getAccessToken()
+    const accessToken = await getAccessToken('orders')
 
     const queryParams = new URLSearchParams(options)
     const url = `${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
@@ -462,7 +438,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
  */
 export const cancelStoreOrder = async (storeId, orderId, reason = 'RESTAURANT_UNAVAILABLE') => {
   try {
-    const accessToken = await getAccessToken()
+    const accessToken = await getAccessToken('cancel')
 
     const response = await fetch(
       `${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/orders/${orderId}/cancel`,
@@ -608,16 +584,26 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
       throw new Error(`找不到對應的店鋪設定: ${ubereatsStoreId}`)
     }
 
+    // 使用提供的 User Access Token 進行 provisioning
+    const token = userAccessToken || getUserToken()
+    
+    if (!token) {
+      throw new Error('User Access Token 是 provisioning 操作的必需參數')
+    }
+
     // 使用環境變數中的 SERVER_URL，如果沒有則使用預設值
     const serverUrl = process.env.SERVER_URL || process.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8700'
     const webhookUrl = `${serverUrl}/api/delivery/webhook/ubereats`
+    
+    console.log(`🔑 Using User Access Token for provisioning`)
+    console.log(`🔔 Webhook URL: ${webhookUrl}`)
     
     const response = await fetch(
       `${UBEREATS_CONFIG.apiUrl}/eats/stores/${ubereatsStoreId}/pos_data`,
       {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${userAccessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

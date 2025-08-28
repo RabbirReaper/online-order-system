@@ -173,6 +173,42 @@ export const checkUberEatsConfig = asyncHandler(async (req, res) => {
   })
 })
 
+/**
+ * 檢查 Token 狀態
+ */
+export const checkTokenStatus = asyncHandler(async (req, res) => {
+  const tokenStatus = deliveryService.getTokenStatus()
+
+  const allConfigured = tokenStatus.userToken.configured && tokenStatus.appToken.configured
+
+  res.json({
+    success: allConfigured,
+    message: allConfigured ? 'Token 配置完整' : 'Token 配置不完整',
+    tokenStatus,
+  })
+})
+
+/**
+ * 刷新 User Access Token
+ */
+export const refreshUserToken = asyncHandler(async (req, res) => {
+  try {
+    const newToken = await deliveryService.refreshUserToken()
+
+    res.json({
+      success: true,
+      message: 'User Access Token 刷新成功',
+      tokenLength: newToken ? newToken.length : 0,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Token 刷新失敗',
+      error: error.message,
+    })
+  }
+})
+
 // ==========================================
 // 🚀 Phase 1: UberEats 訂單同步功能 (優先實作)
 // ==========================================

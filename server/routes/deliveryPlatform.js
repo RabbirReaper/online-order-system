@@ -36,6 +36,28 @@ router.get(
   deliveryController.checkUberEatsConfig,
 )
 
+/**
+ * 檢查 Token 狀態
+ * GET /api/delivery/ubereats/token-status
+ */
+router.get(
+  '/ubereats/token-status',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin'),
+  deliveryController.checkTokenStatus,
+)
+
+/**
+ * 刷新 User Access Token
+ * POST /api/delivery/ubereats/refresh-token
+ */
+router.post(
+  '/ubereats/refresh-token',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin'),
+  deliveryController.refreshUserToken,
+)
+
 // =============================================================================
 // 平台管理功能路由（需要管理員權限）
 // =============================================================================

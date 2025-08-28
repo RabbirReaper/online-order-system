@@ -37,6 +37,12 @@ export const {
   autoProvisionStore, // 自動配置店鋪整合
 } = ubereatsService
 
+// === Token 管理服務導出 ===
+import { UberEatsTokenManager } from './tokenManager.js'
+
+export const getTokenStatus = () => UberEatsTokenManager.getTokenStatus()
+export const refreshUserToken = () => UberEatsTokenManager.refreshUserToken()
+
 // === 便捷別名導出（方便控制器調用）===
 export const getUberEatsStoreOrders = ubereatsService.getStoreOrders
 export const cancelUberEatsOrder = ubereatsService.cancelStoreOrder
