@@ -10,7 +10,7 @@ import path from 'path'
 // 載入環境變數
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-dotenv.config({ path: path.join(__dirname, '.env') })
+dotenv.config({ path: path.join(__dirname, '../../.env') })
 
 // 測試用的 API 端點
 const API_BASE = process.env.VITE_API_BASE_URL || 'http://localhost:8700/api'
@@ -122,7 +122,7 @@ async function testTokenManagement() {
   
   // 直接測試 Token Manager 模組
   try {
-    const { UberEatsTokenManager } = await import('./server/services/delivery/tokenManager.js')
+    const { UberEatsTokenManager } = await import('../../server/services/delivery/tokenManager.js')
     
     console.log('\n🔍 Token Manager 狀態檢查：')
     const status = UberEatsTokenManager.getTokenStatus()

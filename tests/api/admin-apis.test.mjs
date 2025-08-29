@@ -2,10 +2,10 @@
  * 測試需要管理員權限的 UberEats API
  * 
  * 使用方法：
- * node test-admin-apis.mjs
+ * node tests/api/admin-apis.test.mjs
  * 
  * 或者提供管理員 token：
- * ADMIN_TOKEN=your_token node test-admin-apis.mjs
+ * ADMIN_TOKEN=your_token node tests/api/admin-apis.test.mjs
  */
 
 import dotenv from 'dotenv'
@@ -15,7 +15,7 @@ import path from 'path'
 // 載入環境變數
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-dotenv.config({ path: path.join(__dirname, '.env') })
+dotenv.config({ path: path.join(__dirname, '../../.env') })
 
 const API_BASE = 'http://localhost:8700/api'
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'mock_admin_token_for_testing'
