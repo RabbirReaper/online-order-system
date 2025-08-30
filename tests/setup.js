@@ -1,10 +1,28 @@
 // tests/setup.js
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
+import { createPinia } from 'pinia';
+import { createI18n } from 'vue-i18n';
+
+// 全域 Mock 設置
+global.vi = vi;
+global.fetch = vi.fn();
 
 // 模擬 Vue Router
 vi.mock('vue-router', () => ({
-  useRouter: vi.fn(),
-  useRoute: vi.fn(),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    go: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn()
+  }),
+  useRoute: () => ({
+    params: {},
+    query: {},
+    path: '/',
+    name: '',
+    meta: {}
+  }),
   createRouter: vi.fn(),
   createWebHistory: vi.fn()
 }));
@@ -60,7 +78,7 @@ vi.mock('mongoose', () => {
     index: vi.fn().mockReturnThis()
   };
 
-  return {
+  const mockMongoose = {
     Schema: vi.fn().mockImplementation(() => mockSchema),
     model: vi.fn().mockReturnValue({
       find: vi.fn().mockReturnThis(),
@@ -87,6 +105,11 @@ vi.mock('mongoose', () => {
     connection: {
       on: vi.fn()
     }
+  };
+
+  return {
+    default: mockMongoose,
+    ...mockMongoose
   };
 });
 
@@ -124,3 +147,246 @@ Object.defineProperty(window, 'matchMedia', {
 
 // 模擬 window.scrollTo
 window.scrollTo = vi.fn();
+
+// 測試資料工廠
+export class TestDataFactory {
+  // 創建用戶資料
+  static createUser(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439011',
+      name: 'TestUser',
+      email: 'test@example.com',
+      phone: '0912345678',
+      points: 0,
+      status: 'active',
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建管理員資料
+  static createAdmin(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439012',
+      name: 'TestAdmin',
+      password: 'hashed_password',
+      role: 'brand_admin',
+      manage: [],
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建品牌資料
+  static createBrand(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439013',
+      name: 'TestBrand',
+      description: '測試品牌描述',
+      logo: 'brand-logo.jpg',
+      isActive: true,
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建店鋪資料
+  static createStore(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439014',
+      name: 'TestStore',
+      brand: '507f1f77bcf86cd799439013',
+      address: '台北市測試區測試路123號',
+      phone: '02-12345678',
+      isActive: true,
+      settings: {
+        acceptsOrders: true,
+        requiresTableNumber: true
+      },
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建菜單資料
+  static createMenu(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439015',
+      name: 'TestMenu',
+      store: '507f1f77bcf86cd799439014',
+      brand: '507f1f77bcf86cd799439013',
+      categories: [
+        {
+          name: '主餐',
+          dishes: [
+            {
+              dishTemplate: '507f1f77bcf86cd799439016',
+              price: 150,
+              isPublished: true,
+              order: 1
+            }
+          ]
+        }
+      ],
+      isActive: true,
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建菜品模板資料
+  static createDishTemplate(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439016',
+      name: 'TestDish',
+      description: '測試菜品描述',
+      brand: '507f1f77bcf86cd799439013',
+      category: 'main',
+      basePrice: 150,
+      images: ['dish-image.jpg'],
+      options: [],
+      isActive: true,
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建訂單資料
+  static createOrder(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439017',
+      orderNumber: 'T20240101001',
+      customer: '507f1f77bcf86cd799439011',
+      store: '507f1f77bcf86cd799439014',
+      items: [
+        {
+          dishTemplate: '507f1f77bcf86cd799439016',
+          name: 'TestDish',
+          price: 150,
+          quantity: 1,
+          subtotal: 150
+        }
+      ],
+      orderType: 'dine_in',
+      tableNumber: 'A1',
+      status: 'pending',
+      paymentMethod: 'cash',
+      totalAmount: 150,
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建庫存資料
+  static createInventory(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439018',
+      store: '507f1f77bcf86cd799439014',
+      dishTemplate: '507f1f77bcf86cd799439016',
+      currentStock: 100,
+      reservedStock: 0,
+      availableStock: 100,
+      minThreshold: 10,
+      maxThreshold: 200,
+      autoReplenish: true,
+      isActive: true,
+      lastUpdated: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建優惠券資料
+  static createCoupon(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439019',
+      code: 'TEST50',
+      name: '測試折扣券',
+      discountType: 'percentage',
+      discountValue: 10,
+      minOrderAmount: 100,
+      maxDiscountAmount: 50,
+      validFrom: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      usageLimit: 100,
+      usedCount: 0,
+      isActive: true,
+      ...overrides
+    };
+  }
+}
+
+// 測試輔助函式
+export class TestHelpers {
+  // 創建模擬的 API Client
+  static createMockApiClient() {
+    return {
+      get: vi.fn().mockResolvedValue({ success: true }),
+      post: vi.fn().mockResolvedValue({ success: true }),
+      put: vi.fn().mockResolvedValue({ success: true }),
+      delete: vi.fn().mockResolvedValue({ success: true }),
+      patch: vi.fn().mockResolvedValue({ success: true })
+    };
+  }
+
+  // 創建模擬的 Axios 實例
+  static createMockAxiosInstance() {
+    return {
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() }
+      },
+      get: vi.fn().mockResolvedValue({ data: {} }),
+      post: vi.fn().mockResolvedValue({ data: {} }),
+      put: vi.fn().mockResolvedValue({ data: {} }),
+      delete: vi.fn().mockResolvedValue({ data: {} }),
+      patch: vi.fn().mockResolvedValue({ data: {} })
+    };
+  }
+
+  // 等待異步操作完成
+  static async waitForAsync() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  // 創建模擬的 Express Request
+  static createMockRequest(overrides = {}) {
+    return {
+      params: {},
+      query: {},
+      body: {},
+      headers: {},
+      user: null,
+      session: {},
+      ...overrides
+    };
+  }
+
+  // 創建模擬的 Express Response
+  static createMockResponse() {
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      redirect: vi.fn().mockReturnThis(),
+      cookie: vi.fn().mockReturnThis(),
+      clearCookie: vi.fn().mockReturnThis()
+    };
+    return res;
+  }
+
+  // 創建模擬的 Next 函式
+  static createMockNext() {
+    return vi.fn();
+  }
+}
+
+// 全域測試清理
+beforeEach(() => {
+  // 清理所有模擬函式
+  vi.clearAllMocks();
+});
+
+afterEach(() => {
+  // 重置所有模擬狀態
+  vi.resetAllMocks();
+});
