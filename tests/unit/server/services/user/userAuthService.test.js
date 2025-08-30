@@ -24,7 +24,7 @@ describe('UserAuthService', () => {
       findById: vi.fn(),
       create: vi.fn(),
       save: vi.fn(),
-      populate: vi.fn()
+      populate: vi.fn(),
     }
     User.mockReturnValue(mockUser)
     Object.assign(User, mockUser)
@@ -33,7 +33,7 @@ describe('UserAuthService', () => {
     mockVerificationCode = {
       findOne: vi.fn(),
       create: vi.fn(),
-      findOneAndDelete: vi.fn()
+      findOneAndDelete: vi.fn(),
     }
     VerificationCode.mockReturnValue(mockVerificationCode)
     Object.assign(VerificationCode, mockVerificationCode)
@@ -99,14 +99,14 @@ describe('UserAuthService', () => {
       phone: '0912345678',
       email: 'test@example.com',
       password: 'password123',
-      verificationCode: '1234'
+      verificationCode: '1234',
     }
 
     it('should register user successfully with valid data', async () => {
       // Mock 驗證碼檢查成功
       VerificationCode.findOne.mockResolvedValue({
         code: '1234',
-        expiresAt: new Date(Date.now() + 10000)
+        expiresAt: new Date(Date.now() + 10000),
       })
       VerificationCode.findOneAndDelete.mockResolvedValue(true)
 
@@ -116,7 +116,7 @@ describe('UserAuthService', () => {
       // Mock 用戶創建成功
       const createdUser = TestDataFactory.createUser({
         ...validUserData,
-        password: 'hashed_password'
+        password: 'hashed_password',
       })
       User.create.mockResolvedValue(createdUser)
 
@@ -132,37 +132,35 @@ describe('UserAuthService', () => {
       // Mock 驗證碼檢查成功
       VerificationCode.findOne.mockResolvedValue({
         code: '1234',
-        expiresAt: new Date(Date.now() + 10000)
+        expiresAt: new Date(Date.now() + 10000),
       })
 
       // Mock 用戶已存在
       const existingUser = TestDataFactory.createUser()
       User.findOne.mockResolvedValue(existingUser)
 
-      await expect(userAuthService.registerUser(validUserData))
-        .rejects
-        .toThrow('用戶已存在')
+      await expect(userAuthService.registerUser(validUserData)).rejects.toThrow('用戶已存在')
     })
 
     it('should fail with invalid verification code', async () => {
       // Mock 驗證碼不存在
       VerificationCode.findOne.mockResolvedValue(null)
 
-      await expect(userAuthService.registerUser(validUserData))
-        .rejects
-        .toThrow('驗證碼無效或已過期')
+      await expect(userAuthService.registerUser(validUserData)).rejects.toThrow(
+        '驗證碼無效或已過期',
+      )
     })
 
     it('should fail with expired verification code', async () => {
       // Mock 過期的驗證碼
       VerificationCode.findOne.mockResolvedValue({
         code: '1234',
-        expiresAt: new Date(Date.now() - 10000) // 已過期
+        expiresAt: new Date(Date.now() - 10000), // 已過期
       })
 
-      await expect(userAuthService.registerUser(validUserData))
-        .rejects
-        .toThrow('驗證碼無效或已過期')
+      await expect(userAuthService.registerUser(validUserData)).rejects.toThrow(
+        '驗證碼無效或已過期',
+      )
     })
 
     it('should fail with invalid input data', async () => {
@@ -171,25 +169,25 @@ describe('UserAuthService', () => {
         phone: '123', // 無效手機
         email: 'invalid', // 無效信箱
         password: '123', // 密碼太短
-        verificationCode: '1234'
+        verificationCode: '1234',
       }
 
-      await expect(userAuthService.registerUser(invalidUserData))
-        .rejects
-        .toThrow('輸入資料驗證失敗')
+      await expect(userAuthService.registerUser(invalidUserData)).rejects.toThrow(
+        '輸入資料驗證失敗',
+      )
     })
   })
 
   describe('loginUser', () => {
     const loginData = {
       identifier: '0912345678', // 可以是手機或信箱
-      password: 'password123'
+      password: 'password123',
     }
 
     it('should login successfully with correct credentials', async () => {
       const mockUser = TestDataFactory.createUser({
         phone: '0912345678',
-        password: 'hashed_password'
+        password: 'hashed_password',
       })
 
       User.findOne.mockResolvedValue(mockUser)
@@ -208,29 +206,23 @@ describe('UserAuthService', () => {
       User.findOne.mockResolvedValue(mockUser)
       bcrypt.compare.mockResolvedValue(false)
 
-      await expect(userAuthService.loginUser(loginData))
-        .rejects
-        .toThrow('用戶名或密碼錯誤')
+      await expect(userAuthService.loginUser(loginData)).rejects.toThrow('用戶名或密碼錯誤')
     })
 
     it('should fail when user not found', async () => {
       User.findOne.mockResolvedValue(null)
 
-      await expect(userAuthService.loginUser(loginData))
-        .rejects
-        .toThrow('用戶名或密碼錯誤')
+      await expect(userAuthService.loginUser(loginData)).rejects.toThrow('用戶名或密碼錯誤')
     })
 
     it('should fail with inactive user', async () => {
       const mockUser = TestDataFactory.createUser({
-        status: 'inactive'
+        status: 'inactive',
       })
       User.findOne.mockResolvedValue(mockUser)
       bcrypt.compare.mockResolvedValue(true)
 
-      await expect(userAuthService.loginUser(loginData))
-        .rejects
-        .toThrow('用戶帳號已被停用')
+      await expect(userAuthService.loginUser(loginData)).rejects.toThrow('用戶帳號已被停用')
     })
   })
 
@@ -238,12 +230,12 @@ describe('UserAuthService', () => {
     const changePasswordData = {
       userId: '507f1f77bcf86cd799439011',
       currentPassword: 'oldpassword',
-      newPassword: 'newpassword123'
+      newPassword: 'newpassword123',
     }
 
     it('should change password successfully', async () => {
       const mockUser = TestDataFactory.createUser({
-        password: 'old_hashed_password'
+        password: 'old_hashed_password',
       })
 
       User.findById.mockResolvedValue(mockUser)
@@ -254,7 +246,10 @@ describe('UserAuthService', () => {
       const result = await userAuthService.changePassword(changePasswordData)
 
       expect(result.success).toBe(true)
-      expect(bcrypt.compare).toHaveBeenCalledWith(changePasswordData.currentPassword, mockUser.password)
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        changePasswordData.currentPassword,
+        mockUser.password,
+      )
       expect(bcrypt.hash).toHaveBeenCalledWith(changePasswordData.newPassword, 'salt')
       expect(mockUser.save).toHaveBeenCalled()
     })
@@ -264,17 +259,15 @@ describe('UserAuthService', () => {
       User.findById.mockResolvedValue(mockUser)
       bcrypt.compare.mockResolvedValue(false)
 
-      await expect(userAuthService.changePassword(changePasswordData))
-        .rejects
-        .toThrow('當前密碼錯誤')
+      await expect(userAuthService.changePassword(changePasswordData)).rejects.toThrow(
+        '當前密碼錯誤',
+      )
     })
 
     it('should fail when user not found', async () => {
       User.findById.mockResolvedValue(null)
 
-      await expect(userAuthService.changePassword(changePasswordData))
-        .rejects
-        .toThrow('用戶不存在')
+      await expect(userAuthService.changePassword(changePasswordData)).rejects.toThrow('用戶不存在')
     })
   })
 
@@ -286,7 +279,7 @@ describe('UserAuthService', () => {
       const mockVerificationCode = {
         phone: phoneNumber,
         code: '1234',
-        expiresAt: new Date(Date.now() + 300000) // 5分鐘後過期
+        expiresAt: new Date(Date.now() + 300000), // 5分鐘後過期
       }
       VerificationCode.create.mockResolvedValue(mockVerificationCode)
 
@@ -298,17 +291,17 @@ describe('UserAuthService', () => {
         expect.objectContaining({
           phone: phoneNumber,
           code: expect.any(String),
-          expiresAt: expect.any(Date)
-        })
+          expiresAt: expect.any(Date),
+        }),
       )
     })
 
     it('should fail with invalid phone number', async () => {
       const invalidPhone = '123456'
 
-      await expect(userAuthService.sendVerificationCode(invalidPhone))
-        .rejects
-        .toThrow('手機號碼格式不正確')
+      await expect(userAuthService.sendVerificationCode(invalidPhone)).rejects.toThrow(
+        '手機號碼格式不正確',
+      )
     })
   })
 
@@ -318,7 +311,7 @@ describe('UserAuthService', () => {
     it('should get user profile successfully', async () => {
       const mockUser = TestDataFactory.createUser()
       User.findById.mockReturnValue({
-        select: vi.fn().mockResolvedValue(mockUser)
+        select: vi.fn().mockResolvedValue(mockUser),
       })
 
       const result = await userAuthService.getUserProfile(userId)
@@ -330,12 +323,10 @@ describe('UserAuthService', () => {
 
     it('should fail when user not found', async () => {
       User.findById.mockReturnValue({
-        select: vi.fn().mockResolvedValue(null)
+        select: vi.fn().mockResolvedValue(null),
       })
 
-      await expect(userAuthService.getUserProfile(userId))
-        .rejects
-        .toThrow('用戶不存在')
+      await expect(userAuthService.getUserProfile(userId)).rejects.toThrow('用戶不存在')
     })
   })
 })
