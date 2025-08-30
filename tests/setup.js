@@ -75,11 +75,31 @@ vi.mock('bcrypt', () => ({
 vi.mock('mongoose', () => {
   const mockSchema = {
     pre: vi.fn().mockReturnThis(),
-    index: vi.fn().mockReturnThis()
+    index: vi.fn().mockReturnThis(),
+    methods: {},
+    statics: {},
+    virtual: vi.fn().mockReturnThis(),
+    plugin: vi.fn().mockReturnThis()
   };
 
   const mockMongoose = {
-    Schema: vi.fn().mockImplementation(() => mockSchema),
+    Schema: vi.fn().mockImplementation(() => {
+      const schema = {
+        ...mockSchema,
+        Types: {
+          ObjectId: vi.fn().mockImplementation(() => '507f1f77bcf86cd799439011')
+        }
+      };
+      
+      // 為了支援 mongoose.Schema.Types.ObjectId 的使用方式
+      schema.constructor = {
+        Types: {
+          ObjectId: vi.fn().mockImplementation(() => '507f1f77bcf86cd799439011')
+        }
+      };
+      
+      return schema;
+    }),
     model: vi.fn().mockReturnValue({
       find: vi.fn().mockReturnThis(),
       findOne: vi.fn().mockReturnThis(),
@@ -105,6 +125,11 @@ vi.mock('mongoose', () => {
     connection: {
       on: vi.fn()
     }
+  };
+
+  // 為 Schema 添加靜態 Types 屬性
+  mockMongoose.Schema.Types = {
+    ObjectId: vi.fn().mockImplementation(() => '507f1f77bcf86cd799439011')
   };
 
   return {
