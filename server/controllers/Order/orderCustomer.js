@@ -69,7 +69,7 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
   if (!order) {
     return res.status(404).json({
       success: false,
-      message: '找不到指定的訂單'
+      message: '找不到指定的訂單',
     })
   }
 
@@ -91,7 +91,7 @@ export const processPayment = asyncHandler(async (req, res) => {
     message: '支付處理成功',
     paymentId: result.paymentId,
     redirectUrl: result.redirectUrl,
-    ...result
+    ...result,
   })
 })
 

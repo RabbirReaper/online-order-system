@@ -11,39 +11,40 @@ dotenv.config()
 
 // Token 類型定義
 export const TOKEN_TYPES = {
-  USER: 'user',     // 用於 Provisioning
-  APP: 'app',       // 用於日常 API 操作
+  USER: 'user', // 用於 Provisioning
+  APP: 'app', // 用於日常 API 操作
 }
 
 // UberEats OAuth 配置
 const OAUTH_CONFIG = {
   tokenUrl: 'https://login.uber.com/oauth/v2/token',
   environment: process.env.UBEREATS_ENVIRONMENT || 'sandbox',
-  clientId: process.env.UBEREATS_ENVIRONMENT === 'production'
-    ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
-    : process.env.UBEREATS_SANDBOX_CLIENT_ID,
-  clientSecret: process.env.UBEREATS_ENVIRONMENT === 'production'
-    ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
-    : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
+  clientId:
+    process.env.UBEREATS_ENVIRONMENT === 'production'
+      ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
+      : process.env.UBEREATS_SANDBOX_CLIENT_ID,
+  clientSecret:
+    process.env.UBEREATS_ENVIRONMENT === 'production'
+      ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
+      : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
 }
 
 /**
  * UberEats Token 管理類
  */
 export class UberEatsTokenManager {
-  
   /**
    * 獲取 User Access Token (用於 Provisioning)
    * @returns {String} User Access Token
    */
   static getUserToken() {
     const token = process.env.UBEREATS_USER_ACCESS_TOKEN
-    
+
     if (!token) {
       console.warn('⚠️  User Access Token not configured')
       return null
     }
-    
+
     console.log('🔑 Using User Access Token for Provisioning')
     return token
   }
@@ -54,12 +55,12 @@ export class UberEatsTokenManager {
    */
   static getAppToken() {
     const token = process.env.UBEREATS_APP_ACCESS_TOKEN
-    
+
     if (!token) {
       console.warn('⚠️  App Access Token not configured')
       return null
     }
-    
+
     console.log('🔑 Using App Access Token for API operations')
     return token
   }
@@ -71,8 +72,8 @@ export class UberEatsTokenManager {
    */
   static getTokenForOperation(operation) {
     const provisioningOperations = ['provisioning', 'pos_data', 'setup']
-    const isProvisioningOperation = provisioningOperations.some(op => 
-      operation.toLowerCase().includes(op)
+    const isProvisioningOperation = provisioningOperations.some((op) =>
+      operation.toLowerCase().includes(op),
     )
 
     if (isProvisioningOperation) {
@@ -131,7 +132,7 @@ export class UberEatsTokenManager {
       // 記錄新的 token 資訊（不記錄實際 token 值）
       console.log('✅ User Access Token refreshed successfully')
       console.log(`📋 New token expires in: ${tokenData.expires_in} seconds`)
-      
+
       if (tokenData.refresh_token) {
         console.log('🔄 New refresh token also received')
       }
@@ -172,13 +173,13 @@ export class UberEatsTokenManager {
       const response = await fetch(testEndpoint, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       })
 
       const isValid = response.status !== 401 && response.status !== 403
-      
+
       if (isValid) {
         console.log(`✅ ${type.toUpperCase()} token validation successful`)
       } else {
@@ -197,7 +198,7 @@ export class UberEatsTokenManager {
    * @returns {String} API URL
    */
   static getApiUrl() {
-    return OAUTH_CONFIG.environment === 'production' 
+    return OAUTH_CONFIG.environment === 'production'
       ? 'https://api.uber.com/v1'
       : 'https://sandbox-api.uber.com/v1'
   }
@@ -260,14 +261,14 @@ export class UberEatsTokenManager {
 export const getUserToken = () => UberEatsTokenManager.getUserToken()
 
 /**
- * 便捷函數：獲取 App Token  
+ * 便捷函數：獲取 App Token
  */
 export const getAppToken = () => UberEatsTokenManager.getAppToken()
 
 /**
  * 便捷函數：根據操作自動選擇 Token
  */
-export const getTokenForOperation = (operation) => 
+export const getTokenForOperation = (operation) =>
   UberEatsTokenManager.getTokenForOperation(operation)
 
 /**
@@ -280,7 +281,9 @@ const tokenStatus = UberEatsTokenManager.getTokenStatus()
 console.log('🔑 Token Manager initialized')
 console.log(`📊 User Token: ${tokenStatus.userToken.configured ? '✅ Configured' : '❌ Missing'}`)
 console.log(`📊 App Token: ${tokenStatus.appToken.configured ? '✅ Configured' : '❌ Missing'}`)
-console.log(`📊 Refresh Token: ${tokenStatus.refreshToken.configured ? '✅ Available' : '❌ Missing'}`)
+console.log(
+  `📊 Refresh Token: ${tokenStatus.refreshToken.configured ? '✅ Available' : '❌ Missing'}`,
+)
 console.log(`🌍 Environment: ${tokenStatus.environment}`)
 
 export default UberEatsTokenManager

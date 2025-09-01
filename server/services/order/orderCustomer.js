@@ -761,7 +761,7 @@ export const processPayment = async (orderId, brandId, paymentData) => {
     success: true,
     paymentId,
     redirectUrl,
-    order: order.toObject()
+    order: order.toObject(),
   }
 }
 
@@ -790,14 +790,14 @@ export const paymentCallback = async (orderId, brandId, callbackData) => {
     return {
       success: true,
       order: result,
-      pointsAwarded: result.pointsAwarded || 0
+      pointsAwarded: result.pointsAwarded || 0,
     }
   } else {
     order.status = 'cancelled'
     await order.save()
     return {
       success: false,
-      order: order.toObject()
+      order: order.toObject(),
     }
   }
 }

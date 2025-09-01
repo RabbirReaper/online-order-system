@@ -6,7 +6,12 @@
 import Store from '../../models/Store/Store.js'
 import { AppError } from '../../middlewares/error.js'
 import * as orderSyncService from './orderSyncService.js'
-import { UberEatsTokenManager, getTokenForOperation, getUserToken, getAppToken } from './tokenManager.js'
+import {
+  UberEatsTokenManager,
+  getTokenForOperation,
+  getUserToken,
+  getAppToken,
+} from './tokenManager.js'
 import crypto from 'crypto'
 import dotenv from 'dotenv'
 
@@ -45,7 +50,8 @@ const UBEREATS_CONFIG = {
   // OAuth URL 固定
   oauthUrl: 'https://login.uber.com/oauth/v2/token',
 
-  scope: 'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
+  scope:
+    'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
   environment: ENVIRONMENT,
 }
 
@@ -300,18 +306,20 @@ const getAccessToken = async (operation = 'api') => {
   try {
     // 使用 Token Manager 自動選擇合適的 token
     const token = getTokenForOperation(operation)
-    
+
     if (!token) {
       // 在開發階段提供模擬 token
       if (UBEREATS_CONFIG.environment === 'sandbox') {
         console.log('🧪 Sandbox mode: using mock access token')
         return UberEatsTokenManager.getMockToken('app')
       }
-      
+
       throw new Error('No valid access token available')
     }
-    
-    console.log(`🔑 Using ${operation.includes('provision') ? 'User' : 'App'} token for ${operation}`)
+
+    console.log(
+      `🔑 Using ${operation.includes('provision') ? 'User' : 'App'} token for ${operation}`,
+    )
     return token
   } catch (error) {
     console.error('❌ Failed to get access token:', error)
@@ -414,18 +422,15 @@ export const getStoreOrders = async (storeId, options = {}) => {
     return data
   } catch (error) {
     console.error(`❌ Failed to get store orders for ${storeId}:`, error)
-    
+
     // 開發階段提供模擬數據
     if (UBEREATS_CONFIG.environment === 'sandbox') {
       console.log('🧪 Sandbox mode: returning mock orders')
       return {
-        orders: [
-          createMockOrderData('mock-order-1'),
-          createMockOrderData('mock-order-2')
-        ]
+        orders: [createMockOrderData('mock-order-1'), createMockOrderData('mock-order-2')],
       }
     }
-    
+
     throw error
   }
 }
@@ -461,19 +466,19 @@ export const cancelStoreOrder = async (storeId, orderId, reason = 'RESTAURANT_UN
     return data
   } catch (error) {
     console.error(`❌ Failed to cancel order ${orderId}:`, error)
-    
+
     // 開發階段提供模擬回應
     if (UBEREATS_CONFIG.environment === 'sandbox') {
       console.log('🧪 Sandbox mode: simulating order cancellation')
       return { success: true, message: 'Mock cancellation successful' }
     }
-    
+
     throw error
   }
 }
 
 // ==========================================
-// 📋 Phase 2: TODO - 其他 API 功能 
+// 📋 Phase 2: TODO - 其他 API 功能
 // ==========================================
 
 /**
@@ -586,18 +591,21 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
 
     // 使用提供的 User Access Token 進行 provisioning
     const token = userAccessToken || getUserToken()
-    
+
     if (!token) {
       throw new Error('User Access Token 是 provisioning 操作的必需參數')
     }
 
     // 使用環境變數中的 SERVER_URL，如果沒有則使用預設值
-    const serverUrl = process.env.SERVER_URL || process.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8700'
+    const serverUrl =
+      process.env.SERVER_URL ||
+      process.env.VITE_API_BASE_URL?.replace('/api', '') ||
+      'http://localhost:8700'
     const webhookUrl = `${serverUrl}/api/delivery/webhook/ubereats`
-    
+
     console.log(`🔑 Using User Access Token for provisioning`)
     console.log(`🔔 Webhook URL: ${webhookUrl}`)
-    
+
     const response = await fetch(
       `${UBEREATS_CONFIG.apiUrl}/eats/stores/${ubereatsStoreId}/pos_data`,
       {
@@ -621,7 +629,7 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
     }
 
     const data = await response.json()
-    
+
     // 更新內部店鋪的整合狀態
     await Store.updateOne(
       {
@@ -636,7 +644,7 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
         },
       },
     )
-    
+
     console.log(`✅ Store ${ubereatsStoreId} auto-provisioned successfully`)
     return {
       ...data,

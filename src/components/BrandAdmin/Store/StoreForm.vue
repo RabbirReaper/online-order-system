@@ -1077,11 +1077,12 @@ const fetchStoreData = async () => {
 
       // 處理外送平台設定
       formData.deliveryPlatforms =
-        store.deliveryPlatforms && store.deliveryPlatforms.length > 0 ? 
-        store.deliveryPlatforms.map(platform => ({
-          platform: platform.platform || '',
-          storeId: platform.storeId || '',
-        })) : []
+        store.deliveryPlatforms && store.deliveryPlatforms.length > 0
+          ? store.deliveryPlatforms.map((platform) => ({
+              platform: platform.platform || '',
+              storeId: platform.storeId || '',
+            }))
+          : []
 
       formData._id = store._id
     } else {

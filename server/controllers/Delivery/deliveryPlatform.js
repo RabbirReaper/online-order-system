@@ -283,10 +283,7 @@ export const autoProvisionUberEatsStore = asyncHandler(async (req, res) => {
     })
   }
 
-  const result = await deliveryService.autoProvisionUberEatsStore(
-    storeId,
-    userAccessToken
-  )
+  const result = await deliveryService.autoProvisionUberEatsStore(storeId, userAccessToken)
 
   res.json({
     success: true,

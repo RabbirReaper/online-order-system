@@ -329,10 +329,14 @@ const getInitialOrderType = () => {
   // 將後端格式轉換為前端格式
   const storeOrderType = cartStore.orderType
   switch (storeOrderType) {
-    case 'dine_in': return 'dineIn'
-    case 'takeout': return 'selfPickup' 
-    case 'delivery': return 'delivery'
-    default: return 'selfPickup'
+    case 'dine_in':
+      return 'dineIn'
+    case 'takeout':
+      return 'selfPickup'
+    case 'delivery':
+      return 'delivery'
+    default:
+      return 'selfPickup'
   }
 }
 const orderType = ref(getInitialOrderType())
@@ -882,21 +886,21 @@ onMounted(() => {
   if (storeOrderType) {
     // 將後端格式轉換為前端格式
     switch (storeOrderType) {
-      case 'dine_in': 
+      case 'dine_in':
         orderType.value = 'dineIn'
         tableNumber.value = cartStore.dineInInfo?.tableNumber || ''
         break
-      case 'takeout': 
+      case 'takeout':
         orderType.value = 'selfPickup'
         break
-      case 'delivery': 
+      case 'delivery':
         orderType.value = 'delivery'
         deliveryAddress.value = cartStore.deliveryInfo?.address || ''
         deliveryFee.value = cartStore.deliveryInfo?.deliveryFee || 0
         break
     }
   }
-  
+
   // 同步客戶資訊
   if (cartStore.customerInfo) {
     customerInfo.value = {

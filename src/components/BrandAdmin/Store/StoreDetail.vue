@@ -584,7 +584,9 @@
                     >
                       <i class="bi bi-qr-code action-icon mb-2"></i>
                       <h6 class="mb-1">生成桌牌</h6>
-                      <p class="small text-muted text-center mb-0">生成 QR Code 桌牌供顧客掃描點餐</p>
+                      <p class="small text-muted text-center mb-0">
+                        生成 QR Code 桌牌供顧客掃描點餐
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -966,7 +968,7 @@
     </BModal>
 
     <!-- QR Code 桌牌生成器 -->
-    <QRTableCardGenerator 
+    <QRTableCardGenerator
       v-if="store"
       v-model:show="showTableCardModal"
       :brandId="brandId"
@@ -1166,7 +1168,7 @@ const updateDeliveryPlatforms = async () => {
   }
 
   // 檢查是否有重複的平台
-  const platforms = editDeliveryPlatforms.value.map(p => p.platform)
+  const platforms = editDeliveryPlatforms.value.map((p) => p.platform)
   const uniquePlatforms = new Set(platforms)
   if (platforms.length !== uniquePlatforms.size) {
     alert('不能重複新增相同的外送平台')
@@ -1180,7 +1182,7 @@ const updateDeliveryPlatforms = async () => {
     const response = await api.store.updateStore({
       brandId: brandId.value,
       id: store.value._id,
-      data: { deliveryPlatforms: editDeliveryPlatforms.value }
+      data: { deliveryPlatforms: editDeliveryPlatforms.value },
     })
 
     if (response && response.store) {
@@ -1219,10 +1221,12 @@ const initEditData = () => {
   editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []))
 
   // 深複製外送平台數據
-  editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || [])).map(platform => ({
-    platform: platform.platform || '',
-    storeId: platform.storeId || '',
-  }))
+  editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || [])).map(
+    (platform) => ({
+      platform: platform.platform || '',
+      storeId: platform.storeId || '',
+    }),
+  )
 
   // 初始化服務設定
   Object.assign(editServiceSettings, {
@@ -1524,7 +1528,9 @@ onMounted(() => {
   // 當外送平台編輯模態框開啟時重新初始化數據
   watch(showDeliveryPlatformsModal, (newValue) => {
     if (newValue) {
-      editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || [])).map(platform => ({
+      editDeliveryPlatforms.value = JSON.parse(
+        JSON.stringify(store.value.deliveryPlatforms || []),
+      ).map((platform) => ({
         platform: platform.platform || '',
         storeId: platform.storeId || '',
       }))
@@ -1565,8 +1571,8 @@ onMounted(() => {
 // 確保組件正確註冊
 defineOptions({
   components: {
-    QRTableCardGenerator
-  }
+    QRTableCardGenerator,
+  },
 })
 </script>
 
