@@ -656,8 +656,13 @@ export const getUserOrders = async (userId, options = {}) => {
 /**
  * 根據ID獲取訂單詳情
  */
-export const getUserOrderById = async (orderId) => {
-  const order = await Order.findById(orderId)
+export const getUserOrderById = async (orderId, brandId) => {
+  const query = { _id: orderId }
+  if (brandId) {
+    query.brand = brandId
+  }
+
+  const order = await Order.findOne(query)
     .populate('items.dishInstance', 'name options')
     .populate({
       path: 'items.bundleInstance',
@@ -675,10 +680,6 @@ export const getUserOrderById = async (orderId) => {
         },
       },
     })
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404)
-  }
 
   return order
 }
@@ -731,8 +732,13 @@ export const calculateOrderAmounts = (items) => {
 /**
  * 處理支付
  */
-export const processPayment = async (orderId, paymentData) => {
-  const order = await Order.findById(orderId)
+export const processPayment = async (orderId, brandId, paymentData) => {
+  const query = { _id: orderId }
+  if (brandId) {
+    query.brand = brandId
+  }
+
+  const order = await Order.findOne(query)
 
   if (!order) {
     throw new AppError('訂單不存在', 404)
@@ -742,24 +748,33 @@ export const processPayment = async (orderId, paymentData) => {
     throw new AppError('訂單已付款', 400)
   }
 
-  // 更新支付資訊
-  order.status = 'paid'
-  order.paymentType = paymentData.paymentType
-  order.paymentMethod = paymentData.paymentMethod
+  // 模擬支付處理 - 返回模擬的支付ID和重定向URL
+  const paymentId = `payment-${Date.now()}`
+  const redirectUrl = `https://payment.example.com/redirect?paymentId=${paymentId}`
 
+  // 更新支付資訊但不立即標記為已付款（等待回調）
+  order.paymentMethod = paymentData.paymentMethod
+  order.paymentType = paymentData.paymentType
   await order.save()
 
-  // 處理付款完成後的流程
-  const result = await processOrderPaymentComplete(order)
-
-  return result
+  return {
+    success: true,
+    paymentId,
+    redirectUrl,
+    order: order.toObject()
+  }
 }
 
 /**
  * 處理支付回調
  */
-export const handlePaymentCallback = async (orderId, callbackData) => {
-  const order = await Order.findById(orderId)
+export const paymentCallback = async (orderId, brandId, callbackData) => {
+  const query = { _id: orderId }
+  if (brandId) {
+    query.brand = brandId
+  }
+
+  const order = await Order.findOne(query)
 
   if (!order) {
     throw new AppError('訂單不存在', 404)
@@ -771,11 +786,19 @@ export const handlePaymentCallback = async (orderId, callbackData) => {
     await order.save()
 
     // 處理付款完成後的流程
-    return await processOrderPaymentComplete(order)
+    const result = await processOrderPaymentComplete(order)
+    return {
+      success: true,
+      order: result,
+      pointsAwarded: result.pointsAwarded || 0
+    }
   } else {
     order.status = 'cancelled'
     await order.save()
-    return order
+    return {
+      success: false,
+      order: order.toObject()
+    }
   }
 }
 

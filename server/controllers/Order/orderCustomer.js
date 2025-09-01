@@ -62,9 +62,16 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 
 // 獲取訂單詳情（支援匿名訪問）
 export const getUserOrderById = asyncHandler(async (req, res) => {
-  const { orderId } = req.params
+  const { orderId, brandId } = req.params
 
-  const order = await orderService.getUserOrderById(orderId)
+  const order = await orderService.getUserOrderById(orderId, brandId)
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: '找不到指定的訂單'
+    })
+  }
 
   res.json({
     success: true,
@@ -74,29 +81,31 @@ export const getUserOrderById = asyncHandler(async (req, res) => {
 
 // 處理訂單支付
 export const processPayment = asyncHandler(async (req, res) => {
-  const { orderId } = req.params
+  const { orderId, brandId } = req.params
   const paymentData = req.body
 
-  const result = await orderService.processPayment(orderId, paymentData)
+  const result = await orderService.processPayment(orderId, brandId, paymentData)
 
   res.json({
     success: true,
     message: '支付處理成功',
-    result,
+    paymentId: result.paymentId,
+    redirectUrl: result.redirectUrl,
+    ...result
   })
 })
 
 // 支付回調處理
 export const paymentCallback = asyncHandler(async (req, res) => {
-  const { orderId } = req.params
+  const { orderId, brandId } = req.params
   const callbackData = req.body
 
-  const result = await orderService.handlePaymentCallback(orderId, callbackData)
+  const result = await orderService.paymentCallback(orderId, brandId, callbackData)
 
   res.json({
     success: true,
     message: '支付回調處理完成',
-    result,
+    order: result.order,
     // 混合購買相關資訊
     pointsAwarded: result.pointsAwarded || 0,
     generatedCoupons: result.generatedCoupons || [],
