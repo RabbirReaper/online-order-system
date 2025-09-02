@@ -100,9 +100,11 @@ vi.mock('@server/services/inventory/stockManagement.js', () => ({
 
 vi.mock('@server/services/order/orderCustomer.js', () => ({
   createOrder: vi.fn(),
-  generateOrderNumber: vi.fn().mockResolvedValue({
-    orderDateCode: '20240901',
-    sequence: 1
+  generateOrderNumber: vi.fn().mockImplementation(async (storeId) => {
+    return {
+      orderDateCode: '250902',
+      sequence: 1
+    }
   }),
   getUserOrders: vi.fn().mockResolvedValue({
     orders: [],
@@ -222,11 +224,16 @@ let inventoryService
 describe('訂單 API 整合測試', () => {
   beforeAll(async () => {
     // 動態導入路由和服務
-    const { default: orderCustomerRoutesModule } = await import('@server/routes/orderCustomer.js')
-    orderCustomerRoutes = orderCustomerRoutesModule
-    
-    orderService = await import('@server/services/order/orderCustomer.js')
-    inventoryService = await import('@server/services/inventory/stockManagement.js')
+    try {
+      const { default: orderCustomerRoutesModule } = await import('@server/routes/orderCustomer.js')
+      orderCustomerRoutes = orderCustomerRoutesModule
+      
+      orderService = await import('@server/services/order/orderCustomer.js')
+      inventoryService = await import('@server/services/inventory/stockManagement.js')
+    } catch (error) {
+      console.error('Failed to import modules:', error)
+      throw error
+    }
 
     // 設置 Express 應用
     app = express()
@@ -244,6 +251,11 @@ describe('訂單 API 整合測試', () => {
 
     // 模擬認證中介軟體
     app.use((req, res, next) => {
+      // 確保 session 對象存在
+      if (!req.session) {
+        req.session = {}
+      }
+      
       // 模擬用戶登入狀態
       if (req.headers.authorization) {
         req.session.userId = 'test-user-id'
@@ -257,9 +269,11 @@ describe('訂單 API 整合測試', () => {
 
     // 全域錯誤處理
     app.use((error, req, res, next) => {
+      console.error('Test error:', error)
       res.status(error.statusCode || 500).json({
         success: false,
-        message: error.message || '伺服器錯誤'
+        message: error.message || '伺服器錯誤',
+        stack: process.env.NODE_ENV === 'test' ? error.stack : undefined
       })
     })
   })
@@ -275,9 +289,12 @@ describe('訂單 API 整合測試', () => {
       // 模擬訂單創建成功
       const mockOrder = TestDataFactory.createOrder({
         _id: 'order-123',
-        orderNumber: 'T20240901001',
-        status: 'pending',
-        total: 150
+        status: 'unpaid',
+        total: 240,
+        store: 'test-store',
+        brand: 'test-brand',
+        orderDateCode: '250902',
+        sequence: 1
       })
       
       orderService.createOrder.mockResolvedValue(mockOrder)
@@ -286,9 +303,11 @@ describe('訂單 API 整合測試', () => {
         items: [
           {
             itemType: 'dish',
-            dishTemplate: 'dish-template-id',
+            templateId: 'dish-template-id',
             name: '測試菜品',
-            price: 150,
+            basePrice: 240,
+            finalPrice: 240,
+            subtotal: 240,
             quantity: 1
           }
         ],
@@ -309,7 +328,7 @@ describe('訂單 API 整合測試', () => {
       expect(response.body.success).toBe(true)
       expect(response.body.message).toBe('訂單創建成功')
       expect(response.body.order).toBeDefined()
-      expect(response.body.orderNumber).toBe('20240901001')
+      expect(response.body.orderNumber).toBe('250902001')
       
       // 驗證服務被正確調用
       expect(orderService.generateOrderNumber).toHaveBeenCalledWith('test-store')
@@ -318,16 +337,26 @@ describe('訂單 API 整合測試', () => {
         store: 'test-store',
         items: orderData.items,
         orderType: orderData.orderType,
-        orderDateCode: '20240901',
+        orderDateCode: '250902',
         sequence: 1
       }))
     })
 
     it('應該成功創建訂單（已登入用戶）', async () => {
+      // 設置 generateOrderNumber mock
+      orderService.generateOrderNumber.mockResolvedValue({
+        orderDateCode: '250902',
+        sequence: 2
+      })
+
       const mockOrder = TestDataFactory.createOrder({
         _id: 'order-124',
         user: 'test-user-id',
-        status: 'pending'
+        status: 'unpaid',
+        store: 'test-store',
+        brand: 'test-brand',
+        orderDateCode: '250902',
+        sequence: 2
       })
       
       orderService.createOrder.mockResolvedValue(mockOrder)
@@ -336,9 +365,11 @@ describe('訂單 API 整合測試', () => {
         items: [
           {
             itemType: 'dish',
-            dishTemplate: 'dish-template-id', 
+            templateId: 'dish-template-id', 
             name: '測試菜品',
-            price: 150,
+            basePrice: 240,
+            finalPrice: 240,
+            subtotal: 240,
             quantity: 1
           }
         ],
@@ -361,6 +392,12 @@ describe('訂單 API 整合測試', () => {
     })
 
     it('應該處理庫存不足的錯誤', async () => {
+      // 設置 generateOrderNumber mock
+      orderService.generateOrderNumber.mockResolvedValue({
+        orderDateCode: '250902',
+        sequence: 3
+      })
+
       // 模擬庫存不足錯誤
       const { AppError } = await import('@server/middlewares/error.js')
       orderService.createOrder.mockRejectedValue(new AppError('庫存不足', 400))
@@ -369,9 +406,11 @@ describe('訂單 API 整合測試', () => {
         items: [
           {
             itemType: 'dish',
-            dishTemplate: 'dish-template-id',
+            templateId: 'dish-template-id',
             name: '測試菜品',
-            price: 150,
+            basePrice: 240,
+            finalPrice: 24000,
+            subtotal: 24000,
             quantity: 100 // 過多數量
           }
         ],
@@ -508,7 +547,7 @@ describe('訂單 API 整合測試', () => {
 
       const paymentData = {
         paymentMethod: 'line_pay',
-        amount: 150
+        amount: 240
       }
 
       const response = await request(app)
@@ -533,7 +572,7 @@ describe('訂單 API 整合測試', () => {
 
       const response = await request(app)
         .post(paymentEndpoint)
-        .send({ paymentMethod: 'credit_card', amount: 150 })
+        .send({ paymentMethod: 'credit_card', amount: 240 })
         .expect(400)
 
       expect(response.body.success).toBe(false)
@@ -592,11 +631,21 @@ describe('訂單 API 整合測試', () => {
 
   describe('完整訂單流程整合測試', () => {
     it('應該完成完整的下單到支付流程', async () => {
+      // 設置 generateOrderNumber mock
+      orderService.generateOrderNumber.mockResolvedValue({
+        orderDateCode: '250902',
+        sequence: 1
+      })
+
       // Step 1: 創建訂單
       const mockOrder = TestDataFactory.createOrder({
         _id: 'flow-order-123',
-        status: 'pending',
-        total: 150
+        status: 'unpaid',
+        total: 240,
+        store: 'test-store',
+        brand: 'test-brand',
+        orderDateCode: '250902',
+        sequence: 1
       })
       
       orderService.createOrder.mockResolvedValue(mockOrder)
@@ -605,9 +654,11 @@ describe('訂單 API 整合測試', () => {
         items: [
           {
             itemType: 'dish',
-            dishTemplate: 'dish-template-id',
+            templateId: 'dish-template-id',
             name: '測試菜品',
-            price: 150,
+            basePrice: 240,
+            finalPrice: 240,
+            subtotal: 240,
             quantity: 1
           }
         ],
@@ -646,7 +697,7 @@ describe('訂單 API 整合測試', () => {
 
       const paymentResponse = await request(app)
         .post(`/api/orderCustomer/brands/test-brand/orders/${orderId}/payment`)
-        .send({ paymentMethod: 'line_pay', amount: 150 })
+        .send({ paymentMethod: 'line_pay', amount: 240 })
         .expect(200)
 
       expect(paymentResponse.body.success).toBe(true)

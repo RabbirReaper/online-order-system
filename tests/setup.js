@@ -281,22 +281,32 @@ export class TestDataFactory {
     return {
       _id: '507f1f77bcf86cd799439017',
       orderNumber: 'T20240101001',
-      customer: '507f1f77bcf86cd799439011',
+      user: '507f1f77bcf86cd799439011',
       store: '507f1f77bcf86cd799439014',
+      brand: '507f1f77bcf86cd799439013',
+      orderDateCode: '20240101',
+      sequence: 1,
       items: [
         {
-          dishTemplate: '507f1f77bcf86cd799439016',
-          name: 'TestDish',
-          price: 150,
+          itemType: 'dish',
+          itemName: 'TestDish',
+          dishInstance: '507f1f77bcf86cd799439020',
           quantity: 1,
           subtotal: 150
         }
       ],
       orderType: 'dine_in',
       tableNumber: 'A1',
-      status: 'pending',
+      status: 'unpaid',
       paymentMethod: 'cash',
-      totalAmount: 150,
+      dishSubtotal: 150,
+      bundleSubtotal: 0,
+      subtotal: 150,
+      serviceCharge: 0,
+      discounts: [],
+      totalDiscount: 0,
+      manualAdjustment: 0,
+      total: 150,
       createdAt: new Date(),
       ...overrides
     };
