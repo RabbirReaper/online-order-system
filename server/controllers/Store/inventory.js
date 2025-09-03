@@ -325,7 +325,6 @@ export const getInventoryLogs = asyncHandler(async (req, res) => {
   }
 })
 
-
 // 獲取項目庫存統計
 export const getItemInventoryStats = asyncHandler(async (req, res) => {
   try {

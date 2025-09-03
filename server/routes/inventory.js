@@ -243,7 +243,6 @@ router.put(
   inventoryController.toggleSoldOut,
 )
 
-
 // 獲取庫存統計
 router.get(
   '/brands/:brandId/:storeId/inventory/:inventoryId/stats',
