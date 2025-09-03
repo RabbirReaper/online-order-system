@@ -221,32 +221,6 @@ export default function (apiClient) {
       })
     },
 
-    /**
-     * 獲取庫存趨勢數據
-     * @param {Object} params - 查詢參數
-     * @param {string} params.brandId - 品牌ID（必填）
-     * @param {string} params.storeId - 店鋪ID
-     * @param {string} params.inventoryId - 庫存ID
-     * @param {string} [params.inventoryType='DishTemplate'] - 庫存類型
-     * @param {string} [params.stockType='totalStock'] - 庫存類型
-     * @param {number} [params.days=30] - 天數
-     * @returns {Promise} - API 回應
-     */
-    getStockTrends({
-      brandId,
-      storeId,
-      inventoryId,
-      inventoryType = 'DishTemplate',
-      stockType = 'totalStock',
-      days = 30,
-    }) {
-      return apiClient.get(
-        `/inventory/brands/${brandId}/${storeId}/inventory/${inventoryId}/trends`,
-        {
-          params: { inventoryType, stockType, days },
-        },
-      )
-    },
 
     /**
      * 獲取項目庫存統計

@@ -31,7 +31,6 @@ export const {
 
 export const {
   getInventoryLogs,
-  getStockTrends,
   getItemInventoryStats,
   getInventoryHealthReport,
   getStockChangeSummary,

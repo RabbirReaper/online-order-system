@@ -325,32 +325,6 @@ export const getInventoryLogs = asyncHandler(async (req, res) => {
   }
 })
 
-// 獲取庫存趨勢
-export const getStockTrends = asyncHandler(async (req, res) => {
-  try {
-    const { storeId, inventoryId } = req.params
-    const options = {
-      storeId,
-      itemId: inventoryId, // 服務層內部仍使用 itemId，所以這裡轉換
-      inventoryType: req.query.inventoryType || 'DishTemplate',
-      stockType: req.query.stockType || 'totalStock',
-      days: parseInt(req.query.days, 10) || 30,
-    }
-
-    const trends = await inventoryService.stats.getStockTrends(options)
-
-    res.json({
-      success: true,
-      trends,
-    })
-  } catch (error) {
-    console.error('Error getting stock trends:', error)
-    res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Internal server error',
-    })
-  }
-})
 
 // 獲取項目庫存統計
 export const getItemInventoryStats = asyncHandler(async (req, res) => {
