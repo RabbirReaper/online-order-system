@@ -30,7 +30,38 @@ export const {
   receiveOrder, // 接收 UberEats 訂單
   checkUberEatsConfig, // 檢查 UberEats 配置
   testUberEatsConnection, // 測試 UberEats API 連接
+  // Phase 1: 優先實作的訂單同步功能
+  getStoreOrders, // 獲取店鋪訂單列表
+  cancelStoreOrder, // 取消店鋪訂單
+  // 自動 Provisioning 功能
+  autoProvisionStore, // 自動配置店鋪整合
 } = ubereatsService
+
+// === Token 管理服務導出 ===
+import { UberEatsTokenManager } from './tokenManager.js'
+
+export const getTokenStatus = () => UberEatsTokenManager.getTokenStatus()
+export const refreshUserToken = () => UberEatsTokenManager.refreshUserToken()
+
+// === 便捷別名導出（方便控制器調用）===
+export const getUberEatsStoreOrders = ubereatsService.getStoreOrders
+export const cancelUberEatsOrder = ubereatsService.cancelStoreOrder
+export const autoProvisionUberEatsStore = ubereatsService.autoProvisionStore
+
+// === TODO: Phase 2 功能（註解待實作）===
+/*
+export const {
+  updateStoreStatus, // TODO: 更新店鋪營業狀態
+  getStoreStatus, // TODO: 獲取店鋪營業狀態
+  getStoreInfo, // TODO: 獲取店鋪資訊
+  configurePOSIntegration, // TODO: POS 系統配置
+  getStoreReports, // TODO: 獲取營運報表
+} = ubereatsService
+
+export const updateUberEatsStoreStatus = ubereatsService.updateStoreStatus
+export const getUberEatsStoreStatus = ubereatsService.getStoreStatus
+export const getUberEatsStoreInfo = ubereatsService.getStoreInfo
+*/
 
 // === 訂單同步服務導出 ===
 export const {

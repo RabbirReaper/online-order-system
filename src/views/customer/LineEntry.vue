@@ -125,7 +125,7 @@ onMounted(() => {
   // 記錄來源資訊（用於除錯）
   const userAgent = navigator.userAgent
   const isInLineApp = userAgent.includes('Line/')
-  
+
   console.log('📱 環境資訊:', {
     userAgent,
     isInLineApp,

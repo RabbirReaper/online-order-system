@@ -363,7 +363,7 @@ watch(
       console.log('已更新為內用模式，桌號:', newTableNumber)
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 檢查並處理桌號參數
@@ -419,7 +419,7 @@ onActivated(() => {
   if (cartStore.currentBrand !== brandId.value || cartStore.currentStore !== storeId.value) {
     cartStore.setBrandAndStore(brandId.value, storeId.value)
   }
-  
+
   // 重新檢查桌號參數（頁面重新激活時）
   handleTableNumber()
 })

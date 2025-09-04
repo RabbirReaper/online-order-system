@@ -34,6 +34,7 @@ const storeSchema = new mongoose.Schema(
 
     // === 新增的功能設定欄位 ===
     enableLineOrdering: { type: Boolean, default: false }, // 啟用LINE點餐
+    liffId: { type: String, trim: true }, // LINE LIFF應用程式ID
     showTaxId: { type: Boolean, default: false }, // 顯示統一編號欄位
     provideReceipt: { type: Boolean, default: true }, // 提供收據
 
@@ -74,22 +75,11 @@ const storeSchema = new mongoose.Schema(
         },
         isEnabled: {
           type: Boolean,
-          default: false,
+          default: false, // 預設未啟用，需要經過 provisioning 後才啟用
         },
-        // 平台特定設定
         settings: {
-          // 自動接單設定
-          autoAcceptOrders: { type: Boolean, default: false },
-          // 準備時間（分鐘）- 可覆蓋店家預設值
-          prepTime: { type: Number, min: 0 },
-          // 平台特定的營業狀態
-          isOnline: { type: Boolean, default: false },
-        },
-        // 同步設定（目前測試階段先不啟用）
-        syncSettings: {
-          // syncMenu: { type: Boolean, default: false },
-          // syncInventory: { type: Boolean, default: false },
-          // syncBusinessHours: { type: Boolean, default: false }
+          autoAcceptOrders: { type: Boolean, default: true },
+          prepTime: { type: Number, default: 30 }, // 準備時間（分鐘）
         },
         lastSyncAt: { type: Date },
         createdAt: { type: Date, default: Date.now },
