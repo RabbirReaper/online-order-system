@@ -9,9 +9,13 @@
     <!-- 錯誤狀態 -->
     <div v-else-if="error" class="error-container">
       <div class="error-icon">⚠️</div>
-      <h3>連接失敗</h3>
+      <h3>{{ error.includes('好友') ? '需要加入好友' : '連接失敗' }}</h3>
       <p class="error-message">{{ error }}</p>
       <div class="error-actions">
+        <!-- 如果是好友相關錯誤，顯示加好友按鈕 -->
+        <button v-if="error.includes('好友')" @click="openFriendshipPage" class="friendship-btn">
+          📱 加入官方帳號
+        </button>
         <button @click="retry" class="retry-btn">重新嘗試</button>
         <button @click="goHome" class="home-btn">返回首頁</button>
       </div>
@@ -30,6 +34,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLineParams } from '@/composables/useLineParams'
 import { useCartStore } from '@/stores/cart'
+import liff from '@line/liff'
 
 // 組合式 API
 const router = useRouter()
@@ -46,6 +51,9 @@ const currentStep = ref('init')
 const loadingMessage = computed(() => {
   const messages = {
     init: '正在初始化...',
+    liff: '正在連接 LINE...',
+    auth: '正在驗證登入狀態...',
+    friendship: '正在檢查好友狀態...',
     params: '正在解析參數...',
     context: '正在設定上下文...',
     redirect: '處理成功，準備跳轉...',
@@ -56,15 +64,68 @@ const loadingMessage = computed(() => {
 // 主要處理邏輯
 const processLineEntry = async () => {
   try {
-    // Step 1: 解析參數
-    currentStep.value = 'params'
+    // Step 1: 初始化 LIFF
+    currentStep.value = 'liff'
+    console.log('🔗 開始初始化 LIFF...')
+
+    // 獲取 liffId - 可以從參數或預設值獲取
     const params = getCleanParams()
+    const liffId = params.liffId
+
+    await liff.init({ liffId })
+    console.log('✅ LIFF 初始化成功')
+
+    // 短暫延遲，讓用戶看到載入過程
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    // Step 2: 檢查登入狀態
+    currentStep.value = 'auth'
+    console.log('🔐 檢查登入狀態...')
+
+    if (!liff.isLoggedIn()) {
+      console.log('❌ 用戶未登入，跳轉到登入頁面')
+      liff.login()
+      return
+    }
+
+    console.log('✅ 用戶已登入')
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    // Step 3: 檢查好友狀態
+    currentStep.value = 'friendship'
+    console.log('👥 檢查好友狀態...')
+
+    try {
+      const friendship = await liff.getFriendship()
+
+      if (!friendship.friendFlag) {
+        console.log('❌ 用戶尚未加入好友')
+        // 顯示提示訊息並跳轉到加好友頁面
+        error.value = '請先加入官方帳號為好友，然後重新開啟此連結'
+        isLoading.value = false
+
+        // 嘗試開啟加好友連結（需要替換為實際的官方帳號 ID）
+        const botId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
+        window.open(`https://line.me/R/ti/p/@${botId}`, '_blank')
+        return
+      }
+
+      console.log('✅ 用戶已是好友')
+    } catch (friendshipError) {
+      console.warn('⚠️ 無法檢查好友狀態，繼續處理:', friendshipError)
+      // 如果無法檢查好友狀態，繼續處理（容錯機制）
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    // Step 4: 解析參數
+    currentStep.value = 'params'
     console.log('📋 解析到的參數:', params)
 
     // 短暫延遲，讓用戶看到載入過程
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 2: 設定購物車上下文
+    // Step 5: 設定購物車上下文
     currentStep.value = 'context'
     cartStore.setBrandAndStore(params.brandId, params.storeId)
     console.log('🛒 設定購物車上下文:', {
@@ -72,7 +133,7 @@ const processLineEntry = async () => {
       storeId: params.storeId,
     })
 
-    // Step 3: 準備跳轉
+    // Step 6: 準備跳轉
     currentStep.value = 'redirect'
     success.value = true
 
@@ -101,7 +162,29 @@ const processLineEntry = async () => {
     }, 800)
   } catch (err) {
     console.error('❌ LINE Entry 處理失敗:', err)
-    error.value = err.message || '處理失敗，請重新嘗試'
+
+    // 針對 LIFF 特定錯誤提供更友善的錯誤訊息
+    let errorMessage = '處理失敗，請重新嘗試'
+
+    if (err.code) {
+      switch (err.code) {
+        case 'LIFF_INIT_ERROR':
+          errorMessage = 'LINE 應用程式初始化失敗，請確認連結正確'
+          break
+        case 'FORBIDDEN':
+          errorMessage = '無權限訪問此應用程式'
+          break
+        case 'UNAUTHORIZED':
+          errorMessage = '請先登入 LINE 帳號'
+          break
+        default:
+          errorMessage = `LINE 連接錯誤 (${err.code}): ${err.message || '請重新嘗試'}`
+      }
+    } else if (err.message) {
+      errorMessage = err.message
+    }
+
+    error.value = errorMessage
     isLoading.value = false
   }
 }
@@ -118,6 +201,12 @@ const retry = () => {
 // 返回首頁
 const goHome = () => {
   router.replace({ name: 'landing-home' })
+}
+
+// 開啟加好友頁面
+const openFriendshipPage = () => {
+  const botId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
+  window.open(`https://line.me/R/ti/p/@${botId}`, '_blank')
 }
 
 // 生命週期
@@ -225,7 +314,8 @@ window.addEventListener('unhandledrejection', (event) => {
 }
 
 .retry-btn,
-.home-btn {
+.home-btn,
+.friendship-btn {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
@@ -234,13 +324,24 @@ window.addEventListener('unhandledrejection', (event) => {
   transition: all 0.3s ease;
 }
 
-.retry-btn {
+.friendship-btn {
   background: #00c851;
+  color: white;
+  font-weight: 600;
+}
+
+.friendship-btn:hover {
+  background: #007e33;
+  transform: translateY(-1px);
+}
+
+.retry-btn {
+  background: #6c757d;
   color: white;
 }
 
 .retry-btn:hover {
-  background: #007e33;
+  background: #5a6268;
 }
 
 .home-btn {
@@ -282,7 +383,8 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 
   .retry-btn,
-  .home-btn {
+  .home-btn,
+  .friendship-btn {
     width: 100%;
   }
 }
