@@ -34,6 +34,7 @@ const storeSchema = new mongoose.Schema(
 
     // === 新增的功能設定欄位 ===
     enableLineOrdering: { type: Boolean, default: false }, // 啟用LINE點餐
+    liffId: { type: String, trim: true }, // LINE LIFF應用程式ID
     showTaxId: { type: Boolean, default: false }, // 顯示統一編號欄位
     provideReceipt: { type: Boolean, default: true }, // 提供收據
 

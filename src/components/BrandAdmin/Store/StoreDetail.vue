@@ -940,6 +940,20 @@
           <BFormCheckbox v-model="editServiceSettings.enableLineOrdering" switch>
             啟用LINE點餐 {{ editServiceSettings.enableLineOrdering ? '✓' : '✗' }}
           </BFormCheckbox>
+          
+          <!-- LINE LIFF ID 設定 (只有在啟用 LINE 點餐時顯示) -->
+          <div v-if="editServiceSettings.enableLineOrdering" class="ms-3 mt-2">
+            <label for="edit-liffId" class="form-label small">LINE LIFF 應用程式 ID</label>
+            <BFormInput
+              id="edit-liffId"
+              v-model="editServiceSettings.liffId"
+              placeholder="例如：2007974797-rvmVYQB0"
+            />
+            <BFormText class="text-muted small">
+              請輸入 LINE LIFF 應用程式的 ID，用於生成 LINE 點餐連結
+            </BFormText>
+          </div>
+
           <BFormCheckbox v-model="editServiceSettings.showTaxId" switch>
             顯示統一編號欄位 {{ editServiceSettings.showTaxId ? '✓' : '✗' }}
           </BFormCheckbox>
@@ -1001,7 +1015,7 @@ const baseUrl = computed(() => window.location.origin)
 const menuUrl = computed(() => `${baseUrl.value}/stores/${brandId.value}/${storeId.value}`)
 const counterUrl = computed(() => `${baseUrl.value}/counter/${brandId.value}/${storeId.value}`)
 const liffUrl = computed(() => {
-  const liffId = '2007974797-rvmVYQB0'
+  const liffId = store.value?.liffId
   if (!liffId) return null
   return `https://liff.line.me/${liffId}?brandId=${brandId.value}&storeId=${storeId.value}`
 })
@@ -1034,6 +1048,7 @@ const editAnnouncements = ref([])
 const editDeliveryPlatforms = ref([])
 const editServiceSettings = reactive({
   enableLineOrdering: false,
+  liffId: '',
   showTaxId: false,
   provideReceipt: true,
   enableDineIn: true,
@@ -1232,6 +1247,7 @@ const initEditData = () => {
   Object.assign(editServiceSettings, {
     enableLineOrdering:
       store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
+    liffId: store.value.liffId || '',
     showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
     provideReceipt: store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,
     enableDineIn: store.value.enableDineIn !== undefined ? store.value.enableDineIn : true,
@@ -1543,6 +1559,7 @@ onMounted(() => {
       Object.assign(editServiceSettings, {
         enableLineOrdering:
           store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
+        liffId: store.value.liffId || '',
         showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
         provideReceipt:
           store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,

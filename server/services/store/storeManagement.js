@@ -507,6 +507,7 @@ export const updateStoreServiceSettings = async (storeId, serviceSettings) => {
   // 更新服務設定
   const allowedFields = [
     'enableLineOrdering',
+    'liffId',
     'showTaxId',
     'provideReceipt',
     'enableDineIn',
