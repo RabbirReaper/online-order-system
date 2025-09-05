@@ -34,14 +34,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLineParams } from '@/composables/useLineParams'
 import { useCartStore } from '@/stores/cart'
-import { useApi } from '@/composables/useApi'
+import api from '@/api'
 import liff from '@line/liff'
 
 // 組合式 API
 const router = useRouter()
 const { getCleanParams } = useLineParams()
 const cartStore = useCartStore()
-const { api } = useApi()
 
 // 響應式狀態
 const isLoading = ref(true)
