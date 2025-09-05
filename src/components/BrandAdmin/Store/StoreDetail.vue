@@ -144,6 +144,7 @@
                     </a>
                   </div>
                 </div>
+                {{ liffUrl }}
                 <!-- LINE LIFF 連結 -->
                 <div class="mb-0" v-if="store.enableLineOrdering && liffUrl">
                   <label class="form-label small fw-bold">
@@ -178,6 +179,46 @@
                   <div class="form-text text-muted small mt-1">
                     <i class="bi bi-info-circle me-1"></i>
                     此連結需要在 LINE 應用程式中開啟才能正常運作
+                  </div>
+                </div>
+
+                <!-- LINE Bot ID 顯示 -->
+                <div class="mb-0" v-if="store.enableLineOrdering">
+                  <label class="form-label small fw-bold">
+                    <i class="bi bi-robot me-1" style="color: #00c300"></i>
+                    LINE 官方帳號 ID
+                  </label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      :value="store.lineBotId || '(使用系統預設)'"
+                      readonly
+                      :class="!store.lineBotId ? 'text-muted fst-italic' : ''"
+                    />
+                    <button
+                      v-if="store.lineBotId"
+                      class="btn btn-sm"
+                      :class="copyStates.botId ? 'btn-success' : 'btn-outline-secondary'"
+                      type="button"
+                      @click="copyToClipboard(store.lineBotId, 'botId')"
+                      :title="copyStates.botId ? '已複製' : '複製 Bot ID'"
+                    >
+                      <i class="bi" :class="copyStates.botId ? 'bi-check' : 'bi-copy'"></i>
+                    </button>
+                    <a
+                      v-if="store.lineBotId"
+                      :href="`https://line.me/R/ti/p/@${store.lineBotId}`"
+                      target="_blank"
+                      class="btn btn-outline-success btn-sm"
+                      title="開啟加好友頁面"
+                    >
+                      <i class="bi bi-person-plus"></i>
+                    </a>
+                  </div>
+                  <div class="form-text text-muted small mt-1">
+                    <i class="bi bi-info-circle me-1"></i>
+                    客戶在需要加好友時會被導向此 LINE 官方帳號
                   </div>
                 </div>
               </div>
@@ -940,7 +981,7 @@
           <BFormCheckbox v-model="editServiceSettings.enableLineOrdering" switch>
             啟用LINE點餐 {{ editServiceSettings.enableLineOrdering ? '✓' : '✗' }}
           </BFormCheckbox>
-          
+
           <!-- LINE Bot ID 設定 (只有在啟用 LINE 點餐時顯示) -->
           <div v-if="editServiceSettings.enableLineOrdering" class="ms-3 mt-2">
             <label for="edit-lineBotId" class="form-label small">LINE 官方帳號 ID</label>
@@ -1015,7 +1056,7 @@ const baseUrl = computed(() => window.location.origin)
 const menuUrl = computed(() => `${baseUrl.value}/stores/${brandId.value}/${storeId.value}`)
 const counterUrl = computed(() => `${baseUrl.value}/counter/${brandId.value}/${storeId.value}`)
 const liffUrl = computed(() => {
-  const liffId = import.meta.env.VITE_LIFF_ID
+  const liffId = '2007974797-rvmVYQB0'
   if (!liffId) return null
   return `https://liff.line.me/${liffId}?brandId=${brandId.value}&storeId=${storeId.value}`
 })
@@ -1068,6 +1109,7 @@ const copyStates = ref({
   menu: false,
   counter: false,
   liff: false,
+  botId: false,
 })
 
 // 複製連結到剪貼簿

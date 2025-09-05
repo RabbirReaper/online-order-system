@@ -215,9 +215,8 @@ const openFriendshipPage = async () => {
     const params = getCleanParams()
     
     if (!params.brandId || !params.storeId) {
-      console.warn('⚠️ 缺少店家資訊，使用預設 Bot ID')
-      const defaultBotId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
-      window.open(`https://line.me/R/ti/p/@${defaultBotId}`, '_blank')
+      console.warn('⚠️ 缺少店家資訊，無法獲取 LINE Bot 資訊')
+      error.value = '無法獲取店家資訊，請重新開啟連結'
       return
     }
 
@@ -229,19 +228,16 @@ const openFriendshipPage = async () => {
 
     const lineBotId = response.data.lineBotInfo.lineBotId
     
-    if (lineBotId && lineBotId !== 'your-bot-id') {
+    if (lineBotId) {
       console.log('🤖 使用店家專屬 LINE Bot:', lineBotId)
       window.open(`https://line.me/R/ti/p/@${lineBotId}`, '_blank')
     } else {
-      console.warn('⚠️ 店家未設定專屬 Bot ID，使用預設值')
-      const defaultBotId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
-      window.open(`https://line.me/R/ti/p/@${defaultBotId}`, '_blank')
+      console.warn('⚠️ 店家未設定 LINE Bot ID')
+      error.value = '此店家尚未設定 LINE 官方帳號，請聯繫店家處理'
     }
   } catch (error) {
     console.error('❌ 獲取店家 LINE Bot 資訊失敗:', error)
-    // 錯誤時使用預設 Bot ID
-    const defaultBotId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
-    window.open(`https://line.me/R/ti/p/@${defaultBotId}`, '_blank')
+    error.value = '無法獲取店家 LINE Bot 資訊，請稍後再試'
   }
 }
 
