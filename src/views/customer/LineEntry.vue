@@ -70,14 +70,14 @@ const processLineEntry = async () => {
     console.log('🔗 開始初始化 LIFF...')
 
     // 獲取固定的 liffId 從環境變數
-    const liffId = import.meta.env.VITE_LIFF_ID
-    
+    const liffId = '2007974797-rvmVYQB0'
+
     if (!liffId) {
       throw new Error('LIFF ID 未設定，請檢查環境變數 VITE_LIFF_ID')
     }
 
     await liff.init({ liffId })
-    
+
     // 獲取 URL 參數（不包含 liffId，因為它是固定的）
     const params = getCleanParams()
     console.log('✅ LIFF 初始化成功')
@@ -212,7 +212,7 @@ const openFriendshipPage = async () => {
   try {
     // 獲取當前的參數（包含店家資訊）
     const params = getCleanParams()
-    
+
     if (!params.brandId || !params.storeId) {
       console.warn('⚠️ 缺少店家資訊，無法獲取 LINE Bot 資訊')
       error.value = '無法獲取店家資訊，請重新開啟連結'
@@ -222,11 +222,11 @@ const openFriendshipPage = async () => {
     // 從 API 獲取店家的 LINE Bot 資訊
     const response = await api.store.getLineBotInfo({
       brandId: params.brandId,
-      id: params.storeId
+      id: params.storeId,
     })
 
     const lineBotId = response.data.lineBotInfo.lineBotId
-    
+
     if (lineBotId) {
       console.log('🤖 使用店家專屬 LINE Bot:', lineBotId)
       window.open(`https://line.me/R/ti/p/@${lineBotId}`, '_blank')
