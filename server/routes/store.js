@@ -96,6 +96,9 @@ router.put(
 // 獲取店鋪當前狀態
 router.get('/brands/:brandId/:id/status', storeController.getStoreCurrentStatus)
 
+// 獲取店鋪LINE Bot資訊（無需認證，供客戶端使用）
+router.get('/brands/:brandId/:id/line-bot-info', storeController.getStoreLineBotInfo)
+
 // 更新店鋪服務設定
 router.put(
   '/brands/:brandId/:storeId/service-settings',

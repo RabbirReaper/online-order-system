@@ -221,18 +221,18 @@
                 啟用LINE點餐 {{ formData.enableLineOrdering ? '✓' : '✗' }}
               </BFormCheckbox>
               
-              <!-- LINE LIFF ID 設定 (只有在啟用 LINE 點餐時顯示) -->
+              <!-- LINE Bot ID 設定 (只有在啟用 LINE 點餐時顯示) -->
               <div v-if="formData.enableLineOrdering" class="ms-3 mt-2">
-                <label for="liffId" class="form-label small">LINE LIFF 應用程式 ID</label>
+                <label for="lineBotId" class="form-label small">LINE 官方帳號 ID</label>
                 <BFormInput
-                  id="liffId"
-                  v-model="formData.liffId"
-                  placeholder="例如：2007974797-rvmVYQB0"
-                  :state="errors.liffId ? false : null"
+                  id="lineBotId"
+                  v-model="formData.lineBotId"
+                  placeholder="例如：@example-bot (不需要包含@)"
+                  :state="errors.lineBotId ? false : null"
                 />
-                <BFormInvalidFeedback v-if="errors.liffId">{{ errors.liffId }}</BFormInvalidFeedback>
+                <BFormInvalidFeedback v-if="errors.lineBotId">{{ errors.lineBotId }}</BFormInvalidFeedback>
                 <BFormText class="text-muted small">
-                  請輸入 LINE LIFF 應用程式的 ID，用於生成 LINE 點餐連結
+                  輸入店家的 LINE 官方帳號 ID，用於客戶加好友功能。留空則使用系統預設的官方帳號
                 </BFormText>
               </div>
 
@@ -597,7 +597,7 @@ const formData = reactive({
 
   // 新增的欄位
   enableLineOrdering: false,
-  liffId: '',
+  lineBotId: '',
   showTaxId: false,
   provideReceipt: true,
   enableDineIn: true,
@@ -823,7 +823,7 @@ const resetForm = () => {
     formData.isActive = true
     // 重置新增欄位
     formData.enableLineOrdering = false
-    formData.liffId = ''
+    formData.lineBotId = ''
     formData.showTaxId = false
     formData.provideReceipt = true
     formData.enableDineIn = true
@@ -1077,7 +1077,7 @@ const fetchStoreData = async () => {
       // 設定新增的欄位
       formData.enableLineOrdering =
         store.enableLineOrdering !== undefined ? store.enableLineOrdering : false
-      formData.liffId = store.liffId || ''
+      formData.lineBotId = store.lineBotId || ''
       formData.showTaxId = store.showTaxId !== undefined ? store.showTaxId : false
       formData.provideReceipt = store.provideReceipt !== undefined ? store.provideReceipt : true
       formData.enableDineIn = store.enableDineIn !== undefined ? store.enableDineIn : true
@@ -1148,7 +1148,7 @@ const submitForm = async () => {
       isActive: formData.isActive,
       // 新增的欄位
       enableLineOrdering: formData.enableLineOrdering,
-      liffId: formData.liffId,
+      lineBotId: formData.lineBotId,
       showTaxId: formData.showTaxId,
       provideReceipt: formData.provideReceipt,
       enableDineIn: formData.enableDineIn,
