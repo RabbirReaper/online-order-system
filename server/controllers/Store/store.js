@@ -262,3 +262,22 @@ export const updateServiceSettings = asyncHandler(async (req, res) => {
     })
   }
 })
+
+// 獲取店家LINE Bot資訊
+export const getStoreLineBotInfo = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params
+    const lineBotInfo = await storeService.getStoreLineBotInfo(id)
+
+    res.json({
+      success: true,
+      lineBotInfo,
+    })
+  } catch (error) {
+    console.error('Error getting store LINE bot info:', error)
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    })
+  }
+})

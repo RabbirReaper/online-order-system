@@ -941,16 +941,16 @@
             啟用LINE點餐 {{ editServiceSettings.enableLineOrdering ? '✓' : '✗' }}
           </BFormCheckbox>
           
-          <!-- LINE LIFF ID 設定 (只有在啟用 LINE 點餐時顯示) -->
+          <!-- LINE Bot ID 設定 (只有在啟用 LINE 點餐時顯示) -->
           <div v-if="editServiceSettings.enableLineOrdering" class="ms-3 mt-2">
-            <label for="edit-liffId" class="form-label small">LINE LIFF 應用程式 ID</label>
+            <label for="edit-lineBotId" class="form-label small">LINE 官方帳號 ID</label>
             <BFormInput
-              id="edit-liffId"
-              v-model="editServiceSettings.liffId"
-              placeholder="例如：2007974797-rvmVYQB0"
+              id="edit-lineBotId"
+              v-model="editServiceSettings.lineBotId"
+              placeholder="例如：@example-bot (不需要包含@)"
             />
             <BFormText class="text-muted small">
-              請輸入 LINE LIFF 應用程式的 ID，用於生成 LINE 點餐連結
+              輸入店家的 LINE 官方帳號 ID，用於客戶加好友功能。留空則使用系統預設的官方帳號
             </BFormText>
           </div>
 
@@ -1015,7 +1015,7 @@ const baseUrl = computed(() => window.location.origin)
 const menuUrl = computed(() => `${baseUrl.value}/stores/${brandId.value}/${storeId.value}`)
 const counterUrl = computed(() => `${baseUrl.value}/counter/${brandId.value}/${storeId.value}`)
 const liffUrl = computed(() => {
-  const liffId = store.value?.liffId
+  const liffId = import.meta.env.VITE_LIFF_ID
   if (!liffId) return null
   return `https://liff.line.me/${liffId}?brandId=${brandId.value}&storeId=${storeId.value}`
 })
@@ -1048,7 +1048,7 @@ const editAnnouncements = ref([])
 const editDeliveryPlatforms = ref([])
 const editServiceSettings = reactive({
   enableLineOrdering: false,
-  liffId: '',
+  lineBotId: '',
   showTaxId: false,
   provideReceipt: true,
   enableDineIn: true,
@@ -1247,7 +1247,7 @@ const initEditData = () => {
   Object.assign(editServiceSettings, {
     enableLineOrdering:
       store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
-    liffId: store.value.liffId || '',
+    lineBotId: store.value.lineBotId || '',
     showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
     provideReceipt: store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,
     enableDineIn: store.value.enableDineIn !== undefined ? store.value.enableDineIn : true,
@@ -1559,7 +1559,7 @@ onMounted(() => {
       Object.assign(editServiceSettings, {
         enableLineOrdering:
           store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
-        liffId: store.value.liffId || '',
+        lineBotId: store.value.lineBotId || '',
         showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
         provideReceipt:
           store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,

@@ -34,12 +34,14 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLineParams } from '@/composables/useLineParams'
 import { useCartStore } from '@/stores/cart'
+import { useApi } from '@/composables/useApi'
 import liff from '@line/liff'
 
 // 組合式 API
 const router = useRouter()
 const { getCleanParams } = useLineParams()
 const cartStore = useCartStore()
+const { api } = useApi()
 
 // 響應式狀態
 const isLoading = ref(true)
@@ -68,11 +70,17 @@ const processLineEntry = async () => {
     currentStep.value = 'liff'
     console.log('🔗 開始初始化 LIFF...')
 
-    // 獲取 liffId - 可以從參數或預設值獲取
-    const params = getCleanParams()
-    const liffId = params.liffId
+    // 獲取固定的 liffId 從環境變數
+    const liffId = import.meta.env.VITE_LIFF_ID
+    
+    if (!liffId) {
+      throw new Error('LIFF ID 未設定，請檢查環境變數 VITE_LIFF_ID')
+    }
 
     await liff.init({ liffId })
+    
+    // 獲取 URL 參數（不包含 liffId，因為它是固定的）
+    const params = getCleanParams()
     console.log('✅ LIFF 初始化成功')
 
     // 短暫延遲，讓用戶看到載入過程
@@ -100,13 +108,9 @@ const processLineEntry = async () => {
 
       if (!friendship.friendFlag) {
         console.log('❌ 用戶尚未加入好友')
-        // 顯示提示訊息並跳轉到加好友頁面
+        // 顯示提示訊息
         error.value = '請先加入官方帳號為好友，然後重新開啟此連結'
         isLoading.value = false
-
-        // 嘗試開啟加好友連結（需要替換為實際的官方帳號 ID）
-        const botId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
-        window.open(`https://line.me/R/ti/p/@${botId}`, '_blank')
         return
       }
 
@@ -121,6 +125,7 @@ const processLineEntry = async () => {
     // Step 4: 解析參數
     currentStep.value = 'params'
     console.log('📋 解析到的參數:', params)
+    console.log('🔧 使用的 LIFF ID:', liffId)
 
     // 短暫延遲，讓用戶看到載入過程
     await new Promise((resolve) => setTimeout(resolve, 300))
@@ -204,9 +209,40 @@ const goHome = () => {
 }
 
 // 開啟加好友頁面
-const openFriendshipPage = () => {
-  const botId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
-  window.open(`https://line.me/R/ti/p/@${botId}`, '_blank')
+const openFriendshipPage = async () => {
+  try {
+    // 獲取當前的參數（包含店家資訊）
+    const params = getCleanParams()
+    
+    if (!params.brandId || !params.storeId) {
+      console.warn('⚠️ 缺少店家資訊，使用預設 Bot ID')
+      const defaultBotId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
+      window.open(`https://line.me/R/ti/p/@${defaultBotId}`, '_blank')
+      return
+    }
+
+    // 從 API 獲取店家的 LINE Bot 資訊
+    const response = await api.store.getLineBotInfo({
+      brandId: params.brandId,
+      id: params.storeId
+    })
+
+    const lineBotId = response.data.lineBotInfo.lineBotId
+    
+    if (lineBotId && lineBotId !== 'your-bot-id') {
+      console.log('🤖 使用店家專屬 LINE Bot:', lineBotId)
+      window.open(`https://line.me/R/ti/p/@${lineBotId}`, '_blank')
+    } else {
+      console.warn('⚠️ 店家未設定專屬 Bot ID，使用預設值')
+      const defaultBotId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
+      window.open(`https://line.me/R/ti/p/@${defaultBotId}`, '_blank')
+    }
+  } catch (error) {
+    console.error('❌ 獲取店家 LINE Bot 資訊失敗:', error)
+    // 錯誤時使用預設 Bot ID
+    const defaultBotId = import.meta.env.VITE_LINE_BOT_ID || 'your-bot-id'
+    window.open(`https://line.me/R/ti/p/@${defaultBotId}`, '_blank')
+  }
 }
 
 // 生命週期

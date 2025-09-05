@@ -155,5 +155,16 @@ export default function (apiClient) {
         serviceSettings,
       })
     },
+
+    /**
+     * 獲取店鋪LINE Bot資訊
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.id - 店鋪ID
+     * @returns {Promise} - API 回應
+     */
+    getLineBotInfo({ brandId, id }) {
+      return apiClient.get(`/store/brands/${brandId}/${id}/line-bot-info`)
+    },
   }
 }

@@ -507,7 +507,7 @@ export const updateStoreServiceSettings = async (storeId, serviceSettings) => {
   // 更新服務設定
   const allowedFields = [
     'enableLineOrdering',
-    'liffId',
+    'lineBotId',
     'showTaxId',
     'provideReceipt',
     'enableDineIn',
@@ -531,4 +531,31 @@ export const updateStoreServiceSettings = async (storeId, serviceSettings) => {
   await store.save()
 
   return store
+}
+
+/**
+ * 獲取店鋪LINE Bot資訊
+ * @param {String} storeId - 店鋪ID
+ * @returns {Promise<Object>} LINE Bot資訊
+ */
+export const getStoreLineBotInfo = async (storeId) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId).select('lineBotId enableLineOrdering name')
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404)
+  }
+
+  // 如果沒有啟用LINE點餐，使用環境變數的預設Bot ID
+  const lineBotId = store.lineBotId || process.env.VITE_LINE_BOT_ID || 'your-bot-id'
+  
+  // LIFF ID 從環境變數獲取，所有店家共用
+  const liffId = process.env.VITE_LIFF_ID
+
+  return {
+    lineBotId,
+    liffId,
+    enableLineOrdering: store.enableLineOrdering,
+    storeName: store.name
+  }
 }
