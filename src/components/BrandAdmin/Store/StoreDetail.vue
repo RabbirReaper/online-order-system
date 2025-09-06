@@ -144,7 +144,6 @@
                     </a>
                   </div>
                 </div>
-                {{ liffUrl }}
                 <!-- LINE LIFF 連結 -->
                 <div class="mb-0" v-if="store.enableLineOrdering && liffUrl">
                   <label class="form-label small fw-bold">
