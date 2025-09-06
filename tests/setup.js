@@ -330,6 +330,43 @@ export class TestDataFactory {
     };
   }
 
+  // 創建庫存項目（別名方法）
+  static createInventoryItem(overrides = {}) {
+    return this.createInventory(overrides);
+  }
+
+  // 創建庫存資料（用於創建新庫存）
+  static createInventoryData(overrides = {}) {
+    return {
+      dishTemplate: '507f1f77bcf86cd799439016',
+      totalStock: 100,
+      availableStock: 100,
+      minThreshold: 10,
+      maxThreshold: 200,
+      autoReplenish: true,
+      isActive: true,
+      ...overrides
+    };
+  }
+
+  // 創建庫存日誌
+  static createInventoryLog(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439021',
+      store: '507f1f77bcf86cd799439014',
+      itemId: '507f1f77bcf86cd799439016',
+      inventoryType: 'DishTemplate',
+      changeType: 'reduce',
+      stockType: 'totalStock',
+      quantity: 5,
+      reason: 'Order consumption',
+      orderId: '507f1f77bcf86cd799439017',
+      adminId: '507f1f77bcf86cd799439012',
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
   // 創建優惠券資料
   static createCoupon(overrides = {}) {
     return {
