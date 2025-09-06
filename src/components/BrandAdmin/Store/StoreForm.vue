@@ -220,7 +220,7 @@
               <BFormCheckbox v-model="formData.enableLineOrdering" switch>
                 啟用LINE點餐 {{ formData.enableLineOrdering ? '✓' : '✗' }}
               </BFormCheckbox>
-              
+
               <!-- LINE Bot ID 設定 (只有在啟用 LINE 點餐時顯示) -->
               <div v-if="formData.enableLineOrdering" class="ms-3 mt-2">
                 <label for="lineBotId" class="form-label small">LINE 官方帳號 ID</label>
@@ -230,7 +230,9 @@
                   placeholder="例如：@example-bot (不需要包含@)"
                   :state="errors.lineBotId ? false : null"
                 />
-                <BFormInvalidFeedback v-if="errors.lineBotId">{{ errors.lineBotId }}</BFormInvalidFeedback>
+                <BFormInvalidFeedback v-if="errors.lineBotId">{{
+                  errors.lineBotId
+                }}</BFormInvalidFeedback>
                 <BFormText class="text-muted small">
                   輸入店家的 LINE 官方帳號 ID，用於客戶加好友功能。留空則使用系統預設的官方帳號
                 </BFormText>

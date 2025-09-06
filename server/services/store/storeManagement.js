@@ -548,7 +548,7 @@ export const getStoreLineBotInfo = async (storeId) => {
 
   // 使用店鋪專屬的 LINE Bot ID，沒有則為空
   const lineBotId = store.lineBotId || ''
-  
+
   // LIFF ID 從環境變數獲取，所有店家共用
   const liffId = process.env.VITE_LIFF_ID
 
@@ -556,6 +556,6 @@ export const getStoreLineBotInfo = async (storeId) => {
     lineBotId,
     liffId,
     enableLineOrdering: store.enableLineOrdering,
-    storeName: store.name
+    storeName: store.name,
   }
 }

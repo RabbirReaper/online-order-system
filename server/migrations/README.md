@@ -31,15 +31,18 @@ node server/migrations/2024-12-05-remove-store-liff-id.js
 **目的**：移除 Store collection 中的 `liffId` 欄位
 
 **原因**：
+
 - LIFF ID 應該從環境變數 `VITE_LIFF_ID` 獲取
 - 所有品牌和店家共用同一個 LIFF ID
 - 不需要在每個店鋪記錄中單獨存儲
 
 **影響**：
+
 - 從所有 Store 文件中移除 `liffId` 欄位
 - 不會影響其他資料
 
 **驗證**：
+
 - Migration 會自動驗證執行結果
 - 可以手動查詢確認：`db.stores.find({ liffId: { $exists: true } })`
 
@@ -58,9 +61,9 @@ node server/migrations/2024-12-05-remove-store-liff-id.js
 ```javascript
 /**
  * Migration: 描述你的變更
- * 
+ *
  * 理由：說明為什麼需要這個變更
- * 
+ *
  * 執行方式：node server/migrations/YYYY-MM-DD-描述.js
  */
 
@@ -72,9 +75,9 @@ dotenv.config()
 async function yourMigrationFunction() {
   try {
     await mongoose.connect(process.env.MongoDB_url)
-    
+
     // 你的 migration 邏輯
-    
+
   } catch (error) {
     console.error('Migration 失敗:', error)
     process.exit(1)
