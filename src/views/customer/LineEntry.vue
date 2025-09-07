@@ -72,10 +72,42 @@ const processLineEntry = async () => {
     }
 
     await liff.init({ liffId })
-
-    // 獲取 URL 參數（不包含 liffId，因為它是固定的）
-    const params = getCleanParams()
     console.log('✅ LIFF 初始化成功')
+
+    // 🔥 重要：在檢查登入狀態前先獲取並保存參數
+    // 獲取 URL 參數（不包含 liffId，因為它是固定的）
+    let params
+    try {
+      params = getCleanParams()
+      console.log('📋 解析到的參數:', params)
+      
+      // 🔥 預先保存參數到 sessionStorage，避免登錄過程中遺失
+      if (params.brandId && params.storeId) {
+        sessionStorage.setItem('temp-brandId', params.brandId)
+        sessionStorage.setItem('temp-storeId', params.storeId)
+        console.log('💾 已預先保存參數到 sessionStorage')
+      } else {
+        console.warn('⚠️ 缺少必要參數 brandId 或 storeId:', params)
+      }
+    } catch (paramError) {
+      console.warn('⚠️ 參數解析失敗，嘗試從 sessionStorage 恢復:', paramError.message)
+      
+      // 嘗試從 sessionStorage 恢復參數
+      const tempBrandId = sessionStorage.getItem('temp-brandId')
+      const tempStoreId = sessionStorage.getItem('temp-storeId')
+      
+      if (tempBrandId && tempStoreId) {
+        params = {
+          brandId: tempBrandId,
+          storeId: tempStoreId,
+          source: 'recovered',
+          timestamp: Date.now()
+        }
+        console.log('🔄 從 sessionStorage 恢復參數:', params)
+      } else {
+        throw new Error('無法獲取必要的店鋪參數，請確認連結正確')
+      }
+    }
 
     // 短暫延遲，讓用戶看到載入過程
     await new Promise((resolve) => setTimeout(resolve, 300))
@@ -86,6 +118,7 @@ const processLineEntry = async () => {
 
     if (!liff.isLoggedIn()) {
       console.log('❌ 用戶未登入，跳轉到登入頁面')
+      console.log('📝 參數已保存，登錄後將自動恢復')
       liff.login()
       return
     }
@@ -93,9 +126,9 @@ const processLineEntry = async () => {
     console.log('✅ 用戶已登入')
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 3: 解析參數
+    // Step 3: 驗證參數完整性
     currentStep.value = 'params'
-    console.log('📋 解析到的參數:', params)
+    console.log('📋 最終使用的參數:', params)
     console.log('🔧 使用的 LIFF ID:', liffId)
 
     // 短暫延遲，讓用戶看到載入過程
@@ -108,6 +141,11 @@ const processLineEntry = async () => {
       brandId: params.brandId,
       storeId: params.storeId,
     })
+    
+    // 清理臨時保存的參數
+    sessionStorage.removeItem('temp-brandId')
+    sessionStorage.removeItem('temp-storeId')
+    console.log('🧹 清理臨時參數')
 
     // Step 5: 準備跳轉
     currentStep.value = 'redirect'
@@ -138,6 +176,14 @@ const processLineEntry = async () => {
     }, 800)
   } catch (err) {
     console.error('❌ LINE Entry 處理失敗:', err)
+    console.error('❌ 錯誤詳細資訊:', {
+      message: err.message,
+      code: err.code,
+      stack: err.stack,
+      step: currentStep.value,
+      url: window.location.href,
+      userAgent: navigator.userAgent
+    })
 
     // 針對 LIFF 特定錯誤提供更友善的錯誤訊息
     let errorMessage = '處理失敗，請重新嘗試'
@@ -158,6 +204,11 @@ const processLineEntry = async () => {
       }
     } else if (err.message) {
       errorMessage = err.message
+    }
+
+    // 如果是參數相關錯誤，提供更具體的指導
+    if (err.message && err.message.includes('參數')) {
+      errorMessage += '\n\n💡 這可能是因為：\n• 連結中缺少必要參數\n• 首次登錄時參數被清除\n• 請嘗試重新開啟連結'
     }
 
     error.value = errorMessage
