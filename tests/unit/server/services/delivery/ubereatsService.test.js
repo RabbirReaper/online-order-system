@@ -22,9 +22,13 @@ vi.mock('@server/services/delivery/orderSyncService.js', () => ({
 vi.mock('@server/services/delivery/tokenManager.js', () => ({
   UberEatsTokenManager: {
     getMockToken: vi.fn(),
-    getTokenStatus: vi.fn()
+    getTokenStatus: vi.fn(),
+    getToken: vi.fn(),
+    getClientCredentialsToken: vi.fn(),
+    getAuthorizationCodeToken: vi.fn()
   },
   getTokenForOperation: vi.fn(),
+  getToken: vi.fn(),
   getUserToken: vi.fn(),
   getAppToken: vi.fn()
 }))
@@ -55,11 +59,10 @@ describe('UberEats Service', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
 
-    // 設定測試環境變數
-    process.env.UBEREATS_ENVIRONMENT = 'sandbox'
-    process.env.UBEREATS_SANDBOX_CLIENT_ID = 'test_client_id'
-    process.env.UBEREATS_SANDBOX_CLIENT_SECRET = 'test_client_secret'
-    process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET = 'test_webhook_secret'
+    // 設定測試環境變數 - 使用 production 配置（符合 UberEats 官方架構）
+    process.env.UBEREATS_ENVIRONMENT = 'production'
+    process.env.UBEREATS_PRODUCTION_CLIENT_ID = 'test_client_id'
+    process.env.UBEREATS_PRODUCTION_CLIENT_SECRET = 'test_client_secret'
 
     // 動態導入被測試的模組和其依賴
     const modules = await Promise.all([
@@ -90,19 +93,19 @@ describe('UberEats Service', () => {
       expect(configStatus).toMatchObject({
         isComplete: expect.any(Boolean),
         config: {
-          environment: 'sandbox',
+          environment: 'production',
           clientId: true,
           clientSecret: true,
-          webhookSecret: true,
           apiUrl: true
         },
-        environment: 'sandbox',
-        apiUrl: expect.stringContaining('sandbox-api.uber.com'),
+        environment: 'production',
+        apiUrl: expect.stringContaining('api.uber.com/v1/eats'),
         signatureCapability: {
           canVerify: true,
-          hasKeyRotationSupport: expect.any(Boolean),
-          recommendedSetup: expect.any(Boolean)
-        }
+          method: 'client_secret',
+          compliant: true
+        },
+        recommendations: expect.any(Array)
       })
     })
 
@@ -160,8 +163,8 @@ describe('UberEats Service', () => {
       }).not.toThrow()
     })
 
-    it('should skip signature verification when no secrets configured', async () => {
-      delete process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET
+    it('should skip signature verification when no client secret configured', async () => {
+      delete process.env.UBEREATS_SANDBOX_CLIENT_SECRET
       
       const mockOrderData = {
         event_type: 'orders.notification',
@@ -239,7 +242,7 @@ describe('UberEats Service', () => {
         orderNumber: 'ORD-2024-001'
       })
 
-      tokenManager.getTokenForOperation.mockReturnValue('mock_access_token')
+      tokenManager.getTokenForOperation.mockResolvedValue('mock_access_token')
 
       const result = await ubereatsService.receiveOrder(mockOrderData)
 
@@ -288,7 +291,7 @@ describe('UberEats Service', () => {
       })
 
       Store.findOne = vi.fn().mockResolvedValue(null)
-      tokenManager.getTokenForOperation.mockReturnValue('mock_access_token')
+      tokenManager.getTokenForOperation.mockResolvedValue('mock_access_token')
 
       await expect(
         ubereatsService.receiveOrder(mockOrderData)
@@ -306,7 +309,7 @@ describe('UberEats Service', () => {
         deliveryPlatforms: [{ platform: 'ubereats', isEnabled: false }]
       })
 
-      tokenManager.getTokenForOperation.mockReturnValue('mock_access_token')
+      tokenManager.getTokenForOperation.mockResolvedValue('mock_access_token')
 
       await expect(
         ubereatsService.receiveOrder(mockOrderData)
@@ -323,7 +326,7 @@ describe('UberEats Service', () => {
         ]
       }
 
-      tokenManager.getTokenForOperation.mockReturnValue('mock_access_token')
+      tokenManager.getTokenForOperation.mockResolvedValue('mock_access_token')
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockOrders)
@@ -333,7 +336,7 @@ describe('UberEats Service', () => {
 
       expect(result).toEqual(mockOrders)
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/eats/stores/uber_store_123/orders'),
+        expect.stringContaining('/stores/uber_store_123/orders'),
         expect.objectContaining({
           method: 'GET',
           headers: {
@@ -378,7 +381,7 @@ describe('UberEats Service', () => {
     it('should cancel store order successfully', async () => {
       const mockResponse = { success: true, message: 'Order cancelled' }
 
-      tokenManager.getTokenForOperation.mockReturnValue('mock_access_token')
+      tokenManager.getTokenForOperation.mockResolvedValue('mock_access_token')
       global.fetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
@@ -392,7 +395,7 @@ describe('UberEats Service', () => {
 
       expect(result).toEqual(mockResponse)
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/eats/stores/uber_store_123/orders/uber_order_123/cancel'),
+        expect.stringContaining('/stores/uber_store_123/orders/uber_order_123/cancel'),
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -528,7 +531,7 @@ describe('UberEats Service', () => {
       })
 
       await expect(
-        ubereatsService.autoProvisionStore('uber_store_123')
+        ubereatsService.autoProvisionStore('uber_store_123', 'user_access_token')
       ).rejects.toThrow('Provisioning failed: 403 - Forbidden')
     })
   })

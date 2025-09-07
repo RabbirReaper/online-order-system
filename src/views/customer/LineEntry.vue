@@ -9,13 +9,9 @@
     <!-- 錯誤狀態 -->
     <div v-else-if="error" class="error-container">
       <div class="error-icon">⚠️</div>
-      <h3>{{ error.includes('好友') ? '需要加入好友' : '連接失敗' }}</h3>
+      <h3>連接失敗</h3>
       <p class="error-message">{{ error }}</p>
       <div class="error-actions">
-        <!-- 如果是好友相關錯誤，顯示加好友按鈕 -->
-        <button v-if="error.includes('好友')" @click="openFriendshipPage" class="friendship-btn">
-          📱 加入官方帳號
-        </button>
         <button @click="retry" class="retry-btn">重新嘗試</button>
         <button @click="goHome" class="home-btn">返回首頁</button>
       </div>
@@ -54,7 +50,6 @@ const loadingMessage = computed(() => {
     init: '正在初始化...',
     liff: '正在連接 LINE...',
     auth: '正在驗證登入狀態...',
-    friendship: '正在檢查好友狀態...',
     params: '正在解析參數...',
     context: '正在設定上下文...',
     redirect: '處理成功，準備跳轉...',
@@ -98,30 +93,7 @@ const processLineEntry = async () => {
     console.log('✅ 用戶已登入')
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 3: 檢查好友狀態
-    currentStep.value = 'friendship'
-    console.log('👥 檢查好友狀態...')
-
-    try {
-      const friendship = await liff.getFriendship()
-
-      if (!friendship.friendFlag) {
-        console.log('❌ 用戶尚未加入好友')
-        // 顯示提示訊息
-        error.value = '請先加入官方帳號為好友，然後重新開啟此連結'
-        isLoading.value = false
-        return
-      }
-
-      console.log('✅ 用戶已是好友')
-    } catch (friendshipError) {
-      console.warn('⚠️ 無法檢查好友狀態，繼續處理:', friendshipError)
-      // 如果無法檢查好友狀態，繼續處理（容錯機制）
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 300))
-
-    // Step 4: 解析參數
+    // Step 3: 解析參數
     currentStep.value = 'params'
     console.log('📋 解析到的參數:', params)
     console.log('🔧 使用的 LIFF ID:', liffId)
@@ -129,7 +101,7 @@ const processLineEntry = async () => {
     // 短暫延遲，讓用戶看到載入過程
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 5: 設定購物車上下文
+    // Step 4: 設定購物車上下文
     currentStep.value = 'context'
     cartStore.setBrandAndStore(params.brandId, params.storeId)
     console.log('🛒 設定購物車上下文:', {
@@ -137,7 +109,7 @@ const processLineEntry = async () => {
       storeId: params.storeId,
     })
 
-    // Step 6: 準備跳轉
+    // Step 5: 準備跳轉
     currentStep.value = 'redirect'
     success.value = true
 
@@ -205,39 +177,6 @@ const retry = () => {
 // 返回首頁
 const goHome = () => {
   router.replace({ name: 'landing-home' })
-}
-
-// 開啟加好友頁面
-const openFriendshipPage = async () => {
-  try {
-    // 獲取當前的參數（包含店家資訊）
-    const params = getCleanParams()
-
-    if (!params.brandId || !params.storeId) {
-      console.warn('⚠️ 缺少店家資訊，無法獲取 LINE Bot 資訊')
-      error.value = '無法獲取店家資訊，請重新開啟連結'
-      return
-    }
-
-    // 從 API 獲取店家的 LINE Bot 資訊
-    const response = await api.store.getLineBotInfo({
-      brandId: params.brandId,
-      id: params.storeId,
-    })
-
-    const lineBotId = response.data.lineBotInfo.lineBotId
-
-    if (lineBotId) {
-      console.log('🤖 使用店家專屬 LINE Bot:', lineBotId)
-      window.open(`https://line.me/R/ti/p/@${lineBotId}`, '_blank')
-    } else {
-      console.warn('⚠️ 店家未設定 LINE Bot ID')
-      error.value = '此店家尚未設定 LINE 官方帳號，請聯繫店家處理'
-    }
-  } catch (error) {
-    console.error('❌ 獲取店家 LINE Bot 資訊失敗:', error)
-    error.value = '無法獲取店家 LINE Bot 資訊，請稍後再試'
-  }
 }
 
 // 生命週期
@@ -345,25 +284,13 @@ window.addEventListener('unhandledrejection', (event) => {
 }
 
 .retry-btn,
-.home-btn,
-.friendship-btn {
+.home-btn {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.friendship-btn {
-  background: #00c851;
-  color: white;
-  font-weight: 600;
-}
-
-.friendship-btn:hover {
-  background: #007e33;
-  transform: translateY(-1px);
 }
 
 .retry-btn {
@@ -414,8 +341,7 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 
   .retry-btn,
-  .home-btn,
-  .friendship-btn {
+  .home-btn {
     width: 100%;
   }
 }

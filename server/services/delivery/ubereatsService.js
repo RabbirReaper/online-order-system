@@ -32,20 +32,11 @@ const UBEREATS_CONFIG = {
       ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
       : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
 
-  // 🔐 支援主要和次要簽名密鑰（用於密鑰輪換）
-  webhookSecret:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_WEBHOOK_SECRET
-      : process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET,
+  // ⚠️ 注意：根據 UberEats 官方文檔，webhook 簽名使用 client_secret 進行驗證
+  // 不再需要單獨的 webhook_secret 配置
 
-  webhookSecretSecondary:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_WEBHOOK_SECRET_SECONDARY
-      : process.env.UBEREATS_SANDBOX_WEBHOOK_SECRET_SECONDARY,
-
-  // API URL 根據環境自動設定
-  apiUrl:
-    ENVIRONMENT === 'production' ? 'https://api.uber.com/v1' : 'https://sandbox-api.uber.com/v1',
+  // API URL 統一使用官方生產端點（符合 UberEats 官方規範）
+  apiUrl: 'https://api.uber.com/v1/eats',
 
   // OAuth URL 固定
   oauthUrl: 'https://login.uber.com/oauth/v2/token',
@@ -60,27 +51,24 @@ console.log(`🔧 UberEats Service initialized in ${ENVIRONMENT} mode`)
 console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
 console.log(`🔑 Client ID configured: ${!!UBEREATS_CONFIG.clientId}`)
 console.log(`🔐 Client Secret configured: ${!!UBEREATS_CONFIG.clientSecret}`)
-console.log(`🔒 Primary Webhook Secret configured: ${!!UBEREATS_CONFIG.webhookSecret}`)
-console.log(`🔒 Secondary Webhook Secret configured: ${!!UBEREATS_CONFIG.webhookSecretSecondary}`)
+console.log(`🔒 Webhook signature verification: Using client_secret (official method)`)
 
-// 檢查簽名驗證能力
-if (UBEREATS_CONFIG.webhookSecret && UBEREATS_CONFIG.webhookSecretSecondary) {
-  console.log(`✅ Key rotation supported: Both primary and secondary keys available`)
-} else if (UBEREATS_CONFIG.webhookSecret || UBEREATS_CONFIG.webhookSecretSecondary) {
-  console.log(`⚠️  Single key mode: Key rotation not supported`)
+// 檢查 Webhook 簽名驗證能力
+if (UBEREATS_CONFIG.clientSecret) {
+  console.log(`✅ Webhook signature verification enabled: Using client_secret`)
 } else {
-  console.log(`❌ No webhook secrets configured: Signature verification disabled`)
+  console.log(`❌ No client secret configured: Signature verification disabled`)
 }
 
 /**
- * 驗證 UberEats webhook 簽名（支援主要和次要密鑰）
+ * 驗證 UberEats webhook 簽名 - 使用官方規範的 client_secret
  * @param {String} payload - 請求內容
  * @param {String} signature - UberEats 簽名
  */
 const verifyWebhookSignature = (payload, signature) => {
-  // 如果沒有配置任何簽名密鑰，跳過驗證（僅開發環境）
-  if (!UBEREATS_CONFIG.webhookSecret && !UBEREATS_CONFIG.webhookSecretSecondary) {
-    console.warn('⚠️  No UberEats webhook secrets configured, skipping signature verification')
+  // 如果沒有配置 client secret，跳過驗證（僅開發環境）
+  if (!UBEREATS_CONFIG.clientSecret) {
+    console.warn('⚠️  No UberEats client secret configured, skipping signature verification')
     return true
   }
 
@@ -90,46 +78,25 @@ const verifyWebhookSignature = (payload, signature) => {
       ? signature.substring(7).toLowerCase()
       : signature.toLowerCase()
 
-    // 🔐 嘗試主要密鑰驗證
-    if (UBEREATS_CONFIG.webhookSecret) {
-      const expectedSignaturePrimary = crypto
-        .createHmac('sha256', UBEREATS_CONFIG.webhookSecret)
-        .update(payload, 'utf8')
-        .digest('hex')
-        .toLowerCase()
+    // 🔐 使用 client_secret 進行簽名驗證（符合 UberEats 官方規範）
+    const expectedSignature = crypto
+      .createHmac('sha256', UBEREATS_CONFIG.clientSecret)
+      .update(payload, 'utf8')
+      .digest('hex')
+      .toLowerCase()
 
-      const isPrimaryValid = crypto.timingSafeEqual(
-        Buffer.from(expectedSignaturePrimary, 'hex'),
-        Buffer.from(cleanSignature, 'hex'),
-      )
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, 'hex'),
+      Buffer.from(cleanSignature, 'hex'),
+    )
 
-      if (isPrimaryValid) {
-        console.log('🔐 Webhook signature verified with PRIMARY key')
-        return true
-      }
+    if (isValid) {
+      console.log('🔐 Webhook signature verified with client_secret')
+      return true
     }
 
-    // 🔐 嘗試次要密鑰驗證（密鑰輪換支援）
-    if (UBEREATS_CONFIG.webhookSecretSecondary) {
-      const expectedSignatureSecondary = crypto
-        .createHmac('sha256', UBEREATS_CONFIG.webhookSecretSecondary)
-        .update(payload, 'utf8')
-        .digest('hex')
-        .toLowerCase()
-
-      const isSecondaryValid = crypto.timingSafeEqual(
-        Buffer.from(expectedSignatureSecondary, 'hex'),
-        Buffer.from(cleanSignature, 'hex'),
-      )
-
-      if (isSecondaryValid) {
-        console.log('🔐 Webhook signature verified with SECONDARY key')
-        console.warn('⚠️  Consider promoting secondary key to primary for better performance')
-        return true
-      }
-    }
-
-    console.log('❌ Webhook signature verification FAILED with both keys')
+    console.log('❌ Webhook signature verification FAILED')
+    console.log('💡 Ensure you are using the correct client_secret for webhook verification')
     return false
   } catch (error) {
     console.error('❌ Signature verification error:', error)
@@ -206,9 +173,9 @@ export const receiveOrder = async (ubereatsOrderData, signature = null) => {
  */
 const getOrderDetails = async (orderId) => {
   try {
-    const accessToken = getTokenForOperation('orders')
+    const accessToken = await getTokenForOperation('orders')
 
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/order/${orderId}`, {
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/orders/${orderId}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -304,21 +271,11 @@ const findStoreByUberEatsId = async (ubereatsStoreId) => {
  */
 const getAccessToken = async (operation = 'api') => {
   try {
-    // 使用 Token Manager 自動選擇合適的 token
-    const token = getTokenForOperation(operation)
-
-    if (!token) {
-      // 在開發階段提供模擬 token
-      if (UBEREATS_CONFIG.environment === 'sandbox') {
-        console.log('🧪 Sandbox mode: using mock access token')
-        return UberEatsTokenManager.getMockToken('app')
-      }
-
-      throw new Error('No valid access token available')
-    }
+    // 使用重構後的 Token Manager 自動選擇合適的認證流程
+    const token = await getTokenForOperation(operation)
 
     console.log(
-      `🔑 Using ${operation.includes('provision') ? 'User' : 'App'} token for ${operation}`,
+      `🔑 Using ${operation.includes('provision') ? 'Authorization Code' : 'Client Credentials'} flow for ${operation}`,
     )
     return token
   } catch (error) {
@@ -327,7 +284,8 @@ const getAccessToken = async (operation = 'api') => {
     // 在開發階段提供後備方案
     if (UBEREATS_CONFIG.environment === 'sandbox') {
       console.log('🧪 Sandbox mode: returning mock token as fallback')
-      return UberEatsTokenManager.getMockToken('app')
+      const flow = operation.includes('provision') ? 'authorization_code' : 'client_credentials'
+      return UberEatsTokenManager.getMockToken(flow)
     }
 
     throw error
@@ -343,24 +301,22 @@ export const checkUberEatsConfig = () => {
     environment: UBEREATS_CONFIG.environment,
     clientId: !!UBEREATS_CONFIG.clientId,
     clientSecret: !!UBEREATS_CONFIG.clientSecret,
-    webhookSecret: !!UBEREATS_CONFIG.webhookSecret,
-    webhookSecretSecondary: !!UBEREATS_CONFIG.webhookSecretSecondary,
     apiUrl: !!UBEREATS_CONFIG.apiUrl,
   }
 
-  // 基本配置檢查（不包含 secondary secret，因為它是可選的）
-  const requiredFields = ['clientId', 'clientSecret', 'webhookSecret', 'apiUrl']
+  // 基本配置檢查 - 使用正確的必需欄位
+  const requiredFields = ['clientId', 'clientSecret', 'apiUrl']
   const isComplete = requiredFields.every((field) => config[field])
 
   const missing = Object.keys(config)
-    .filter((key) => key !== 'environment' && key !== 'webhookSecretSecondary') // 排除環境和次要密鑰
+    .filter((key) => key !== 'environment') // 排除環境設定
     .filter((key) => !config[key])
 
-  // 簽名驗證能力評估
+  // 簽名驗證能力評估 - 基於 client_secret
   const signatureCapability = {
-    canVerify: config.webhookSecret || config.webhookSecretSecondary,
-    hasKeyRotationSupport: config.webhookSecret && config.webhookSecretSecondary,
-    recommendedSetup: config.webhookSecret && config.webhookSecretSecondary,
+    canVerify: config.clientSecret,
+    method: 'client_secret',
+    compliant: true, // 符合官方規範
   }
 
   return {
@@ -370,6 +326,9 @@ export const checkUberEatsConfig = () => {
     environment: UBEREATS_CONFIG.environment,
     apiUrl: UBEREATS_CONFIG.apiUrl,
     signatureCapability,
+    recommendations: isComplete 
+      ? ['✅ All required configurations are complete']
+      : [`❌ Missing configurations: ${missing.join(', ')}`]
   }
 }
 
@@ -380,7 +339,7 @@ export const checkUberEatsConfig = () => {
 export const testUberEatsConnection = async () => {
   try {
     console.log(`🧪 Testing UberEats API connection in ${UBEREATS_CONFIG.environment} mode`)
-    const accessToken = await getAccessToken()
+    const accessToken = await getAccessToken('api')
     console.log(`✅ UberEats API connection test passed (${UBEREATS_CONFIG.environment})`)
     return true
   } catch (error) {
@@ -400,10 +359,10 @@ export const testUberEatsConnection = async () => {
  */
 export const getStoreOrders = async (storeId, options = {}) => {
   try {
-    const accessToken = await getAccessToken('orders')
+    const accessToken = await getTokenForOperation('orders')
 
     const queryParams = new URLSearchParams(options)
-    const url = `${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    const url = `${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
 
     const response = await fetch(url, {
       method: 'GET',
@@ -443,10 +402,10 @@ export const getStoreOrders = async (storeId, options = {}) => {
  */
 export const cancelStoreOrder = async (storeId, orderId, reason = 'RESTAURANT_UNAVAILABLE') => {
   try {
-    const accessToken = await getAccessToken('cancel')
+    const accessToken = await getTokenForOperation('cancel')
 
     const response = await fetch(
-      `${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/orders/${orderId}/cancel`,
+      `${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/orders/${orderId}/cancel`,
       {
         method: 'POST',
         headers: {
@@ -491,7 +450,7 @@ export const updateStoreStatus = async (storeId, status) => {
   try {
     const accessToken = await getAccessToken()
 
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/status`, {
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/status`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -521,7 +480,7 @@ export const getStoreStatus = async (storeId) => {
   try {
     const accessToken = await getAccessToken()
 
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/status`, {
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/status`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -550,7 +509,7 @@ export const getStoreInfo = async (storeId) => {
   try {
     const accessToken = await getAccessToken()
 
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}`, {
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -589,8 +548,8 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
       throw new Error(`找不到對應的店鋪設定: ${ubereatsStoreId}`)
     }
 
-    // 使用提供的 User Access Token 進行 provisioning
-    const token = userAccessToken || getUserToken()
+    // 使用提供的 User Access Token 或自動獲取 provisioning token
+    const token = userAccessToken || await getTokenForOperation('provisioning')
 
     if (!token) {
       throw new Error('User Access Token 是 provisioning 操作的必需參數')
@@ -607,7 +566,7 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
     console.log(`🔔 Webhook URL: ${webhookUrl}`)
 
     const response = await fetch(
-      `${UBEREATS_CONFIG.apiUrl}/eats/stores/${ubereatsStoreId}/pos_data`,
+      `${UBEREATS_CONFIG.apiUrl}/stores/${ubereatsStoreId}/pos_data`,
       {
         method: 'POST',
         headers: {
@@ -667,7 +626,7 @@ export const configurePOSIntegration = async (storeId, posData) => {
   try {
     const accessToken = await getAccessToken()
 
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/eats/stores/${storeId}/pos_data`, {
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/pos_data`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -699,7 +658,7 @@ export const getStoreReports = async (storeId, reportOptions) => {
     const accessToken = await getAccessToken()
     
     const queryParams = new URLSearchParams(reportOptions)
-    const url = `${UBEREATS_CONFIG.apiUrl}/eats/reports/stores/${storeId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    const url = `${UBEREATS_CONFIG.apiUrl}/reports/stores/${storeId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`
 
     const response = await fetch(url, {
       method: 'GET',
