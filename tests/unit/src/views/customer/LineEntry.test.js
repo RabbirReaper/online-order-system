@@ -117,15 +117,20 @@ describe('LineEntry.vue', () => {
     })
 
     it('應該有正確的初始響應式數據', async () => {
+      // Mock 正常的 LIFF 行為避免錯誤
+      mockLiff.init.mockResolvedValue()
+      mockGetCleanParams.mockReturnValue({
+        brandId: 'test-brand',
+        storeId: 'test-store'
+      })
+      
       wrapper = createWrapper()
       
-      // 等待初始化完成前檢查狀態
-      await wrapper.vm.$nextTick()
-      
+      // 檢查初始狀態（在任何異步操作之前）
       expect(wrapper.vm.isLoading).toBe(true)
       expect(wrapper.vm.error).toBe(null)
       expect(wrapper.vm.success).toBe(false)
-      // currentStep 可能已經從 init 變為 liff，這是正常的
+      // currentStep 可能已經從 init 變為 liff，因為 onMounted 會立即執行
       expect(['init', 'liff']).toContain(wrapper.vm.currentStep)
     })
   })
@@ -176,9 +181,23 @@ describe('LineEntry.vue', () => {
       })
     })
 
-    it('應該在未登入時調用 liff.login()', async () => {
+    it('應該在未登入時調用 liff.login() 並保存參數', async () => {
       mockLiff.isLoggedIn.mockReturnValue(false)
       mockLiff.login.mockImplementation(() => {})
+      mockGetCleanParams.mockReturnValue({
+        brandId: 'test-brand-123',
+        storeId: 'test-store-456'
+      })
+      
+      // Mock sessionStorage
+      const sessionStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'sessionStorage', {
+        value: sessionStorageMock
+      })
       
       wrapper = createWrapper()
       
@@ -186,6 +205,8 @@ describe('LineEntry.vue', () => {
       await new Promise(resolve => setTimeout(resolve, 100))
       
       expect(mockLiff.login).toHaveBeenCalled()
+      expect(sessionStorageMock.setItem).toHaveBeenCalledWith('temp-brandId', 'test-brand-123')
+      expect(sessionStorageMock.setItem).toHaveBeenCalledWith('temp-storeId', 'test-store-456')
     })
 
     it('應該在已登入時繼續處理流程', async () => {
@@ -235,15 +256,67 @@ describe('LineEntry.vue', () => {
       // 等待處理完成
       await new Promise(resolve => setTimeout(resolve, 100))
       
-      // 應該不會拋出錯誤，會使用預設值或繼續處理
-      expect(wrapper.vm.error).toBe(null)
+      // 應該會顯示警告，但不會拋出錯誤
+      expect(console.warn).toHaveBeenCalledWith(
+        '⚠️ 缺少必要參數 brandId 或 storeId:',
+        expect.any(Object)
+      )
+    })
+
+    it('應該能從 sessionStorage 恢復參數', async () => {
+      // Mock 參數解析失敗
+      mockGetCleanParams.mockImplementation(() => {
+        throw new Error('參數解析失敗')
+      })
+      
+      // Mock sessionStorage 有保存的參數
+      const sessionStorageMock = {
+        getItem: vi.fn((key) => {
+          if (key === 'temp-brandId') return 'recovered-brand-123'
+          if (key === 'temp-storeId') return 'recovered-store-456'
+          return null
+        }),
+        setItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'sessionStorage', {
+        value: sessionStorageMock
+      })
+      
+      wrapper = createWrapper()
+      
+      // 等待處理完成
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      expect(sessionStorageMock.getItem).toHaveBeenCalledWith('temp-brandId')
+      expect(sessionStorageMock.getItem).toHaveBeenCalledWith('temp-storeId')
+      expect(console.log).toHaveBeenCalledWith(
+        '🔄 從 sessionStorage 恢復參數:',
+        expect.objectContaining({
+          brandId: 'recovered-brand-123',
+          storeId: 'recovered-store-456',
+          source: 'recovered'
+        })
+      )
     })
   })
 
   describe('路由跳轉', () => {
+    let sessionStorageMock
+
     beforeEach(() => {
       mockLiff.init.mockResolvedValue()
       mockLiff.isLoggedIn.mockReturnValue(true)
+
+      // Mock sessionStorage
+      sessionStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'sessionStorage', {
+        value: sessionStorageMock
+      })
     })
 
     it('應該跳轉到正確的菜單路由', async () => {
@@ -273,6 +346,25 @@ describe('LineEntry.vue', () => {
           timestamp: expect.any(Number)
         })
       })
+    })
+
+    it('應該清理臨時保存的參數', async () => {
+      const testParams = {
+        brandId: 'brand-123',
+        storeId: 'store-456'
+      }
+      mockGetCleanParams.mockReturnValue(testParams)
+      
+      wrapper = createWrapper()
+      
+      // 等待所有異步操作完成
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      await wrapper.vm.$nextTick()
+      
+      // 驗證臨時參數被清理
+      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('temp-brandId')
+      expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('temp-storeId')
+      expect(console.log).toHaveBeenCalledWith('🧹 清理臨時參數')
     })
   })
 
@@ -454,16 +546,25 @@ describe('LineEntry.vue', () => {
 
   describe('錯誤邊界處理', () => {
     it('應該處理未處理的 Promise 錯誤', async () => {
+      // Mock 避免初始化錯誤
+      mockLiff.init.mockResolvedValue()
+      mockLiff.isLoggedIn.mockReturnValue(true)
+      mockGetCleanParams.mockReturnValue({
+        brandId: 'test-brand',
+        storeId: 'test-store'
+      })
+
       wrapper = createWrapper()
+      
+      // 手動設置載入狀態為 true
+      wrapper.vm.isLoading = true
+      wrapper.vm.error = null
+      await wrapper.vm.$nextTick()
       
       // 觸發未處理的 Promise rejection
       const unhandledRejection = new CustomEvent('unhandledrejection', {
         detail: { reason: new Error('Unhandled promise rejection') }
       })
-      
-      // 設置載入狀態為 true
-      wrapper.vm.isLoading = true
-      await wrapper.vm.$nextTick()
       
       window.dispatchEvent(unhandledRejection)
       

@@ -48,6 +48,22 @@ apiRouter.get('/health', (req, res) => {
   })
 })
 
+apiRouter.get('/test-outbound-ip', async (req, res) => {
+  try {
+    // 這個API會回傳您對外呼叫時使用的IP
+    const response = await fetch('https://api.ipify.org?format=json')
+    const data = await response.json()
+
+    res.json({
+      outboundIP: data.ip,
+      expectedFixedIP: '35.201.160.235',
+      isCorrect: data.ip === '35.201.160.235',
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // 錯誤處理中介軟體
 apiRouter.use(notFoundHandler)
 apiRouter.use(errorHandler)
