@@ -18,6 +18,8 @@ import promotionApi from './modules/promotion.js'
 import pointRulesApi from './modules/pointRules.js'
 import adminApi from './modules/admin.js'
 import bundleApi from './modules/bundle.js' // 新增 Bundle API 模組
+import cashFlowApi from './modules/cashFlow.js' // 新增 現金流記錄 API 模組
+import cashFlowCategoryApi from './modules/cashFlowCategory.js' // 新增 現金流分類 API 模組
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -70,6 +72,8 @@ export default {
   pointRules: pointRulesApi(apiClient),
   admin: adminApi(apiClient),
   bundle: bundleApi(apiClient), // 新增 Bundle API 實例
+  cashFlow: cashFlowApi(apiClient), // 新增 現金流記錄 API 實例
+  cashFlowCategory: cashFlowCategoryApi(apiClient), // 新增 現金流分類 API 實例
   // 導出 axios 實例，方便直接使用
   client: apiClient,
 }
