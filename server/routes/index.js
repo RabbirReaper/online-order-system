@@ -15,6 +15,8 @@ import inventoryRoutes from './inventory.js'
 import menuRoutes from './menu.js'
 import bundleRoutes from './bundle.js'
 import deliveryPlatformRoutes from './deliveryPlatform.js'
+import cashFlowRoutes from './cashFlow.js'
+import cashFlowCategoryRoutes from './cashFlowCategory.js'
 
 // 創建一個主要的 API 路由器
 const apiRouter = express.Router()
@@ -33,6 +35,8 @@ apiRouter.use('/inventory', inventoryRoutes) // 庫存管理路由
 apiRouter.use('/menu', menuRoutes) // 菜單管理路由
 apiRouter.use('/bundle', bundleRoutes) // 兌換券綑綁路由
 apiRouter.use('/delivery', deliveryPlatformRoutes) // 外送平台路由
+apiRouter.use('/cash-flow', cashFlowRoutes) // 現金流記帳路由
+apiRouter.use('/cash-flow-category', cashFlowCategoryRoutes) // 記帳分類路由
 
 // 訂單路由 - 按權限分離
 apiRouter.use('/order-customer', orderCustomerRoutes) // 前台客戶訂單
