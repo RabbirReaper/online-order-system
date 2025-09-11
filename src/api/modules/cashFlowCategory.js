@@ -60,13 +60,5 @@ export default function (apiClient) {
       return apiClient.get(`/cash-flow-category/${storeId}/stats`)
     },
 
-    /**
-     * 為店鋪創建預設分類
-     * @param {string} storeId - 店鋪ID
-     * @returns {Promise} - API 回應
-     */
-    createDefaultCategories(storeId) {
-      return apiClient.post(`/cash-flow-category/${storeId}/defaults`)
-    }
   }
 }

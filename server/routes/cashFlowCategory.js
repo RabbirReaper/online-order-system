@@ -85,20 +85,5 @@ router.delete(
   cashFlowCategoryController.deleteCategory
 )
 
-// 創建店舖預設記帳分類
-router.post(
-  '/:storeId/defaults',
-  authenticate('admin'),
-  requireRole(
-    'primary_system_admin',
-    'system_admin',
-    'primary_brand_admin',
-    'brand_admin',
-    'primary_store_admin',
-    'store_admin'
-  ),
-  requireStoreAccess,
-  cashFlowCategoryController.createDefaultCategories
-)
 
 export default router
