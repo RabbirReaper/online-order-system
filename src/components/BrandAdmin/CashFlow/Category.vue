@@ -207,12 +207,77 @@
         </div>
       </div>
     </div>
+
+    <!-- 刪除確認對話框 -->
+    <BModal
+      v-model:show="showDeleteModal"
+      id="deleteCategoryModal"
+      title="確認刪除"
+      centered
+      @ok="confirmDelete"
+      @cancel="showDeleteModal = false"
+    >
+      <p v-if="categoryToDelete">
+        確定要刪除分類「<strong>{{ categoryToDelete.name }}</strong>」嗎？
+      </p>
+      <BAlert variant="warning" show>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        此操作無法撤銷，刪除後相關記錄可能會受到影響。
+      </BAlert>
+      <template #footer>
+        <BButton variant="secondary" @click="showDeleteModal = false">取消</BButton>
+        <BButton variant="danger" @click="confirmDelete">確認刪除</BButton>
+      </template>
+    </BModal>
+
+    <!-- 新增預設類別確認對話框 -->
+    <BModal
+      v-model:show="showAddDefaultModal"
+      id="addDefaultCategoriesModal"
+      title="新增預設類別"
+      centered
+      @ok="confirmAddDefault"
+      @cancel="showAddDefaultModal = false"
+    >
+      <p>確定要新增預設分類嗎？</p>
+      <BAlert variant="info" show>
+        <i class="bi bi-info-circle-fill me-2"></i>
+        如果已存在相同名稱的分類將會跳過。
+      </BAlert>
+      <template #footer>
+        <BButton variant="secondary" @click="showAddDefaultModal = false">取消</BButton>
+        <BButton variant="primary" @click="confirmAddDefault">確認新增</BButton>
+      </template>
+    </BModal>
+
+    <!-- 結果提示對話框 -->
+    <BModal
+      v-model:show="showResultModal"
+      id="resultModal"
+      :title="resultModal.title"
+      centered
+      @ok="showResultModal = false"
+      @cancel="showResultModal = false"
+    >
+      <div class="text-center">
+        <i :class="resultModal.icon" class="fs-1 mb-3"></i>
+        <p>{{ resultModal.message }}</p>
+      </div>
+      <template #footer>
+        <BButton variant="primary" @click="showResultModal = false">確定</BButton>
+      </template>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import {
+  BModal,
+  BButton,
+  BAlert
+} from 'bootstrap-vue-next'
 
 // 路由
 const route = useRoute()
@@ -227,6 +292,17 @@ const storeName = ref('')
 const newCategory = ref({
   name: '',
   type: ''
+})
+
+// Modal 狀態
+const showDeleteModal = ref(false)
+const showAddDefaultModal = ref(false)
+const showResultModal = ref(false)
+const categoryToDelete = ref(null)
+const resultModal = ref({
+  title: '',
+  message: '',
+  icon: ''
 })
 
 // 模擬店鋪資料
@@ -274,7 +350,7 @@ const fetchData = async () => {
 
 const addCategory = () => {
   if (!newCategory.value.name || !newCategory.value.type) {
-    alert('請填寫分類名稱和類型')
+    showResult('新增失敗', '請填寫分類名稱和類型', 'bi bi-exclamation-triangle text-warning')
     return
   }
   
@@ -294,6 +370,7 @@ const addCategory = () => {
     type: ''
   }
   
+  showResult('新增成功', `分類「${category.name}」已新增`, 'bi bi-check-circle text-success')
   console.log('新增分類:', category)
 }
 
@@ -304,13 +381,14 @@ const startEdit = (category) => {
 
 const saveEdit = (category) => {
   if (!category.editName) {
-    alert('分類名稱不能為空')
+    showResult('更新失敗', '分類名稱不能為空', 'bi bi-exclamation-triangle text-warning')
     return
   }
   
   category.name = category.editName
   category.editing = false
   
+  showResult('更新成功', `分類「${category.name}」已更新`, 'bi bi-check-circle text-success')
   console.log('更新分類:', category)
 }
 
@@ -320,64 +398,83 @@ const cancelEdit = (category) => {
 }
 
 const deleteCategory = (category) => {
-  if (confirm(`確定要刪除分類「${category.name}」嗎？`)) {
-    const index = categories.value.findIndex(c => c.id === category.id)
+  categoryToDelete.value = category
+  showDeleteModal.value = true
+}
+
+const confirmDelete = () => {
+  if (categoryToDelete.value) {
+    const index = categories.value.findIndex(c => c.id === categoryToDelete.value.id)
     if (index > -1) {
+      const deletedName = categoryToDelete.value.name
       categories.value.splice(index, 1)
-      console.log('刪除分類:', category)
+      showDeleteModal.value = false
+      showResult('刪除成功', `分類「${deletedName}」已刪除`, 'bi bi-check-circle text-success')
+      console.log('刪除分類:', categoryToDelete.value)
+      categoryToDelete.value = null
     }
   }
 }
 
 const addDefaultCategories = () => {
-  if (confirm('確定要新增預設分類嗎？如果已存在相同名稱的分類將會跳過。')) {
-    // 預設分類清單
-    const defaultCategories = [
-      // 支出類別
-      { name: '食材採購', type: 'expense' },
-      { name: '租金', type: 'expense' },
-      { name: '水電費', type: 'expense' },
-      { name: '人事費用', type: 'expense' },
-      { name: '設備維護', type: 'expense' },
-      { name: '清潔用品', type: 'expense' },
-      { name: '包裝材料', type: 'expense' },
-      { name: '廣告宣傳', type: 'expense' },
-      // 收入類別
-      { name: '餐點銷售', type: 'income' },
-      { name: '外送收入', type: 'income' },
-      { name: '飲料銷售', type: 'income' },
-      { name: '其他收入', type: 'income' }
-    ]
+  showAddDefaultModal.value = true
+}
+
+const confirmAddDefault = () => {
+  // 預設分類清單
+  const defaultCategories = [
+    // 支出類別
+    { name: '食材採購', type: 'expense' },
+    { name: '租金', type: 'expense' },
+    { name: '水電費', type: 'expense' },
+    { name: '人事費用', type: 'expense' },
+    { name: '設備維護', type: 'expense' },
+    { name: '清潔用品', type: 'expense' },
+    { name: '包裝材料', type: 'expense' },
+    { name: '廣告宣傳', type: 'expense' },
+    // 收入類別
+    { name: '餐點銷售', type: 'income' },
+    { name: '外送收入', type: 'income' },
+    { name: '飲料銷售', type: 'income' },
+    { name: '其他收入', type: 'income' }
+  ]
+  
+  let addedCount = 0
+  
+  defaultCategories.forEach(defaultCat => {
+    // 檢查是否已存在相同名稱的分類
+    const exists = categories.value.some(existingCat => 
+      existingCat.name === defaultCat.name && existingCat.type === defaultCat.type
+    )
     
-    let addedCount = 0
-    
-    defaultCategories.forEach(defaultCat => {
-      // 檢查是否已存在相同名稱的分類
-      const exists = categories.value.some(existingCat => 
-        existingCat.name === defaultCat.name && existingCat.type === defaultCat.type
-      )
-      
-      if (!exists) {
-        const category = {
-          id: Date.now().toString() + Math.random(),
-          name: defaultCat.name,
-          type: defaultCat.type,
-          editing: false,
-          editName: defaultCat.name
-        }
-        categories.value.push(category)
-        addedCount++
+    if (!exists) {
+      const category = {
+        id: Date.now().toString() + Math.random(),
+        name: defaultCat.name,
+        type: defaultCat.type,
+        editing: false,
+        editName: defaultCat.name
       }
-    })
-    
-    if (addedCount > 0) {
-      alert(`成功新增 ${addedCount} 個預設分類！`)
-    } else {
-      alert('所有預設分類都已存在，無需新增。')
+      categories.value.push(category)
+      addedCount++
     }
-    
-    console.log(`新增了 ${addedCount} 個預設分類`)
+  })
+  
+  showAddDefaultModal.value = false
+  
+  if (addedCount > 0) {
+    showResult('新增成功', `成功新增 ${addedCount} 個預設分類！`, 'bi bi-check-circle text-success')
+  } else {
+    showResult('提示', '所有預設分類都已存在，無需新增。', 'bi bi-info-circle text-info')
   }
+  
+  console.log(`新增了 ${addedCount} 個預設分類`)
+}
+
+// 顯示結果對話框
+const showResult = (title, message, icon) => {
+  resultModal.value = { title, message, icon }
+  showResultModal.value = true
 }
 
 // 生命週期

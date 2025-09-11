@@ -20,16 +20,25 @@
     <div class="card mb-4">
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-3">
+          <div class="col-md-4">
             <label class="form-label">日期範圍</label>
             <select class="form-select" v-model="dateFilter">
               <option value="today">今天</option>
               <option value="week">本週</option>
               <option value="month">本月</option>
+              <option value="custom">自訂範圍</option>
               <option value="all">全部</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4" v-if="dateFilter === 'custom'">
+            <label class="form-label">開始日期</label>
+            <input type="date" class="form-control" v-model="customStartDate" />
+          </div>
+          <div class="col-md-4" v-if="dateFilter === 'custom'">
+            <label class="form-label">結束日期</label>
+            <input type="date" class="form-control" v-model="customEndDate" />
+          </div>
+          <div class="col-md-4" :class="{ 'col-md-8': dateFilter === 'custom' }">
             <label class="form-label">類型</label>
             <select class="form-select" v-model="typeFilter">
               <option value="all">全部類型</option>
@@ -37,7 +46,7 @@
               <option value="expense">支出</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4" :class="{ 'col-md-12': dateFilter === 'custom' }">
             <label class="form-label">分類</label>
             <select class="form-select" v-model="categoryFilter">
               <option value="all">全部分類</option>
@@ -45,14 +54,6 @@
                 {{ category.name }}
               </option>
             </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">&nbsp;</label>
-            <div class="d-grid">
-              <button class="btn btn-outline-primary" @click="applyFilters">
-                <i class="bi bi-funnel me-1"></i>篩選
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -160,12 +161,75 @@
         </nav>
       </div>
     </div>
+
+    <!-- 刪除確認對話框 -->
+    <BModal
+      v-model:show="showDeleteModal"
+      id="deleteRecordModal"
+      title="確認刪除"
+      centered
+      @ok="confirmDelete"
+      @cancel="showDeleteModal = false"
+    >
+      <p v-if="recordToDelete">
+        確定要刪除這筆記錄嗎？
+      </p>
+      <div v-if="recordToDelete" class="bg-light p-3 rounded mb-3">
+        <div class="row">
+          <div class="col-sm-3"><strong>日期：</strong></div>
+          <div class="col-sm-9">{{ formatDate(recordToDelete.date) }}</div>
+        </div>
+        <div class="row">
+          <div class="col-sm-3"><strong>類型：</strong></div>
+          <div class="col-sm-9">
+            <span 
+              class="badge"
+              :class="recordToDelete.type === 'income' ? 'bg-success' : 'bg-danger'"
+            >
+              {{ recordToDelete.type === 'income' ? '收入' : '支出' }}
+            </span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-3"><strong>分類：</strong></div>
+          <div class="col-sm-9">{{ getCategoryName(recordToDelete.categoryId) }}</div>
+        </div>
+        <div class="row">
+          <div class="col-sm-3"><strong>描述：</strong></div>
+          <div class="col-sm-9">{{ recordToDelete.description }}</div>
+        </div>
+        <div class="row">
+          <div class="col-sm-3"><strong>金額：</strong></div>
+          <div class="col-sm-9">
+            <span 
+              class="fw-bold"
+              :class="recordToDelete.type === 'income' ? 'text-success' : 'text-danger'"
+            >
+              {{ recordToDelete.type === 'income' ? '+' : '-' }}${{ recordToDelete.amount.toLocaleString() }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <BAlert variant="warning" show>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        此操作無法撤銷，記錄將被永久刪除。
+      </BAlert>
+      <template #footer>
+        <BButton variant="secondary" @click="showDeleteModal = false">取消</BButton>
+        <BButton variant="danger" @click="confirmDelete">確認刪除</BButton>
+      </template>
+    </BModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import {
+  BModal,
+  BButton,
+  BAlert
+} from 'bootstrap-vue-next'
 
 // 路由
 const route = useRoute()
@@ -179,10 +243,16 @@ const categories = ref([])
 const currentPage = ref(1)
 const pageSize = 10
 
+// Modal 狀態
+const showDeleteModal = ref(false)
+const recordToDelete = ref(null)
+
 // 篩選條件
 const dateFilter = ref('all')
 const typeFilter = ref('all')
 const categoryFilter = ref('all')
+const customStartDate = ref('')
+const customEndDate = ref('')
 
 // 模擬分類資料
 const mockCategories = [
@@ -244,18 +314,33 @@ const filteredRecords = computed(() => {
 
   // 日期篩選
   if (dateFilter.value !== 'all') {
-    const today = new Date()
-    const filterDate = new Date()
-    
-    if (dateFilter.value === 'today') {
-      filterDate.setHours(0, 0, 0, 0)
-    } else if (dateFilter.value === 'week') {
-      filterDate.setDate(today.getDate() - 7)
-    } else if (dateFilter.value === 'month') {
-      filterDate.setMonth(today.getMonth() - 1)
+    if (dateFilter.value === 'custom') {
+      // 自訂日期範圍
+      if (customStartDate.value && customEndDate.value) {
+        const startDate = new Date(customStartDate.value)
+        const endDate = new Date(customEndDate.value)
+        endDate.setHours(23, 59, 59, 999) // 設為當天最後一秒
+        
+        result = result.filter(record => {
+          const recordDate = new Date(record.date)
+          return recordDate >= startDate && recordDate <= endDate
+        })
+      }
+    } else {
+      // 預設日期篩選
+      const today = new Date()
+      const filterDate = new Date()
+      
+      if (dateFilter.value === 'today') {
+        filterDate.setHours(0, 0, 0, 0)
+      } else if (dateFilter.value === 'week') {
+        filterDate.setDate(today.getDate() - 7)
+      } else if (dateFilter.value === 'month') {
+        filterDate.setMonth(today.getMonth() - 1)
+      }
+      
+      result = result.filter(record => new Date(record.date) >= filterDate)
     }
-    
-    result = result.filter(record => new Date(record.date) >= filterDate)
   }
 
   // 類型篩選
@@ -327,7 +412,8 @@ const fetchRecords = async () => {
   }
 }
 
-const applyFilters = () => {
+// 響應式篩選 - 當篩選條件改變時自動重置頁面
+const resetPage = () => {
   currentPage.value = 1
 }
 
@@ -346,11 +432,28 @@ const editRecord = (record) => {
 }
 
 const deleteRecord = (record) => {
-  // TODO: 實作刪除功能
-  if (confirm('確定要刪除此記錄嗎？')) {
-    console.log('刪除記錄:', record)
+  recordToDelete.value = record
+  showDeleteModal.value = true
+}
+
+const confirmDelete = () => {
+  if (recordToDelete.value) {
+    // TODO: 實作實際的刪除API
+    const index = records.value.findIndex(r => r.id === recordToDelete.value.id)
+    if (index > -1) {
+      records.value.splice(index, 1)
+    }
+    
+    console.log('刪除記錄:', recordToDelete.value)
+    showDeleteModal.value = false
+    recordToDelete.value = null
   }
 }
+
+// 監聽篩選條件變化，自動重置頁面
+watch([dateFilter, typeFilter, categoryFilter, customStartDate, customEndDate], () => {
+  resetPage()
+})
 
 // 生命週期
 onMounted(() => {
