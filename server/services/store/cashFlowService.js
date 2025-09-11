@@ -73,7 +73,7 @@ export const getCashFlowsByStore = async (storeId, options = {}) => {
 
   // 獲取記錄
   const cashFlows = await CashFlow.find(queryConditions)
-    .populate('category', 'name type icon color')
+    .populate('category', 'name type')
     .populate('admin', 'name email')
     .populate('brand', 'name')
     .populate('store', 'name')
@@ -99,7 +99,7 @@ export const getCashFlowsByStore = async (storeId, options = {}) => {
  */
 export const getCashFlowById = async (cashFlowId) => {
   const cashFlow = await CashFlow.findById(cashFlowId)
-    .populate('category', 'name type icon color')
+    .populate('category', 'name type')
     .populate('admin', 'name email')
     .populate('brand', 'name')
     .populate('store', 'name')
@@ -232,7 +232,7 @@ export const updateCashFlow = async (cashFlowId, updateData, adminId) => {
     cashFlowId,
     updateData,
     { new: true }
-  ).populate('category', 'name type icon color')
+  ).populate('category', 'name type')
    .populate('admin', 'name email')
    .populate('brand', 'name')
    .populate('store', 'name')
@@ -323,8 +323,7 @@ export const getCashFlowStatistics = async (storeId, options = {}) => {
         _id: {
           categoryId: '$category',
           categoryName: '$categoryInfo.name',
-          categoryType: '$categoryInfo.type',
-          categoryColor: '$categoryInfo.color'
+          categoryType: '$categoryInfo.type'
         },
         totalAmount: { $sum: '$amount' },
         transactionCount: { $sum: 1 }

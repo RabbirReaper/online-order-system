@@ -21,16 +21,9 @@ const cashFlowCategorySchema = new mongoose.Schema({
     enum: ['income', 'expense'],
     required: true,
   },
-  icon: {
-    type: String,
-    default: 'fa-money-bill',
-  },
-  color: {
-    type: String,
-    default: '#007bff',
-  },
 })
 
 cashFlowCategorySchema.index({ brand: 1 })
+cashFlowCategorySchema.index({ store: 1, name: 1 }, { unique: true })
 
 export default mongoose.model('CashFlowCategory', cashFlowCategorySchema)
