@@ -326,6 +326,46 @@ export const brandAdminRoutes = [
         component: () => import('@/components/BrandAdmin/Customer/Detail.vue'),
         meta: { requiresAuth: true, title: '顧客詳細資訊' },
       },
+
+      // 記帳系統路由
+      {
+        path: 'cash-flow',
+        name: 'brand-admin-cash-flow',
+        component: () => import('@/views/brandAdmin/CashFlow.vue'),
+        meta: { requiresAuth: true, title: '店家獨立記帳' },
+      },
+      {
+        path: 'cash-flow/:storeId',
+        name: 'brand-admin-cash-flow-store',
+        component: () => import('@/views/brandAdmin/CashFlowStore.vue'),
+        meta: { requiresAuth: true, title: '記帳管理' },
+        children: [
+          {
+            path: 'show',
+            name: 'brand-admin-cash-flow-show',
+            component: () => import('@/components/BrandAdmin/CashFlow/Show.vue'),
+            meta: { requiresAuth: true, title: '記帳記錄' },
+          },
+          {
+            path: 'create',
+            name: 'brand-admin-cash-flow-create',
+            component: () => import('@/components/BrandAdmin/CashFlow/Create.vue'),
+            meta: { requiresAuth: true, title: '新增記帳記錄' },
+          },
+          {
+            path: 'category',
+            name: 'brand-admin-cash-flow-category',
+            component: () => import('@/components/BrandAdmin/CashFlow/Category.vue'),
+            meta: { requiresAuth: true, title: '記帳分類管理' },
+          },
+          {
+            path: 'statistics',
+            name: 'brand-admin-cash-flow-statistics',
+            component: () => import('@/components/BrandAdmin/CashFlow/Statistics.vue'),
+            meta: { requiresAuth: true, title: '記帳統計' },
+          },
+        ],
+      },
       // 系統設置
       {
         path: 'settings',
