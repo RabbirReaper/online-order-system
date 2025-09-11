@@ -11,7 +11,7 @@ const router = express.Router()
 
 // 獲取店舖的現金流記錄
 router.get(
-  '/:storeId',
+  '/:brandId/:storeId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -21,13 +21,14 @@ router.get(
     'primary_store_admin',
     'store_admin'
   ),
+  requireBrandAccess,
   requireStoreAccess,
   cashFlowController.getCashFlowsByStore
 )
 
 // 根據ID獲取記帳記錄
 router.get(
-  '/detail/:cashFlowId',
+  '/:brandId/:storeId/detail/:cashFlowId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -37,12 +38,14 @@ router.get(
     'primary_store_admin',
     'store_admin'
   ),
+  requireBrandAccess,
+  requireStoreAccess,
   cashFlowController.getCashFlowById
 )
 
 // 創建記帳記錄
 router.post(
-  '/',
+  '/:brandId/:storeId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -52,13 +55,14 @@ router.post(
     'primary_store_admin',
     'store_admin'
   ),
+  requireBrandAccess,
   requireStoreAccess,
   cashFlowController.createCashFlow
 )
 
 // 更新記帳記錄
 router.put(
-  '/:cashFlowId',
+  '/:brandId/:storeId/:cashFlowId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -68,12 +72,14 @@ router.put(
     'primary_store_admin',
     'store_admin'
   ),
+  requireBrandAccess,
+  requireStoreAccess,
   cashFlowController.updateCashFlow
 )
 
 // 刪除記帳記錄
 router.delete(
-  '/:cashFlowId',
+  '/:brandId/:storeId/:cashFlowId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -82,12 +88,14 @@ router.delete(
     'brand_admin',
     'primary_store_admin'
   ),
+  requireBrandAccess,
+  requireStoreAccess,
   cashFlowController.deleteCashFlow
 )
 
 // 獲取現金流統計資料
 router.get(
-  '/:storeId/statistics',
+  '/:brandId/:storeId/statistics',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -97,13 +105,14 @@ router.get(
     'primary_store_admin',
     'store_admin'
   ),
+  requireBrandAccess,
   requireStoreAccess,
   cashFlowController.getCashFlowStatistics
 )
 
 // 導出現金流流水帳 (CSV)
 router.get(
-  '/:storeId/export/csv',
+  '/:brandId/:storeId/export/csv',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -113,6 +122,7 @@ router.get(
     'primary_store_admin',
     'store_admin'
   ),
+  requireBrandAccess,
   requireStoreAccess,
   cashFlowController.exportCashFlowCSV
 )

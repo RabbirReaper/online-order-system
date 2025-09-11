@@ -88,6 +88,22 @@
                 </div>
               </div>
 
+              <!-- 名稱 -->
+              <div class="mb-3">
+                <label class="form-label required">記錄名稱</label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  v-model="form.name"
+                  :class="{ 'is-invalid': errors.name }"
+                  placeholder="請輸入記錄名稱"
+                  required
+                />
+                <div class="invalid-feedback" v-if="errors.name">
+                  {{ errors.name }}
+                </div>
+              </div>
+
               <!-- 金額 -->
               <div class="mb-3">
                 <label class="form-label required">金額</label>
@@ -153,6 +169,9 @@
                       </span>
                     </p>
                   </div>
+                  <div class="col-12" v-if="form.name">
+                    <p class="mb-1"><strong>名稱:</strong> {{ form.name }}</p>
+                  </div>
                   <div class="col-12" v-if="form.description">
                     <p class="mb-0"><strong>描述:</strong> {{ form.description }}</p>
                   </div>
@@ -189,6 +208,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import api from '@/api'
 
 // 路由
 const route = useRoute()
@@ -201,26 +221,25 @@ const isSubmitting = ref(false)
 const categories = ref([])
 const errors = ref({})
 
+// 獲取台北時區的今日日期
+const getTaipeiToday = () => {
+  const now = new Date()
+  const taipeiOffset = 8 * 60 // 台北時區 UTC+8
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
+  const taipeiTime = new Date(utc + (taipeiOffset * 60000))
+  return taipeiTime.toISOString().split('T')[0]
+}
+
 // 表單資料
 const form = ref({
-  date: new Date().toISOString().split('T')[0],
+  date: getTaipeiToday(),
   type: '',
   categoryId: '',
+  name: '',
   amount: null,
   description: ''
 })
 
-// 模擬分類資料
-const mockCategories = [
-  { id: '1', name: '食材採購', type: 'expense' },
-  { id: '2', name: '租金', type: 'expense' },
-  { id: '3', name: '水電費', type: 'expense' },
-  { id: '4', name: '人事費用', type: 'expense' },
-  { id: '5', name: '設備維護', type: 'expense' },
-  { id: '6', name: '餐點銷售', type: 'income' },
-  { id: '7', name: '外送收入', type: 'income' },
-  { id: '8', name: '其他收入', type: 'income' }
-]
 
 // 計算屬性
 const filteredCategories = computed(() => {
@@ -232,6 +251,7 @@ const isFormValid = computed(() => {
   return form.value.date && 
          form.value.type && 
          form.value.categoryId && 
+         form.value.name &&
          form.value.amount > 0
 })
 
@@ -244,10 +264,15 @@ watch(() => form.value.type, () => {
 // 方法
 const fetchCategories = async () => {
   try {
-    // 使用假資料
-    categories.value = mockCategories
+    const response = await api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value)
+    categories.value = (response.data || []).map(category => ({
+      id: category._id,
+      name: category.name,
+      type: category.type
+    }))
   } catch (err) {
     console.error('獲取分類失敗:', err)
+    categories.value = []
   }
 }
 
@@ -266,6 +291,10 @@ const validateForm = () => {
     errors.value.categoryId = '請選擇分類'
   }
   
+  if (!form.value.name) {
+    errors.value.name = '請輸入記錄名稱'
+  }
+  
   if (!form.value.amount || form.value.amount <= 0) {
     errors.value.amount = '請輸入有效金額'
   }
@@ -279,16 +308,26 @@ const submitForm = async () => {
   isSubmitting.value = true
   
   try {
-    // 模擬API請求
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const cashFlowData = {
+      name: form.value.name,
+      amount: form.value.amount,
+      type: form.value.type,
+      category: form.value.categoryId,
+      store: storeId.value,
+      time: form.value.date,
+      description: form.value.description || ''
+    }
     
-    console.log('新增記帳記錄:', form.value)
+    await api.cashFlow.createCashFlow(brandId.value, storeId.value, cashFlowData)
+    
+    console.log('新增記帳記錄成功:', cashFlowData)
     
     // 成功後返回列表頁
     router.push(`/admin/${brandId.value}/cash-flow/${storeId.value}/show`)
   } catch (err) {
     console.error('新增記錄失敗:', err)
-    alert('新增記錄失敗，請稍後再試')
+    const errorMessage = err.response?.data?.message || '新增記錄失敗，請稍後再試'
+    alert(errorMessage)
   } finally {
     isSubmitting.value = false
   }
@@ -296,9 +335,10 @@ const submitForm = async () => {
 
 const resetForm = () => {
   form.value = {
-    date: new Date().toISOString().split('T')[0],
+    date: getTaipeiToday(),
     type: '',
     categoryId: '',
+    name: '',
     amount: null,
     description: ''
   }

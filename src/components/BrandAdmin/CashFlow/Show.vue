@@ -7,10 +7,7 @@
         <button class="btn btn-outline-secondary" @click="refreshRecords">
           <i class="bi bi-arrow-clockwise me-1"></i>重新整理
         </button>
-        <router-link 
-          :to="`/admin/${brandId}/cash-flow/${storeId}/create`"
-          class="btn btn-primary"
-        >
+        <router-link :to="`/admin/${brandId}/cash-flow/${storeId}/create`" class="btn btn-primary">
           <i class="bi bi-plus me-1"></i>新增記帳
         </router-link>
       </div>
@@ -69,14 +66,14 @@
     <!-- 記帳記錄列表 -->
     <div class="card" v-if="!isLoading">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span>記錄列表 ({{ filteredRecords.length }} 筆)</span>
+        <span>記錄列表 ({{ pagination.total || 0 }} 筆)</span>
         <div class="d-flex gap-2">
           <small class="text-success">收入: ${{ totalIncome.toLocaleString() }}</small>
           <small class="text-danger">支出: ${{ totalExpense.toLocaleString() }}</small>
           <small class="fw-bold">淨額: ${{ netAmount.toLocaleString() }}</small>
         </div>
       </div>
-      
+
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="table-light">
@@ -93,16 +90,13 @@
             <tr v-for="record in paginatedRecords" :key="record.id">
               <td>{{ formatDate(record.date) }}</td>
               <td>
-                <span 
-                  class="badge"
-                  :class="record.type === 'income' ? 'bg-success' : 'bg-danger'"
-                >
+                <span class="badge" :class="record.type === 'income' ? 'bg-success' : 'bg-danger'">
                   {{ record.type === 'income' ? '收入' : '支出' }}
                 </span>
               </td>
               <td>{{ getCategoryName(record.categoryId) }}</td>
               <td>{{ record.description }}</td>
-              <td 
+              <td
                 class="fw-bold"
                 :class="record.type === 'income' ? 'text-success' : 'text-danger'"
               >
@@ -110,16 +104,10 @@
               </td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <button 
-                    class="btn btn-outline-primary" 
-                    @click="editRecord(record)"
-                  >
+                  <button class="btn btn-outline-primary" @click="editRecord(record)">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button 
-                    class="btn btn-outline-danger" 
-                    @click="deleteRecord(record)"
-                  >
+                  <button class="btn btn-outline-danger" @click="deleteRecord(record)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -130,7 +118,7 @@
       </div>
 
       <!-- 無資料提示 -->
-      <div class="card-body text-center py-5" v-if="filteredRecords.length === 0">
+      <div class="card-body text-center py-5" v-if="records.length === 0">
         <i class="bi bi-inbox fs-1 text-muted"></i>
         <p class="text-muted mt-3 mb-0">目前沒有記帳記錄</p>
       </div>
@@ -144,16 +132,20 @@
                 上一頁
               </button>
             </li>
-            <li 
-              class="page-item" 
-              v-for="page in displayPages" 
+            <li
+              class="page-item"
+              v-for="page in displayPages"
               :key="page"
               :class="{ active: page === currentPage }"
             >
               <button class="page-link" @click="currentPage = page">{{ page }}</button>
             </li>
             <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-              <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">
+              <button
+                class="page-link"
+                @click="currentPage++"
+                :disabled="currentPage === totalPages"
+              >
                 下一頁
               </button>
             </li>
@@ -171,9 +163,7 @@
       @ok="confirmDelete"
       @cancel="showDeleteModal = false"
     >
-      <p v-if="recordToDelete">
-        確定要刪除這筆記錄嗎？
-      </p>
+      <p v-if="recordToDelete">確定要刪除這筆記錄嗎？</p>
       <div v-if="recordToDelete" class="bg-light p-3 rounded mb-3">
         <div class="row">
           <div class="col-sm-3"><strong>日期：</strong></div>
@@ -182,7 +172,7 @@
         <div class="row">
           <div class="col-sm-3"><strong>類型：</strong></div>
           <div class="col-sm-9">
-            <span 
+            <span
               class="badge"
               :class="recordToDelete.type === 'income' ? 'bg-success' : 'bg-danger'"
             >
@@ -201,11 +191,13 @@
         <div class="row">
           <div class="col-sm-3"><strong>金額：</strong></div>
           <div class="col-sm-9">
-            <span 
+            <span
               class="fw-bold"
               :class="recordToDelete.type === 'income' ? 'text-success' : 'text-danger'"
             >
-              {{ recordToDelete.type === 'income' ? '+' : '-' }}${{ recordToDelete.amount.toLocaleString() }}
+              {{ recordToDelete.type === 'income' ? '+' : '-' }}${{
+                recordToDelete.amount.toLocaleString()
+              }}
             </span>
           </div>
         </div>
@@ -225,11 +217,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  BModal,
-  BButton,
-  BAlert
-} from 'bootstrap-vue-next'
+import { BModal, BButton, BAlert } from 'bootstrap-vue-next'
+import api from '@/api'
 
 // 路由
 const route = useRoute()
@@ -240,6 +229,7 @@ const storeId = computed(() => route.params.storeId)
 const isLoading = ref(false)
 const records = ref([])
 const categories = ref([])
+const pagination = ref({})
 const currentPage = ref(1)
 const pageSize = 10
 
@@ -254,113 +244,12 @@ const categoryFilter = ref('all')
 const customStartDate = ref('')
 const customEndDate = ref('')
 
-// 模擬分類資料
-const mockCategories = [
-  { id: '1', name: '食材採購' },
-  { id: '2', name: '租金' },
-  { id: '3', name: '水電費' },
-  { id: '4', name: '人事費用' },
-  { id: '5', name: '餐點銷售' },
-  { id: '6', name: '其他收入' }
-]
-
-// 模擬記帳記錄
-const mockRecords = [
-  {
-    id: '1',
-    date: '2025-01-10',
-    type: 'expense',
-    categoryId: '1',
-    description: '採購新鮮蔬菜',
-    amount: 1500
-  },
-  {
-    id: '2',
-    date: '2025-01-10',
-    type: 'income',
-    categoryId: '5',
-    description: '午餐時段銷售',
-    amount: 8500
-  },
-  {
-    id: '3',
-    date: '2025-01-09',
-    type: 'expense',
-    categoryId: '2',
-    description: '店面租金',
-    amount: 25000
-  },
-  {
-    id: '4',
-    date: '2025-01-09',
-    type: 'income',
-    categoryId: '5',
-    description: '晚餐時段銷售',
-    amount: 12000
-  },
-  {
-    id: '5',
-    date: '2025-01-08',
-    type: 'expense',
-    categoryId: '3',
-    description: '電費',
-    amount: 2800
-  }
-]
-
 // 計算屬性
-const filteredRecords = computed(() => {
-  let result = records.value
-
-  // 日期篩選
-  if (dateFilter.value !== 'all') {
-    if (dateFilter.value === 'custom') {
-      // 自訂日期範圍
-      if (customStartDate.value && customEndDate.value) {
-        const startDate = new Date(customStartDate.value)
-        const endDate = new Date(customEndDate.value)
-        endDate.setHours(23, 59, 59, 999) // 設為當天最後一秒
-        
-        result = result.filter(record => {
-          const recordDate = new Date(record.date)
-          return recordDate >= startDate && recordDate <= endDate
-        })
-      }
-    } else {
-      // 預設日期篩選
-      const today = new Date()
-      const filterDate = new Date()
-      
-      if (dateFilter.value === 'today') {
-        filterDate.setHours(0, 0, 0, 0)
-      } else if (dateFilter.value === 'week') {
-        filterDate.setDate(today.getDate() - 7)
-      } else if (dateFilter.value === 'month') {
-        filterDate.setMonth(today.getMonth() - 1)
-      }
-      
-      result = result.filter(record => new Date(record.date) >= filterDate)
-    }
-  }
-
-  // 類型篩選
-  if (typeFilter.value !== 'all') {
-    result = result.filter(record => record.type === typeFilter.value)
-  }
-
-  // 分類篩選
-  if (categoryFilter.value !== 'all') {
-    result = result.filter(record => record.categoryId === categoryFilter.value)
-  }
-
-  return result.sort((a, b) => new Date(b.date) - new Date(a.date))
-})
-
-const totalPages = computed(() => Math.ceil(filteredRecords.value.length / pageSize))
+const totalPages = computed(() => Math.ceil((pagination.value?.total || 0) / pageSize))
 
 const paginatedRecords = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredRecords.value.slice(start, start + pageSize)
+  // 由於 API 已經處理分頁，直接返回 records
+  return records.value
 })
 
 const displayPages = computed(() => {
@@ -368,11 +257,11 @@ const displayPages = computed(() => {
   const maxDisplay = 5
   let start = Math.max(1, currentPage.value - Math.floor(maxDisplay / 2))
   let end = Math.min(totalPages.value, start + maxDisplay - 1)
-  
+
   if (end - start < maxDisplay - 1) {
     start = Math.max(1, end - maxDisplay + 1)
   }
-  
+
   for (let i = start; i <= end; i++) {
     pages.push(i)
   }
@@ -380,14 +269,14 @@ const displayPages = computed(() => {
 })
 
 const totalIncome = computed(() => {
-  return filteredRecords.value
-    .filter(record => record.type === 'income')
+  return records.value
+    .filter((record) => record.type === 'income')
     .reduce((sum, record) => sum + record.amount, 0)
 })
 
 const totalExpense = computed(() => {
-  return filteredRecords.value
-    .filter(record => record.type === 'expense')
+  return records.value
+    .filter((record) => record.type === 'expense')
     .reduce((sum, record) => sum + record.amount, 0)
 })
 
@@ -401,12 +290,51 @@ const refreshRecords = async () => {
 const fetchRecords = async () => {
   isLoading.value = true
   try {
-    // 使用假資料
-    await new Promise(resolve => setTimeout(resolve, 500))
-    records.value = mockRecords
-    categories.value = mockCategories
+    // 獲取記帳記錄
+    const recordsResponse = await api.cashFlow.getCashFlowsByStore(brandId.value, storeId.value, {
+      startDate: getDateRangeStart(),
+      endDate: getDateRangeEnd(),
+      type: typeFilter.value === 'all' ? undefined : typeFilter.value,
+      categoryId: categoryFilter.value === 'all' ? undefined : categoryFilter.value,
+      page: currentPage.value,
+      limit: pageSize,
+    })
+
+    // 獲取分類資料
+    const categoriesResponse = await api.cashFlowCategory.getCategoriesByStore(
+      brandId.value,
+      storeId.value,
+    )
+
+    // 處理記帳記錄資料
+    if (recordsResponse && recordsResponse.success && recordsResponse.data) {
+      records.value = recordsResponse.data.map((record) => ({
+        id: record._id,
+        date: record.time,
+        type: record.type,
+        categoryId: record.category?._id,
+        description: record.name + (record.description ? ' - ' + record.description : ''),
+        amount: record.amount,
+      }))
+
+      // 處理分頁信息
+      pagination.value = recordsResponse.data.pagination || {}
+    }
+
+    // 處理分類資料
+    if (categoriesResponse.data) {
+      categories.value = categoriesResponse.data.map((category) => ({
+        id: category._id,
+        name: category.name,
+        type: category.type,
+      }))
+    }
   } catch (err) {
     console.error('獲取記帳記錄失敗:', err)
+    // 如果失敗，設置空資料
+    records.value = []
+    categories.value = []
+    pagination.value = {}
   } finally {
     isLoading.value = false
   }
@@ -418,12 +346,65 @@ const resetPage = () => {
 }
 
 const formatDate = (dateStr) => {
-  return new Date(dateStr).toLocaleDateString('zh-TW')
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Taipei',
+  })
 }
 
 const getCategoryName = (categoryId) => {
-  const category = categories.value.find(c => c.id === categoryId)
+  const category = categories.value.find((c) => c.id === categoryId)
   return category ? category.name : '未知分類'
+}
+
+// 獲取台北時區的今日日期
+const getTaipeiToday = () => {
+  const now = new Date()
+  const taipeiOffset = 8 * 60 // 台北時區 UTC+8
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000
+  const taipeiTime = new Date(utc + taipeiOffset * 60000)
+  return new Date(taipeiTime.getFullYear(), taipeiTime.getMonth(), taipeiTime.getDate())
+}
+
+// 獲取日期範圍開始時間
+const getDateRangeStart = () => {
+  if (dateFilter.value === 'custom' && customStartDate.value) {
+    return customStartDate.value
+  }
+
+  const today = getTaipeiToday()
+
+  if (dateFilter.value === 'today') {
+    return today.toISOString().split('T')[0]
+  } else if (dateFilter.value === 'week') {
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - 7)
+    return weekStart.toISOString().split('T')[0]
+  } else if (dateFilter.value === 'month') {
+    const monthStart = new Date(today)
+    monthStart.setMonth(today.getMonth() - 1)
+    return monthStart.toISOString().split('T')[0]
+  }
+
+  return undefined
+}
+
+// 獲取日期範圍結束時間
+const getDateRangeEnd = () => {
+  if (dateFilter.value === 'custom' && customEndDate.value) {
+    return customEndDate.value
+  }
+
+  if (dateFilter.value !== 'all') {
+    return getTaipeiToday().toISOString().split('T')[0]
+  }
+
+  return undefined
 }
 
 const editRecord = (record) => {
@@ -436,23 +417,37 @@ const deleteRecord = (record) => {
   showDeleteModal.value = true
 }
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (recordToDelete.value) {
-    // TODO: 實作實際的刪除API
-    const index = records.value.findIndex(r => r.id === recordToDelete.value.id)
-    if (index > -1) {
-      records.value.splice(index, 1)
+    try {
+      await api.cashFlow.deleteCashFlow(brandId.value, storeId.value, recordToDelete.value.id)
+
+      // 刪除成功後從本地資料中移除
+      const index = records.value.findIndex((r) => r.id === recordToDelete.value.id)
+      if (index > -1) {
+        records.value.splice(index, 1)
+      }
+
+      console.log('刪除記錄成功:', recordToDelete.value)
+    } catch (err) {
+      console.error('刪除記錄失敗:', err)
+      alert('刪除失敗：' + (err.response?.data?.message || '未知錯誤'))
+    } finally {
+      showDeleteModal.value = false
+      recordToDelete.value = null
     }
-    
-    console.log('刪除記錄:', recordToDelete.value)
-    showDeleteModal.value = false
-    recordToDelete.value = null
   }
 }
 
-// 監聽篩選條件變化，自動重置頁面
+// 監聽篩選條件變化，自動重置頁面並重新獲取資料
 watch([dateFilter, typeFilter, categoryFilter, customStartDate, customEndDate], () => {
   resetPage()
+  fetchRecords()
+})
+
+// 監聽頁面變化，重新獲取資料
+watch(currentPage, () => {
+  fetchRecords()
 })
 
 // 生命週期

@@ -68,6 +68,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 路由
 const route = useRoute()
@@ -77,20 +78,14 @@ const storeId = computed(() => route.params.storeId)
 // 狀態
 const storeName = ref('')
 
-// 模擬店鋪資料
-const mockStores = {
-  'store1': '台北分店',
-  'store2': '台中分店', 
-  'store3': '高雄分店'
-}
-
 // 獲取店鋪資訊
 const fetchStoreInfo = async () => {
   try {
-    // 使用假資料
-    storeName.value = mockStores[storeId.value] || '未知店鋪'
+    const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value })
+    storeName.value = response.data?.name || '未知店鋪'
   } catch (err) {
     console.error('獲取店鋪資訊失敗:', err)
+    storeName.value = '未知店鋪'
   }
 }
 

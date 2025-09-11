@@ -257,6 +257,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 路由
 const route = useRoute()
@@ -282,29 +283,6 @@ const summary = ref({
 const incomeRanking = ref([])
 const expenseRanking = ref([])
 
-// 模擬統計資料
-const mockStatistics = {
-  summary: {
-    totalIncome: 156000,
-    totalExpense: 89500,
-    netAmount: 66500,
-    totalRecords: 45,
-    incomeRecords: 20,
-    expenseRecords: 25,
-  },
-  incomeRanking: [
-    { categoryId: '6', categoryName: '餐點銷售', amount: 120000, percentage: 77 },
-    { categoryId: '7', categoryName: '外送收入', amount: 28000, percentage: 18 },
-    { categoryId: '8', categoryName: '其他收入', amount: 8000, percentage: 5 },
-  ],
-  expenseRanking: [
-    { categoryId: '1', categoryName: '食材採購', amount: 35000, percentage: 39 },
-    { categoryId: '2', categoryName: '租金', amount: 25000, percentage: 28 },
-    { categoryId: '4', categoryName: '人事費用', amount: 18000, percentage: 20 },
-    { categoryId: '3', categoryName: '水電費', amount: 8500, percentage: 9 },
-    { categoryId: '5', categoryName: '設備維護', amount: 3000, percentage: 4 },
-  ],
-}
 
 // 計算屬性
 const dateRangeText = computed(() => {
@@ -334,21 +312,132 @@ const expensePercentage = computed(() => {
 // 方法
 const fetchStatistics = async () => {
   try {
-    // 使用假資料
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    summary.value = mockStatistics.summary
-    incomeRanking.value = mockStatistics.incomeRanking
-    expenseRanking.value = mockStatistics.expenseRanking
+    const params = {
+      startDate: getDateRangeStart(),
+      endDate: getDateRangeEnd(),
+      groupBy: 'category'
+    }
+    
+    const response = await api.cashFlow.getCashFlowStatistics(brandId.value, storeId.value, params)
+    const statisticsData = response.data
+    
+    // 設置總結資料
+    summary.value = {
+      totalIncome: statisticsData.summary?.totalIncome || 0,
+      totalExpense: statisticsData.summary?.totalExpense || 0,
+      netAmount: statisticsData.summary?.netIncome || 0,
+      totalRecords: statisticsData.summary?.totalTransactions || 0,
+      incomeRecords: 0,
+      expenseRecords: 0
+    }
+    
+    // 處理分類統計資料
+    const categoryStats = statisticsData.categoryStats || []
+    
+    // 分離收入和支出分類
+    const incomeCategories = categoryStats.filter(cat => cat._id.categoryType === 'income')
+    const expenseCategories = categoryStats.filter(cat => cat._id.categoryType === 'expense')
+    
+    // 計算收入分類排行和比例
+    const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
+    incomeRanking.value = incomeCategories
+      .map(cat => ({
+        categoryId: cat._id.categoryId,
+        categoryName: cat._id.categoryName,
+        amount: cat.totalAmount,
+        percentage: totalIncome > 0 ? Math.round((cat.totalAmount / totalIncome) * 100) : 0
+      }))
+      .sort((a, b) => b.amount - a.amount)
+    
+    // 計算支出分類排行和比例
+    const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
+    expenseRanking.value = expenseCategories
+      .map(cat => ({
+        categoryId: cat._id.categoryId,
+        categoryName: cat._id.categoryName,
+        amount: cat.totalAmount,
+        percentage: totalExpense > 0 ? Math.round((cat.totalAmount / totalExpense) * 100) : 0
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      
+    // 更新記錄數量
+    summary.value.incomeRecords = incomeCategories.reduce((sum, cat) => sum + cat.transactionCount, 0)
+    summary.value.expenseRecords = expenseCategories.reduce((sum, cat) => sum + cat.transactionCount, 0)
+    
   } catch (err) {
     console.error('獲取統計資料失敗:', err)
+    // 設置空資料
+    summary.value = {
+      totalIncome: 0,
+      totalExpense: 0,
+      netAmount: 0,
+      totalRecords: 0,
+      incomeRecords: 0,
+      expenseRecords: 0
+    }
+    incomeRanking.value = []
+    expenseRanking.value = []
   }
+}
+
+// 獲取台北時區的今日日期
+const getTaipeiToday = () => {
+  const now = new Date()
+  const taipeiOffset = 8 * 60 // 台北時區 UTC+8
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
+  const taipeiTime = new Date(utc + (taipeiOffset * 60000))
+  return new Date(taipeiTime.getFullYear(), taipeiTime.getMonth(), taipeiTime.getDate())
+}
+
+// 獲取日期範圍開始時間
+const getDateRangeStart = () => {
+  if (dateRange.value === 'custom' && customDateRange.value.start) {
+    return customDateRange.value.start
+  }
+  
+  const today = getTaipeiToday()
+  
+  switch (dateRange.value) {
+    case 'today':
+      return today.toISOString().split('T')[0]
+    case 'week':
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - 7)
+      return weekStart.toISOString().split('T')[0]
+    case 'month':
+      const monthStart = new Date(today)
+      monthStart.setMonth(today.getMonth() - 1)
+      return monthStart.toISOString().split('T')[0]
+    case 'quarter':
+      const quarterStart = new Date(today)
+      quarterStart.setMonth(today.getMonth() - 3)
+      return quarterStart.toISOString().split('T')[0]
+    case 'year':
+      const yearStart = new Date(today)
+      yearStart.setFullYear(today.getFullYear() - 1)
+      return yearStart.toISOString().split('T')[0]
+    default:
+      return undefined
+  }
+}
+
+// 獲取日期範圍結束時間
+const getDateRangeEnd = () => {
+  if (dateRange.value === 'custom' && customDateRange.value.end) {
+    return customDateRange.value.end
+  }
+  
+  return getTaipeiToday().toISOString().split('T')[0]
 }
 
 const updateStatistics = () => {
   console.log('更新統計範圍:', dateRange.value)
   if (dateRange.value === 'custom') {
     console.log('自訂範圍:', customDateRange.value)
+    if (!customDateRange.value.start || !customDateRange.value.end) {
+      alert('請選擇完整的自訂日期範圍')
+      return
+    }
   }
   fetchStatistics()
 }

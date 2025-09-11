@@ -9,9 +9,9 @@ import {
 
 const router = express.Router()
 
-// 獲取店舖的所有記帳分類
-router.get(
-  '/:storeId',
+// 創建記帳分類
+router.post(
+  '/:brandId/:storeId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -19,15 +19,33 @@ router.get(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
+  requireBrandAccess,
   requireStoreAccess,
-  cashFlowCategoryController.getCategoriesByStore
+  cashFlowCategoryController.createCategory,
+)
+
+// 獲取店舖的所有記帳分類
+router.get(
+  '/:brandId/:storeId',
+  authenticate('admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
+  requireBrandAccess,
+  requireStoreAccess,
+  cashFlowCategoryController.getCategoriesByStore,
 )
 
 // 根據ID獲取記帳分類
 router.get(
-  '/detail/:categoryId',
+  '/:brandId/:storeId/detail/:categoryId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -35,30 +53,16 @@ router.get(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
-  cashFlowCategoryController.getCategoryById
-)
-
-// 創建記帳分類
-router.post(
-  '/',
-  authenticate('admin'),
-  requireRole(
-    'primary_system_admin',
-    'system_admin',
-    'primary_brand_admin',
-    'brand_admin',
-    'primary_store_admin',
-    'store_admin'
-  ),
+  requireBrandAccess,
   requireStoreAccess,
-  cashFlowCategoryController.createCategory
+  cashFlowCategoryController.getCategoryById,
 )
 
 // 更新記帳分類
 router.put(
-  '/:categoryId',
+  '/:brandId/:storeId/:categoryId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
@@ -66,24 +70,27 @@ router.put(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
-  cashFlowCategoryController.updateCategory
+  requireBrandAccess,
+  requireStoreAccess,
+  cashFlowCategoryController.updateCategory,
 )
 
 // 刪除記帳分類
 router.delete(
-  '/:categoryId',
+  '/:brandId/:storeId/:categoryId',
   authenticate('admin'),
   requireRole(
     'primary_system_admin',
     'system_admin',
     'primary_brand_admin',
     'brand_admin',
-    'primary_store_admin'
+    'primary_store_admin',
   ),
-  cashFlowCategoryController.deleteCategory
+  requireBrandAccess,
+  requireStoreAccess,
+  cashFlowCategoryController.deleteCategory,
 )
-
 
 export default router
