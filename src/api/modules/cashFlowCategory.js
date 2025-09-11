@@ -50,15 +50,5 @@ export default function (apiClient) {
     deleteCategory(id) {
       return apiClient.delete(`/cash-flow-category/${id}`)
     },
-
-    /**
-     * 獲取分類使用統計
-     * @param {string} storeId - 店鋪ID
-     * @returns {Promise} - API 回應
-     */
-    getCategoryUsageStats(storeId) {
-      return apiClient.get(`/cash-flow-category/${storeId}/stats`)
-    },
-
   }
 }
