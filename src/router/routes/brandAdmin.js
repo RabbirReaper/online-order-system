@@ -353,18 +353,18 @@ export const brandAdminRoutes = [
             meta: { requiresAuth: true, title: '新增記帳記錄' },
           },
           {
+            path: 'category',
+            name: 'brand-admin-cash-flow-category',
+            component: () => import('@/components/BrandAdmin/CashFlow/Category.vue'),
+            meta: { requiresAuth: true, title: '記帳分類管理' },
+          },
+          {
             path: 'statistics',
             name: 'brand-admin-cash-flow-statistics',
             component: () => import('@/components/BrandAdmin/CashFlow/Statistics.vue'),
             meta: { requiresAuth: true, title: '記帳統計' },
           },
         ],
-      },
-      {
-        path: 'cash-flow-category/:storeId',
-        name: 'brand-admin-cash-flow-category',
-        component: () => import('@/components/BrandAdmin/CashFlow/Category.vue'),
-        meta: { requiresAuth: true, title: '記帳分類管理' },
       },
       // 系統設置
       {

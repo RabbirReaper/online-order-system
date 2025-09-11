@@ -57,6 +57,16 @@
                 <i class="bi bi-box2 me-2"></i>
                 庫存狀態
               </router-link>
+
+              <!-- 店家獨立記帳 - 權限等級 2 -->
+              <router-link
+                class="nav-link ps-4 py-2"
+                :to="`/admin/${brandId}/cash-flow`"
+                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+              >
+                <i class="bi bi-cash-stack me-2"></i>
+                店家獨立記帳
+              </router-link>
             </CollapsibleSection>
           </div>
 
@@ -408,6 +418,10 @@ const getPageTitle = () => {
   if (routePath.includes('/point-rules')) return '點數規則管理'
   if (routePath.includes('/store-admins')) return '店鋪管理員'
   if (routePath.includes('/customers')) return '顧客管理'
+  if (routePath.includes('/cash-flow-category')) return '記帳分類管理'
+  if (routePath.includes('/cash-flow') && routePath.includes('/statistics')) return '記帳統計'
+  if (routePath.includes('/cash-flow') && routePath.includes('/create')) return '新增記帳記錄'
+  if (routePath.includes('/cash-flow')) return '店家獨立記帳'
   if (routePath.includes('/account-settings')) return '帳號設置'
 
   return '品牌儀表板'
