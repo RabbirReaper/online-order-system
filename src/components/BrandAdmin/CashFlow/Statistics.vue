@@ -401,20 +401,21 @@ const getDateRangeStart = () => {
     case 'today':
       return today.toISOString().split('T')[0]
     case 'week':
+      // 本週從週日開始
       const weekStart = new Date(today)
-      weekStart.setDate(today.getDate() - 7)
+      weekStart.setDate(today.getDate() - today.getDay())
       return weekStart.toISOString().split('T')[0]
     case 'month':
-      const monthStart = new Date(today)
-      monthStart.setMonth(today.getMonth() - 1)
+      // 本月從1號開始
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
       return monthStart.toISOString().split('T')[0]
     case 'quarter':
-      const quarterStart = new Date(today)
-      quarterStart.setMonth(today.getMonth() - 3)
+      // 本季從第一天開始
+      const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
       return quarterStart.toISOString().split('T')[0]
     case 'year':
-      const yearStart = new Date(today)
-      yearStart.setFullYear(today.getFullYear() - 1)
+      // 本年從1月1日開始
+      const yearStart = new Date(today.getFullYear(), 0, 1)
       return yearStart.toISOString().split('T')[0]
     default:
       return undefined

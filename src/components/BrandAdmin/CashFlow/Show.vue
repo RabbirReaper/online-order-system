@@ -232,6 +232,11 @@ const categories = ref([])
 const pagination = ref({})
 const currentPage = ref(1)
 const pageSize = 10
+const statistics = ref({
+  totalIncome: 0,
+  totalExpense: 0,
+  netAmount: 0,
+})
 
 // Modal 狀態
 const showDeleteModal = ref(false)
@@ -268,43 +273,85 @@ const displayPages = computed(() => {
   return pages
 })
 
-const totalIncome = computed(() => {
-  return records.value
-    .filter((record) => record.type === 'income')
-    .reduce((sum, record) => sum + record.amount, 0)
-})
-
-const totalExpense = computed(() => {
-  return records.value
-    .filter((record) => record.type === 'expense')
-    .reduce((sum, record) => sum + record.amount, 0)
-})
-
-const netAmount = computed(() => totalIncome.value - totalExpense.value)
+const totalIncome = computed(() => statistics.value.totalIncome)
+const totalExpense = computed(() => statistics.value.totalExpense)
+const netAmount = computed(() => statistics.value.netAmount)
 
 // 方法
 const refreshRecords = async () => {
   await fetchRecords()
 }
 
+// 獲取統計資料
+const fetchStatistics = async () => {
+  try {
+    const startDate = getDateRangeStart()
+    const endDate = getDateRangeEnd()
+    
+    // 除錯：顯示發送的查詢參數
+    console.log('📅 查詢參數除錯:', {
+      dateFilter: dateFilter.value,
+      startDate,
+      endDate,
+      台北時間現在: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}),
+      UTC時間現在: new Date().toISOString()
+    })
+
+    // 獲取所有符合篩選條件的記錄來計算統計（不分頁）
+    const statisticsResponse = await api.cashFlow.getCashFlowsByStore(
+      brandId.value,
+      storeId.value,
+      {
+        startDate,
+        endDate,
+        type: typeFilter.value === 'all' ? undefined : typeFilter.value,
+        categoryId: categoryFilter.value === 'all' ? undefined : categoryFilter.value,
+        // 不設置 page 和 limit，獲取所有資料
+      },
+    )
+
+    console.log('📊 統計資料響應:', statisticsResponse)
+
+    if (statisticsResponse && statisticsResponse.success && statisticsResponse.data) {
+      const allRecords = statisticsResponse.data
+      const totalIncome = allRecords
+        .filter((record) => record.type === 'income')
+        .reduce((sum, record) => sum + record.amount, 0)
+      const totalExpense = allRecords
+        .filter((record) => record.type === 'expense')
+        .reduce((sum, record) => sum + record.amount, 0)
+
+      statistics.value = {
+        totalIncome,
+        totalExpense,
+        netAmount: totalIncome - totalExpense,
+      }
+    }
+  } catch (err) {
+    console.error('獲取統計資料失敗:', err)
+    statistics.value = {
+      totalIncome: 0,
+      totalExpense: 0,
+      netAmount: 0,
+    }
+  }
+}
+
 const fetchRecords = async () => {
   isLoading.value = true
   try {
-    // 獲取記帳記錄
-    const recordsResponse = await api.cashFlow.getCashFlowsByStore(brandId.value, storeId.value, {
-      startDate: getDateRangeStart(),
-      endDate: getDateRangeEnd(),
-      type: typeFilter.value === 'all' ? undefined : typeFilter.value,
-      categoryId: categoryFilter.value === 'all' ? undefined : categoryFilter.value,
-      page: currentPage.value,
-      limit: pageSize,
-    })
-
-    // 獲取分類資料
-    const categoriesResponse = await api.cashFlowCategory.getCategoriesByStore(
-      brandId.value,
-      storeId.value,
-    )
+    // 同時獲取記帳記錄、分類資料和統計資料
+    const [recordsResponse, categoriesResponse] = await Promise.all([
+      api.cashFlow.getCashFlowsByStore(brandId.value, storeId.value, {
+        startDate: getDateRangeStart(),
+        endDate: getDateRangeEnd(),
+        type: typeFilter.value === 'all' ? undefined : typeFilter.value,
+        categoryId: categoryFilter.value === 'all' ? undefined : categoryFilter.value,
+        page: currentPage.value,
+        limit: pageSize,
+      }),
+      api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value),
+    ])
 
     // 處理記帳記錄資料
     if (recordsResponse && recordsResponse.success && recordsResponse.data) {
@@ -317,24 +364,32 @@ const fetchRecords = async () => {
         amount: record.amount,
       }))
 
-      // 處理分頁信息
-      pagination.value = recordsResponse.data.pagination || {}
+      // 修正分頁信息處理
+      pagination.value = recordsResponse.pagination || {}
     }
 
     // 處理分類資料
-    if (categoriesResponse.data) {
+    if (categoriesResponse && categoriesResponse.success && categoriesResponse.data) {
       categories.value = categoriesResponse.data.map((category) => ({
         id: category._id,
         name: category.name,
         type: category.type,
       }))
     }
+
+    // 獲取統計資料
+    await fetchStatistics()
   } catch (err) {
     console.error('獲取記帳記錄失敗:', err)
     // 如果失敗，設置空資料
     records.value = []
     categories.value = []
     pagination.value = {}
+    statistics.value = {
+      totalIncome: 0,
+      totalExpense: 0,
+      netAmount: 0,
+    }
   } finally {
     isLoading.value = false
   }
@@ -364,11 +419,29 @@ const getCategoryName = (categoryId) => {
 
 // 獲取台北時區的今日日期
 const getTaipeiToday = () => {
+  // 更簡單直接的方法：手動調整UTC+8
   const now = new Date()
-  const taipeiOffset = 8 * 60 // 台北時區 UTC+8
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000
-  const taipeiTime = new Date(utc + taipeiOffset * 60000)
-  return new Date(taipeiTime.getFullYear(), taipeiTime.getMonth(), taipeiTime.getDate())
+  const taipeiOffset = 8 * 60 * 60 * 1000 // UTC+8 in milliseconds
+  const taipeiTime = new Date(now.getTime() + taipeiOffset)
+  
+  // 取得台北時間的年月日
+  const year = taipeiTime.getUTCFullYear()
+  const month = taipeiTime.getUTCMonth()  
+  const date = taipeiTime.getUTCDate()
+  
+  // 建立今日日期（UTC 0點）
+  const today = new Date(Date.UTC(year, month, date))
+  
+  // 除錯：顯示日期轉換過程
+  console.log('🕒 日期轉換除錯:', {
+    原始時間: now.toISOString(),
+    台北時間: taipeiTime.toISOString(),
+    年月日: { year, month, date },
+    今日日期: today.toISOString(),
+    今日日期字串: today.toISOString().split('T')[0]
+  })
+  
+  return today
 }
 
 // 獲取日期範圍開始時間
@@ -382,12 +455,13 @@ const getDateRangeStart = () => {
   if (dateFilter.value === 'today') {
     return today.toISOString().split('T')[0]
   } else if (dateFilter.value === 'week') {
+    // 本週從週日開始
     const weekStart = new Date(today)
-    weekStart.setDate(today.getDate() - 7)
+    weekStart.setDate(today.getDate() - today.getDay())
     return weekStart.toISOString().split('T')[0]
   } else if (dateFilter.value === 'month') {
-    const monthStart = new Date(today)
-    monthStart.setMonth(today.getMonth() - 1)
+    // 本月從1號開始
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
     return monthStart.toISOString().split('T')[0]
   }
 
@@ -439,15 +513,48 @@ const confirmDelete = async () => {
   }
 }
 
+// 獲取記錄列表（僅列表，不獲取統計）
+const fetchRecordsList = async () => {
+  try {
+    const recordsResponse = await api.cashFlow.getCashFlowsByStore(brandId.value, storeId.value, {
+      startDate: getDateRangeStart(),
+      endDate: getDateRangeEnd(),
+      type: typeFilter.value === 'all' ? undefined : typeFilter.value,
+      categoryId: categoryFilter.value === 'all' ? undefined : categoryFilter.value,
+      page: currentPage.value,
+      limit: pageSize,
+    })
+
+    // 處理記帳記錄資料
+    if (recordsResponse && recordsResponse.success && recordsResponse.data) {
+      records.value = recordsResponse.data.map((record) => ({
+        id: record._id,
+        date: record.time,
+        type: record.type,
+        categoryId: record.category?._id,
+        description: record.name + (record.description ? ' - ' + record.description : ''),
+        amount: record.amount,
+      }))
+
+      // 修正分頁信息處理
+      pagination.value = recordsResponse.pagination || {}
+    }
+  } catch (err) {
+    console.error('獲取記帳記錄失敗:', err)
+    records.value = []
+    pagination.value = {}
+  }
+}
+
 // 監聽篩選條件變化，自動重置頁面並重新獲取資料
 watch([dateFilter, typeFilter, categoryFilter, customStartDate, customEndDate], () => {
   resetPage()
   fetchRecords()
 })
 
-// 監聽頁面變化，重新獲取資料
+// 監聽頁面變化，只重新獲取記錄列表（不重新計算統計）
 watch(currentPage, () => {
-  fetchRecords()
+  fetchRecordsList()
 })
 
 // 生命週期
