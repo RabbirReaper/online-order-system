@@ -7,7 +7,9 @@
         <button class="btn btn-outline-primary" @click="refreshData">
           <i class="bi bi-arrow-clockwise me-1"></i>重新整理
         </button>
-        <button class="btn btn-outline-success" @click="exportReport"><i class="bi bi-download me-1"></i>匯出報表</button>
+        <button class="btn btn-outline-success" @click="exportReport">
+          <i class="bi bi-download me-1"></i>匯出報表
+        </button>
       </div>
     </div>
 
@@ -128,12 +130,8 @@
           <div class="card-header">
             <h6 class="card-title mb-0">收支趨勢圖</h6>
           </div>
-          <div class="card-body">
-            <div class="chart-placeholder">
-              <i class="bi bi-graph-up fs-1 text-muted"></i>
-              <p class="text-muted mt-3">圖表功能需要集成圖表庫</p>
-              <small class="text-muted">建議使用 Chart.js</small>
-            </div>
+          <div class="card-body" style="height: 400px">
+            <IncomeExpenseTrendChart :chartData="trendChartData" :height="350" />
           </div>
         </div>
       </div>
@@ -144,21 +142,8 @@
           <div class="card-header">
             <h6 class="card-title mb-0">收支比例</h6>
           </div>
-          <div class="card-body">
-            <div class="chart-placeholder">
-              <i class="bi bi-pie-chart fs-1 text-muted"></i>
-              <p class="text-muted mt-3">圓餅圖</p>
-              <div class="mt-3">
-                <div class="d-flex justify-content-between">
-                  <span class="text-success">收入</span>
-                  <span>{{ incomePercentage }}%</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                  <span class="text-danger">支出</span>
-                  <span>{{ expensePercentage }}%</span>
-                </div>
-              </div>
-            </div>
+          <div class="card-body" style="height: 400px">
+            <IncomeExpensePieChart :summary="summary" :height="350" />
           </div>
         </div>
       </div>
@@ -265,6 +250,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/api'
+import IncomeExpenseTrendChart from './Charts/IncomeExpenseTrendChart.vue'
+import IncomeExpensePieChart from './Charts/IncomeExpensePieChart.vue'
 
 // 路由
 const route = useRoute()
@@ -291,6 +278,11 @@ const incomeRanking = ref([])
 const expenseRanking = ref([])
 const categories = ref([])
 const isLoading = ref(false)
+const trendChartData = ref({
+  labels: [],
+  incomeData: [],
+  expenseData: [],
+})
 
 // 計算屬性
 const dateRangeText = computed(() => {
@@ -328,23 +320,23 @@ const getTaipeiToday = () => {
   const now = new Date()
   const taipeiOffset = 8 * 60 * 60 * 1000 // UTC+8 in milliseconds
   const taipeiTime = new Date(now.getTime() + taipeiOffset)
-  
+
   // 取得台北時間的年月日
   const year = taipeiTime.getUTCFullYear()
-  const month = taipeiTime.getUTCMonth()  
+  const month = taipeiTime.getUTCMonth()
   const date = taipeiTime.getUTCDate()
-  
+
   // 建立今日日期（UTC 0點）
   const today = new Date(Date.UTC(year, month, date))
-  
+
   console.log('🕒 日期轉換除錯:', {
     原始時間: now.toISOString(),
     台北時間: taipeiTime.toISOString(),
     年月日: { year, month, date },
     今日日期: today.toISOString(),
-    今日日期字串: today.toISOString().split('T')[0]
+    今日日期字串: today.toISOString().split('T')[0],
   })
-  
+
   return today
 }
 
@@ -405,27 +397,23 @@ const fetchStatistics = async () => {
   try {
     const startDate = getDateRangeStart()
     const endDate = getDateRangeEnd()
-    
+
     console.log('📅 統計查詢參數:', {
       dateRange: dateRange.value,
       startDate,
       endDate,
-      台北時間現在: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}),
-      UTC時間現在: new Date().toISOString()
+      台北時間現在: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+      UTC時間現在: new Date().toISOString(),
     })
 
     // 同時獲取現金流記錄和分類資料
     const [recordsResponse, categoriesResponse] = await Promise.all([
-      api.cashFlow.getCashFlowsByStore(
-        brandId.value,
-        storeId.value,
-        {
-          startDate,
-          endDate,
-          // 不設置 page 和 limit，獲取所有資料用於統計
-        }
-      ),
-      api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value)
+      api.cashFlow.getCashFlowsByStore(brandId.value, storeId.value, {
+        startDate,
+        endDate,
+        // 不設置 page 和 limit，獲取所有資料用於統計
+      }),
+      api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value),
     ])
 
     console.log('📊 統計資料響應:', { recordsResponse, categoriesResponse })
@@ -454,7 +442,7 @@ const fetchStatistics = async () => {
       // 計算基本統計
       const incomeRecords = allRecords.filter((record) => record.type === 'income')
       const expenseRecords = allRecords.filter((record) => record.type === 'expense')
-      
+
       const totalIncome = incomeRecords.reduce((sum, record) => sum + record.amount, 0)
       const totalExpense = expenseRecords.reduce((sum, record) => sum + record.amount, 0)
 
@@ -477,7 +465,7 @@ const fetchStatistics = async () => {
             categoryId,
             categoryName,
             amount: 0,
-            count: 0
+            count: 0,
           }
         }
         incomeByCategory[categoryId].amount += record.amount
@@ -488,7 +476,7 @@ const fetchStatistics = async () => {
         .sort((a, b) => b.amount - a.amount)
         .map((item) => ({
           ...item,
-          percentage: totalIncome > 0 ? Math.round((item.amount / totalIncome) * 100) : 0
+          percentage: totalIncome > 0 ? Math.round((item.amount / totalIncome) * 100) : 0,
         }))
 
       // 計算支出分類排行
@@ -501,7 +489,7 @@ const fetchStatistics = async () => {
             categoryId,
             categoryName,
             amount: 0,
-            count: 0
+            count: 0,
           }
         }
         expenseByCategory[categoryId].amount += record.amount
@@ -512,8 +500,11 @@ const fetchStatistics = async () => {
         .sort((a, b) => b.amount - a.amount)
         .map((item) => ({
           ...item,
-          percentage: totalExpense > 0 ? Math.round((item.amount / totalExpense) * 100) : 0
+          percentage: totalExpense > 0 ? Math.round((item.amount / totalExpense) * 100) : 0,
         }))
+
+      // 計算趨勢數據
+      generateTrendData(allRecords)
 
       console.log('✅ 統計計算完成:', {
         總記錄數: allRecords.length,
@@ -523,7 +514,8 @@ const fetchStatistics = async () => {
         總支出: totalExpense,
         淨收益: totalIncome - totalExpense,
         收入排行: incomeRanking.value,
-        支出排行: expenseRanking.value
+        支出排行: expenseRanking.value,
+        趨勢數據: trendChartData.value,
       })
     } else {
       resetStatisticsData()
@@ -536,6 +528,52 @@ const fetchStatistics = async () => {
   }
 }
 
+// 生成趨勢圖表數據
+const generateTrendData = (allRecords) => {
+  if (!allRecords || allRecords.length === 0) {
+    trendChartData.value = {
+      labels: [],
+      incomeData: [],
+      expenseData: [],
+    }
+    return
+  }
+
+  // 按日期分組記錄
+  const dailyData = {}
+
+  allRecords.forEach((record) => {
+    const date = record.date.split('T')[0] // 取日期部分 YYYY-MM-DD
+
+    if (!dailyData[date]) {
+      dailyData[date] = {
+        income: 0,
+        expense: 0,
+      }
+    }
+
+    if (record.type === 'income') {
+      dailyData[date].income += record.amount
+    } else if (record.type === 'expense') {
+      dailyData[date].expense += record.amount
+    }
+  })
+
+  // 排序日期並生成圖表數據
+  const sortedDates = Object.keys(dailyData).sort()
+
+  trendChartData.value = {
+    labels: sortedDates.map((date) => {
+      const dateObj = new Date(date)
+      return dateObj.toLocaleDateString('zh-TW', {
+        month: 'short',
+        day: 'numeric',
+      })
+    }),
+    incomeData: sortedDates.map((date) => dailyData[date].income),
+    expenseData: sortedDates.map((date) => dailyData[date].expense),
+  }
+}
 
 // 🆕 重置統計資料
 const resetStatisticsData = () => {
@@ -549,6 +587,11 @@ const resetStatisticsData = () => {
   }
   incomeRanking.value = []
   expenseRanking.value = []
+  trendChartData.value = {
+    labels: [],
+    incomeData: [],
+    expenseData: [],
+  }
 }
 
 // 🆕 更新統計資料 (與 Show.vue 風格一致)
@@ -581,7 +624,7 @@ const exportReport = () => {
     統計期間: dateRangeText.value,
     統計範圍: {
       開始日期: getDateRangeStart() || '無限制',
-      結束日期: getDateRangeEnd() || '無限制'
+      結束日期: getDateRangeEnd() || '無限制',
     },
     財務概覽: {
       總收入: `$${summary.value.totalIncome.toLocaleString()}`,
@@ -589,20 +632,20 @@ const exportReport = () => {
       淨收益: `$${summary.value.netAmount.toLocaleString()}`,
       記錄總數: summary.value.totalRecords,
       收入記錄數: summary.value.incomeRecords,
-      支出記錄數: summary.value.expenseRecords
+      支出記錄數: summary.value.expenseRecords,
     },
     收入分類排行: incomeRanking.value.map((item, index) => ({
       排名: index + 1,
       分類: item.categoryName,
       金額: `$${item.amount.toLocaleString()}`,
-      比例: `${item.percentage}%`
+      比例: `${item.percentage}%`,
     })),
     支出分類排行: expenseRanking.value.map((item, index) => ({
       排名: index + 1,
       分類: item.categoryName,
       金額: `$${item.amount.toLocaleString()}`,
-      比例: `${item.percentage}%`
-    }))
+      比例: `${item.percentage}%`,
+    })),
   }
 
   const jsonData = JSON.stringify(data, null, 2)
