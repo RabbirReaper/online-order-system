@@ -61,16 +61,6 @@ export default function (apiClient) {
       return apiClient.delete(`/cash-flow/${brandId}/${storeId}/${cashFlowId}`)
     },
 
-    /**
-     * 獲取店鋪現金流統計
-     * @param {string} brandId - 品牌ID
-     * @param {string} storeId - 店鋪ID
-     * @param {Object} params - 查詢參數
-     * @returns {Promise} - API 回應
-     */
-    getCashFlowStatistics(brandId, storeId, params = {}) {
-      return apiClient.get(`/cash-flow/${brandId}/${storeId}/statistics`, { params })
-    },
 
     /**
      * 匯出現金流記錄為CSV

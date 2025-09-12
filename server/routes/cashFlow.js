@@ -93,22 +93,6 @@ router.delete(
   cashFlowController.deleteCashFlow
 )
 
-// 獲取現金流統計資料
-router.get(
-  '/:brandId/:storeId/statistics',
-  authenticate('admin'),
-  requireRole(
-    'primary_system_admin',
-    'system_admin',
-    'primary_brand_admin',
-    'brand_admin',
-    'primary_store_admin',
-    'store_admin'
-  ),
-  requireBrandAccess,
-  requireStoreAccess,
-  cashFlowController.getCashFlowStatistics
-)
 
 // 導出現金流流水帳 (CSV)
 router.get(

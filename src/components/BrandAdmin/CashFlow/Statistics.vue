@@ -365,94 +365,23 @@ const getDateRangeParams = () => {
   return { startDate, endDate }
 }
 
-// 🆕 簡化的統計資料獲取
+// TODO: 改用 getCashFlowsByStore 來獲取現金流資料，並在前端進行統計處理
 const fetchStatistics = async () => {
   try {
-    const { startDate, endDate } = getDateRangeParams()
-
-    const params = {
-      startDate,
-      endDate,
-      groupBy: 'category',
-    }
-
-    console.log('📅 Statistics 查詢參數:', {
-      dateRange: dateRange.value,
-      params,
-      當前時間: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
-    })
-
-    const response = await api.cashFlow.getCashFlowStatistics(brandId.value, storeId.value, params)
-    console.log('📊 Statistics API 回應:', response)
-
-    if (!response || !response.success) {
-      throw new Error('API 回應格式錯誤')
-    }
-
-    const statisticsData = response.data
-    if (!statisticsData) {
-      throw new Error('統計資料為空')
-    }
-
-    // 處理統計資料
-    processStatisticsData(statisticsData)
+    console.log('TODO: 需要實現使用 getCashFlowsByStore 的統計邏輯')
+    // 暫時重置統計資料
+    resetStatisticsData()
   } catch (err) {
     console.error('獲取統計資料失敗:', err)
     resetStatisticsData()
   }
 }
 
-// 🆕 分離資料處理邏輯
-const processStatisticsData = (statisticsData) => {
-  // 設置總結資料
-  summary.value = {
-    totalIncome: statisticsData.summary?.totalIncome || 0,
-    totalExpense: statisticsData.summary?.totalExpense || 0,
-    netAmount: statisticsData.summary?.netIncome || 0,
-    totalRecords: statisticsData.summary?.totalTransactions || 0,
-    incomeRecords: 0,
-    expenseRecords: 0,
-  }
-
-  console.log('📊 統計摘要:', summary.value)
-
-  // 處理分類統計資料
-  const categoryStats = statisticsData.categoryStats || []
-  console.log('📊 分類統計資料:', categoryStats)
-
-  // 分離收入和支出分類
-  const incomeCategories = categoryStats.filter((cat) => cat._id.categoryType === 'income')
-  const expenseCategories = categoryStats.filter((cat) => cat._id.categoryType === 'expense')
-
-  // 計算收入分類排行和比例
-  const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
-  incomeRanking.value = incomeCategories
-    .map((cat) => ({
-      categoryId: cat._id.categoryId,
-      categoryName: cat._id.categoryName,
-      amount: cat.totalAmount,
-      percentage: totalIncome > 0 ? Math.round((cat.totalAmount / totalIncome) * 100) : 0,
-    }))
-    .sort((a, b) => b.amount - a.amount)
-
-  // 計算支出分類排行和比例
-  const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
-  expenseRanking.value = expenseCategories
-    .map((cat) => ({
-      categoryId: cat._id.categoryId,
-      categoryName: cat._id.categoryName,
-      amount: cat.totalAmount,
-      percentage: totalExpense > 0 ? Math.round((cat.totalAmount / totalExpense) * 100) : 0,
-    }))
-    .sort((a, b) => b.amount - a.amount)
-
-  // 更新記錄數量
-  summary.value.incomeRecords = incomeCategories.reduce((sum, cat) => sum + cat.transactionCount, 0)
-  summary.value.expenseRecords = expenseCategories.reduce(
-    (sum, cat) => sum + cat.transactionCount,
-    0,
-  )
-}
+// TODO: 重新實現資料處理邏輯，用於處理 getCashFlowsByStore 回傳的資料
+// const processStatisticsData = (statisticsData) => {
+//   // 這個函數原本處理 getCashFlowStatistics API 的回應格式
+//   // 需要重寫以處理 getCashFlowsByStore 回傳的現金流記錄陣列
+// }
 
 // 🆕 重置統計資料
 const resetStatisticsData = () => {
