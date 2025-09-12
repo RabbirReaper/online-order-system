@@ -7,7 +7,7 @@
         <button class="btn btn-outline-primary" @click="refreshData">
           <i class="bi bi-arrow-clockwise me-1"></i>重新整理
         </button>
-        <button class="btn btn-outline-success"><i class="bi bi-download me-1"></i>匯出報表</button>
+        <button class="btn btn-outline-success" @click="exportReport"><i class="bi bi-download me-1"></i>匯出報表</button>
       </div>
     </div>
 
@@ -43,8 +43,15 @@
       </div>
     </div>
 
+    <!-- 載入中提示 -->
+    <div class="d-flex justify-content-center my-5" v-if="isLoading">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">載入中...</span>
+      </div>
+    </div>
+
     <!-- 概覽卡片 -->
-    <div class="row mb-4">
+    <div class="row mb-4" v-if="!isLoading">
       <div class="col-md-3">
         <div class="card bg-success text-white">
           <div class="card-body">
@@ -114,7 +121,7 @@
     </div>
 
     <!-- 圖表區域 -->
-    <div class="row mb-4">
+    <div class="row mb-4" v-if="!isLoading">
       <!-- 收支趨勢圖 -->
       <div class="col-md-8">
         <div class="card">
@@ -158,7 +165,7 @@
     </div>
 
     <!-- 分類統計 -->
-    <div class="row">
+    <div class="row" v-if="!isLoading">
       <!-- 收入分類排行 -->
       <div class="col-md-6">
         <div class="card">
@@ -282,6 +289,8 @@ const summary = ref({
 
 const incomeRanking = ref([])
 const expenseRanking = ref([])
+const categories = ref([])
+const isLoading = ref(false)
 
 // 計算屬性
 const dateRangeText = computed(() => {
@@ -308,80 +317,225 @@ const expensePercentage = computed(() => {
   return Math.round((summary.value.totalExpense / total) * 100)
 })
 
-// 🆕 與 OrderList.vue 相同的日期處理方式
+// 🆕 與 Show.vue 相同的日期處理方式
 const formatDate = (date) => {
   return date.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
 }
 
-const getDateRangeParams = () => {
-  if (dateRange.value === 'custom') {
-    if (!customDateRange.value.start || !customDateRange.value.end) {
-      throw new Error('請選擇完整的自訂日期範圍')
-    }
-    return {
-      startDate: customDateRange.value.start,
-      endDate: customDateRange.value.end,
-    }
-  }
-
-  const today = new Date()
-  let startDate, endDate
-
-  switch (dateRange.value) {
-    case 'today':
-      startDate = formatDate(today)
-      endDate = formatDate(today)
-      break
-    case 'week':
-      // 本週從週日開始 (與 OrderList.vue 一致)
-      const weekStart = new Date()
-      weekStart.setDate(today.getDate() - today.getDay())
-      startDate = formatDate(weekStart)
-      endDate = formatDate(today)
-      break
-    case 'month':
-      // 本月從1號開始
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-      startDate = formatDate(monthStart)
-      endDate = formatDate(today)
-      break
-    case 'quarter':
-      // 本季從第一天開始
-      const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
-      startDate = formatDate(quarterStart)
-      endDate = formatDate(today)
-      break
-    case 'year':
-      // 本年從1月1日開始
-      const yearStart = new Date(today.getFullYear(), 0, 1)
-      startDate = formatDate(yearStart)
-      endDate = formatDate(today)
-      break
-    default:
-      startDate = undefined
-      endDate = undefined
-  }
-
-  return { startDate, endDate }
+// 獲取台北時區的今日日期 (與 Show.vue 相同)
+const getTaipeiToday = () => {
+  // 更簡單直接的方法：手動調整UTC+8
+  const now = new Date()
+  const taipeiOffset = 8 * 60 * 60 * 1000 // UTC+8 in milliseconds
+  const taipeiTime = new Date(now.getTime() + taipeiOffset)
+  
+  // 取得台北時間的年月日
+  const year = taipeiTime.getUTCFullYear()
+  const month = taipeiTime.getUTCMonth()  
+  const date = taipeiTime.getUTCDate()
+  
+  // 建立今日日期（UTC 0點）
+  const today = new Date(Date.UTC(year, month, date))
+  
+  console.log('🕒 日期轉換除錯:', {
+    原始時間: now.toISOString(),
+    台北時間: taipeiTime.toISOString(),
+    年月日: { year, month, date },
+    今日日期: today.toISOString(),
+    今日日期字串: today.toISOString().split('T')[0]
+  })
+  
+  return today
 }
 
-// TODO: 改用 getCashFlowsByStore 來獲取現金流資料，並在前端進行統計處理
+// 獲取日期範圍開始時間 (與 Show.vue 相同)
+const getDateRangeStart = () => {
+  if (dateRange.value === 'custom') {
+    if (!customDateRange.value.start) {
+      return undefined
+    }
+    return customDateRange.value.start
+  }
+
+  const today = getTaipeiToday()
+
+  if (dateRange.value === 'today') {
+    return today.toISOString().split('T')[0]
+  } else if (dateRange.value === 'week') {
+    // 本週從週日開始
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - today.getDay())
+    return weekStart.toISOString().split('T')[0]
+  } else if (dateRange.value === 'month') {
+    // 本月從1號開始
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+    return monthStart.toISOString().split('T')[0]
+  } else if (dateRange.value === 'quarter') {
+    // 本季從第一天開始
+    const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
+    return quarterStart.toISOString().split('T')[0]
+  } else if (dateRange.value === 'year') {
+    // 本年從1月1日開始
+    const yearStart = new Date(today.getFullYear(), 0, 1)
+    return yearStart.toISOString().split('T')[0]
+  }
+
+  return undefined
+}
+
+// 獲取日期範圍結束時間 (與 Show.vue 相同)
+const getDateRangeEnd = () => {
+  if (dateRange.value === 'custom') {
+    if (!customDateRange.value.end) {
+      return undefined
+    }
+    return customDateRange.value.end
+  }
+
+  if (dateRange.value !== 'all') {
+    return getTaipeiToday().toISOString().split('T')[0]
+  }
+
+  return undefined
+}
+
+// 使用 getCashFlowsByStore 來獲取現金流資料，並在前端進行統計處理
 const fetchStatistics = async () => {
+  isLoading.value = true
   try {
-    console.log('TODO: 需要實現使用 getCashFlowsByStore 的統計邏輯')
-    // 暫時重置統計資料
-    resetStatisticsData()
+    const startDate = getDateRangeStart()
+    const endDate = getDateRangeEnd()
+    
+    console.log('📅 統計查詢參數:', {
+      dateRange: dateRange.value,
+      startDate,
+      endDate,
+      台北時間現在: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}),
+      UTC時間現在: new Date().toISOString()
+    })
+
+    // 同時獲取現金流記錄和分類資料
+    const [recordsResponse, categoriesResponse] = await Promise.all([
+      api.cashFlow.getCashFlowsByStore(
+        brandId.value,
+        storeId.value,
+        {
+          startDate,
+          endDate,
+          // 不設置 page 和 limit，獲取所有資料用於統計
+        }
+      ),
+      api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value)
+    ])
+
+    console.log('📊 統計資料響應:', { recordsResponse, categoriesResponse })
+
+    // 處理分類資料
+    if (categoriesResponse && categoriesResponse.success && categoriesResponse.data) {
+      categories.value = categoriesResponse.data.map((category) => ({
+        id: category._id,
+        name: category.name,
+        type: category.type,
+      }))
+    }
+
+    // 處理現金流記錄資料
+    if (recordsResponse && recordsResponse.success && recordsResponse.data) {
+      const allRecords = recordsResponse.data.map((record) => ({
+        id: record._id,
+        date: record.time,
+        type: record.type,
+        categoryId: record.category?._id,
+        categoryName: record.category?.name || '未知分類',
+        description: record.name + (record.description ? ' - ' + record.description : ''),
+        amount: record.amount,
+      }))
+
+      // 計算基本統計
+      const incomeRecords = allRecords.filter((record) => record.type === 'income')
+      const expenseRecords = allRecords.filter((record) => record.type === 'expense')
+      
+      const totalIncome = incomeRecords.reduce((sum, record) => sum + record.amount, 0)
+      const totalExpense = expenseRecords.reduce((sum, record) => sum + record.amount, 0)
+
+      summary.value = {
+        totalIncome,
+        totalExpense,
+        netAmount: totalIncome - totalExpense,
+        totalRecords: allRecords.length,
+        incomeRecords: incomeRecords.length,
+        expenseRecords: expenseRecords.length,
+      }
+
+      // 計算收入分類排行
+      const incomeByCategory = {}
+      incomeRecords.forEach((record) => {
+        const categoryId = record.categoryId || 'unknown'
+        const categoryName = record.categoryName || '未知分類'
+        if (!incomeByCategory[categoryId]) {
+          incomeByCategory[categoryId] = {
+            categoryId,
+            categoryName,
+            amount: 0,
+            count: 0
+          }
+        }
+        incomeByCategory[categoryId].amount += record.amount
+        incomeByCategory[categoryId].count += 1
+      })
+
+      incomeRanking.value = Object.values(incomeByCategory)
+        .sort((a, b) => b.amount - a.amount)
+        .map((item) => ({
+          ...item,
+          percentage: totalIncome > 0 ? Math.round((item.amount / totalIncome) * 100) : 0
+        }))
+
+      // 計算支出分類排行
+      const expenseByCategory = {}
+      expenseRecords.forEach((record) => {
+        const categoryId = record.categoryId || 'unknown'
+        const categoryName = record.categoryName || '未知分類'
+        if (!expenseByCategory[categoryId]) {
+          expenseByCategory[categoryId] = {
+            categoryId,
+            categoryName,
+            amount: 0,
+            count: 0
+          }
+        }
+        expenseByCategory[categoryId].amount += record.amount
+        expenseByCategory[categoryId].count += 1
+      })
+
+      expenseRanking.value = Object.values(expenseByCategory)
+        .sort((a, b) => b.amount - a.amount)
+        .map((item) => ({
+          ...item,
+          percentage: totalExpense > 0 ? Math.round((item.amount / totalExpense) * 100) : 0
+        }))
+
+      console.log('✅ 統計計算完成:', {
+        總記錄數: allRecords.length,
+        收入記錄: incomeRecords.length,
+        支出記錄: expenseRecords.length,
+        總收入: totalIncome,
+        總支出: totalExpense,
+        淨收益: totalIncome - totalExpense,
+        收入排行: incomeRanking.value,
+        支出排行: expenseRanking.value
+      })
+    } else {
+      resetStatisticsData()
+    }
   } catch (err) {
     console.error('獲取統計資料失敗:', err)
     resetStatisticsData()
+  } finally {
+    isLoading.value = false
   }
 }
 
-// TODO: 重新實現資料處理邏輯，用於處理 getCashFlowsByStore 回傳的資料
-// const processStatisticsData = (statisticsData) => {
-//   // 這個函數原本處理 getCashFlowStatistics API 的回應格式
-//   // 需要重寫以處理 getCashFlowsByStore 回傳的現金流記錄陣列
-// }
 
 // 🆕 重置統計資料
 const resetStatisticsData = () => {
@@ -397,7 +551,7 @@ const resetStatisticsData = () => {
   expenseRanking.value = []
 }
 
-// 🆕 更新統計資料 (與 OrderList.vue 風格一致)
+// 🆕 更新統計資料 (與 Show.vue 風格一致)
 const updateStatistics = () => {
   console.log('更新統計範圍:', dateRange.value)
 
@@ -414,6 +568,55 @@ const updateStatistics = () => {
 
 const refreshData = () => {
   fetchStatistics()
+}
+
+// 匯出報表功能
+const exportReport = () => {
+  if (isLoading.value) {
+    alert('資料載入中，請稍後再試')
+    return
+  }
+
+  const data = {
+    統計期間: dateRangeText.value,
+    統計範圍: {
+      開始日期: getDateRangeStart() || '無限制',
+      結束日期: getDateRangeEnd() || '無限制'
+    },
+    財務概覽: {
+      總收入: `$${summary.value.totalIncome.toLocaleString()}`,
+      總支出: `$${summary.value.totalExpense.toLocaleString()}`,
+      淨收益: `$${summary.value.netAmount.toLocaleString()}`,
+      記錄總數: summary.value.totalRecords,
+      收入記錄數: summary.value.incomeRecords,
+      支出記錄數: summary.value.expenseRecords
+    },
+    收入分類排行: incomeRanking.value.map((item, index) => ({
+      排名: index + 1,
+      分類: item.categoryName,
+      金額: `$${item.amount.toLocaleString()}`,
+      比例: `${item.percentage}%`
+    })),
+    支出分類排行: expenseRanking.value.map((item, index) => ({
+      排名: index + 1,
+      分類: item.categoryName,
+      金額: `$${item.amount.toLocaleString()}`,
+      比例: `${item.percentage}%`
+    }))
+  }
+
+  const jsonData = JSON.stringify(data, null, 2)
+  const blob = new Blob([jsonData], { type: 'application/json;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `現金流統計報表_${dateRangeText.value}_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+
+  console.log('📊 匯出統計報表:', data)
 }
 
 // 生命週期
