@@ -283,7 +283,6 @@ const summary = ref({
 const incomeRanking = ref([])
 const expenseRanking = ref([])
 
-
 // 計算屬性
 const dateRangeText = computed(() => {
   const texts = {
@@ -309,130 +308,170 @@ const expensePercentage = computed(() => {
   return Math.round((summary.value.totalExpense / total) * 100)
 })
 
-// 方法
-const fetchStatistics = async () => {
-  try {
-    const params = {
-      startDate: getDateRangeStart(),
-      endDate: getDateRangeEnd(),
-      groupBy: 'category'
-    }
-    
-    const response = await api.cashFlow.getCashFlowStatistics(brandId.value, storeId.value, params)
-    const statisticsData = response.data
-    
-    // 設置總結資料
-    summary.value = {
-      totalIncome: statisticsData.summary?.totalIncome || 0,
-      totalExpense: statisticsData.summary?.totalExpense || 0,
-      netAmount: statisticsData.summary?.netIncome || 0,
-      totalRecords: statisticsData.summary?.totalTransactions || 0,
-      incomeRecords: 0,
-      expenseRecords: 0
-    }
-    
-    // 處理分類統計資料
-    const categoryStats = statisticsData.categoryStats || []
-    
-    // 分離收入和支出分類
-    const incomeCategories = categoryStats.filter(cat => cat._id.categoryType === 'income')
-    const expenseCategories = categoryStats.filter(cat => cat._id.categoryType === 'expense')
-    
-    // 計算收入分類排行和比例
-    const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
-    incomeRanking.value = incomeCategories
-      .map(cat => ({
-        categoryId: cat._id.categoryId,
-        categoryName: cat._id.categoryName,
-        amount: cat.totalAmount,
-        percentage: totalIncome > 0 ? Math.round((cat.totalAmount / totalIncome) * 100) : 0
-      }))
-      .sort((a, b) => b.amount - a.amount)
-    
-    // 計算支出分類排行和比例
-    const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
-    expenseRanking.value = expenseCategories
-      .map(cat => ({
-        categoryId: cat._id.categoryId,
-        categoryName: cat._id.categoryName,
-        amount: cat.totalAmount,
-        percentage: totalExpense > 0 ? Math.round((cat.totalAmount / totalExpense) * 100) : 0
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      
-    // 更新記錄數量
-    summary.value.incomeRecords = incomeCategories.reduce((sum, cat) => sum + cat.transactionCount, 0)
-    summary.value.expenseRecords = expenseCategories.reduce((sum, cat) => sum + cat.transactionCount, 0)
-    
-  } catch (err) {
-    console.error('獲取統計資料失敗:', err)
-    // 設置空資料
-    summary.value = {
-      totalIncome: 0,
-      totalExpense: 0,
-      netAmount: 0,
-      totalRecords: 0,
-      incomeRecords: 0,
-      expenseRecords: 0
-    }
-    incomeRanking.value = []
-    expenseRanking.value = []
-  }
+// 🆕 與 OrderList.vue 相同的日期處理方式
+const formatDate = (date) => {
+  return date.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
 }
 
-// 獲取台北時區的今日日期
-const getTaipeiToday = () => {
-  const now = new Date()
-  const taipeiOffset = 8 * 60 // 台北時區 UTC+8
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
-  const taipeiTime = new Date(utc + (taipeiOffset * 60000))
-  return new Date(taipeiTime.getFullYear(), taipeiTime.getMonth(), taipeiTime.getDate())
-}
-
-// 獲取日期範圍開始時間
-const getDateRangeStart = () => {
-  if (dateRange.value === 'custom' && customDateRange.value.start) {
-    return customDateRange.value.start
+const getDateRangeParams = () => {
+  if (dateRange.value === 'custom') {
+    if (!customDateRange.value.start || !customDateRange.value.end) {
+      throw new Error('請選擇完整的自訂日期範圍')
+    }
+    return {
+      startDate: customDateRange.value.start,
+      endDate: customDateRange.value.end,
+    }
   }
-  
-  const today = getTaipeiToday()
-  
+
+  const today = new Date()
+  let startDate, endDate
+
   switch (dateRange.value) {
     case 'today':
-      return today.toISOString().split('T')[0]
+      startDate = formatDate(today)
+      endDate = formatDate(today)
+      break
     case 'week':
-      // 本週從週日開始
-      const weekStart = new Date(today)
+      // 本週從週日開始 (與 OrderList.vue 一致)
+      const weekStart = new Date()
       weekStart.setDate(today.getDate() - today.getDay())
-      return weekStart.toISOString().split('T')[0]
+      startDate = formatDate(weekStart)
+      endDate = formatDate(today)
+      break
     case 'month':
       // 本月從1號開始
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-      return monthStart.toISOString().split('T')[0]
+      startDate = formatDate(monthStart)
+      endDate = formatDate(today)
+      break
     case 'quarter':
       // 本季從第一天開始
       const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
-      return quarterStart.toISOString().split('T')[0]
+      startDate = formatDate(quarterStart)
+      endDate = formatDate(today)
+      break
     case 'year':
       // 本年從1月1日開始
       const yearStart = new Date(today.getFullYear(), 0, 1)
-      return yearStart.toISOString().split('T')[0]
+      startDate = formatDate(yearStart)
+      endDate = formatDate(today)
+      break
     default:
-      return undefined
+      startDate = undefined
+      endDate = undefined
+  }
+
+  return { startDate, endDate }
+}
+
+// 🆕 簡化的統計資料獲取
+const fetchStatistics = async () => {
+  try {
+    const { startDate, endDate } = getDateRangeParams()
+
+    const params = {
+      startDate,
+      endDate,
+      groupBy: 'category',
+    }
+
+    console.log('📅 Statistics 查詢參數:', {
+      dateRange: dateRange.value,
+      params,
+      當前時間: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+    })
+
+    const response = await api.cashFlow.getCashFlowStatistics(brandId.value, storeId.value, params)
+    console.log('📊 Statistics API 回應:', response)
+
+    if (!response || !response.success) {
+      throw new Error('API 回應格式錯誤')
+    }
+
+    const statisticsData = response.data
+    if (!statisticsData) {
+      throw new Error('統計資料為空')
+    }
+
+    // 處理統計資料
+    processStatisticsData(statisticsData)
+  } catch (err) {
+    console.error('獲取統計資料失敗:', err)
+    resetStatisticsData()
   }
 }
 
-// 獲取日期範圍結束時間
-const getDateRangeEnd = () => {
-  if (dateRange.value === 'custom' && customDateRange.value.end) {
-    return customDateRange.value.end
+// 🆕 分離資料處理邏輯
+const processStatisticsData = (statisticsData) => {
+  // 設置總結資料
+  summary.value = {
+    totalIncome: statisticsData.summary?.totalIncome || 0,
+    totalExpense: statisticsData.summary?.totalExpense || 0,
+    netAmount: statisticsData.summary?.netIncome || 0,
+    totalRecords: statisticsData.summary?.totalTransactions || 0,
+    incomeRecords: 0,
+    expenseRecords: 0,
   }
-  
-  return getTaipeiToday().toISOString().split('T')[0]
+
+  console.log('📊 統計摘要:', summary.value)
+
+  // 處理分類統計資料
+  const categoryStats = statisticsData.categoryStats || []
+  console.log('📊 分類統計資料:', categoryStats)
+
+  // 分離收入和支出分類
+  const incomeCategories = categoryStats.filter((cat) => cat._id.categoryType === 'income')
+  const expenseCategories = categoryStats.filter((cat) => cat._id.categoryType === 'expense')
+
+  // 計算收入分類排行和比例
+  const totalIncome = incomeCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
+  incomeRanking.value = incomeCategories
+    .map((cat) => ({
+      categoryId: cat._id.categoryId,
+      categoryName: cat._id.categoryName,
+      amount: cat.totalAmount,
+      percentage: totalIncome > 0 ? Math.round((cat.totalAmount / totalIncome) * 100) : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount)
+
+  // 計算支出分類排行和比例
+  const totalExpense = expenseCategories.reduce((sum, cat) => sum + cat.totalAmount, 0)
+  expenseRanking.value = expenseCategories
+    .map((cat) => ({
+      categoryId: cat._id.categoryId,
+      categoryName: cat._id.categoryName,
+      amount: cat.totalAmount,
+      percentage: totalExpense > 0 ? Math.round((cat.totalAmount / totalExpense) * 100) : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount)
+
+  // 更新記錄數量
+  summary.value.incomeRecords = incomeCategories.reduce((sum, cat) => sum + cat.transactionCount, 0)
+  summary.value.expenseRecords = expenseCategories.reduce(
+    (sum, cat) => sum + cat.transactionCount,
+    0,
+  )
 }
 
+// 🆕 重置統計資料
+const resetStatisticsData = () => {
+  summary.value = {
+    totalIncome: 0,
+    totalExpense: 0,
+    netAmount: 0,
+    totalRecords: 0,
+    incomeRecords: 0,
+    expenseRecords: 0,
+  }
+  incomeRanking.value = []
+  expenseRanking.value = []
+}
+
+// 🆕 更新統計資料 (與 OrderList.vue 風格一致)
 const updateStatistics = () => {
   console.log('更新統計範圍:', dateRange.value)
+
   if (dateRange.value === 'custom') {
     console.log('自訂範圍:', customDateRange.value)
     if (!customDateRange.value.start || !customDateRange.value.end) {
@@ -440,6 +479,7 @@ const updateStatistics = () => {
       return
     }
   }
+
   fetchStatistics()
 }
 
