@@ -12,7 +12,7 @@ class SMSService {
   constructor() {
     this.username = process.env.KOTSMS_USERNAME
     this.password = process.env.KOTSMS_PASSWORD
-    this.baseURL = 'https://api.kotsms.com.tw'
+    this.baseURL = 'https://www.kotsms.com.tw'
 
     if (!this.username || !this.password) {
       console.warn('簡訊王帳號或密碼未設定，簡訊功能將被禁用')
