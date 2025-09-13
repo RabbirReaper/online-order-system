@@ -2,7 +2,7 @@
   <div>
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h5 class="mb-0">記帳統計報表</h5>
+      <h5 class="mb-0"></h5>
       <div class="d-flex gap-2">
         <button class="btn btn-outline-primary" @click="refreshData">
           <i class="bi bi-arrow-clockwise me-1"></i>重新整理
@@ -16,29 +16,109 @@
     <!-- 時間範圍選擇 -->
     <div class="card mb-4">
       <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-3">
-            <label class="form-label">統計範圍</label>
-            <select class="form-select" v-model="dateRange" @change="updateStatistics">
-              <option value="today">今天</option>
-              <option value="week">本週</option>
-              <option value="month">本月</option>
-              <option value="quarter">本季</option>
-              <option value="year">本年</option>
-              <option value="custom">自訂範圍</option>
-            </select>
+        <!-- 快速日期選擇器 -->
+        <div class="row align-items-center mb-3">
+          <div class="col-md-6">
+            <label class="form-label">快速選擇日期</label>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-outline-primary" @click="adjustDate(-1)" :disabled="isLoading">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+
+              <div class="quick-date-selector">
+                <div class="current-date-display">
+                  {{ formatSelectedDateRange() }}
+                </div>
+              </div>
+
+              <button
+                class="btn btn-outline-primary"
+                @click="adjustDate(1)"
+                :disabled="isLoading || isToday()"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
           </div>
-          <div class="col-md-3" v-if="dateRange === 'custom'">
+
+          <div class="col-md-6">
+            <label class="form-label">快速期間選擇</label>
+            <div class="d-flex gap-2 flex-wrap">
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="setDateRange('lastWeek')"
+                :class="{ active: isCurrentRange('lastWeek') }"
+              >
+                上週
+              </button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="setDateRange('thisWeek')"
+                :class="{ active: isCurrentRange('thisWeek') }"
+              >
+                本週
+              </button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="setDateRange('lastMonth')"
+                :class="{ active: isCurrentRange('lastMonth') }"
+              >
+                上月
+              </button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="setDateRange('thisMonth')"
+                :class="{ active: isCurrentRange('thisMonth') }"
+              >
+                本月
+              </button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="setDateRange('thisQuarter')"
+                :class="{ active: isCurrentRange('thisQuarter') }"
+              >
+                本季
+              </button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="setDateRange('thisYear')"
+                :class="{ active: isCurrentRange('thisYear') }"
+              >
+                本年
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 詳細日期選擇 -->
+        <div class="row align-items-center">
+          <div class="col-md-3">
             <label class="form-label">開始日期</label>
-            <input type="date" class="form-control" v-model="customDateRange.start" />
-          </div>
-          <div class="col-md-3" v-if="dateRange === 'custom'">
-            <label class="form-label">結束日期</label>
-            <input type="date" class="form-control" v-model="customDateRange.end" />
+            <input
+              type="date"
+              class="form-control"
+              v-model="startDate"
+              @change="handleDateChange"
+            />
           </div>
           <div class="col-md-3">
-            <button class="btn btn-primary w-100" @click="updateStatistics">
-              <i class="bi bi-bar-chart me-1"></i>更新統計
+            <label class="form-label">結束日期</label>
+            <input type="date" class="form-control" v-model="endDate" @change="handleDateChange" />
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-primary w-100" @click="updateStatistics" :disabled="isLoading">
+              <span
+                v-if="isLoading"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              {{ isLoading ? '載入中...' : '更新統計' }}
+            </button>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-secondary w-100" @click="resetDateRange">
+              <i class="bi bi-arrow-clockwise me-1"></i>重置
             </button>
           </div>
         </div>
@@ -259,11 +339,9 @@ const brandId = computed(() => route.params.brandId)
 const storeId = computed(() => route.params.storeId)
 
 // 狀態
-const dateRange = ref('month')
-const customDateRange = ref({
-  start: '',
-  end: '',
-})
+const startDate = ref('')
+const endDate = ref('')
+const currentDateRange = ref('') // 記錄當前選擇的日期範圍類型
 
 const summary = ref({
   totalIncome: 0,
@@ -287,14 +365,14 @@ const trendChartData = ref({
 // 計算屬性
 const dateRangeText = computed(() => {
   const texts = {
-    today: '今天',
-    week: '本週',
-    month: '本月',
-    quarter: '本季',
-    year: '本年',
-    custom: '自訂範圍',
+    lastWeek: '上週',
+    thisWeek: '本週',
+    lastMonth: '上月',
+    thisMonth: '本月',
+    thisQuarter: '本季',
+    thisYear: '本年',
   }
-  return texts[dateRange.value] || '未知'
+  return texts[currentDateRange.value] || '自訂範圍'
 })
 
 const incomePercentage = computed(() => {
@@ -309,86 +387,133 @@ const expensePercentage = computed(() => {
   return Math.round((summary.value.totalExpense / total) * 100)
 })
 
-// 🆕 與 Show.vue 相同的日期處理方式
+// 🆕 與 OrderList.vue 相同的日期處理方式
 const formatDate = (date) => {
   return date.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
 }
 
-// 獲取台北時區的今日日期 (與 Show.vue 相同)
-const getTaipeiToday = () => {
-  // 更簡單直接的方法：手動調整UTC+8
-  const now = new Date()
-  const taipeiOffset = 8 * 60 * 60 * 1000 // UTC+8 in milliseconds
-  const taipeiTime = new Date(now.getTime() + taipeiOffset)
-
-  // 取得台北時間的年月日
-  const year = taipeiTime.getUTCFullYear()
-  const month = taipeiTime.getUTCMonth()
-  const date = taipeiTime.getUTCDate()
-
-  // 建立今日日期（UTC 0點）
-  const today = new Date(Date.UTC(year, month, date))
-
-  console.log('🕒 日期轉換除錯:', {
-    原始時間: now.toISOString(),
-    台北時間: taipeiTime.toISOString(),
-    年月日: { year, month, date },
-    今日日期: today.toISOString(),
-    今日日期字串: today.toISOString().split('T')[0],
-  })
-
-  return today
+const isToday = () => {
+  const today = formatDate(new Date())
+  return startDate.value === today && endDate.value === today
 }
 
-// 獲取日期範圍開始時間 (與 Show.vue 相同)
+const formatSelectedDateRange = () => {
+  if (!startDate.value || !endDate.value) return '請選擇日期'
+
+  if (startDate.value === endDate.value) {
+    return new Date(startDate.value + 'T00:00:00').toLocaleDateString('zh-TW')
+  }
+
+  return `${new Date(startDate.value + 'T00:00:00').toLocaleDateString('zh-TW')} - ${new Date(endDate.value + 'T00:00:00').toLocaleDateString('zh-TW')}`
+}
+
+const setToday = () => {
+  const today = new Date()
+  startDate.value = formatDate(today)
+  endDate.value = formatDate(today)
+  currentDateRange.value = ''
+  fetchStatistics()
+}
+
+const adjustDate = (days) => {
+  const fromDate = new Date(startDate.value + 'T00:00:00')
+  const toDate = new Date(endDate.value + 'T00:00:00')
+
+  fromDate.setDate(fromDate.getDate() + days)
+  toDate.setDate(toDate.getDate() + days)
+
+  // 不能選擇未來的日期
+  const today = new Date()
+  if (toDate > today) return
+
+  startDate.value = formatDate(fromDate)
+  endDate.value = formatDate(toDate)
+  currentDateRange.value = ''
+  fetchStatistics()
+}
+
+const setDateRange = (range) => {
+  const today = new Date()
+
+  switch (range) {
+    case 'lastWeek':
+      // 上週（週日到週六）
+      const lastWeekEnd = new Date()
+      lastWeekEnd.setDate(today.getDate() - today.getDay() - 1) // 上週六
+      const lastWeekStart = new Date(lastWeekEnd)
+      lastWeekStart.setDate(lastWeekEnd.getDate() - 6) // 上週日
+      startDate.value = formatDate(lastWeekStart)
+      endDate.value = formatDate(lastWeekEnd)
+      break
+    case 'thisWeek':
+      // 本週（週日開始到今天）
+      const thisWeekStart = new Date()
+      thisWeekStart.setDate(today.getDate() - today.getDay()) // 週日開始
+      startDate.value = formatDate(thisWeekStart)
+      endDate.value = formatDate(today)
+      break
+    case 'lastMonth':
+      // 上月（完整月份）
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0) // 上月最後一天
+      startDate.value = formatDate(lastMonth)
+      endDate.value = formatDate(lastMonthEnd)
+      break
+    case 'thisMonth':
+      // 本月（從1號到今天）
+      const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      startDate.value = formatDate(thisMonthStart)
+      endDate.value = formatDate(today)
+      break
+    case 'thisQuarter':
+      // 本季（從第一天到今天）
+      const thisQuarterStart = new Date(
+        today.getFullYear(),
+        Math.floor(today.getMonth() / 3) * 3,
+        1,
+      )
+      startDate.value = formatDate(thisQuarterStart)
+      endDate.value = formatDate(today)
+      break
+    case 'thisYear':
+      // 本年（從1月1日到今天）
+      const thisYearStart = new Date(today.getFullYear(), 0, 1)
+      startDate.value = formatDate(thisYearStart)
+      endDate.value = formatDate(today)
+      break
+  }
+
+  currentDateRange.value = range
+  fetchStatistics()
+}
+
+const isCurrentRange = (range) => {
+  return currentDateRange.value === range
+}
+
+const handleDateChange = () => {
+  if (startDate.value && endDate.value) {
+    if (new Date(startDate.value) > new Date(endDate.value)) {
+      alert('開始日期不能晚於結束日期')
+      return
+    }
+    currentDateRange.value = '' // 清除快速選擇狀態
+    fetchStatistics()
+  }
+}
+
+const resetDateRange = () => {
+  setDateRange('thisMonth')
+}
+
+// 獲取日期範圍開始時間
 const getDateRangeStart = () => {
-  if (dateRange.value === 'custom') {
-    if (!customDateRange.value.start) {
-      return undefined
-    }
-    return customDateRange.value.start
-  }
-
-  const today = getTaipeiToday()
-
-  if (dateRange.value === 'today') {
-    return today.toISOString().split('T')[0]
-  } else if (dateRange.value === 'week') {
-    // 本週從週日開始
-    const weekStart = new Date(today)
-    weekStart.setDate(today.getDate() - today.getDay())
-    return weekStart.toISOString().split('T')[0]
-  } else if (dateRange.value === 'month') {
-    // 本月從1號開始
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
-    return monthStart.toISOString().split('T')[0]
-  } else if (dateRange.value === 'quarter') {
-    // 本季從第一天開始
-    const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1)
-    return quarterStart.toISOString().split('T')[0]
-  } else if (dateRange.value === 'year') {
-    // 本年從1月1日開始
-    const yearStart = new Date(today.getFullYear(), 0, 1)
-    return yearStart.toISOString().split('T')[0]
-  }
-
-  return undefined
+  return startDate.value || undefined
 }
 
-// 獲取日期範圍結束時間 (與 Show.vue 相同)
+// 獲取日期範圍結束時間
 const getDateRangeEnd = () => {
-  if (dateRange.value === 'custom') {
-    if (!customDateRange.value.end) {
-      return undefined
-    }
-    return customDateRange.value.end
-  }
-
-  if (dateRange.value !== 'all') {
-    return getTaipeiToday().toISOString().split('T')[0]
-  }
-
-  return undefined
+  return endDate.value || undefined
 }
 
 // 使用 getCashFlowsByStore 來獲取現金流資料，並在前端進行統計處理
@@ -399,11 +524,10 @@ const fetchStatistics = async () => {
     const endDate = getDateRangeEnd()
 
     console.log('📅 統計查詢參數:', {
-      dateRange: dateRange.value,
+      currentDateRange: currentDateRange.value,
       startDate,
       endDate,
-      台北時間現在: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
-      UTC時間現在: new Date().toISOString(),
+      本地時間現在: new Date().toLocaleString('zh-TW'),
     })
 
     // 同時獲取現金流記錄和分類資料
@@ -594,16 +718,18 @@ const resetStatisticsData = () => {
   }
 }
 
-// 🆕 更新統計資料 (與 Show.vue 風格一致)
+// 🆕 更新統計資料
 const updateStatistics = () => {
-  console.log('更新統計範圍:', dateRange.value)
+  console.log('更新統計範圍:', { startDate: startDate.value, endDate: endDate.value })
 
-  if (dateRange.value === 'custom') {
-    console.log('自訂範圍:', customDateRange.value)
-    if (!customDateRange.value.start || !customDateRange.value.end) {
-      alert('請選擇完整的自訂日期範圍')
-      return
-    }
+  if (!startDate.value || !endDate.value) {
+    alert('請選擇完整的日期範圍')
+    return
+  }
+
+  if (new Date(startDate.value) > new Date(endDate.value)) {
+    alert('開始日期不能晚於結束日期')
+    return
   }
 
   fetchStatistics()
@@ -662,9 +788,14 @@ const exportReport = () => {
   console.log('📊 匯出統計報表:', data)
 }
 
+// 初始化日期範圍（預設為本月）
+const initializeDateRange = () => {
+  setDateRange('thisMonth')
+}
+
 // 生命週期
 onMounted(() => {
-  fetchStatistics()
+  initializeDateRange()
 })
 </script>
 
@@ -706,5 +837,51 @@ onMounted(() => {
 
 .fs-2 {
   font-size: 2rem;
+}
+
+/* 快速日期選擇器樣式 */
+.quick-date-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 200px;
+}
+
+.current-date-display {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-align: center;
+}
+
+/* 快速期間選擇按鈕 */
+.btn-sm.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+/* 按鈕hover效果 */
+.btn-outline-primary:hover {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .quick-date-selector {
+    min-width: 150px;
+  }
+
+  .current-date-display {
+    font-size: 0.75rem;
+  }
 }
 </style>
