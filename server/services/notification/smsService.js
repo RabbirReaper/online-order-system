@@ -1,5 +1,8 @@
 import axios from 'axios'
+import dotenv from 'dotenv'
 import { AppError } from '../../middlewares/error.js'
+
+dotenv.config()
 
 /**
  * 簡訊王 (KotSMS) 服務
