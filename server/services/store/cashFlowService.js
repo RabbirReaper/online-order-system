@@ -16,15 +16,7 @@ import { AppError } from '../../middlewares/error.js'
  * @returns {Promise<Object>} 記帳記錄和分頁資訊
  */
 export const getCashFlowsByStore = async (storeId, options = {}) => {
-  const {
-    startDate,
-    endDate,
-    type,
-    categoryId,
-    page = 1,
-    limit = 20,
-    search
-  } = options
+  const { startDate, endDate, type, categoryId, page = 1, limit = 20, search } = options
 
   // 驗證店舖是否存在
   const store = await Store.findById(storeId)
@@ -63,7 +55,7 @@ export const getCashFlowsByStore = async (storeId, options = {}) => {
   if (search) {
     queryConditions.$or = [
       { name: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } }
+      { description: { $regex: search, $options: 'i' } },
     ]
   }
 
@@ -87,8 +79,8 @@ export const getCashFlowsByStore = async (storeId, options = {}) => {
       current: page,
       limit,
       total,
-      pages: Math.ceil(total / limit)
-    }
+      pages: Math.ceil(total / limit),
+    },
   }
 }
 
@@ -140,7 +132,7 @@ export const createCashFlow = async (cashFlowData, adminId) => {
   // 驗證分類是否存在且屬於該店舖
   const category = await CashFlowCategory.findOne({
     _id: cashFlowData.category,
-    store: cashFlowData.store
+    store: cashFlowData.store,
   })
   if (!category) {
     throw new AppError('分類不存在或不屬於該店舖', 400)
@@ -207,7 +199,7 @@ export const updateCashFlow = async (cashFlowId, updateData, adminId) => {
   if (updateData.category) {
     const category = await CashFlowCategory.findOne({
       _id: updateData.category,
-      store: cashFlow.store
+      store: cashFlow.store,
     })
     if (!category) {
       throw new AppError('分類不存在或不屬於該店舖', 400)
@@ -223,19 +215,16 @@ export const updateCashFlow = async (cashFlowId, updateData, adminId) => {
   // 不允許修改 brand, store
   delete updateData.brand
   delete updateData.store
-  
+
   // 更新操作者
   updateData.admin = adminId
 
   // 更新記帳記錄
-  const updatedCashFlow = await CashFlow.findByIdAndUpdate(
-    cashFlowId,
-    updateData,
-    { new: true }
-  ).populate('category', 'name type')
-   .populate('admin', 'name email')
-   .populate('brand', 'name')
-   .populate('store', 'name')
+  const updatedCashFlow = await CashFlow.findByIdAndUpdate(cashFlowId, updateData, { new: true })
+    .populate('category', 'name type')
+    .populate('admin', 'name email')
+    .populate('brand', 'name')
+    .populate('store', 'name')
 
   return updatedCashFlow
 }
@@ -254,7 +243,6 @@ export const deleteCashFlow = async (cashFlowId) => {
   await CashFlow.findByIdAndDelete(cashFlowId)
   return true
 }
-
 
 /**
  * 導出現金流流水帳 (CSV格式)
@@ -305,9 +293,9 @@ export const exportCashFlowCSV = async (storeId, options = {}) => {
 
   // 構建CSV內容
   const csvHeaders = ['日期', '類型', '分類', '金額', '名稱', '描述', '操作人員']
-  
+
   // 格式化數據
-  const csvRows = cashFlows.map(flow => {
+  const csvRows = cashFlows.map((flow) => {
     const formatDate = (date) => {
       return new Date(date).toLocaleDateString('zh-TW', {
         year: 'numeric',
@@ -315,7 +303,7 @@ export const exportCashFlowCSV = async (storeId, options = {}) => {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: false,
       })
     }
 
@@ -330,21 +318,27 @@ export const exportCashFlowCSV = async (storeId, options = {}) => {
       flow.amount,
       flow.name,
       flow.description || '',
-      flow.admin?.name || ''
+      flow.admin?.name || '',
     ]
   })
 
   // 組合CSV字符串
   const csvContent = [csvHeaders, ...csvRows]
-    .map(row => 
-      row.map(field => {
-        // 處理包含逗號、引號或換行的字段
-        const stringField = String(field)
-        if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
-          return `"${stringField.replace(/"/g, '""')}"`
-        }
-        return stringField
-      }).join(',')
+    .map((row) =>
+      row
+        .map((field) => {
+          // 處理包含逗號、引號或換行的字段
+          const stringField = String(field)
+          if (
+            stringField.includes(',') ||
+            stringField.includes('"') ||
+            stringField.includes('\n')
+          ) {
+            return `"${stringField.replace(/"/g, '""')}"`
+          }
+          return stringField
+        })
+        .join(','),
     )
     .join('\n')
 

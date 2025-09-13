@@ -55,13 +55,16 @@ export class UberEatsTokenManager {
           grant_type: 'client_credentials',
           client_id: OAUTH_CONFIG.clientId,
           client_secret: OAUTH_CONFIG.clientSecret,
-          scope: 'eats.store eats.order eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
+          scope:
+            'eats.store eats.order eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
         }),
       })
 
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`Client credentials token request failed: ${response.status} - ${errorText}`)
+        throw new Error(
+          `Client credentials token request failed: ${response.status} - ${errorText}`,
+        )
       }
 
       const tokenData = await response.json()
@@ -83,7 +86,9 @@ export class UberEatsTokenManager {
 
     if (!token) {
       console.warn('⚠️  User Access Token not configured for provisioning')
-      console.log('💡 For provisioning operations, you need to obtain a User Access Token through the Authorization Code flow')
+      console.log(
+        '💡 For provisioning operations, you need to obtain a User Access Token through the Authorization Code flow',
+      )
       return null
     }
 
@@ -98,15 +103,16 @@ export class UberEatsTokenManager {
    */
   static async getToken(scopes = ['eats.store', 'eats.order']) {
     const provisioningScopes = ['eats.pos_provisioning']
-    const needsProvisioning = scopes.some(scope => 
-      provisioningScopes.includes(scope)
-    )
+    const needsProvisioning = scopes.some((scope) => provisioningScopes.includes(scope))
 
     if (needsProvisioning) {
       // POS Provisioning 需要 User Access Token (Authorization Code 流程)
       const token = this.getAuthorizationCodeToken()
       if (!token) {
-        throw new AppError('User Access Token required for provisioning operations. Please configure UBEREATS_USER_ACCESS_TOKEN.', 401)
+        throw new AppError(
+          'User Access Token required for provisioning operations. Please configure UBEREATS_USER_ACCESS_TOKEN.',
+          401,
+        )
       }
       return token
     } else {
@@ -321,8 +327,12 @@ export const refreshUserToken = () => UberEatsTokenManager.refreshUserToken()
 // 啟動時記錄 token 狀態
 const tokenStatus = UberEatsTokenManager.getTokenStatus()
 console.log('🔑 Token Manager initialized with OAuth2 flows')
-console.log(`📊 Client Credentials: ${tokenStatus.clientCredentials.canGenerate ? '✅ Ready' : '❌ Missing credentials'}`)
-console.log(`📊 Authorization Code: ${tokenStatus.authorizationCode.configured ? '✅ Configured' : '❌ Missing user token'}`)
+console.log(
+  `📊 Client Credentials: ${tokenStatus.clientCredentials.canGenerate ? '✅ Ready' : '❌ Missing credentials'}`,
+)
+console.log(
+  `📊 Authorization Code: ${tokenStatus.authorizationCode.configured ? '✅ Configured' : '❌ Missing user token'}`,
+)
 console.log(
   `📊 Refresh Token: ${tokenStatus.refreshToken.configured ? '✅ Available' : '❌ Missing'}`,
 )

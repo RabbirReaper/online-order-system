@@ -61,7 +61,6 @@ export default function (apiClient) {
       return apiClient.delete(`/cash-flow/${brandId}/${storeId}/${cashFlowId}`)
     },
 
-
     /**
      * 匯出現金流記錄為CSV
      * @param {string} brandId - 品牌ID
@@ -72,8 +71,8 @@ export default function (apiClient) {
     exportCashFlowCSV(brandId, storeId, params = {}) {
       return apiClient.get(`/cash-flow/${brandId}/${storeId}/export/csv`, {
         params,
-        responseType: 'blob'
+        responseType: 'blob',
       })
-    }
+    },
   }
 }

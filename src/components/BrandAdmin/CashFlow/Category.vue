@@ -295,7 +295,10 @@ const fetchData = async () => {
     storeName.value = storeResponse.data?.name || '未知店鋪'
 
     // 獲取分類資料
-    const categoriesResponse = await api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value)
+    const categoriesResponse = await api.cashFlowCategory.getCategoriesByStore(
+      brandId.value,
+      storeId.value,
+    )
     categories.value = (categoriesResponse.data || []).map((category) => ({
       id: category._id,
       name: category.name,
@@ -322,7 +325,11 @@ const addCategory = async () => {
       store: storeId.value,
     }
 
-    const response = await api.cashFlowCategory.createCategory(brandId.value, storeId.value, categoryData)
+    const response = await api.cashFlowCategory.createCategory(
+      brandId.value,
+      storeId.value,
+      categoryData,
+    )
 
     const category = {
       id: response.data._id,
@@ -400,7 +407,11 @@ const deleteCategory = (category) => {
 const confirmDelete = async () => {
   if (categoryToDelete.value) {
     try {
-      await api.cashFlowCategory.deleteCategory(brandId.value, storeId.value, categoryToDelete.value.id)
+      await api.cashFlowCategory.deleteCategory(
+        brandId.value,
+        storeId.value,
+        categoryToDelete.value.id,
+      )
 
       const index = categories.value.findIndex((c) => c.id === categoryToDelete.value.id)
       if (index > -1) {
@@ -468,7 +479,11 @@ const confirmAddDefault = async () => {
           store: storeId.value,
         }
         console.log('新增預設分類:', categoryData)
-        const response = await api.cashFlowCategory.createCategory(brandId.value, storeId.value, categoryData)
+        const response = await api.cashFlowCategory.createCategory(
+          brandId.value,
+          storeId.value,
+          categoryData,
+        )
 
         const category = {
           id: response.data._id,

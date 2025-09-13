@@ -11,7 +11,7 @@ export const getCashFlowsByStore = asyncHandler(async (req, res) => {
     categoryId: req.query.categoryId,
     page: parseInt(req.query.page) || 1,
     limit: parseInt(req.query.limit) || 20,
-    search: req.query.search
+    search: req.query.search,
   }
 
   const result = await cashFlowService.getCashFlowsByStore(storeId, options)
@@ -19,7 +19,7 @@ export const getCashFlowsByStore = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '獲取現金流記錄成功',
-    ...result
+    ...result,
   })
 })
 
@@ -31,7 +31,7 @@ export const getCashFlowById = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '獲取記帳記錄詳情成功',
-    data: cashFlow
+    data: cashFlow,
   })
 })
 
@@ -39,11 +39,11 @@ export const getCashFlowById = asyncHandler(async (req, res) => {
 export const createCashFlow = asyncHandler(async (req, res) => {
   // 從認證中間件獲取管理員ID
   const adminId = req.auth.id || req.auth.adminId
-  
+
   if (!adminId) {
     return res.status(401).json({
       success: false,
-      message: '無法獲取管理員身份資訊'
+      message: '無法獲取管理員身份資訊',
     })
   }
 
@@ -52,7 +52,7 @@ export const createCashFlow = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: '創建記帳記錄成功',
-    data: cashFlow
+    data: cashFlow,
   })
 })
 
@@ -65,7 +65,7 @@ export const updateCashFlow = asyncHandler(async (req, res) => {
   if (!adminId) {
     return res.status(401).json({
       success: false,
-      message: '無法獲取管理員身份資訊'
+      message: '無法獲取管理員身份資訊',
     })
   }
 
@@ -74,7 +74,7 @@ export const updateCashFlow = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '更新記帳記錄成功',
-    data: updatedCashFlow
+    data: updatedCashFlow,
   })
 })
 
@@ -85,10 +85,9 @@ export const deleteCashFlow = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: '刪除記帳記錄成功'
+    message: '刪除記帳記錄成功',
   })
 })
-
 
 // 導出現金流流水帳 (CSV)
 export const exportCashFlowCSV = asyncHandler(async (req, res) => {
@@ -97,7 +96,7 @@ export const exportCashFlowCSV = asyncHandler(async (req, res) => {
     startDate: req.query.startDate,
     endDate: req.query.endDate,
     type: req.query.type,
-    categoryId: req.query.categoryId
+    categoryId: req.query.categoryId,
   }
 
   const csvContent = await cashFlowService.exportCashFlowCSV(storeId, options)

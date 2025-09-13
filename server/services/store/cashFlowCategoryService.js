@@ -25,7 +25,7 @@ export const getCategoriesByStore = async (storeId, options = {}) => {
 
   // 構建查詢條件
   const queryConditions = { store: storeId }
-  
+
   if (type && ['income', 'expense'].includes(type)) {
     queryConditions.type = type
   }
@@ -82,7 +82,7 @@ export const createCategory = async (categoryData) => {
   // 檢查同一店舖內是否已存在相同名稱的分類
   const existingCategory = await CashFlowCategory.findOne({
     store: categoryData.store,
-    name: categoryData.name
+    name: categoryData.name,
   })
 
   if (existingCategory) {
@@ -119,7 +119,7 @@ export const updateCategory = async (categoryId, updateData) => {
     const existingCategory = await CashFlowCategory.findOne({
       _id: { $ne: categoryId },
       store: category.store,
-      name: updateData.name
+      name: updateData.name,
     })
 
     if (existingCategory) {
@@ -132,11 +132,11 @@ export const updateCategory = async (categoryId, updateData) => {
   delete updateData.store
 
   // 更新分類
-  const updatedCategory = await CashFlowCategory.findByIdAndUpdate(
-    categoryId,
-    updateData,
-    { new: true }
-  ).populate('brand', 'name').populate('store', 'name')
+  const updatedCategory = await CashFlowCategory.findByIdAndUpdate(categoryId, updateData, {
+    new: true,
+  })
+    .populate('brand', 'name')
+    .populate('store', 'name')
 
   return updatedCategory
 }
@@ -154,8 +154,7 @@ export const deleteCategory = async (categoryId) => {
 
   // TODO: 檢查是否有記帳記錄使用此分類
   // 可以選擇：1. 禁止刪除 2. 將關聯記錄移到預設分類 3. 軟刪除
-  
+
   await CashFlowCategory.findByIdAndDelete(categoryId)
   return true
 }
-
