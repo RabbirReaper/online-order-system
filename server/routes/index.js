@@ -54,14 +54,21 @@ apiRouter.get('/health', (req, res) => {
 
 apiRouter.get('/test-outbound-ip', async (req, res) => {
   try {
-    // 這個API會回傳您對外呼叫時使用的IP
-    const response = await fetch('https://api.ipify.org?format=json')
-    const data = await response.json()
+    // 獲取對外 IP 資訊
+    const ipResponse = await fetch('https://api.ipify.org?format=json')
+    const ipData = await ipResponse.json()
+
+    // 拜訪指定的 kotsms 網頁並獲取 HTML
+    const kotResponse = await fetch('https://www.kotsms.com.tw/index.php?selectpage=pagenews&kind=4&viewnum=238')
+    const htmlContent = await kotResponse.text()
 
     res.json({
-      outboundIP: data.ip,
+      outboundIP: ipData.ip,
       expectedFixedIP: '35.201.160.235',
-      isCorrect: data.ip === '35.201.160.235',
+      isCorrect: ipData.ip === '35.201.160.235',
+      kotSmsHtml: htmlContent,
+      kotSmsStatus: kotResponse.status,
+      kotSmsStatusText: kotResponse.statusText
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
