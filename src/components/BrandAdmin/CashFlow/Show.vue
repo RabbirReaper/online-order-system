@@ -81,7 +81,7 @@
               <th>日期</th>
               <th>類型</th>
               <th>分類</th>
-              <th>描述</th>
+              <th>名稱-描述</th>
               <th>金額</th>
               <th>操作</th>
             </tr>
@@ -216,12 +216,13 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { BModal, BButton, BAlert } from 'bootstrap-vue-next'
 import api from '@/api'
 
 // 路由
 const route = useRoute()
+const router = useRouter()
 const brandId = computed(() => route.params.brandId)
 const storeId = computed(() => route.params.storeId)
 
@@ -287,15 +288,15 @@ const fetchStatistics = async () => {
   try {
     const startDate = getDateRangeStart()
     const endDate = getDateRangeEnd()
-    
+
     // 除錯：顯示發送的查詢參數
-    console.log('📅 查詢參數除錯:', {
-      dateFilter: dateFilter.value,
-      startDate,
-      endDate,
-      台北時間現在: new Date().toLocaleString('zh-TW', {timeZone: 'Asia/Taipei'}),
-      UTC時間現在: new Date().toISOString()
-    })
+    // console.log('📅 查詢參數除錯:', {
+    //   dateFilter: dateFilter.value,
+    //   startDate,
+    //   endDate,
+    //   台北時間現在: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+    //   UTC時間現在: new Date().toISOString(),
+    // })
 
     // 獲取所有符合篩選條件的記錄來計算統計（不分頁）
     const statisticsResponse = await api.cashFlow.getCashFlowsByStore(
@@ -310,7 +311,7 @@ const fetchStatistics = async () => {
       },
     )
 
-    console.log('📊 統計資料響應:', statisticsResponse)
+    // console.log('📊 統計資料響應:', statisticsResponse)
 
     if (statisticsResponse && statisticsResponse.success && statisticsResponse.data) {
       const allRecords = statisticsResponse.data
@@ -423,24 +424,24 @@ const getTaipeiToday = () => {
   const now = new Date()
   const taipeiOffset = 8 * 60 * 60 * 1000 // UTC+8 in milliseconds
   const taipeiTime = new Date(now.getTime() + taipeiOffset)
-  
+
   // 取得台北時間的年月日
   const year = taipeiTime.getUTCFullYear()
-  const month = taipeiTime.getUTCMonth()  
+  const month = taipeiTime.getUTCMonth()
   const date = taipeiTime.getUTCDate()
-  
+
   // 建立今日日期（UTC 0點）
   const today = new Date(Date.UTC(year, month, date))
-  
+
   // 除錯：顯示日期轉換過程
-  console.log('🕒 日期轉換除錯:', {
-    原始時間: now.toISOString(),
-    台北時間: taipeiTime.toISOString(),
-    年月日: { year, month, date },
-    今日日期: today.toISOString(),
-    今日日期字串: today.toISOString().split('T')[0]
-  })
-  
+  // console.log('🕒 日期轉換除錯:', {
+  //   原始時間: now.toISOString(),
+  //   台北時間: taipeiTime.toISOString(),
+  //   年月日: { year, month, date },
+  //   今日日期: today.toISOString(),
+  //   今日日期字串: today.toISOString().split('T')[0],
+  // })
+
   return today
 }
 
@@ -482,8 +483,8 @@ const getDateRangeEnd = () => {
 }
 
 const editRecord = (record) => {
-  // TODO: 實作編輯功能
-  console.log('編輯記錄:', record)
+  // 導航到編輯頁面
+  router.push(`/admin/${brandId.value}/cash-flow/${storeId.value}/edit/${record.id}`)
 }
 
 const deleteRecord = (record) => {
@@ -502,7 +503,7 @@ const confirmDelete = async () => {
         records.value.splice(index, 1)
       }
 
-      console.log('刪除記錄成功:', recordToDelete.value)
+      // console.log('刪除記錄成功:', recordToDelete.value)
     } catch (err) {
       console.error('刪除記錄失敗:', err)
       alert('刪除失敗：' + (err.response?.data?.message || '未知錯誤'))
