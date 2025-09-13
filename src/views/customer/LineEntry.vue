@@ -80,7 +80,7 @@ const processLineEntry = async () => {
     try {
       params = getCleanParams()
       console.log('📋 解析到的參數:', params)
-      
+
       // 🔥 預先保存參數到 sessionStorage，避免登錄過程中遺失
       if (params.brandId && params.storeId) {
         sessionStorage.setItem('temp-brandId', params.brandId)
@@ -91,17 +91,17 @@ const processLineEntry = async () => {
       }
     } catch (paramError) {
       console.warn('⚠️ 參數解析失敗，嘗試從 sessionStorage 恢復:', paramError.message)
-      
+
       // 嘗試從 sessionStorage 恢復參數
       const tempBrandId = sessionStorage.getItem('temp-brandId')
       const tempStoreId = sessionStorage.getItem('temp-storeId')
-      
+
       if (tempBrandId && tempStoreId) {
         params = {
           brandId: tempBrandId,
           storeId: tempStoreId,
           source: 'recovered',
-          timestamp: Date.now()
+          timestamp: Date.now(),
         }
         console.log('🔄 從 sessionStorage 恢復參數:', params)
       } else {
@@ -141,7 +141,7 @@ const processLineEntry = async () => {
       brandId: params.brandId,
       storeId: params.storeId,
     })
-    
+
     // 清理臨時保存的參數
     sessionStorage.removeItem('temp-brandId')
     sessionStorage.removeItem('temp-storeId')
@@ -182,7 +182,7 @@ const processLineEntry = async () => {
       stack: err.stack,
       step: currentStep.value,
       url: window.location.href,
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent,
     })
 
     // 針對 LIFF 特定錯誤提供更友善的錯誤訊息
@@ -208,7 +208,8 @@ const processLineEntry = async () => {
 
     // 如果是參數相關錯誤，提供更具體的指導
     if (err.message && err.message.includes('參數')) {
-      errorMessage += '\n\n💡 這可能是因為：\n• 連結中缺少必要參數\n• 首次登錄時參數被清除\n• 請嘗試重新開啟連結'
+      errorMessage +=
+        '\n\n💡 這可能是因為：\n• 連結中缺少必要參數\n• 首次登錄時參數被清除\n• 請嘗試重新開啟連結'
     }
 
     error.value = errorMessage

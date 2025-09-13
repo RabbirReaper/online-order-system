@@ -326,9 +326,9 @@ export const checkUberEatsConfig = () => {
     environment: UBEREATS_CONFIG.environment,
     apiUrl: UBEREATS_CONFIG.apiUrl,
     signatureCapability,
-    recommendations: isComplete 
+    recommendations: isComplete
       ? ['✅ All required configurations are complete']
-      : [`❌ Missing configurations: ${missing.join(', ')}`]
+      : [`❌ Missing configurations: ${missing.join(', ')}`],
   }
 }
 
@@ -549,7 +549,7 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
     }
 
     // 使用提供的 User Access Token 或自動獲取 provisioning token
-    const token = userAccessToken || await getTokenForOperation('provisioning')
+    const token = userAccessToken || (await getTokenForOperation('provisioning'))
 
     if (!token) {
       throw new Error('User Access Token 是 provisioning 操作的必需參數')
@@ -565,22 +565,19 @@ export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
     console.log(`🔑 Using User Access Token for provisioning`)
     console.log(`🔔 Webhook URL: ${webhookUrl}`)
 
-    const response = await fetch(
-      `${UBEREATS_CONFIG.apiUrl}/stores/${ubereatsStoreId}/pos_data`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          integration_enabled: true,
-          external_store_id: internalStore._id.toString(),
-          webhook_url: webhookUrl,
-          pos_provider: process.env.COMPANY_NAME || 'Online Order System',
-        }),
+    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${ubereatsStoreId}/pos_data`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-    )
+      body: JSON.stringify({
+        integration_enabled: true,
+        external_store_id: internalStore._id.toString(),
+        webhook_url: webhookUrl,
+        pos_provider: process.env.COMPANY_NAME || 'Online Order System',
+      }),
+    })
 
     if (!response.ok) {
       const errorText = await response.text()

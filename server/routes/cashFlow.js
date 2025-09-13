@@ -19,11 +19,11 @@ router.get(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
   requireBrandAccess,
   requireStoreAccess,
-  cashFlowController.getCashFlowsByStore
+  cashFlowController.getCashFlowsByStore,
 )
 
 // 根據ID獲取記帳記錄
@@ -36,11 +36,11 @@ router.get(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
   requireBrandAccess,
   requireStoreAccess,
-  cashFlowController.getCashFlowById
+  cashFlowController.getCashFlowById,
 )
 
 // 創建記帳記錄
@@ -53,11 +53,11 @@ router.post(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
   requireBrandAccess,
   requireStoreAccess,
-  cashFlowController.createCashFlow
+  cashFlowController.createCashFlow,
 )
 
 // 更新記帳記錄
@@ -70,11 +70,11 @@ router.put(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
   requireBrandAccess,
   requireStoreAccess,
-  cashFlowController.updateCashFlow
+  cashFlowController.updateCashFlow,
 )
 
 // 刪除記帳記錄
@@ -86,13 +86,12 @@ router.delete(
     'system_admin',
     'primary_brand_admin',
     'brand_admin',
-    'primary_store_admin'
+    'primary_store_admin',
   ),
   requireBrandAccess,
   requireStoreAccess,
-  cashFlowController.deleteCashFlow
+  cashFlowController.deleteCashFlow,
 )
-
 
 // 導出現金流流水帳 (CSV)
 router.get(
@@ -104,11 +103,11 @@ router.get(
     'primary_brand_admin',
     'brand_admin',
     'primary_store_admin',
-    'store_admin'
+    'store_admin',
   ),
   requireBrandAccess,
   requireStoreAccess,
-  cashFlowController.exportCashFlowCSV
+  cashFlowController.exportCashFlowCSV,
 )
 
 export default router

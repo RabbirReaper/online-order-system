@@ -6,7 +6,7 @@ export const getCategoriesByStore = asyncHandler(async (req, res) => {
   const { storeId } = req.params
   const options = {
     type: req.query.type,
-    activeOnly: req.query.activeOnly === 'true'
+    activeOnly: req.query.activeOnly === 'true',
   }
 
   const categories = await cashFlowCategoryService.getCategoriesByStore(storeId, options)
@@ -14,7 +14,7 @@ export const getCategoriesByStore = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '獲取記帳分類成功',
-    data: categories
+    data: categories,
   })
 })
 
@@ -26,7 +26,7 @@ export const getCategoryById = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '獲取記帳分類詳情成功',
-    data: category
+    data: category,
   })
 })
 
@@ -37,7 +37,7 @@ export const createCategory = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: '創建記帳分類成功',
-    data: category
+    data: category,
   })
 })
 
@@ -49,7 +49,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: '更新記帳分類成功',
-    data: updatedCategory
+    data: updatedCategory,
   })
 })
 
@@ -60,7 +60,6 @@ export const deleteCategory = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: '刪除記帳分類成功'
+    message: '刪除記帳分類成功',
   })
 })
-

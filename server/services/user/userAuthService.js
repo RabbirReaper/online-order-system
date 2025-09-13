@@ -300,7 +300,7 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
           message: '驗證碼已發送到您的手機（開發模式）',
           code, // 測試用
           expiresIn: 300,
-          smsError: smsResult.message
+          smsError: smsResult.message,
         }
       } else {
         // 生產環境下如果簡訊發送失敗，刪除剛創建的驗證碼
@@ -310,7 +310,6 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
     }
 
     console.log(`簡訊已發送至 ${phone}，消息ID: ${smsResult.messageId}`)
-
   } catch (smsError) {
     console.error('簡訊發送異常:', smsError)
     // 如果是開發環境，繼續執行
