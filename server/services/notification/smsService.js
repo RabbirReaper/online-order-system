@@ -12,7 +12,7 @@ class SMSService {
   constructor() {
     this.username = process.env.KOTSMS_USERNAME
     this.password = process.env.KOTSMS_PASSWORD
-    this.baseURL = 'http://api.kotsms.com.tw'
+    this.baseURL = 'https://api.kotsms.com.tw'
 
     if (!this.username || !this.password) {
       console.warn('簡訊王帳號或密碼未設定，簡訊功能將被禁用')
@@ -36,7 +36,7 @@ class SMSService {
             success: true,
             message: '簡訊已發送（開發模式）',
             messageId: 'mock_' + Date.now(),
-            cost: 1
+            cost: 1,
           }
         } else {
           throw new AppError('簡訊服務未正確配置', 500)
@@ -50,7 +50,7 @@ class SMSService {
         dstaddr: this.formatPhoneNumber(phone),
         smbody: encodeURIComponent(message),
         response: 'http://your-webhook-url.com/sms-callback', // 可選的回調 URL
-        CharsetURL: 'UTF-8'
+        CharsetURL: 'UTF-8',
       })
 
       // 如果有預約時間
@@ -59,20 +59,15 @@ class SMSService {
       }
 
       // 發送 SMS
-      const response = await axios.post(
-        `${this.baseURL}/kotsmsapi-1.php`,
-        params.toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'text/plain'
-          },
-          timeout: 30000 // 30 秒超時
-        }
-      )
+      const response = await axios.post(`${this.baseURL}/kotsmsapi-1.php`, params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'text/plain',
+        },
+        timeout: 30000, // 30 秒超時
+      })
 
       return this.parseResponse(response.data)
-
     } catch (error) {
       console.error('SMS 發送失敗:', error)
 
@@ -104,19 +99,15 @@ class SMSService {
 
       const params = new URLSearchParams({
         username: this.username,
-        password: this.password
+        password: this.password,
       })
 
-      const response = await axios.post(
-        `${this.baseURL}/memberpoint.php`,
-        params.toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          timeout: 15000
-        }
-      )
+      const response = await axios.post(`${this.baseURL}/memberpoint.php`, params.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        timeout: 15000,
+      })
 
       const points = parseInt(response.data.trim())
 
@@ -127,9 +118,8 @@ class SMSService {
       return {
         success: true,
         points: points,
-        message: `剩餘點數: ${points}`
+        message: `剩餘點數: ${points}`,
       }
-
     } catch (error) {
       console.error('查詢簡訊點數失敗:', error)
       throw error instanceof AppError ? error : new AppError('查詢點數失敗', 500)
@@ -197,7 +187,7 @@ class SMSService {
         cost: parseInt(params.get('cost') || '1'),
         unsend: parseInt(params.get('unsend') || '0'),
         click: parseInt(params.get('click') || '0'),
-        invalid: parseInt(params.get('invalid') || '0')
+        invalid: parseInt(params.get('invalid') || '0'),
       }
     }
 
@@ -212,7 +202,7 @@ class SMSService {
       '-11': '收簡訊手機號碼不得為空值',
       '-12': '收簡訊手機號碼格式錯誤',
       '-20': '簡訊長度超出限制',
-      '-21': '簡訊內容含有禁止字詞'
+      '-21': '簡訊內容含有禁止字詞',
     }
 
     const errorCode = data.trim()
@@ -221,7 +211,7 @@ class SMSService {
     return {
       success: false,
       message: errorMessage,
-      errorCode: errorCode
+      errorCode: errorCode,
     }
   }
 
@@ -234,7 +224,7 @@ class SMSService {
     if (!message || message.trim().length === 0) {
       return {
         valid: false,
-        message: '簡訊內容不能為空'
+        message: '簡訊內容不能為空',
       }
     }
 
@@ -242,25 +232,25 @@ class SMSService {
     if (messageLength > 1000) {
       return {
         valid: false,
-        message: '簡訊內容過長，最多 1000 字符'
+        message: '簡訊內容過長，最多 1000 字符',
       }
     }
 
     // 檢查是否包含禁止詞彙（可自定義）
     const forbiddenWords = ['詐騙', '病毒', '色情']
-    const containsForbidden = forbiddenWords.some(word => message.includes(word))
+    const containsForbidden = forbiddenWords.some((word) => message.includes(word))
 
     if (containsForbidden) {
       return {
         valid: false,
-        message: '簡訊內容包含禁止詞彙'
+        message: '簡訊內容包含禁止詞彙',
       }
     }
 
     return {
       valid: true,
       cost: this.calculateCost(message),
-      message: '內容驗證通過'
+      message: '內容驗證通過',
     }
   }
 }
