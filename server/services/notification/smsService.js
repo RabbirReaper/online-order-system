@@ -1,5 +1,5 @@
 import axios from 'axios'
-import AppError from '../../utils/AppError.js'
+import { AppError } from '../../middlewares/error.js'
 
 /**
  * 簡訊王 (KotSMS) 服務
