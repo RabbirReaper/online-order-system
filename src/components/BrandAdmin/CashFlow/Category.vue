@@ -6,8 +6,8 @@
         <h4 class="mb-1">記帳分類管理</h4>
         <small class="text-muted">{{ storeName || '記帳分類設定' }}</small>
       </div>
-      <router-link 
-        :to="`/admin/${brandId}/cash-flow/${storeId}/show`" 
+      <router-link
+        :to="`/admin/${brandId}/cash-flow/${storeId}/show`"
         class="btn btn-outline-secondary"
       >
         <i class="bi bi-arrow-left me-1"></i>返回記帳管理
@@ -23,8 +23,8 @@
         <form @submit.prevent="addCategory" class="row g-3">
           <div class="col-md-3">
             <label class="form-label">分類名稱</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               class="form-control"
               v-model="newCategory.name"
               placeholder="請輸入分類名稱"
@@ -50,11 +50,7 @@
           <div class="col-md-3">
             <label class="form-label">&nbsp;</label>
             <div class="d-grid">
-              <button 
-                type="button" 
-                class="btn btn-outline-info"
-                @click="addDefaultCategories"
-              >
+              <button type="button" class="btn btn-outline-info" @click="addDefaultCategories">
                 <i class="bi bi-magic me-1"></i>新增預設類別
               </button>
             </div>
@@ -75,19 +71,19 @@
           </div>
           <div class="card-body p-0">
             <div class="list-group list-group-flush">
-              <div 
-                v-for="category in incomeCategories" 
+              <div
+                v-for="category in incomeCategories"
                 :key="category.id"
                 class="list-group-item d-flex justify-content-between align-items-center"
               >
                 <div class="flex-grow-1" v-if="!category.editing">
                   <div class="fw-medium">{{ category.name }}</div>
                 </div>
-                
+
                 <!-- 編輯模式 -->
                 <div class="flex-grow-1" v-else>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     class="form-control form-control-sm"
                     v-model="category.editName"
                   />
@@ -95,37 +91,25 @@
 
                 <!-- 操作按鈕 -->
                 <div class="btn-group btn-group-sm ms-2" v-if="!category.editing">
-                  <button 
-                    class="btn btn-outline-primary" 
-                    @click="startEdit(category)"
-                  >
+                  <button class="btn btn-outline-primary" @click="startEdit(category)">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button 
-                    class="btn btn-outline-danger" 
-                    @click="deleteCategory(category)"
-                  >
+                  <button class="btn btn-outline-danger" @click="deleteCategory(category)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
-                
+
                 <!-- 編輯按鈕 -->
                 <div class="btn-group btn-group-sm ms-2" v-else>
-                  <button 
-                    class="btn btn-success" 
-                    @click="saveEdit(category)"
-                  >
+                  <button class="btn btn-success" @click="saveEdit(category)">
                     <i class="bi bi-check"></i>
                   </button>
-                  <button 
-                    class="btn btn-secondary" 
-                    @click="cancelEdit(category)"
-                  >
+                  <button class="btn btn-secondary" @click="cancelEdit(category)">
                     <i class="bi bi-x"></i>
                   </button>
                 </div>
               </div>
-              
+
               <!-- 無資料提示 -->
               <div class="list-group-item text-center py-4" v-if="incomeCategories.length === 0">
                 <i class="bi bi-inbox text-muted fs-4"></i>
@@ -146,19 +130,19 @@
           </div>
           <div class="card-body p-0">
             <div class="list-group list-group-flush">
-              <div 
-                v-for="category in expenseCategories" 
+              <div
+                v-for="category in expenseCategories"
                 :key="category.id"
                 class="list-group-item d-flex justify-content-between align-items-center"
               >
                 <div class="flex-grow-1" v-if="!category.editing">
                   <div class="fw-medium">{{ category.name }}</div>
                 </div>
-                
+
                 <!-- 編輯模式 -->
                 <div class="flex-grow-1" v-else>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     class="form-control form-control-sm"
                     v-model="category.editName"
                   />
@@ -166,37 +150,25 @@
 
                 <!-- 操作按鈕 -->
                 <div class="btn-group btn-group-sm ms-2" v-if="!category.editing">
-                  <button 
-                    class="btn btn-outline-primary" 
-                    @click="startEdit(category)"
-                  >
+                  <button class="btn btn-outline-primary" @click="startEdit(category)">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button 
-                    class="btn btn-outline-danger" 
-                    @click="deleteCategory(category)"
-                  >
+                  <button class="btn btn-outline-danger" @click="deleteCategory(category)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
-                
+
                 <!-- 編輯按鈕 -->
                 <div class="btn-group btn-group-sm ms-2" v-else>
-                  <button 
-                    class="btn btn-success" 
-                    @click="saveEdit(category)"
-                  >
+                  <button class="btn btn-success" @click="saveEdit(category)">
                     <i class="bi bi-check"></i>
                   </button>
-                  <button 
-                    class="btn btn-secondary" 
-                    @click="cancelEdit(category)"
-                  >
+                  <button class="btn btn-secondary" @click="cancelEdit(category)">
                     <i class="bi bi-x"></i>
                   </button>
                 </div>
               </div>
-              
+
               <!-- 無資料提示 -->
               <div class="list-group-item text-center py-4" v-if="expenseCategories.length === 0">
                 <i class="bi bi-inbox text-muted fs-4"></i>
@@ -207,12 +179,75 @@
         </div>
       </div>
     </div>
+
+    <!-- 刪除確認對話框 -->
+    <BModal
+      v-model:show="showDeleteModal"
+      id="deleteCategoryModal"
+      title="確認刪除"
+      centered
+      @ok="confirmDelete"
+      @cancel="showDeleteModal = false"
+    >
+      <p v-if="categoryToDelete">
+        確定要刪除分類「<strong>{{ categoryToDelete.name }}</strong
+        >」嗎？
+      </p>
+      <BAlert variant="warning" show>
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        此操作無法撤銷，刪除後相關記錄可能會受到影響。
+      </BAlert>
+      <template #footer>
+        <BButton variant="secondary" @click="showDeleteModal = false">取消</BButton>
+        <BButton variant="danger" @click="confirmDelete">確認刪除</BButton>
+      </template>
+    </BModal>
+
+    <!-- 新增預設類別確認對話框 -->
+    <BModal
+      v-model:show="showAddDefaultModal"
+      id="addDefaultCategoriesModal"
+      title="新增預設類別"
+      centered
+      @ok="confirmAddDefault"
+      @cancel="showAddDefaultModal = false"
+    >
+      <p>確定要新增預設分類嗎？</p>
+      <BAlert variant="info" show>
+        <i class="bi bi-info-circle-fill me-2"></i>
+        如果已存在相同名稱的分類將會跳過。
+      </BAlert>
+      <template #footer>
+        <BButton variant="secondary" @click="showAddDefaultModal = false">取消</BButton>
+        <BButton variant="primary" @click="confirmAddDefault">確認新增</BButton>
+      </template>
+    </BModal>
+
+    <!-- 結果提示對話框 -->
+    <BModal
+      v-model:show="showResultModal"
+      id="resultModal"
+      :title="resultModal.title"
+      centered
+      @ok="showResultModal = false"
+      @cancel="showResultModal = false"
+    >
+      <div class="text-center">
+        <i :class="resultModal.icon" class="fs-1 mb-3"></i>
+        <p>{{ resultModal.message }}</p>
+      </div>
+      <template #footer>
+        <BButton variant="primary" @click="showResultModal = false">確定</BButton>
+      </template>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { BModal, BButton, BAlert } from 'bootstrap-vue-next'
+import api from '@/api'
 
 // 路由
 const route = useRoute()
@@ -226,75 +261,95 @@ const storeName = ref('')
 // 新增分類表單
 const newCategory = ref({
   name: '',
-  type: ''
+  type: '',
 })
 
-// 模擬店鋪資料
-const mockStores = {
-  'store1': '台北分店',
-  'store2': '台中分店', 
-  'store3': '高雄分店'
-}
-
-// 模擬分類資料
-const mockCategories = [
-  { id: '1', name: '食材採購', type: 'expense' },
-  { id: '2', name: '租金', type: 'expense' },
-  { id: '3', name: '水電費', type: 'expense' },
-  { id: '4', name: '人事費用', type: 'expense' },
-  { id: '5', name: '設備維護', type: 'expense' },
-  { id: '6', name: '餐點銷售', type: 'income' },
-  { id: '7', name: '外送收入', type: 'income' },
-  { id: '8', name: '其他收入', type: 'income' }
-]
+// Modal 狀態
+const showDeleteModal = ref(false)
+const showAddDefaultModal = ref(false)
+const showResultModal = ref(false)
+const categoryToDelete = ref(null)
+const resultModal = ref({
+  title: '',
+  message: '',
+  icon: '',
+})
 
 // 計算屬性
-const incomeCategories = computed(() => 
-  categories.value.filter(category => category.type === 'income')
+const incomeCategories = computed(() =>
+  categories.value.filter((category) => category.type === 'income'),
 )
 
-const expenseCategories = computed(() => 
-  categories.value.filter(category => category.type === 'expense')
+const expenseCategories = computed(() =>
+  categories.value.filter((category) => category.type === 'expense'),
 )
 
 // 方法
 const fetchData = async () => {
   try {
-    // 使用假資料
-    categories.value = mockCategories.map(category => ({
-      ...category,
+    // 獲取店鋪資訊
+    const storeResponse = await api.store.getStoreById({
+      brandId: brandId.value,
+      id: storeId.value,
+    })
+    storeName.value = storeResponse.data?.name || '未知店鋪'
+
+    // 獲取分類資料
+    const categoriesResponse = await api.cashFlowCategory.getCategoriesByStore(brandId.value, storeId.value)
+    categories.value = (categoriesResponse.data || []).map((category) => ({
+      id: category._id,
+      name: category.name,
+      type: category.type,
       editing: false,
-      editName: category.name
+      editName: category.name,
     }))
-    storeName.value = mockStores[storeId.value] || '未知店鋪'
   } catch (err) {
     console.error('獲取資料失敗:', err)
+    categories.value = []
   }
 }
 
-const addCategory = () => {
+const addCategory = async () => {
   if (!newCategory.value.name || !newCategory.value.type) {
-    alert('請填寫分類名稱和類型')
+    showResult('新增失敗', '請填寫分類名稱和類型', 'bi bi-exclamation-triangle text-warning')
     return
   }
-  
-  const category = {
-    id: Date.now().toString(),
-    name: newCategory.value.name,
-    type: newCategory.value.type,
-    editing: false,
-    editName: newCategory.value.name
+
+  try {
+    const categoryData = {
+      name: newCategory.value.name,
+      type: newCategory.value.type,
+      store: storeId.value,
+    }
+
+    const response = await api.cashFlowCategory.createCategory(brandId.value, storeId.value, categoryData)
+
+    const category = {
+      id: response.data._id,
+      name: response.data.name,
+      type: response.data.type,
+      editing: false,
+      editName: response.data.name,
+    }
+
+    categories.value.push(category)
+
+    // 重置表單
+    newCategory.value = {
+      name: '',
+      type: '',
+    }
+
+    showResult('新增成功', `分類「${category.name}」已新增`, 'bi bi-check-circle text-success')
+    console.log('新增分類:', category)
+  } catch (err) {
+    console.error('新增分類失敗:', err)
+    showResult(
+      '新增失敗',
+      err.response?.data?.message || '新增分類失敗',
+      'bi bi-exclamation-triangle text-warning',
+    )
   }
-  
-  categories.value.push(category)
-  
-  // 重置表單
-  newCategory.value = {
-    name: '',
-    type: ''
-  }
-  
-  console.log('新增分類:', category)
 }
 
 const startEdit = (category) => {
@@ -302,16 +357,34 @@ const startEdit = (category) => {
   category.editName = category.name
 }
 
-const saveEdit = (category) => {
+const saveEdit = async (category) => {
   if (!category.editName) {
-    alert('分類名稱不能為空')
+    showResult('更新失敗', '分類名稱不能為空', 'bi bi-exclamation-triangle text-warning')
     return
   }
-  
-  category.name = category.editName
-  category.editing = false
-  
-  console.log('更新分類:', category)
+
+  try {
+    const updateData = {
+      name: category.editName,
+    }
+
+    await api.cashFlowCategory.updateCategory(brandId.value, storeId.value, category.id, updateData)
+
+    category.name = category.editName
+    category.editing = false
+
+    showResult('更新成功', `分類「${category.name}」已更新`, 'bi bi-check-circle text-success')
+    console.log('更新分類:', category)
+  } catch (err) {
+    console.error('更新分類失敗:', err)
+    showResult(
+      '更新失敗',
+      err.response?.data?.message || '更新失敗',
+      'bi bi-exclamation-triangle text-warning',
+    )
+    category.editing = false
+    category.editName = category.name
+  }
 }
 
 const cancelEdit = (category) => {
@@ -320,64 +393,123 @@ const cancelEdit = (category) => {
 }
 
 const deleteCategory = (category) => {
-  if (confirm(`確定要刪除分類「${category.name}」嗎？`)) {
-    const index = categories.value.findIndex(c => c.id === category.id)
-    if (index > -1) {
-      categories.value.splice(index, 1)
-      console.log('刪除分類:', category)
+  categoryToDelete.value = category
+  showDeleteModal.value = true
+}
+
+const confirmDelete = async () => {
+  if (categoryToDelete.value) {
+    try {
+      await api.cashFlowCategory.deleteCategory(brandId.value, storeId.value, categoryToDelete.value.id)
+
+      const index = categories.value.findIndex((c) => c.id === categoryToDelete.value.id)
+      if (index > -1) {
+        const deletedName = categoryToDelete.value.name
+        categories.value.splice(index, 1)
+        showDeleteModal.value = false
+        showResult('刪除成功', `分類「${deletedName}」已刪除`, 'bi bi-check-circle text-success')
+        console.log('刪除分類:', categoryToDelete.value)
+        categoryToDelete.value = null
+      }
+    } catch (err) {
+      console.error('刪除分類失敗:', err)
+      showResult(
+        '刪除失敗',
+        err.response?.data?.message || '刪除失敗',
+        'bi bi-exclamation-triangle text-warning',
+      )
+      showDeleteModal.value = false
+      categoryToDelete.value = null
     }
   }
 }
 
 const addDefaultCategories = () => {
-  if (confirm('確定要新增預設分類嗎？如果已存在相同名稱的分類將會跳過。')) {
-    // 預設分類清單
-    const defaultCategories = [
-      // 支出類別
-      { name: '食材採購', type: 'expense' },
-      { name: '租金', type: 'expense' },
-      { name: '水電費', type: 'expense' },
-      { name: '人事費用', type: 'expense' },
-      { name: '設備維護', type: 'expense' },
-      { name: '清潔用品', type: 'expense' },
-      { name: '包裝材料', type: 'expense' },
-      { name: '廣告宣傳', type: 'expense' },
-      // 收入類別
-      { name: '餐點銷售', type: 'income' },
-      { name: '外送收入', type: 'income' },
-      { name: '飲料銷售', type: 'income' },
-      { name: '其他收入', type: 'income' }
-    ]
-    
-    let addedCount = 0
-    
-    defaultCategories.forEach(defaultCat => {
-      // 檢查是否已存在相同名稱的分類
-      const exists = categories.value.some(existingCat => 
-        existingCat.name === defaultCat.name && existingCat.type === defaultCat.type
+  showAddDefaultModal.value = true
+}
+
+const confirmAddDefault = async () => {
+  // 預設分類清單
+  const defaultCategories = [
+    // 支出類別
+    { name: '食材採購', type: 'expense' },
+    { name: '租金', type: 'expense' },
+    { name: '水電費', type: 'expense' },
+    { name: '人事費用', type: 'expense' },
+    { name: '設備維護', type: 'expense' },
+    { name: '清潔用品', type: 'expense' },
+    { name: '包裝材料', type: 'expense' },
+    { name: '廣告宣傳', type: 'expense' },
+    // 收入類別
+    { name: '餐點銷售', type: 'income' },
+    { name: '外送收入', type: 'income' },
+    { name: '飲料銷售', type: 'income' },
+    { name: '其他收入', type: 'income' },
+  ]
+
+  let addedCount = 0
+  const errors = []
+
+  showAddDefaultModal.value = false
+
+  // 使用迴圈一一新增預設分類
+  for (const defaultCat of defaultCategories) {
+    try {
+      // 檢查是否已存在相同名稱的分類（前端檢查）
+      const exists = categories.value.some(
+        (existingCat) =>
+          existingCat.name === defaultCat.name && existingCat.type === defaultCat.type,
       )
-      
+
       if (!exists) {
-        const category = {
-          id: Date.now().toString() + Math.random(),
+        const categoryData = {
           name: defaultCat.name,
           type: defaultCat.type,
-          editing: false,
-          editName: defaultCat.name
+          store: storeId.value,
         }
+        console.log('新增預設分類:', categoryData)
+        const response = await api.cashFlowCategory.createCategory(brandId.value, storeId.value, categoryData)
+
+        const category = {
+          id: response.data._id,
+          name: response.data.name,
+          type: response.data.type,
+          editing: false,
+          editName: response.data.name,
+        }
+
         categories.value.push(category)
         addedCount++
       }
-    })
-    
-    if (addedCount > 0) {
-      alert(`成功新增 ${addedCount} 個預設分類！`)
-    } else {
-      alert('所有預設分類都已存在，無需新增。')
+    } catch (err) {
+      console.error(`新增預設分類「${defaultCat.name}」失敗:`, err)
+      // 如果後端也檢查到重複，跳過此錯誤
+      if (err.response?.status === 400 && err.response?.data?.message?.includes('已存在')) {
+        continue
+      }
+      errors.push(`${defaultCat.name}: ${err.response?.data?.message || '未知錯誤'}`)
     }
-    
-    console.log(`新增了 ${addedCount} 個預設分類`)
   }
+
+  if (errors.length > 0) {
+    showResult(
+      '部分失敗',
+      `成功新增 ${addedCount} 個分類，${errors.length} 個失敗`,
+      'bi bi-exclamation-triangle text-warning',
+    )
+  } else if (addedCount > 0) {
+    showResult('新增成功', `成功新增 ${addedCount} 個預設分類！`, 'bi bi-check-circle text-success')
+  } else {
+    showResult('提示', '所有預設分類都已存在，無需新增。', 'bi bi-info-circle text-info')
+  }
+
+  console.log(`新增了 ${addedCount} 個預設分類，${errors.length} 個失敗`)
+}
+
+// 顯示結果對話框
+const showResult = (title, message, icon) => {
+  resultModal.value = { title, message, icon }
+  showResultModal.value = true
 }
 
 // 生命週期

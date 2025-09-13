@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt'
 import User from '../../models/User/User.js'
 import VerificationCode from '../../models/User/VerificationCode.js'
 import { AppError } from '../../middlewares/error.js'
+import smsService from '../notification/smsService.js'
 
 // 驗證規則常數
 const VALIDATION_PATTERNS = {
@@ -285,13 +286,45 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
     expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5分鐘後過期
   })
 
-  // TODO: 整合簡訊發送服務
-  // 這裡應該調用簡訊服務API，例如：sendSMS(phone, `您的驗證碼是：${code}，5分鐘內有效`);
+  // 發送簡訊驗證碼
+  try {
+    const message = `您的驗證碼是：${code}，5分鐘內有效。請勿將驗證碼告訴他人。`
+    const smsResult = await smsService.sendSMS(phone, message)
+
+    if (!smsResult.success) {
+      console.error('簡訊發送失敗:', smsResult.message)
+      // 簡訊發送失敗但驗證碼已創建，用戶仍可使用（在開發環境）
+      if (process.env.NODE_ENV === 'development') {
+        return {
+          success: true,
+          message: '驗證碼已發送到您的手機（開發模式）',
+          code, // 測試用
+          expiresIn: 300,
+          smsError: smsResult.message
+        }
+      } else {
+        // 生產環境下如果簡訊發送失敗，刪除剛創建的驗證碼
+        await VerificationCode.deleteOne({ phone, code, purpose })
+        throw new AppError('簡訊發送失敗，請稍後再試', 500)
+      }
+    }
+
+    console.log(`簡訊已發送至 ${phone}，消息ID: ${smsResult.messageId}`)
+
+  } catch (smsError) {
+    console.error('簡訊發送異常:', smsError)
+    // 如果是開發環境，繼續執行
+    if (process.env.NODE_ENV !== 'development') {
+      // 生產環境下刪除驗證碼並拋出錯誤
+      await VerificationCode.deleteOne({ phone, code, purpose })
+      throw smsError instanceof AppError ? smsError : new AppError('簡訊發送失敗', 500)
+    }
+  }
 
   return {
     success: true,
     message: '驗證碼已發送到您的手機',
-    code, //測試用
+    code: process.env.NODE_ENV === 'development' ? code : undefined, // 只在開發環境返回驗證碼
     expiresIn: 300, // 5分鐘，單位秒
   }
 }

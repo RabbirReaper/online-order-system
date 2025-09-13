@@ -89,23 +89,6 @@ export const deleteCashFlow = asyncHandler(async (req, res) => {
   })
 })
 
-// 獲取現金流統計資料
-export const getCashFlowStatistics = asyncHandler(async (req, res) => {
-  const { storeId } = req.params
-  const options = {
-    startDate: req.query.startDate,
-    endDate: req.query.endDate,
-    groupBy: req.query.groupBy || 'month'
-  }
-
-  const statistics = await cashFlowService.getCashFlowStatistics(storeId, options)
-
-  res.json({
-    success: true,
-    message: '獲取統計資料成功',
-    data: statistics
-  })
-})
 
 // 導出現金流流水帳 (CSV)
 export const exportCashFlowCSV = asyncHandler(async (req, res) => {

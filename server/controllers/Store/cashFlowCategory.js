@@ -64,14 +64,3 @@ export const deleteCategory = asyncHandler(async (req, res) => {
   })
 })
 
-// 創建店舖預設記帳分類
-export const createDefaultCategories = asyncHandler(async (req, res) => {
-  const { storeId } = req.params
-  const categories = await cashFlowCategoryService.createDefaultCategories(storeId)
-
-  res.status(201).json({
-    success: true,
-    message: '創建預設記帳分類成功',
-    data: categories
-  })
-})

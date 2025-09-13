@@ -7,66 +7,57 @@ export default function (apiClient) {
   return {
     /**
      * 獲取店鋪的現金流分類
+     * @param {string} brandId - 品牌ID
      * @param {string} storeId - 店鋪ID
      * @returns {Promise} - API 回應
      */
-    getCategoriesByStore(storeId) {
-      return apiClient.get(`/cash-flow-category/${storeId}`)
+    getCategoriesByStore(brandId, storeId) {
+      return apiClient.get(`/cash-flow-category/${brandId}/${storeId}`)
     },
 
     /**
      * 創建現金流分類
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
      * @param {Object} data - 分類資料
      * @returns {Promise} - API 回應
      */
-    createCategory(data) {
-      return apiClient.post('/cash-flow-category', data)
+    createCategory(brandId, storeId, data) {
+      return apiClient.post(`/cash-flow-category/${brandId}/${storeId}`, data)
     },
 
     /**
      * 獲取分類詳情
-     * @param {string} id - 分類ID
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @param {string} categoryId - 分類ID
      * @returns {Promise} - API 回應
      */
-    getCategoryById(id) {
-      return apiClient.get(`/cash-flow-category/detail/${id}`)
+    getCategoryById(brandId, storeId, categoryId) {
+      return apiClient.get(`/cash-flow-category/${brandId}/${storeId}/detail/${categoryId}`)
     },
 
     /**
      * 更新分類
-     * @param {string} id - 分類ID
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @param {string} categoryId - 分類ID
      * @param {Object} data - 更新資料
      * @returns {Promise} - API 回應
      */
-    updateCategory(id, data) {
-      return apiClient.put(`/cash-flow-category/${id}`, data)
+    updateCategory(brandId, storeId, categoryId, data) {
+      return apiClient.put(`/cash-flow-category/${brandId}/${storeId}/${categoryId}`, data)
     },
 
     /**
      * 刪除分類
-     * @param {string} id - 分類ID
-     * @returns {Promise} - API 回應
-     */
-    deleteCategory(id) {
-      return apiClient.delete(`/cash-flow-category/${id}`)
-    },
-
-    /**
-     * 獲取分類使用統計
+     * @param {string} brandId - 品牌ID
      * @param {string} storeId - 店鋪ID
+     * @param {string} categoryId - 分類ID
      * @returns {Promise} - API 回應
      */
-    getCategoryUsageStats(storeId) {
-      return apiClient.get(`/cash-flow-category/${storeId}/stats`)
+    deleteCategory(brandId, storeId, categoryId) {
+      return apiClient.delete(`/cash-flow-category/${brandId}/${storeId}/${categoryId}`)
     },
-
-    /**
-     * 為店鋪創建預設分類
-     * @param {string} storeId - 店鋪ID
-     * @returns {Promise} - API 回應
-     */
-    createDefaultCategories(storeId) {
-      return apiClient.post(`/cash-flow-category/${storeId}/defaults`)
-    }
   }
 }

@@ -353,6 +353,13 @@ export const brandAdminRoutes = [
             meta: { requiresAuth: true, title: '新增記帳記錄' },
           },
           {
+            path: 'edit/:recordId',
+            name: 'brand-admin-cash-flow-edit',
+            component: () => import('@/components/BrandAdmin/CashFlow/Edit.vue'),
+            props: true,
+            meta: { requiresAuth: true, title: '編輯記帳記錄' },
+          },
+          {
             path: 'category',
             name: 'brand-admin-cash-flow-category',
             component: () => import('@/components/BrandAdmin/CashFlow/Category.vue'),

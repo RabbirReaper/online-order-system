@@ -82,12 +82,11 @@ export const createCategory = async (categoryData) => {
   // 檢查同一店舖內是否已存在相同名稱的分類
   const existingCategory = await CashFlowCategory.findOne({
     store: categoryData.store,
-    name: categoryData.name,
-    type: categoryData.type
+    name: categoryData.name
   })
 
   if (existingCategory) {
-    throw new AppError('該店舖已存在相同名稱和類型的記帳分類', 400)
+    throw new AppError('該店舖已存在相同名稱的記帳分類', 400)
   }
 
   // 創建分類
@@ -120,12 +119,11 @@ export const updateCategory = async (categoryId, updateData) => {
     const existingCategory = await CashFlowCategory.findOne({
       _id: { $ne: categoryId },
       store: category.store,
-      name: updateData.name,
-      type: updateData.type || category.type
+      name: updateData.name
     })
 
     if (existingCategory) {
-      throw new AppError('該店舖已存在相同名稱和類型的記帳分類', 400)
+      throw new AppError('該店舖已存在相同名稱的記帳分類', 400)
     }
   }
 
@@ -161,63 +159,3 @@ export const deleteCategory = async (categoryId) => {
   return true
 }
 
-/**
- * 創建店舖預設記帳分類
- * @param {String} storeId - 店舖ID
- * @returns {Promise<Array>} 創建的預設分類列表
- */
-export const createDefaultCategories = async (storeId) => {
-  // 驗證店舖是否存在
-  const store = await Store.findById(storeId).populate('brand')
-  if (!store) {
-    throw new AppError('店舖不存在', 404)
-  }
-
-  const brandId = store.brand._id
-
-  // 預設收入分類
-  const defaultIncomeCategories = [
-    { name: '餐點銷售', icon: 'fa-utensils', color: '#28a745' },
-    { name: '飲料銷售', icon: 'fa-coffee', color: '#17a2b8' },
-    { name: '其他收入', icon: 'fa-plus-circle', color: '#6c757d' }
-  ]
-
-  // 預設支出分類
-  const defaultExpenseCategories = [
-    { name: '食材採購', icon: 'fa-shopping-cart', color: '#dc3545' },
-    { name: '人事費用', icon: 'fa-users', color: '#fd7e14' },
-    { name: '租金', icon: 'fa-home', color: '#6f42c1' },
-    { name: '水電費', icon: 'fa-bolt', color: '#e83e8c' },
-    { name: '設備維護', icon: 'fa-tools', color: '#20c997' },
-    { name: '行銷費用', icon: 'fa-bullhorn', color: '#ffc107' },
-    { name: '其他支出', icon: 'fa-minus-circle', color: '#6c757d' }
-  ]
-
-  const createdCategories = []
-
-  // 創建收入分類
-  for (const categoryData of defaultIncomeCategories) {
-    const category = new CashFlowCategory({
-      ...categoryData,
-      type: 'income',
-      brand: brandId,
-      store: storeId
-    })
-    await category.save()
-    createdCategories.push(category)
-  }
-
-  // 創建支出分類
-  for (const categoryData of defaultExpenseCategories) {
-    const category = new CashFlowCategory({
-      ...categoryData,
-      type: 'expense',
-      brand: brandId,
-      store: storeId
-    })
-    await category.save()
-    createdCategories.push(category)
-  }
-
-  return createdCategories
-}

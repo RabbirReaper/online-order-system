@@ -75,6 +75,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '@/api'
 
 // 路由
 const route = useRoute()
@@ -85,40 +86,17 @@ const isLoading = ref(false)
 const error = ref('')
 const stores = ref([])
 
-// 模擬店鋪資料
-const mockStores = [
-  {
-    _id: 'store1',
-    name: '台北分店',
-    isActive: true,
-    image: { url: '/placeholder.jpg' }
-  },
-  {
-    _id: 'store2', 
-    name: '台中分店',
-    isActive: true,
-    image: { url: '/placeholder.jpg' }
-  },
-  {
-    _id: 'store3',
-    name: '高雄分店',
-    isActive: false,
-    image: { url: '/placeholder.jpg' }
-  }
-]
-
 // 獲取店鋪列表
 const fetchStores = async () => {
   isLoading.value = true
   error.value = ''
 
   try {
-    // 使用假資料
-    await new Promise(resolve => setTimeout(resolve, 500)) // 模擬API請求延遲
-    stores.value = mockStores
+    const response = await api.store.getAllStores({ brandId: brandId.value })
+    stores.value = response.stores || []
   } catch (err) {
     console.error('獲取店鋪列表失敗:', err)
-    error.value = '獲取店鋪列表時發生錯誤'
+    error.value = err.response?.data?.message || '獲取店鋪列表時發生錯誤'
   } finally {
     isLoading.value = false
   }
