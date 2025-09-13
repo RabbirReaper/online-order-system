@@ -6,10 +6,7 @@
         <h4 class="mb-1">{{ storeName || '記帳管理' }}</h4>
         <small class="text-muted">店鋪記帳系統</small>
       </div>
-      <router-link 
-        :to="`/admin/${brandId}/cash-flow`" 
-        class="btn btn-outline-secondary"
-      >
+      <router-link :to="`/admin/${brandId}/cash-flow`" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>返回店鋪選擇
       </router-link>
     </div>
@@ -82,7 +79,7 @@ const storeName = ref('')
 const fetchStoreInfo = async () => {
   try {
     const response = await api.store.getStoreById({ brandId: brandId.value, id: storeId.value })
-    storeName.value = response.data?.name || '未知店鋪'
+    storeName.value = response.store.name || '未知店鋪'
   } catch (err) {
     console.error('獲取店鋪資訊失敗:', err)
     storeName.value = '未知店鋪'
