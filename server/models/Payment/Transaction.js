@@ -17,12 +17,37 @@ const transactionSchema = new mongoose.Schema(
       ref: 'Store',
       required: true,
     }, // 關聯店鋪
-    // 關聯訂單
+    // 關聯訂單 (付款成功後才會有)
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Order',
-      required: true,
+      required: false,
       index: true,
+    },
+
+    // 臨時訂單資訊 (付款前儲存，成功後移至正式訂單)
+    tempOrderData: {
+      customerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      customerInfo: {
+        name: String,
+        phone: String,
+      },
+      items: [
+        {
+          dishId: mongoose.Schema.Types.ObjectId,
+          name: String,
+          price: Number,
+          quantity: Number,
+        },
+      ],
+      totalAmount: Number,
+      orderType: {
+        type: String,
+        enum: ['dine_in', 'takeout', 'delivery'],
+      },
     },
 
     // 支付閘道交易 ID
