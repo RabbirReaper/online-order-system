@@ -101,7 +101,7 @@
       <!-- 菜單列表 -->
       <TransitionGroup name="stagger-fade" tag="div" appear>
         <MenuCategoryList
-          v-if="!isLoadingMenu && !menuError && hasMenuCategories"
+          v-if="!isLoadingMenu && !menuError && hasMenuCategories && brandId && storeId"
           key="menu-list"
           :categories="currentMenu.categories"
           :brand-id="brandId"

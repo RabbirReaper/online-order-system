@@ -232,69 +232,55 @@
 
       <!-- Modal Components -->
       <!-- 結帳確認框 -->
-      <div
-        class="modal fade"
-        id="confirmOrderModal"
-        tabindex="-1"
-        aria-labelledby="confirmOrderModalLabel"
-        aria-hidden="true"
+      <BModal
+        v-model:show="showConfirmModal"
+        title="確認訂單"
+        centered
+        @ok="submitOrder"
+        @cancel="showConfirmModal = false"
       >
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="confirmOrderModalLabel">確認訂單</h5>
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
-            </div>
-            <div class="modal-body">
-              <p>請確認您的訂單資訊</p>
-              <!-- 訂單摘要 -->
-              <div class="order-summary">
-                <h6>訂單項目：</h6>
-                <ul class="list-unstyled">
-                  <li v-for="item in cartItems" :key="item.key" class="mb-1">
-                    {{ item.dishInstance?.name || item.bundleInstance?.name }} x{{ item.quantity }}
-                  </li>
-                </ul>
+        <p>請確認您的訂單資訊</p>
+        <!-- 訂單摘要 -->
+        <div class="order-summary">
+          <h6>訂單項目：</h6>
+          <ul class="list-unstyled">
+            <li v-for="item in cartItems" :key="item.key" class="mb-1">
+              {{ item.dishInstance?.name || item.bundleInstance?.name }} x{{ item.quantity }}
+            </li>
+          </ul>
 
-                <div v-if="usedVouchers.length > 0">
-                  <h6 class="text-success">使用的兌換券：</h6>
-                  <ul class="list-unstyled text-success">
-                    <li v-for="voucher in usedVouchers" :key="voucher.voucherId">
-                      {{ voucher.dishName }} (省下 ${{ voucher.savedAmount }})
-                    </li>
-                  </ul>
-                </div>
+          <div v-if="usedVouchers.length > 0">
+            <h6 class="text-success">使用的兌換券：</h6>
+            <ul class="list-unstyled text-success">
+              <li v-for="voucher in usedVouchers" :key="voucher.voucherId">
+                {{ voucher.dishName }} (省下 ${{ voucher.savedAmount }})
+              </li>
+            </ul>
+          </div>
 
-                <div v-if="appliedCoupons.length > 0">
-                  <h6 class="text-primary">使用的折價券：</h6>
-                  <ul class="list-unstyled text-primary">
-                    <li v-for="coupon in appliedCoupons" :key="coupon.couponId">
-                      {{ coupon.name }} (折抵 ${{ coupon.amount }})
-                    </li>
-                  </ul>
-                </div>
+          <div v-if="appliedCoupons.length > 0">
+            <h6 class="text-primary">使用的折價券：</h6>
+            <ul class="list-unstyled text-primary">
+              <li v-for="coupon in appliedCoupons" :key="coupon.couponId">
+                {{ coupon.name }} (折抵 ${{ coupon.amount }})
+              </li>
+            </ul>
+          </div>
 
-                <hr />
-                <div class="d-flex justify-content-between fw-bold">
-                  <span>總計：</span>
-                  <span>${{ calculateTotal() }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                返回修改
-              </button>
-              <button type="button" class="btn btn-primary" @click="submitOrder">確認送出</button>
-            </div>
+          <hr />
+          <div class="d-flex justify-content-between fw-bold">
+            <span>總計：</span>
+            <span>${{ calculateTotal() }}</span>
           </div>
         </div>
-      </div>
+
+        <template #footer>
+          <button type="button" class="btn btn-secondary" @click="showConfirmModal = false">
+            返回修改
+          </button>
+          <button type="button" class="btn btn-primary" @click="submitOrder">確認送出</button>
+        </template>
+      </BModal>
     </div>
   </div>
 </template>
@@ -302,6 +288,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { BModal } from 'bootstrap-vue-next'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/customerAuth'
 import CartItem from '@/components/customer/cart/CartItem.vue'
@@ -357,8 +344,7 @@ const userCoupons = ref([])
 const usedVouchers = ref([]) // 已選擇的兌換券
 const appliedCoupons = ref([]) // 已應用的折價券
 const isLoadingCoupons = ref(false)
-
-let confirmModal = null
+const showConfirmModal = ref(false)
 
 // 計算屬性
 const isFormValid = computed(() => {
@@ -713,10 +699,7 @@ const checkout = () => {
   }
 
   clearError()
-
-  if (confirmModal) {
-    confirmModal.show()
-  }
+  showConfirmModal.value = true
 }
 
 // 提交訂單
@@ -807,9 +790,7 @@ const submitOrder = async () => {
     const result = await cartStore.submitOrder()
 
     if (result.success) {
-      if (confirmModal) {
-        confirmModal.hide()
-      }
+      showConfirmModal.value = false
 
       // 如果有使用兌換券，需要調用API標記為已使用
       if (usedVouchers.value.length > 0) {
@@ -843,9 +824,7 @@ const submitOrder = async () => {
   } catch (error) {
     console.error('提交訂單失敗:', error)
 
-    if (confirmModal) {
-      confirmModal.hide()
-    }
+    showConfirmModal.value = false
 
     let errorMessage = '訂單提交失敗，請稍後再試'
 
@@ -916,14 +895,6 @@ onMounted(() => {
   date.setMinutes(date.getMinutes() + 30)
   scheduledTime.value = date.toISOString().slice(0, 16)
 
-  // 初始化模態框
-  import('bootstrap/js/dist/modal').then((module) => {
-    const Modal = module.default
-    const modalElement = document.getElementById('confirmOrderModal')
-    if (modalElement) {
-      confirmModal = new Modal(modalElement)
-    }
-  })
 
   // 如果用戶已登入，獲取券資料
   if (authStore.isLoggedIn) {
