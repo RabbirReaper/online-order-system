@@ -1,4 +1,5 @@
 import express from 'express'
+import dotenv from 'dotenv'
 import adminAuthRoutes from './adminAuth.js'
 import userAuthRoutes from './userAuth.js'
 import adminUserRoutes from './adminUser.js'
@@ -17,6 +18,9 @@ import bundleRoutes from './bundle.js'
 import deliveryPlatformRoutes from './deliveryPlatform.js'
 import cashFlowRoutes from './cashFlow.js'
 import cashFlowCategoryRoutes from './cashFlowCategory.js'
+
+// 載入環境變數
+dotenv.config()
 
 // 創建一個主要的 API 路由器
 const apiRouter = express.Router()
@@ -58,17 +62,29 @@ apiRouter.get('/test-outbound-ip', async (req, res) => {
     const ipResponse = await fetch('https://api.ipify.org?format=json')
     const ipData = await ipResponse.json()
 
-    // 拜訪指定的 kotsms 網頁並獲取 HTML
-    const kotResponse = await fetch('https://www.kotsms.com.tw/index.php?selectpage=pagenews&kind=4&viewnum=238')
-    const htmlContent = await kotResponse.text()
+    const username = process.env.KOTSMS_USERNAME
+    const password = process.env.KOTSMS_PASSWORD
+
+    // 準備 KOTSMS API 請求資料
+    const kotsmsData = new URLSearchParams({
+      username,
+      password,
+    })
+
+    // 呼叫 KOTSMS API
+    const kotsmsResponse = await fetch('https://api.kotsms.com.tw:8515/kotsms/SmQuery', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: kotsmsData,
+    })
 
     res.json({
       outboundIP: ipData.ip,
       expectedFixedIP: '35.201.160.235',
       isCorrect: ipData.ip === '35.201.160.235',
-      kotSmsHtml: htmlContent,
-      kotSmsStatus: kotResponse.status,
-      kotSmsStatusText: kotResponse.statusText
+      kotsmsResponse: kotsmsResponse,
     })
   } catch (error) {
     res.status(500).json({ error: error.message })
