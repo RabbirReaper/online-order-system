@@ -1,454 +1,747 @@
-# TapPay 支付整合計劃
+# TapPay 統一API整合計劃 - 基於現有架構
 
 ## 專案概述
 
-將 TapPay 支付閘道整合到線上點餐系統，支援信用卡支付和電子錢包（如 LINE Pay）。
+基於現有的 TapPay 服務架構，實現統一 API 接口設計，讓前端購物車與付款在同一頁面無縫整合。
 
-## 整合資源
+## 🏗️ 核心架構設計
 
-- **TapPay 官方文檔**: https://docs.tappaysdk.com/
-- **GitHub 範例**: https://github.com/TapPay/tappay-web-example
-- **測試卡號**: 4242 4242 4242 4242, CVV: 123
-- **技術支援**: support@cherri.tech
+### 統一API流程圖
 
-## Phase 1: 環境設定與準備
+```mermaid
+flowchart TD
+    Start([前端：客戶填寫訂單內容<br/>+ 選擇付款方式]) --> PaymentChoice{前端判斷付款方式}
 
-### 1.1 TapPay Portal 設定
+    %% 現場付款分支
+    PaymentChoice -->|現場付款| CashFlow[準備現場付款資料<br/>orderData + paymentType: On-site]
+    CashFlow --> CallAPI1[呼叫統一API<br/>POST /createOrder]
 
-- [ ] 登入 TapPay Portal (已完成 - 用戶已有帳戶)
-- [ ] 取得 APP_ID 和 APP_KEY (Sandbox & Production)
-- [ ] 設定商家資訊和回調 URLs
-- [ ] 設定支付方式 (Direct Pay, LINE Pay)
+    %% 線上付款分支
+    PaymentChoice -->|信用卡付款| GetPrime[前端：TapPay SDK<br/>獲取 Prime Token]
+    GetPrime --> PrimeResult{Prime Token 結果}
+    PrimeResult -->|失敗| PrimeError[顯示信用卡錯誤<br/>用戶重新輸入]
+    PrimeResult -->|成功| OnlineFlow[準備線上付款資料<br/>orderData + paymentType: Online<br/>+ primeToken]
+    OnlineFlow --> CallAPI2[呼叫統一API<br/>POST /createOrder]
 
-### 1.2 測試環境配置
+    %% 後端統一處理
+    CallAPI1 --> BackendValidate[後端：驗證訂單資料]
+    CallAPI2 --> BackendValidate
+    BackendValidate --> ValidateResult{資料驗證}
+    ValidateResult -->|失敗| ValidationError[返回驗證錯誤]
+    ValidateResult -->|成功| CheckPaymentType{檢查 paymentType}
 
-- [ ] 確保開發環境支援 HTTPS (可使用 ngrok)
-- [ ] 安裝 ngrok: `yarn global add ngrok`
-- [ ] 測試 SSL 憑證設定
+    %% 現場付款流程（簡單）
+    CheckPaymentType -->|On-site| CashValidate[驗證現場付款資料]
+    CashValidate --> CreateCashOrder[orderCustomer.createOrder<br/>創建 unpaid 訂單<br/>📝 不創建 Transaction]
+    CreateCashOrder --> CashResponse[返回 unpaid 訂單<br/>status: cash_submitted]
 
-### 1.3 環境變數設定
+    %% 線上付款流程（複雜）
+    CheckPaymentType -->|Online + primeToken| OnlineValidate[驗證線上付款資料<br/>檢查 primeToken 存在]
+    OnlineValidate --> GenTxnId[生成唯一 transactionId<br/>UUID 或時間戳]
 
-```javascript
-// .env
-TAPPAY_APP_ID=160922
-TAPPAY_APP_KEY=app_PTXFmsaMgILnDLwCfpQhDmYeVXfKw5sNSi2khZU6ASeL4oyJjVaF0uSDEsgx
-TAPPAY_MERCHANT_ID=tppf_RabbirReaper_GP_POS_3
-TAPPAY_SANDBOX_MODE=true
-TAPPAY_API_BASE_URL=https://sandbox.tappaysdk.com
+    %% Transaction 創建（關鍵步驟）
+    GenTxnId --> CreateTransaction[🎯 Step 1: 創建 Transaction<br/>transactionService.createTransaction<br/>• tempOrderData: 完整訂單資訊<br/>• status: pending<br/>• amount: 訂單金額]
+
+    CreateTransaction --> MarkProcessing[🎯 Step 2: 標記處理中<br/>transactionService.markAsProcessing<br/>• status: processing]
+
+    %% TapPay API 調用
+    MarkProcessing --> CallTapPay[🎯 Step 3: 呼叫 TapPay API<br/>tapPayService.payByPrime<br/>• primeToken<br/>• amount<br/>• orderDetails]
+
+    CallTapPay --> TapPayResult{🎯 Step 4: TapPay 付款結果}
+
+    %% 付款成功分支
+    TapPayResult -->|付款成功| MarkCompleted[🎯 Step 5: 標記付款完成<br/>transactionService.markAsCompleted<br/>• status: completed<br/>• 記錄 TapPay 回應]
+
+    MarkCompleted --> CreateOrderFromTxn[🎯 Step 6: 創建正式訂單<br/>從 Transaction.tempOrderData<br/>創建 Order status: paid]
+
+    CreateOrderFromTxn --> LinkOrderTxn[🎯 Step 7: 關聯訂單與交易<br/>transaction.orderId = order._id<br/>清除 tempOrderData]
+
+    LinkOrderTxn --> ProcessComplete[處理付款後續邏輯<br/>• 庫存扣減<br/>• 點數給予<br/>• 券類標記]
+
+    ProcessComplete --> OnlineResponse[返回 paid 訂單<br/>status: online_success]
+
+    %% 付款失敗分支
+    TapPayResult -->|付款失敗| MarkFailed[標記付款失敗<br/>transactionService.markAsFailed<br/>• status: failed<br/>• 記錄失敗原因]
+
+    MarkFailed --> CleanupFailed[清理失敗交易<br/>保留 Transaction 記錄供審計]
+    CleanupFailed --> PaymentError[返回付款失敗錯誤<br/>status: payment_failed]
+
+    %% 前端響應處理
+    CashResponse --> FrontendCash[前端：顯示等待付款確認<br/>訂單編號 + 櫃檯付款提示]
+    OnlineResponse --> FrontendOnline[前端：顯示付款成功<br/>訂單確認 + 清空購物車]
+    PaymentError --> FrontendError[前端：顯示付款失敗<br/>保持購物車 + 重試選項]
+    ValidationError --> FrontendValidation[前端：顯示驗證錯誤<br/>用戶修正後重新提交]
+    PrimeError --> FrontendPrime[前端：信用卡錯誤<br/>用戶重新輸入卡片資訊]
+
+    %% 樣式定義
+    classDef frontendNode fill:#e3f2fd,stroke:#1976d2
+    classDef backendNode fill:#f3e5f5,stroke:#7b1fa2
+    classDef transactionNode fill:#fff59d,stroke:#f57c00,stroke-width:3px
+    classDef decisionNode fill:#fff3e0,stroke:#ff8f00
+    classDef successNode fill:#c8e6c9,stroke:#388e3c
+    classDef errorNode fill:#ffcdd2,stroke:#d32f2f
+    classDef cashNode fill:#e8f5e8,stroke:#4caf50
+
+    class Start,GetPrime,OnlineFlow,CashFlow,CallAPI1,CallAPI2,FrontendCash,FrontendOnline,FrontendError,FrontendValidation,FrontendPrime frontendNode
+    class BackendValidate,CashValidate,OnlineValidate,GenTxnId,CallTapPay,CreateOrderFromTxn,LinkOrderTxn,ProcessComplete,CleanupFailed backendNode
+    class CreateTransaction,MarkProcessing,MarkCompleted,MarkFailed transactionNode
+    class PaymentChoice,PrimeResult,ValidateResult,CheckPaymentType,TapPayResult decisionNode
+    class OnlineResponse,CashResponse successNode
+    class ValidationError,PaymentError,PrimeError errorNode
+    class CreateCashOrder cashNode
 ```
 
-## Phase 2: 前端整合
+## 🎯 現有架構評估
 
-### 2.1 TapPay SDK 引入
+### ✅ 已完成的後端服務
+
+- **TapPay 服務**: `server/services/payment/tapPayService.js` ✅
+- **交易管理**: `server/services/payment/transactionService.js` ✅
+- **支付處理**: `server/services/payment/paymentOrderService.js` ✅
+- **訂單服務**: `server/services/order/orderCustomer.js` ✅
+- **Transaction 模型**: `server/models/Payment/Transaction.js` ✅
+
+### 🔧 需要整合的部分
+
+- 統一 API 接口設計
+- 前端 TapPay SDK 整合
+- 購物車狀態管理優化
+
+## Phase 1: 後端 API 統一整合
+
+### 1.1 修改訂單控制器 - 統一接口
+
+**檔案**: `server/controllers/Order/orderCustomer.js`
+
+#### 🎯 關鍵修改：createOrder 方法
+
+```javascript
+/**
+ * 統一創建訂單接口 - 根據 paymentType 自動路由
+ */
+export const createOrder = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
+  const { orderData, paymentType, paymentMethod, primeToken } = req.body
+
+  // 基本驗證
+  if (!orderData || !paymentType) {
+    throw new AppError('缺少必要的訂單資料', 400)
+  }
+
+  // 🔀 根據付款類型路由到不同處理流程
+  if (paymentType === 'On-site') {
+    // 現場付款流程 - 直接創建 unpaid 訂單
+    const result = await orderCustomer.createOrder({
+      ...orderData,
+      paymentType,
+      paymentMethod: 'cash',
+      brand: brandId,
+      store: storeId,
+      user: req.user?.id,
+    })
+
+    res.json({
+      success: true,
+      order: result,
+      status: 'cash_submitted',
+      message: '訂單已送出，請至櫃台付款',
+    })
+  } else if (paymentType === 'Online' && primeToken) {
+    // 線上付款流程 - 先付款後創建訂單
+    const result = await paymentOrderService.processPaymentAndCreateOrder(
+      {
+        ...orderData,
+        brand: brandId,
+        store: storeId,
+        customerId: req.user?.id,
+        customerName: orderData.customerInfo?.name,
+        customerPhone: orderData.customerInfo?.phone,
+        customerEmail: orderData.customerInfo?.email,
+        totalAmount: orderData.total || calculateTotal(orderData.items),
+      },
+      primeToken,
+      paymentMethod || 'credit_card',
+    )
+
+    if (result.success) {
+      res.json({
+        success: true,
+        order: result.order,
+        status: 'online_success',
+        transaction: result.transaction,
+        message: '付款成功，訂單已確認',
+      })
+    } else {
+      throw new AppError('線上付款處理失敗', 400)
+    }
+  } else {
+    throw new AppError('無效的付款參數', 400)
+  }
+})
+```
+
+### 1.2 API 路由設定
+
+**檔案**: `server/routes/Order/orderCustomer.js`
+
+```javascript
+// 統一訂單創建接口
+router.post(
+  '/brands/:brandId/stores/:storeId/create',
+  authMiddleware.optionalAuth, // 支援匿名和登入用戶
+  createOrder,
+)
+```
+
+### 1.3 回應格式標準化
+
+```javascript
+// 統一回應格式
+const apiResponse = {
+  success: boolean,
+  order?: Object,
+  status: 'cash_submitted' | 'online_success' | 'payment_failed',
+  transaction?: Object,
+  message: string,
+  error?: string
+}
+```
+
+## Phase 2: 前端整合改造
+
+### 2.1 TapPay SDK 整合
+
+**檔案**: `public/index.html`
 
 ```html
-<!-- 在 public/index.html 中加入 -->
-<script src="https://js.tappaysdk.com/tpdirect/v4"></script>
+<!-- TapPay SDK -->
+<script src="https://js.tappaysdk.com/tpdirect/v5.14.0"></script>
 ```
 
-### 2.2 修改付款組件
+### 2.2 修改 CustomerInfoForm.vue
 
-**檔案**: `src/components/customer/cart/CustomerInfoForm.vue`
+#### 🎯 主要改動：
 
-#### 需要的修改:
+```vue
+<template>
+  <div class="customer-info-container">
+    <!-- 現有的顧客資訊表單 -->
 
-- [ ] 初始化 TapPay SDK
-- [ ] 設定信用卡欄位為 TapPay Fields
-- [ ] 實作 Prime Token 生成
-- [ ] 移除模擬警告訊息
+    <!-- 付款方式選擇 -->
+    <div class="payment-methods">
+      <h6 class="mb-3 fw-bold">付款方式</h6>
 
-```javascript
-// 新增 TapPay 初始化
+      <div class="form-check mb-3">
+        <input type="radio" id="cashPayment" value="cash" v-model="localPaymentMethod" />
+        <label for="cashPayment">
+          <strong>現場付款</strong>
+          <small class="d-block text-muted">訂單送出後請至櫃台付款</small>
+        </label>
+      </div>
+
+      <div class="form-check mb-3">
+        <input
+          type="radio"
+          id="creditCardPayment"
+          value="credit_card"
+          v-model="localPaymentMethod"
+        />
+        <label for="creditCardPayment">
+          <strong>信用卡付款</strong>
+          <small class="d-block text-muted">安全線上付款</small>
+        </label>
+      </div>
+    </div>
+
+    <!-- 🔥 TapPay 信用卡輸入區域 -->
+    <div v-if="localPaymentMethod === 'credit_card'" class="tappay-credit-card">
+      <div class="alert alert-info mb-3">
+        <i class="bi bi-shield-check me-2"></i>
+        採用 TapPay 金流加密技術保護您的付款資訊
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label">卡號</label>
+          <div id="tappay-card-number" class="tappay-field"></div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">有效期限</label>
+          <div id="tappay-card-expiry" class="tappay-field"></div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">安全碼</label>
+          <div id="tappay-card-ccv" class="tappay-field"></div>
+        </div>
+      </div>
+
+      <div class="card-status mt-3">
+        <small :class="cardStatusClass">{{ cardStatusMessage }}</small>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+
+// TapPay 相關狀態
+const tapPayCard = ref(null)
+const cardIsValid = ref(false)
+const cardStatusMessage = ref('請輸入信用卡資訊')
+
+// TapPay SDK 初始化
 onMounted(() => {
-  TPDirect.setupSDK(APP_ID, 'APP_KEY', 'sandbox')
-
-  // 設定信用卡欄位
-  TPDirect.card.setup({
-    fields: {
-      number: {
-        element: '#cardNumber',
-        placeholder: '**** **** **** ****',
-      },
-      expirationDate: {
-        element: '#expiryDate',
-        placeholder: 'MM / YY',
-      },
-      ccv: {
-        element: '#cvv',
-        placeholder: 'CVV',
-      },
-    },
-    styles: {
-      // 自定義樣式
-    },
-  })
+  if (window.TPDirect) {
+    initTapPay()
+  } else {
+    loadTapPayScript()
+  }
 })
 
-// 新增獲取 Prime Token 方法
+const loadTapPayScript = () => {
+  if (document.querySelector('script[src*="tappaysdk"]')) {
+    initTapPay()
+    return
+  }
+
+  const script = document.createElement('script')
+  script.src = 'https://js.tappaysdk.com/tpdirect/v5.14.0'
+  script.onload = initTapPay
+  document.head.appendChild(script)
+}
+
+const initTapPay = () => {
+  // 使用現有環境變數中的 TapPay 設定
+  window.TPDirect.setupSDK(
+    '160922',
+    'app_PTXFmsaMgILnDLwCfpQhDmYeVXfKw5sNSi2khZU6ASeL4oyJjVaF0uSDEsgx',
+    'sandbox',
+  )
+
+  tapPayCard.value = window.TPDirect.card.setup({
+    fields: {
+      number: { element: '#tappay-card-number', placeholder: '**** **** **** ****' },
+      expirationDate: { element: '#tappay-card-expiry', placeholder: 'MM / YY' },
+      ccv: { element: '#tappay-card-ccv', placeholder: 'CVV' },
+    },
+    styles: {
+      input: {
+        color: '#495057',
+        'font-size': '16px',
+        'line-height': '1.5',
+        border: '1px solid #ced4da',
+        'border-radius': '0.375rem',
+        padding: '0.375rem 0.75rem',
+      },
+    },
+  })
+
+  // 監聽卡片狀態
+  tapPayCard.value.onUpdate((update) => {
+    cardIsValid.value = update.canGetPrime
+    updateCardStatus(update)
+  })
+}
+
+const updateCardStatus = (update) => {
+  if (update.canGetPrime) {
+    cardStatusMessage.value = '✅ 信用卡資訊有效'
+  } else if (update.status.number === 2) {
+    cardStatusMessage.value = '❌ 卡號格式錯誤'
+  } else if (update.status.expirationDate === 2) {
+    cardStatusMessage.value = '❌ 有效期限格式錯誤'
+  } else if (update.status.ccv === 2) {
+    cardStatusMessage.value = '❌ 安全碼格式錯誤'
+  } else {
+    cardStatusMessage.value = '請完整填寫信用卡資訊'
+  }
+}
+
+// 獲取 Prime Token 的方法
 const getPrimeToken = () => {
   return new Promise((resolve, reject) => {
-    TPDirect.card.getPrime((result) => {
+    if (!tapPayCard.value) {
+      reject(new Error('TapPay SDK 未初始化'))
+      return
+    }
+
+    if (!cardIsValid.value) {
+      reject(new Error('信用卡資訊不完整或格式錯誤'))
+      return
+    }
+
+    tapPayCard.value.getPrime((result) => {
       if (result.status !== 0) {
-        reject(new Error('獲取 Prime Token 失敗'))
+        reject(new Error('獲取付款憑證失敗：' + result.msg))
       } else {
         resolve(result.card.prime)
       }
     })
   })
 }
+
+// 暴露給父組件
+defineExpose({
+  getPrimeToken,
+  isCardValid: computed(() => cardIsValid.value),
+})
+</script>
+
+<style scoped>
+.tappay-field {
+  min-height: 38px;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.card-status {
+  font-size: 0.875rem;
+}
+
+.text-success {
+  color: #198754 !important;
+}
+.text-danger {
+  color: #dc3545 !important;
+}
+.text-muted {
+  color: #6c757d !important;
+}
+</style>
 ```
 
-### 2.3 建立支付處理組件
+### 2.3 修改購物車 submitOrder 邏輯
 
-**新檔案**: `src/components/customer/payment/TapPayCreditCard.vue`
+**檔案**: `src/stores/cart.js`
+
+#### 🎯 關鍵修改：
+
+```javascript
+// 修改 submitOrder 方法
+async function submitOrder() {
+  if (isSubmitting.value) return { success: false, message: '訂單正在處理中...' }
+
+  if (!validateOrder()) {
+    return { success: false, errors: validationErrors.value }
+  }
+
+  try {
+    isSubmitting.value = true
+
+    // 準備基本訂單資料
+    const orderData = {
+      items: items.value.map((item) => ({
+        // 現有的 item 轉換邏輯
+      })),
+      orderType: orderType.value,
+      customerInfo: customerInfo.value,
+      deliveryInfo: deliveryInfo.value,
+      dineInInfo: dineInInfo.value,
+      notes: notes.value,
+      discounts: appliedCoupons.value.map((discount) => ({
+        discountModel: discount.discountModel,
+        refId: discount.refId,
+        amount: discount.amount,
+      })),
+    }
+
+    // 🔀 根據付款方式決定請求參數
+    const requestData = {
+      orderData,
+      paymentType: paymentMethod.value === 'cash' ? 'On-site' : 'Online',
+      paymentMethod: paymentMethod.value,
+    }
+
+    // 🔥 如果是信用卡付款，需要獲取 Prime Token
+    if (paymentMethod.value === 'credit_card') {
+      const customerInfoForm = getCustomerInfoFormRef() // 需要從父組件獲取引用
+
+      if (!customerInfoForm.isCardValid) {
+        throw new Error('請完整填寫信用卡資訊')
+      }
+
+      const primeToken = await customerInfoForm.getPrimeToken()
+      requestData.primeToken = primeToken
+    }
+
+    // 🎯 呼叫統一 API
+    const response = await api.orderCustomer.createOrder({
+      brandId: currentBrand.value,
+      storeId: currentStore.value,
+      ...requestData,
+    })
+
+    if (response?.success) {
+      clearCart()
+
+      return {
+        success: true,
+        order: response.order,
+        status: response.status, // 'cash_submitted' 或 'online_success'
+        message: response.message,
+        transaction: response.transaction,
+      }
+    }
+
+    throw new Error(response?.message || '訂單處理失敗')
+  } catch (error) {
+    console.error('提交訂單錯誤:', error)
+
+    return {
+      success: false,
+      error: error.message || '訂單提交失敗',
+    }
+  } finally {
+    isSubmitting.value = false
+  }
+}
+```
+
+## Phase 3: 狀態處理與 UI 回饋
+
+### 3.1 建立訂單狀態處理組件
+
+**新檔案**: `src/components/customer/order/OrderStatusDisplay.vue`
 
 ```vue
 <template>
-  <div class="tappay-credit-card">
-    <div class="form-group">
-      <label>卡號</label>
-      <div id="cardNumber" class="tappay-field"></div>
+  <div class="order-status-display">
+    <!-- 現場付款等待狀態 -->
+    <div v-if="status === 'cash_submitted'" class="alert alert-warning">
+      <div class="d-flex align-items-center">
+        <div class="spinner-border spinner-border-sm me-3" role="status"></div>
+        <div class="flex-grow-1">
+          <h6 class="mb-1">
+            <i class="bi bi-receipt me-2"></i>
+            訂單已送出 #{{ orderNumber }}
+          </h6>
+          <p class="mb-0">請至櫃台出示此畫面並完成付款</p>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>有效期限</label>
-      <div id="expiryDate" class="tappay-field"></div>
+
+    <!-- 線上付款成功 -->
+    <div v-if="status === 'online_success'" class="alert alert-success">
+      <div class="text-center">
+        <i class="bi bi-check-circle-fill fs-1 text-success mb-3"></i>
+        <h5 class="mb-2">付款成功！</h5>
+        <p class="mb-2">訂單 #{{ orderNumber }} 已確認</p>
+        <small class="text-muted"> 交易編號：{{ transactionId }} </small>
+      </div>
     </div>
-    <div class="form-group">
-      <label>安全碼</label>
-      <div id="cvv" class="tappay-field"></div>
+
+    <!-- 付款失敗 -->
+    <div v-if="status === 'payment_failed'" class="alert alert-danger">
+      <div class="text-center">
+        <i class="bi bi-x-circle-fill fs-1 text-danger mb-3"></i>
+        <h5 class="mb-2">付款失敗</h5>
+        <p class="mb-3">{{ errorMessage }}</p>
+        <div class="d-flex gap-2 justify-content-center">
+          <button class="btn btn-outline-secondary" @click="$emit('back-to-cart')">
+            返回購物車
+          </button>
+          <button class="btn btn-primary" @click="$emit('retry-payment')">重新付款</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-// TapPay 信用卡組件實作
+const props = defineProps({
+  status: {
+    type: String,
+    required: true,
+  },
+  orderNumber: String,
+  transactionId: String,
+  errorMessage: String,
+})
+
+defineEmits(['back-to-cart', 'retry-payment'])
 </script>
 ```
 
-## Phase 3: 後端 API 開發
+### 3.2 主要購物車頁面整合
 
-### 3.1 建立 TapPay 服務層
+**檔案**: 使用購物車的主要組件
 
-**新檔案**: `server/services/payment/tapPayService.js`
+```vue
+<template>
+  <div class="checkout-page">
+    <!-- 🔄 根據訂單狀態顯示不同界面 -->
+    <div v-if="orderStatus === null">
+      <!-- 原有的購物車和結帳表單 -->
+      <CartComponent />
+      <CustomerInfoForm ref="customerInfoForm" />
+      <button @click="handleSubmitOrder" :disabled="isSubmitting">
+        {{ isSubmitting ? '處理中...' : '確認訂單' }}
+      </button>
+    </div>
 
-```javascript
-import axios from 'axios'
-import { AppError } from '../../middlewares/error.js'
+    <OrderStatusDisplay
+      v-else
+      :status="orderStatus"
+      :order-number="orderData?.sequence"
+      :transaction-id="orderData?.transactionId"
+      :error-message="orderError"
+      @back-to-cart="resetOrderStatus"
+      @retry-payment="retryPayment"
+    />
+  </div>
+</template>
 
-class TapPayService {
-  constructor() {
-    this.baseURL = process.env.TAPPAY_API_BASE_URL
-    this.partnerKey = process.env.TAPPAY_PARTNER_KEY
-    this.merchantId = process.env.TAPPAY_MERCHANT_ID
-  }
+<script setup>
+import { ref } from 'vue'
+import { useCartStore } from '@/stores/cart'
+import OrderStatusDisplay from '@/components/customer/order/OrderStatusDisplay.vue'
 
-  // Pay by Prime API
-  async payByPrime(primeToken, amount, orderDetails) {
-    try {
-      const response = await axios.post(`${this.baseURL}/tpc/payment/pay-by-prime`, {
-        prime: primeToken,
-        partner_key: this.partnerKey,
-        merchant_id: this.merchantId,
-        amount: amount,
-        currency: 'TWD',
-        details: orderDetails.description,
-        cardholder: {
-          phone_number: orderDetails.customerPhone,
-          name: orderDetails.customerName,
-        },
-        remember: false,
-      })
+const cartStore = useCartStore()
+const customerInfoForm = ref(null)
+const orderStatus = ref(null)
+const orderData = ref(null)
+const orderError = ref(null)
+const isSubmitting = ref(false)
 
-      return response.data
-    } catch (error) {
-      throw new AppError('TapPay 支付處理失敗', 400)
-    }
-  }
+const handleSubmitOrder = async () => {
+  isSubmitting.value = true
 
-  // 查詢交易狀態
-  async getTransactionStatus(transactionId) {
-    // 實作交易狀態查詢
-  }
+  try {
+    // 注入 customerInfoForm 引用到 cart store
+    cartStore.setCustomerInfoFormRef(customerInfoForm.value)
 
-  // 退款
-  async refund(transactionId, amount, reason) {
-    // 實作退款功能
-  }
-}
+    const result = await cartStore.submitOrder()
 
-export default new TapPayService()
-```
-
-### 3.2 修改訂單控制器
-
-**檔案**: `server/controllers/Order/orderCustomer.js`
-
-```javascript
-import tapPayService from '../../services/payment/tapPayService.js'
-
-// 修改 processPayment 方法
-export const processPayment = asyncHandler(async (req, res) => {
-  const { orderId, brandId } = req.params
-  const { primeToken, paymentMethod } = req.body
-
-  const order = await Order.findOne({ _id: orderId, brand: brandId })
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404)
-  }
-
-  if (paymentMethod === 'credit_card') {
-    // 使用 TapPay 處理信用卡支付
-    const paymentResult = await tapPayService.payByPrime(primeToken, order.total, {
-      description: `訂單 ${order.orderNumber}`,
-      customerName: order.customerInfo.name,
-      customerPhone: order.customerInfo.phone,
-    })
-
-    if (paymentResult.status === 0) {
-      // 支付成功
-      order.status = 'paid'
-      order.transactionId = paymentResult.rec_trade_id
-      order.paymentDetails = {
-        method: 'credit_card',
-        processor: 'tappay',
-        transactionId: paymentResult.rec_trade_id,
-        bankTransactionId: paymentResult.bank_transaction_id,
-      }
-      await order.save()
-
-      // 處理支付完成後續流程
-      const result = await processOrderPaymentComplete(order)
-
-      res.json({
-        success: true,
-        message: '支付成功',
-        order: result,
-        transactionId: paymentResult.rec_trade_id,
-      })
+    if (result.success) {
+      orderStatus.value = result.status
+      orderData.value = result.order
     } else {
-      throw new AppError(paymentResult.msg || '支付失敗', 400)
+      orderStatus.value = 'payment_failed'
+      orderError.value = result.error
     }
+  } catch (error) {
+    orderStatus.value = 'payment_failed'
+    orderError.value = error.message
+  } finally {
+    isSubmitting.value = false
   }
-})
-```
-
-### 3.3 建立支付模型
-
-**新檔案**: `server/models/Payment/Transaction.js`
-
-```javascript
-import mongoose from 'mongoose'
-
-const transactionSchema = new mongoose.Schema(
-  {
-    orderId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Order',
-      required: true,
-    },
-    transactionId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    amount: {
-      type: Number,
-      required: true,
-    },
-    currency: {
-      type: String,
-      default: 'TWD',
-    },
-    paymentMethod: {
-      type: String,
-      enum: ['credit_card', 'line_pay'],
-      required: true,
-    },
-    processor: {
-      type: String,
-      default: 'tappay',
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'completed', 'failed', 'refunded'],
-      default: 'pending',
-    },
-    processorResponse: {
-      type: mongoose.Schema.Types.Mixed,
-    },
-  },
-  {
-    timestamps: true,
-  },
-)
-
-export default mongoose.model('Transaction', transactionSchema)
-```
-
-## Phase 4: LINE Pay 整合
-
-### 4.1 LINE Pay API 設定
-
-```javascript
-// TapPay LINE Pay 整合
-const processLinePayment = async (amount, orderInfo) => {
-  const response = await axios.post(`${this.baseURL}/tpc/line-pay/payment`, {
-    partner_key: this.partnerKey,
-    merchant_id: this.merchantId,
-    amount: amount,
-    currency: 'TWD',
-    order_number: orderInfo.orderNumber,
-    product_name: orderInfo.productName,
-    return_url: `${process.env.FRONTEND_URL}/payment/line-pay/return`,
-    notify_url: `${process.env.BACKEND_URL}/api/orders/payment/line-pay/notify`,
-  })
-
-  return response.data
 }
+
+const resetOrderStatus = () => {
+  orderStatus.value = null
+  orderError.value = null
+}
+
+const retryPayment = () => {
+  resetOrderStatus()
+  // 重新顯示付款表單
+}
+</script>
 ```
 
-## Phase 5: 測試計劃
+## Phase 4: 測試計劃
 
-### 5.1 單元測試
-
-**新檔案**: `tests/unit/server/services/payment/tapPayService.test.js`
+### 4.1 整合測試用例
 
 ```javascript
-import { describe, it, expect, vi } from 'vitest'
-import tapPayService from '../../../../../server/services/payment/tapPayService.js'
-
-describe('TapPay Service', () => {
-  it('should process credit card payment successfully', async () => {
-    // 測試信用卡支付
-  })
-
-  it('should handle payment failure correctly', async () => {
-    // 測試支付失敗處理
-  })
-})
-```
-
-### 5.2 整合測試
-
-- [ ] 測試完整支付流程 (前端 → 後端 → TapPay)
-- [ ] 測試錯誤處理 (無效卡號、餘額不足等)
-- [ ] 測試回調處理
-- [ ] 測試退款功能
-
-### 5.3 測試用例
-
-```javascript
-// 測試資料
-const testCases = [
+// 測試用例
+const testScenarios = [
   {
-    name: '成功支付',
-    cardNumber: '4242424242424242',
-    cvv: '123',
-    expectedResult: 'success',
+    name: '現場付款流程',
+    paymentMethod: 'cash',
+    expectedStatus: 'cash_submitted',
+    expectedOrder: { status: 'unpaid' },
   },
   {
-    name: '餘額不足',
+    name: '信用卡付款成功',
+    paymentMethod: 'credit_card',
+    cardNumber: '4242424242424242',
+    expectedStatus: 'online_success',
+    expectedOrder: { status: 'paid' },
+  },
+  {
+    name: '信用卡付款失敗',
+    paymentMethod: 'credit_card',
     cardNumber: '4000000000000002',
-    cvv: '123',
-    expectedResult: 'insufficient_funds',
+    expectedStatus: 'payment_failed',
   },
 ]
 ```
 
-## Phase 6: 部署與監控
+### 4.2 前端測試重點
 
-### 6.1 生產環境設定
+- [ ] TapPay SDK 正確載入和初始化
+- [ ] Prime Token 生成成功
+- [ ] 信用卡驗證錯誤處理
+- [ ] 統一 API 呼叫正確性
+- [ ] 狀態切換 UI 正確顯示
 
-- [ ] 更新環境變數為生產環境
-- [ ] 設定 HTTPS 憑證
-- [ ] 配置回調 URL
-- [ ] 設定錯誤監控 (Sentry)
+### 4.3 後端測試重點
 
-### 6.2 監控與日誌
+- [ ] paymentType 路由邏輯正確
+- [ ] Transaction 創建時機正確
+- [ ] TapPay API 整合正常
+- [ ] 錯誤處理完整性
+
+## Phase 5: 部署檢查清單
+
+### 5.1 環境變數確認
 
 ```javascript
-// 支付日誌
-const paymentLogger = {
-  logPaymentAttempt: (orderId, amount, method) => {
-    console.log(`Payment attempt: Order ${orderId}, Amount ${amount}, Method ${method}`)
-  },
-  logPaymentSuccess: (orderId, transactionId) => {
-    console.log(`Payment success: Order ${orderId}, Transaction ${transactionId}`)
-  },
-  logPaymentFailure: (orderId, error) => {
-    console.error(`Payment failed: Order ${orderId}, Error ${error}`)
-  },
+// 必要的環境變數
+{
+  TAPPAY_APP_ID: '160922',
+  TAPPAY_APP_KEY: 'app_PTXFmsaMgILnDLwCfpQhDmYeVXfKw5sNSi2khZU6ASeL4oyJjVaF0uSDEsgx',
+  TAPPAY_MERCHANT_ID: 'tppf_RabbirReaper_GP_POS_3',
+  TAPPAY_SANDBOX_MODE: 'true', // 生產環境改為 'false'
+  TAPPAY_API_BASE_URL: 'https://sandbox.tappaysdk.com' // 生產環境改為正式URL
 }
 ```
 
+### 5.2 HTTPS 確認
+
+- [ ] 確保前端和後端都使用 HTTPS
+- [ ] 驗證 SSL 憑證有效性
+- [ ] 測試 TapPay SDK 在 HTTPS 環境下正常運作
+
 ## 實作時程規劃
 
-### Week 1: 基礎設定
+### Week 1: 後端統一 API 整合
 
-- [ ] TapPay Portal 設定
-- [ ] 開發環境 HTTPS 配置
-- [ ] 環境變數配置
+- [ ] 修改 orderCustomer.js 控制器
+- [ ] 實作 paymentType 路由邏輯
+- [ ] 統一回應格式
 
-### Week 2: 前端整合
+### Week 2: 前端 TapPay SDK 整合
 
-- [ ] TapPay SDK 整合
-- [ ] 信用卡表單重構
-- [ ] Prime Token 生成
+- [ ] 修改 CustomerInfoForm.vue
+- [ ] TapPay SDK 初始化
+- [ ] Prime Token 生成功能
 
-### Week 3: 後端開發
+### Week 3: 購物車狀態管理
 
-- [ ] 支付服務層開發
-- [ ] API 端點修改
-- [ ] 資料庫模型更新
+- [ ] 修改 cart.js submitOrder 邏輯
+- [ ] 建立 OrderStatusDisplay 組件
+- [ ] 整合狀態處理流程
 
-### Week 4: 測試與優化
+### Week 4: 測試與除錯
 
-- [ ] 單元測試
-- [ ] 整合測試
-- [ ] 錯誤處理優化
+- [ ] 端到端測試
+- [ ] 錯誤處理測試
+- [ ] UI/UX 調整
 
 ### Week 5: 部署與監控
 
 - [ ] 生產環境部署
-- [ ] 監控系統設定
+- [ ] 監控系統確認
 - [ ] 用戶驗收測試
 
-## 潛在風險與注意事項
+## 關鍵成功因素
 
-1. **安全性**
-
-   - 確保所有敏感資料加密傳輸
-   - 定期輪換 API 金鑰
-   - 實作 CSRF 保護
-
-2. **效能**
-
-   - 設定適當的超時時間 (建議 30 秒)
-   - 實作重試機制
-   - 監控 API 回應時間
-
-3. **用戶體驗**
-
-   - 提供清楚的錯誤訊息
-   - 實作載入狀態指示
-   - 支援多語言錯誤訊息
-
-4. **合規性**
-   - 遵守 PCI DSS 標準
-   - 確保個資保護合規
-   - 定期安全審查
-
-## 後續功能擴展
-
-- [ ] Apple Pay / Google Pay 整合
-- [ ] 定期付款功能
-- [ ] 多幣別支援
-- [ ] 分期付款選項
-- [ ] 退款自動化流程
-
----
-
-**建議**: 建議先完成 Direct Pay (信用卡) 整合並充分測試後，再進行 LINE Pay 等其他支付方式的整合。
-
-**聯繫方式**: 如有技術問題，請聯繫 TapPay 技術支援 support@cherri.tech
+1. **充分利用現有服務**: 避免重複開發，專注於整合
+2. **統一 API 設計**: 簡化前端邏輯，提升維護性
+3. **Transaction 管理**: 確保付款流程的完整性和可追蹤性
+4. **錯誤處理**: 提供良好的用戶體驗和除錯資訊
+5. **測試覆蓋**: 確保所有付款場景都經過充分測試
