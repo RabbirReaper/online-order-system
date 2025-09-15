@@ -143,6 +143,9 @@ vi.mock('express-session', () => vi.fn().mockReturnValue((req, res, next) => nex
 
 // 模擬 dotenv
 vi.mock('dotenv', () => ({
+  default: {
+    config: vi.fn()
+  },
   config: vi.fn()
 }));
 

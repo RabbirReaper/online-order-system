@@ -19,12 +19,13 @@ export const {
   getUserOrders,
   getUserOrderById,
   processPayment,
-  handlePaymentCallback,
+  paymentCallback,
   generateOrderNumber,
   calculateOrderAmounts,
   updateOrderAmounts,
   processOrderPaymentComplete,
   processOrderPointsReward,
+  issueVoucherToUser,
 } = orderCustomer
 
 export const { getStoreOrders, getOrderById, updateOrder, cancelOrder } = orderAdmin

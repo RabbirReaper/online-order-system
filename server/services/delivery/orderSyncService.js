@@ -8,7 +8,7 @@ import Store from '../../models/Store/Store.js'
 import DishTemplate from '../../models/Dish/DishTemplate.js'
 import DishInstance from '../../models/Dish/DishInstance.js'
 import { AppError } from '../../middlewares/error.js'
-import { generateOrderNumber } from '../order/orderCustomer.js'
+import { generateOrderNumber } from '../order/orderUtils.js'
 // import * as ubereatsService from './ubereatsService.js'
 
 // 🔧 支援的平台列表（與 schema enum 保持一致）
