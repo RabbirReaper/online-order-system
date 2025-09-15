@@ -7,24 +7,37 @@
 export default function (apiClient) {
   return {
     /**
-     * 創建訂單
+     * 創建訂單 (統一API架構)
      * @param {Object} params - 創建參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.storeId - 店鋪ID（必填）
      * @param {Object} params.orderData - 訂單資料
      * @param {Array} params.orderData.items - 訂單項目
      * @param {string} params.orderData.orderType - 訂單類型 ('dine_in', 'takeout', 'delivery')
-     * @param {string} params.orderData.paymentType - 付款類型 ('On-site', 'Online')
-     * @param {string} params.orderData.paymentMethod - 付款方式 ('cash', 'credit_card', 'line_pay', 'other')
      * @param {Object} [params.orderData.customerInfo] - 顧客資訊
      * @param {Object} [params.orderData.deliveryInfo] - 配送資訊（外送訂單）
      * @param {Object} [params.orderData.dineInInfo] - 內用資訊（內用訂單）
      * @param {Date} [params.orderData.estimatedPickupTime] - 預計取餐時間（外帶訂單）
      * @param {string} [params.orderData.notes] - 訂單備註
+     * @param {number} [params.orderData.total] - 訂單總金額
+     * @param {string} params.paymentType - 付款類型 ('On-site', 'Online')（必填）
+     * @param {string} params.paymentMethod - 付款方式 ('cash', 'credit_card', 'line_pay', 'other')（必填）
+     * @param {string} [params.primeToken] - TapPay Prime Token（線上付款時必填）
      * @returns {Promise} - API 回應
      */
-    createOrder({ brandId, storeId, orderData }) {
-      return apiClient.post(`/order-customer/brands/${brandId}/stores/${storeId}/create`, orderData)
+    createOrder({ brandId, storeId, orderData, paymentType, paymentMethod, primeToken }) {
+      const requestData = {
+        orderData,
+        paymentType,
+        paymentMethod
+      }
+
+      // 線上付款時需要 primeToken
+      if (paymentType === 'Online' && primeToken) {
+        requestData.primeToken = primeToken
+      }
+
+      return apiClient.post(`/order-customer/brands/${brandId}/stores/${storeId}/create`, requestData)
     },
 
     /**

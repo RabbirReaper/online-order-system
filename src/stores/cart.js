@@ -500,11 +500,15 @@ export const useCartStore = defineStore('cart', () => {
       console.log('訂單資料:', JSON.stringify(orderData, null, 2))
       console.log('========================')
 
-      // 提交訂單
+      // 提交訂單 (使用統一API架構)
       const response = await api.orderCustomer.createOrder({
         brandId: currentBrand.value,
         storeId: currentStore.value,
         orderData,
+        paymentType: paymentType.value, // 使用store中的付款類型
+        paymentMethod: paymentMethod.value, // 使用store中的付款方式
+        // TODO: 如果是Online付款，需要在這裡添加primeToken
+        // primeToken: primeToken // 線上付款時需要的TapPay Prime Token
       })
 
       console.log('=== API 回應 ===')
