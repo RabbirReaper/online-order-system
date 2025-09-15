@@ -276,6 +276,8 @@ export const useCounterCartStore = defineStore('counterCart', () => {
         brandId,
         storeId,
         orderData,
+        paymentType: 'On-site', // 櫃檯系統固定為現場付款
+        paymentMethod: 'cash', // 櫃檯系統預設為現金付款
       })
 
       if (response.success) {

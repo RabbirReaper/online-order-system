@@ -1,11 +1,11 @@
 import express from 'express'
 import * as orderController from '../controllers/Order/orderCustomer.js'
-import { authenticate } from '../middlewares/auth/index.js'
+import { authenticate, optionalAuth } from '../middlewares/auth/index.js'
 
 const router = express.Router()
 
-// 創建訂單（公開，可匿名訪問）
-router.post('/brands/:brandId/stores/:storeId/create', orderController.createOrder)
+// 創建訂單（支援匿名和登入用戶）
+router.post('/brands/:brandId/stores/:storeId/create', optionalAuth('user'), orderController.createOrder)
 
 // 個人訂單列表（需要用戶認證）
 router.get('/brands/:brandId/my-orders', authenticate('user'), orderController.getUserOrders)

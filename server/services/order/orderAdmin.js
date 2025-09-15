@@ -1,5 +1,5 @@
 /**
- * 訂單管理員服務
+ * 訂單管理員服務 - 重構版
  * 處理管理員相關的訂單操作（支援 Bundle 訂單 + Voucher 恢復）
  */
 
@@ -7,83 +7,26 @@ import Order from '../../models/Order/Order.js'
 import VoucherInstance from '../../models/Promotion/VoucherInstance.js'
 import CouponInstance from '../../models/Promotion/CouponInstance.js'
 import { AppError } from '../../middlewares/error.js'
-import { parseDateString, getStartOfDay, getEndOfDay } from '../../utils/date.js'
-// 直接導入而非動態導入
+
+// 導入重構後的模組
+import {
+  getStoreOrders as getStoreOrdersCore,
+  getUserOrders as getUserOrdersCore,
+  getOrderById as getOrderByIdCore
+} from './orderQueries.js'
 import {
   processOrderPaymentComplete,
   processOrderPointsReward,
-  updateOrderAmounts,
-} from './orderCustomer.js'
+  restoreUsedVouchers,
+  restoreUsedCoupons
+} from './orderPayment.js'
+import { updateOrderAmounts } from './orderUtils.js'
 
 /**
  * 獲取店鋪訂單列表
  */
 export const getStoreOrders = async (storeId, options = {}) => {
-  const { status, orderType, fromDate, toDate, page = 1, limit = 20 } = options
-
-  const query = { store: storeId }
-
-  if (status) {
-    query.status = status
-  }
-
-  if (orderType) {
-    query.orderType = orderType
-  }
-
-  // 處理日期範圍
-  if (fromDate || toDate) {
-    query.createdAt = {}
-
-    if (fromDate) {
-      try {
-        const startDateTime = getStartOfDay(parseDateString(fromDate))
-        query.createdAt.$gte = startDateTime.toJSDate()
-      } catch (error) {
-        console.error('解析開始日期失敗:', error)
-        throw new AppError('無效的開始日期格式', 400)
-      }
-    }
-
-    if (toDate) {
-      try {
-        const endDateTime = getEndOfDay(parseDateString(toDate))
-        query.createdAt.$lte = endDateTime.toJSDate()
-      } catch (error) {
-        console.error('解析結束日期失敗:', error)
-        throw new AppError('無效的結束日期格式', 400)
-      }
-    }
-  }
-
-  const skip = (page - 1) * limit
-  const total = await Order.countDocuments(query)
-
-  // 查詢訂單，包含 Bundle 資訊
-  const orders = await Order.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate('items.dishInstance', 'name finalPrice options')
-    .populate('items.bundleInstance', 'name finalPrice')
-    .populate('user', 'name email phone')
-    .lean()
-
-  const totalPages = Math.ceil(total / limit)
-  const hasNextPage = page < totalPages
-  const hasPrevPage = page > 1
-
-  return {
-    orders,
-    pagination: {
-      total,
-      totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage,
-      hasPrevPage,
-    },
-  }
+  return await getStoreOrdersCore(storeId, options)
 }
 
 /**
@@ -91,76 +34,14 @@ export const getStoreOrders = async (storeId, options = {}) => {
  * 功能與客戶版本相同，但允許管理員查看任何用戶的訂單
  */
 export const getUserOrders = async (userId, options = {}) => {
-  const { brandId, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options
-
-  const query = { user: userId }
-  if (brandId) query.brand = brandId
-
-  const skip = (page - 1) * limit
-  const sort = {}
-  sort[sortBy] = sortOrder === 'desc' ? -1 : 1
-
-  const total = await Order.countDocuments(query)
-
-  const orders = await Order.find(query)
-    .populate('store', 'name address')
-    .populate('brand', 'name')
-    .populate('items.dishInstance', 'name finalPrice options')
-    .populate('items.bundleInstance', 'name finalPrice')
-    .sort(sort)
-    .skip(skip)
-    .limit(limit)
-
-  const totalPages = Math.ceil(total / limit)
-  const hasNextPage = page < totalPages
-  const hasPrevPage = page > 1
-
-  return {
-    orders,
-    pagination: {
-      total,
-      totalPages,
-      currentPage: page,
-      limit,
-      hasNextPage,
-      hasPrevPage,
-    },
-  }
+  return await getUserOrdersCore(userId, options)
 }
 
 /**
  * 獲取訂單詳情（管理員）
  */
 export const getOrderById = async (orderId, storeId) => {
-  const query = { _id: orderId }
-  if (storeId) query.store = storeId
-
-  const order = await Order.findOne(query)
-    .populate('items.dishInstance', 'name finalPrice options')
-    .populate({
-      path: 'items.bundleInstance',
-      select: 'name finalPrice templateId',
-      populate: {
-        path: 'templateId',
-        select: 'bundleItems',
-        populate: {
-          path: 'bundleItems.voucherTemplate',
-          select: 'name exchangeDishTemplate',
-          populate: {
-            path: 'exchangeDishTemplate',
-            select: 'name basePrice',
-          },
-        },
-      },
-    })
-    .populate('user', 'name email phone')
-    .lean()
-
-  if (!order) {
-    throw new AppError('訂單不存在', 404)
-  }
-
-  return order
+  return await getOrderByIdCore(orderId, storeId)
 }
 
 /**
@@ -316,84 +197,3 @@ export const cancelOrder = async (orderId, reason, adminId) => {
   return order
 }
 
-/**
- * 恢復使用的 Voucher 狀態
- */
-const restoreUsedVouchers = async (order) => {
-  const voucherDiscounts = order.discounts.filter(
-    (discount) => discount.discountModel === 'VoucherInstance',
-  )
-
-  if (voucherDiscounts.length === 0) {
-    return
-  }
-
-  console.log(`Restoring ${voucherDiscounts.length} used vouchers...`)
-
-  for (const voucherDiscount of voucherDiscounts) {
-    try {
-      const voucher = await VoucherInstance.findById(voucherDiscount.refId)
-
-      if (voucher && voucher.isUsed) {
-        // 檢查兌換券是否過期
-        const now = new Date()
-        if (voucher.expiryDate < now) {
-          console.log(`Voucher ${voucher.voucherName} has expired, cannot restore`)
-          continue
-        }
-
-        // 恢復兌換券狀態
-        voucher.isUsed = false
-        voucher.usedAt = null
-        voucher.orderId = null
-        await voucher.save()
-
-        console.log(`✅ Restored voucher ${voucher.voucherName}`)
-      }
-    } catch (error) {
-      console.error(`Failed to restore voucher ${voucherDiscount.refId}:`, error)
-      // 不拋出錯誤，繼續處理其他兌換券
-    }
-  }
-}
-
-/**
- * 恢復使用的 Coupon 狀態
- */
-const restoreUsedCoupons = async (order) => {
-  const couponDiscounts = order.discounts.filter(
-    (discount) => discount.discountModel === 'CouponInstance',
-  )
-
-  if (couponDiscounts.length === 0) {
-    return
-  }
-
-  console.log(`Restoring ${couponDiscounts.length} used coupons...`)
-
-  for (const couponDiscount of couponDiscounts) {
-    try {
-      const coupon = await CouponInstance.findById(couponDiscount.refId)
-
-      if (coupon && coupon.isUsed) {
-        // 檢查優惠券是否過期
-        const now = new Date()
-        if (coupon.expiryDate < now) {
-          console.log(`Coupon has expired, cannot restore`)
-          continue
-        }
-
-        // 恢復優惠券狀態
-        coupon.isUsed = false
-        coupon.usedAt = null
-        coupon.order = null
-        await coupon.save()
-
-        console.log(`✅ Restored coupon`)
-      }
-    } catch (error) {
-      console.error(`Failed to restore coupon ${couponDiscount.refId}:`, error)
-      // 不拋出錯誤，繼續處理其他優惠券
-    }
-  }
-}

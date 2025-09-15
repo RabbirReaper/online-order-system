@@ -212,6 +212,13 @@ vi.mock('@server/middlewares/auth/index.js', () => ({
     } else {
       next()
     }
+  }),
+  optionalAuth: vi.fn().mockImplementation((userType) => (req, res, next) => {
+    // 可選認證：如果有登入資訊就設置，沒有就繼續
+    if (userType === 'user' && req.session?.userId) {
+      req.auth = { userId: req.session.userId }
+    }
+    next()
   })
 }))
 
@@ -322,11 +329,15 @@ describe('訂單 API 整合測試', () => {
 
       const response = await request(app)
         .post(createOrderEndpoint)
-        .send(orderData)
-        .expect(201)
+        .send({
+          orderData,
+          paymentType: 'On-site',
+          paymentMethod: 'cash'
+        })
+        .expect(200)
 
       expect(response.body.success).toBe(true)
-      expect(response.body.message).toBe('訂單創建成功')
+      expect(response.body.message).toBe('訂單已送出，請至櫃台付款')
       expect(response.body.order).toBeDefined()
       expect(response.body.orderNumber).toBe('250902001')
       
@@ -380,8 +391,12 @@ describe('訂單 API 整合測試', () => {
       const response = await request(app)
         .post(createOrderEndpoint)
         .set('Authorization', 'Bearer test-token')
-        .send(orderData)
-        .expect(201)
+        .send({
+          orderData,
+          paymentType: 'On-site',
+          paymentMethod: 'cash'
+        })
+        .expect(200)
 
       expect(response.body.success).toBe(true)
       expect(orderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
@@ -419,7 +434,11 @@ describe('訂單 API 整合測試', () => {
 
       const response = await request(app)
         .post(createOrderEndpoint)
-        .send(orderData)
+        .send({
+          orderData,
+          paymentType: 'On-site',
+          paymentMethod: 'cash'
+        })
         .expect(400)
 
       expect(response.body.success).toBe(false)
@@ -430,7 +449,7 @@ describe('訂單 API 整合測試', () => {
       const response = await request(app)
         .post(createOrderEndpoint)
         .send({})
-        .expect(500)
+        .expect(400)
 
       expect(response.body.success).toBe(false)
     })
@@ -672,8 +691,12 @@ describe('訂單 API 整合測試', () => {
 
       const createResponse = await request(app)
         .post('/api/orderCustomer/brands/test-brand/stores/test-store/create')
-        .send(orderData)
-        .expect(201)
+        .send({
+          orderData,
+          paymentType: 'On-site',
+          paymentMethod: 'cash'
+        })
+        .expect(200)
 
       expect(createResponse.body.success).toBe(true)
       const orderId = createResponse.body.order._id

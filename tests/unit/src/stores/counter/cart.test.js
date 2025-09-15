@@ -504,9 +504,15 @@ describe('Counter Cart Store', () => {
         orderData: expect.objectContaining({
           orderType: 'takeout',
           paymentType: 'On-site',
+          paymentMethod: '',
           items: expect.any(Array),
-          customerInfo: { name: '顧客' }
-        })
+          customerInfo: { name: '顧客' },
+          notes: '',
+          manualAdjustment: 0,
+          discounts: []
+        }),
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
       })
       expect(result).toEqual(mockResponse.order)
       expect(store.cart).toHaveLength(0) // 購物車應被清空
@@ -523,8 +529,17 @@ describe('Counter Cart Store', () => {
         storeId: 'store1',
         orderData: expect.objectContaining({
           orderType: 'dine_in',
-          dineInInfo: { tableNumber: '5' }
-        })
+          paymentType: 'On-site',
+          paymentMethod: '',
+          customerInfo: { tableNumber: '5' },
+          dineInInfo: { tableNumber: '5' },
+          items: expect.any(Array),
+          notes: '',
+          manualAdjustment: 0,
+          discounts: []
+        }),
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
       })
     })
 
@@ -541,9 +556,17 @@ describe('Counter Cart Store', () => {
         brandId: 'brand1',
         storeId: 'store1',
         orderData: expect.objectContaining({
+          orderType: 'takeout',
+          paymentType: 'On-site',
+          paymentMethod: '',
+          customerInfo: {},
+          items: expect.any(Array),
+          notes: '',
           manualAdjustment: 30,
           discounts: [{ amount: 20 }]
-        })
+        }),
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
       })
     })
 

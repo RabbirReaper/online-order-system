@@ -11,14 +11,27 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
   paymentCallback: vi.fn()
 }))
 
-// Mock asyncHandler
-vi.mock('@server/middlewares/error.js', () => ({
-  asyncHandler: vi.fn((fn) => fn)
+// Mock paymentOrderService
+vi.mock('@server/services/payment/paymentOrderService.js', () => ({
+  default: {
+    processPaymentAndCreateOrder: vi.fn()
+  }
 }))
 
-// 動態導入控制器
+// Mock error middleware
+vi.mock('@server/middlewares/error.js', () => ({
+  asyncHandler: vi.fn((fn) => fn),
+  AppError: vi.fn((message, statusCode) => {
+    const error = new Error(message)
+    error.statusCode = statusCode
+    return error
+  })
+}))
+
+// 動態導入控制器和服務
 const orderController = await import('@server/controllers/Order/orderCustomer.js')
 const orderService = await import('@server/services/order/orderCustomer.js')
+const paymentOrderService = await import('@server/services/payment/paymentOrderService.js')
 
 describe('OrderCustomer Controller', () => {
   let req, res, next
@@ -50,10 +63,14 @@ describe('OrderCustomer Controller', () => {
   })
 
   describe('createOrder', () => {
-    it('應該成功創建訂單並返回正確格式', async () => {
+    it('應該成功創建現場付款訂單', async () => {
       // Arrange
       const orderData = TestDataFactory.createOrder()
-      req.body = orderData
+      req.body = {
+        orderData,
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
+      }
 
       const mockOrderNumber = {
         orderDateCode: '2024010',
@@ -66,8 +83,8 @@ describe('OrderCustomer Controller', () => {
         brand: 'brand123',
         store: 'store456',
         user: 'user123',
-        pointsAwarded: 10,
-        generatedCoupons: ['coupon1', 'coupon2']
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
       }
 
       orderService.generateOrderNumber.mockResolvedValue(mockOrderNumber)
@@ -78,9 +95,11 @@ describe('OrderCustomer Controller', () => {
 
       // Assert
       expect(orderService.generateOrderNumber).toHaveBeenCalledWith('store456')
-      
+
       const expectedOrderData = {
         ...orderData,
+        paymentType: 'On-site',
+        paymentMethod: 'cash',
         brand: 'brand123',
         store: 'store456',
         user: 'user123',
@@ -89,23 +108,22 @@ describe('OrderCustomer Controller', () => {
       }
       expect(orderService.createOrder).toHaveBeenCalledWith(expectedOrderData)
 
-      expect(res.status).toHaveBeenCalledWith(201)
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: '訂單創建成功',
         order: mockOrderResult,
-        orderNumber: '2024010123',
-        pointsAwarded: 10,
-        generatedCoupons: ['coupon1', 'coupon2']
+        status: 'cash_submitted',
+        message: '訂單已送出，請至櫃台付款'
       })
     })
 
     it('應該支援匿名用戶創建訂單', async () => {
       // Arrange
       const orderData = TestDataFactory.createOrder()
-      // 移除 user 屬性，模擬匿名訂單資料
-      delete orderData.user
-      req.body = orderData
+      req.body = {
+        orderData,
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
+      }
       req.auth = null // 匿名用戶
 
       const mockOrderNumber = {
@@ -118,8 +136,8 @@ describe('OrderCustomer Controller', () => {
         ...orderData,
         brand: 'brand123',
         store: 'store456',
-        pointsAwarded: 0,
-        generatedCoupons: []
+        paymentType: 'On-site',
+        paymentMethod: 'cash'
       }
 
       orderService.generateOrderNumber.mockResolvedValue(mockOrderNumber)
@@ -131,50 +149,82 @@ describe('OrderCustomer Controller', () => {
       // Assert
       const expectedOrderData = {
         ...orderData,
+        paymentType: 'On-site',
+        paymentMethod: 'cash',
         brand: 'brand123',
         store: 'store456',
+        user: undefined, // 匿名用戶
         orderDateCode: '2024010',
         sequence: 124
       }
-      // 注意：匿名用戶不應該包含 user 屬性
-      expect(expectedOrderData.user).toBeUndefined()
       expect(orderService.createOrder).toHaveBeenCalledWith(expectedOrderData)
 
-      expect(res.status).toHaveBeenCalledWith(201)
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: '訂單創建成功',
         order: mockOrderResult,
-        orderNumber: '2024010124',
-        pointsAwarded: 0,
-        generatedCoupons: []
+        status: 'cash_submitted',
+        message: '訂單已送出，請至櫃台付款'
       })
     })
 
-    it('應該正確格式化訂單編號', async () => {
+    it('應該成功創建線上付款訂單', async () => {
       // Arrange
       const orderData = TestDataFactory.createOrder()
-      req.body = orderData
-
-      const mockOrderNumber = {
-        orderDateCode: '2024010',
-        sequence: 5 // 測試 padStart 功能
+      req.body = {
+        orderData: {
+          ...orderData,
+          customerInfo: { name: 'Test User', phone: '0912345678', email: 'test@example.com' },
+          total: 1000
+        },
+        paymentType: 'Online',
+        paymentMethod: 'credit_card',
+        primeToken: 'test_prime_token'
       }
 
-      const mockOrderResult = { _id: 'order791', ...orderData }
+      const mockResult = {
+        success: true,
+        order: { _id: 'order791', ...orderData, status: 'paid' },
+        transaction: { transactionId: 'txn_123', status: 'completed' }
+      }
 
-      orderService.generateOrderNumber.mockResolvedValue(mockOrderNumber)
-      orderService.createOrder.mockResolvedValue(mockOrderResult)
+      paymentOrderService.default.processPaymentAndCreateOrder.mockResolvedValue(mockResult)
 
       // Act
       await orderController.createOrder(req, res)
 
       // Assert
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderNumber: '2024010005' // 應該補零到三位數
-        })
+      expect(paymentOrderService.default.processPaymentAndCreateOrder).toHaveBeenCalledWith(
+        {
+          ...orderData,
+          customerInfo: { name: 'Test User', phone: '0912345678', email: 'test@example.com' },
+          total: 1000,
+          brand: 'brand123',
+          store: 'store456',
+          customerId: 'user123',
+          customerName: 'Test User',
+          customerPhone: '0912345678',
+          customerEmail: 'test@example.com',
+          totalAmount: 1000
+        },
+        'test_prime_token',
+        'credit_card'
       )
+
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        order: mockResult.order,
+        status: 'online_success',
+        transaction: mockResult.transaction,
+        message: '付款成功，訂單已確認'
+      })
+    })
+
+    it('應該在缺少必要參數時拋出錯誤', async () => {
+      // Arrange
+      req.body = {} // 缺少必要參數
+
+      // Act & Assert
+      await expect(orderController.createOrder(req, res)).rejects.toThrow('缺少必要的訂單資料')
     })
   })
 
