@@ -4,38 +4,79 @@
  */
 
 import * as orderService from '../../services/order/orderCustomer.js'
-import { asyncHandler } from '../../middlewares/error.js'
+import paymentOrderService from '../../services/payment/paymentOrderService.js'
+import { asyncHandler, AppError } from '../../middlewares/error.js'
 
-// 創建訂單（支援混合購買）
+/**
+ * 統一創建訂單接口 - 根據 paymentType 自動路由
+ */
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params
-  const orderData = req.body
+  const { orderData, paymentType, paymentMethod, primeToken } = req.body
 
-  // 設置訂單的基本資訊
-  orderData.brand = brandId
-  orderData.store = storeId
-
-  // 如果是登入用戶，設置用戶ID
-  if (req.auth && req.auth.userId) {
-    orderData.user = req.auth.userId
+  // 基本驗證
+  if (!orderData || !paymentType) {
+    throw new AppError('缺少必要的訂單資料', 400)
   }
 
-  // 生成訂單編號
-  const orderNumber = await orderService.generateOrderNumber(storeId)
-  orderData.orderDateCode = orderNumber.orderDateCode
-  orderData.sequence = orderNumber.sequence
+  // 🔀 根據付款類型路由到不同處理流程
+  if (paymentType === 'On-site') {
+    // 現場付款流程 - 直接創建 unpaid 訂單
 
-  const result = await orderService.createOrder(orderData)
+    // 設置訂單的基本資訊
+    const completeOrderData = {
+      ...orderData,
+      paymentType,
+      paymentMethod: 'cash',
+      brand: brandId,
+      store: storeId,
+      user: req.auth?.userId,
+    }
 
-  res.status(201).json({
-    success: true,
-    message: '訂單創建成功',
-    order: result,
-    orderNumber: `${orderNumber.orderDateCode}${orderNumber.sequence.toString().padStart(3, '0')}`,
-    // 混合購買相關資訊
-    pointsAwarded: result.pointsAwarded || 0,
-    generatedCoupons: result.generatedCoupons || [],
-  })
+    // 生成訂單編號
+    const orderNumber = await orderService.generateOrderNumber(storeId)
+    completeOrderData.orderDateCode = orderNumber.orderDateCode
+    completeOrderData.sequence = orderNumber.sequence
+
+    const result = await orderService.createOrder(completeOrderData)
+
+    res.json({
+      success: true,
+      order: result,
+      status: 'cash_submitted',
+      message: '訂單已送出，請至櫃台付款',
+    })
+  } else if (paymentType === 'Online' && primeToken) {
+    // 線上付款流程 - 先付款後創建訂單
+    const result = await paymentOrderService.processPaymentAndCreateOrder(
+      {
+        ...orderData,
+        brand: brandId,
+        store: storeId,
+        customerId: req.auth?.userId,
+        customerName: orderData.customerInfo?.name,
+        customerPhone: orderData.customerInfo?.phone,
+        customerEmail: orderData.customerInfo?.email,
+        totalAmount: orderData.total || orderData.totalAmount,
+      },
+      primeToken,
+      paymentMethod || 'credit_card'
+    )
+
+    if (result.success) {
+      res.json({
+        success: true,
+        order: result.order,
+        status: 'online_success',
+        transaction: result.transaction,
+        message: '付款成功，訂單已確認',
+      })
+    } else {
+      throw new AppError('線上付款處理失敗', 400)
+    }
+  } else {
+    throw new AppError('無效的付款參數', 400)
+  }
 })
 
 // 獲取用戶訂單列表

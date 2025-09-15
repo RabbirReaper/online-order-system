@@ -3,7 +3,7 @@
  * 統一匯出所有認證與授權相關的 middleware
  */
 
-import { authenticate } from './authentication.js'
+import { authenticate, optionalAuth } from './authentication.js'
 import {
   requireRole,
   requireSystemLevel,
@@ -17,6 +17,7 @@ import {
 // 統一匯出
 export {
   authenticate,
+  optionalAuth,
   requireRole,
   requireSystemLevel,
   requireBrandAccess,
