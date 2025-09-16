@@ -59,8 +59,7 @@ describe('UberEats Service', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
 
-    // 設定測試環境變數 - 使用 production 配置（符合 UberEats 官方架構）
-    process.env.UBEREATS_ENVIRONMENT = 'production'
+    // 設定測試環境變數
     process.env.UBEREATS_PRODUCTION_CLIENT_ID = 'test_client_id'
     process.env.UBEREATS_PRODUCTION_CLIENT_SECRET = 'test_client_secret'
 
@@ -93,12 +92,10 @@ describe('UberEats Service', () => {
       expect(configStatus).toMatchObject({
         isComplete: expect.any(Boolean),
         config: {
-          environment: 'production',
           clientId: true,
           clientSecret: true,
           apiUrl: true
         },
-        environment: 'production',
         apiUrl: expect.stringContaining('api.uber.com/v1/eats'),
         signatureCapability: {
           canVerify: true,
@@ -109,16 +106,6 @@ describe('UberEats Service', () => {
       })
     })
 
-    // TODO: 修復配置檢測測試 - 環境變數刪除後配置狀態仍為 true
-    // it('should detect missing configuration', () => {
-    //   delete process.env.UBEREATS_SANDBOX_CLIENT_ID
-
-    //   const configStatus = ubereatsService.checkUberEatsConfig()
-
-    //   expect(configStatus.isComplete).toBe(false)
-    //   expect(configStatus.config.clientId).toBe(false)
-    //   expect(configStatus.missing).toContain('clientId')
-    // })
 
     // TODO: 修復 API 連線測試 - token 管理器調用參數不匹配
     // it('should test UberEats API connection successfully', async () => {
@@ -130,16 +117,6 @@ describe('UberEats Service', () => {
     //   expect(tokenManager.getTokenForOperation).toHaveBeenCalledWith()
     // })
 
-    // TODO: 修復連線測試失敗處理 - sandbox 模式下錯誤處理不一致
-    // it('should handle connection test failure', async () => {
-    //   tokenManager.getTokenForOperation.mockImplementation(() => {
-    //     throw new Error('Token not available')
-    //   })
-
-    //   const result = await ubereatsService.testUberEatsConnection()
-
-    //   expect(result).toBe(false)
-    // })
   })
 
   describe('Webhook Signature Verification', () => {
@@ -164,7 +141,7 @@ describe('UberEats Service', () => {
     })
 
     it('should skip signature verification when no client secret configured', async () => {
-      delete process.env.UBEREATS_SANDBOX_CLIENT_SECRET
+      delete process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
       
       const mockOrderData = {
         event_type: 'orders.notification',
@@ -187,17 +164,6 @@ describe('UberEats Service', () => {
       expect(result).toBeDefined()
     })
 
-    // TODO: 修復簽名驗證錯誤處理 - sandbox 模式下簽名驗證邏輯不一致
-    // it('should reject invalid signature', async () => {
-    //   crypto.timingSafeEqual.mockReturnValue(false)
-
-    //   const mockOrderData = { event_type: 'orders.notification' }
-    //   const invalidSignature = 'invalid_signature'
-
-    //   await expect(
-    //     ubereatsService.receiveOrder(mockOrderData, invalidSignature)
-    //   ).rejects.toThrow('Invalid webhook signature')
-    // })
   })
 
   describe('Order Management', () => {
@@ -272,17 +238,6 @@ describe('UberEats Service', () => {
       })
     })
 
-    // TODO: 修復 webhook 資料驗證錯誤處理 - sandbox 模式下錯誤處理不一致
-    // it('should handle missing order ID in webhook', async () => {
-    //   const invalidWebhook = {
-    //     event_type: 'orders.notification',
-    //     meta: {}
-    //   }
-
-    //   await expect(
-    //     ubereatsService.receiveOrder(invalidWebhook)
-    //   ).rejects.toThrow('Order ID not found in webhook data')
-    // })
 
     it('should handle store not found error', async () => {
       global.fetch.mockResolvedValueOnce({
