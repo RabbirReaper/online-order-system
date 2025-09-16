@@ -47,12 +47,17 @@ apiRouter.use('/order-customer', orderCustomerRoutes) // 前台客戶訂單
 apiRouter.use('/order-admin', orderAdminRoutes) // 後台管理員訂單
 
 // API 健康檢查
-apiRouter.get('/health', (req, res) => {
+apiRouter.get('/health', async (req, res) => {
+  const ipResponse = await fetch('https://api.ipify.org?format=json')
+  const ipData = await ipResponse.json()
+
   res.json({
     success: true,
     message: 'API 服務正常運行',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    outboundIP: ipData.ip,
+    expectedFixedIP: '35.201.160.235',
+    isCorrect: ipData.ip === '35.201.160.235',
   })
 })
 
