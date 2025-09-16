@@ -70,13 +70,23 @@ apiRouter.get('/test-outbound-ip', async (req, res) => {
     const username = process.env.KOTSMS_USERNAME
     const password = process.env.KOTSMS_PASSWORD
 
-    // 準備 KOTSMS API 請求資料
+    // 檢查環境變數
+    if (!username || !password) {
+      return res.status(400).json({
+        error: '缺少 KOTSMS_USERNAME 或 KOTSMS_PASSWORD 環境變數',
+      })
+    }
+
+    // 準備 KOTSMS API 請求資料（帳號餘額查詢）
     const kotsmsData = new URLSearchParams({
       username,
       password,
+      // 注意：不提供 msgid 參數，這樣就是帳號餘額查詢
     })
 
-    // 呼叫 KOTSMS API
+    console.log('發送請求到 KOTSMS API...')
+
+    // 呼叫 KOTSMS API - 先用最簡單的 headers
     const kotsmsResponse = await fetch('https://api.kotsms.com.tw:8515/kotsms/SmQuery', {
       method: 'POST',
       headers: {
@@ -85,14 +95,53 @@ apiRouter.get('/test-outbound-ip', async (req, res) => {
       body: kotsmsData,
     })
 
+    // 正確讀取回應內容
+    const kotsmsText = await kotsmsResponse.text()
+
+    console.log('KOTSMS 回應狀態:', kotsmsResponse.status)
+    console.log('KOTSMS 回應內容:', kotsmsText)
+
+    // 解析回應
+    let kotsmsResult = {
+      status: kotsmsResponse.status,
+      statusText: kotsmsResponse.statusText,
+      body: kotsmsText,
+      success: false,
+      accountPoint: null,
+      error: null,
+    }
+
+    if (kotsmsResponse.ok) {
+      // 成功的回應格式應該是：AccountPoint=110
+      if (kotsmsText.startsWith('AccountPoint=')) {
+        kotsmsResult.success = true
+        kotsmsResult.accountPoint = parseInt(kotsmsText.split('=')[1])
+      } else {
+        // 可能是錯誤回應，檢查是否為錯誤代碼
+        kotsmsResult.error = kotsmsText
+      }
+    } else {
+      kotsmsResult.error = `HTTP ${kotsmsResponse.status}: ${kotsmsResponse.statusText}`
+    }
+
     res.json({
       outboundIP: ipData.ip,
       expectedFixedIP: '35.201.160.235',
-      isCorrect: ipData.ip === '35.201.160.235',
-      kotsmsResponse: kotsmsResponse,
+      isCorrectIP: ipData.ip === '35.201.160.235',
+      kotsms: kotsmsResult,
+      troubleshooting: {
+        ipRegistered: ipData.ip === '35.201.160.235' ? 'IP 正確' : 'IP 不符',
+        apiPermission: '請確認是否已申請開啟 API 發送權限',
+        credentials: '請確認帳號密碼是否正確',
+        tlsVersion: '確保使用 TLS v1.2 以上版本',
+      },
     })
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('API 測試錯誤:', error)
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack,
+    })
   }
 })
 
