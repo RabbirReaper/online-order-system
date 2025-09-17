@@ -187,12 +187,12 @@ const main = async () => {
 
     // await getStoreStatus(token, testStoreId)
 
-    // const statusData = {
-    //   is_offline_until: '2025-09-21T17:08:30.000Z',
-    //   status: 'OFFLINE',
-    //   reason: 'Scheduled maintenance',
-    // }
-    // await setStoreStatus(token, testStoreId, statusData)
+    const statusData = {
+      // is_offline_until: '2025-09-21T17:08:30.000Z',
+      status: 'ONLINE',
+      // reason: 'Scheduled maintenance',
+    }
+    await setStoreStatus(token, testStoreId, statusData)
 
     // await setPrepTime(token, testStoreId, 300)
   } catch (error) {
