@@ -718,7 +718,7 @@ const autoAddDeveryPrice = () =>{
   formData.categories.forEach((category) => {
     category.items.forEach((item) => {
       if(item.priceOverride) return;
-      item.priceOverride = (item.dishTemplate.basePrice*1.33).toFixed(0)
+      item.priceOverride = (item.dishTemplate.basePrice/0.66).toFixed(0)
     })
   })
 }
