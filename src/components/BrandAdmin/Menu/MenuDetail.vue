@@ -142,21 +142,13 @@
                           <!-- 價格顯示 -->
                           <div class="item-pricing">
                             <!-- 現金價格 -->
-                            <div
-                              v-if="item.priceOverride !== null && item.priceOverride !== undefined"
-                            >
-                              <p class="item-price text-success mb-1">
-                                <strong>現金價: {{ formatPrice(item.priceOverride) }}</strong>
-                              </p>
-                              <p
-                                class="original-price text-muted small text-decoration-line-through"
-                              >
-                                原價: {{ formatPrice(getItemOriginalPrice(item)) }}
-                              </p>
-                            </div>
-                            <div v-else>
+
+                            <div>
                               <p class="item-price mb-1">
                                 現金價: {{ formatPrice(getItemOriginalPrice(item)) }}
+                              </p>
+                              <p class="item-price mb-1" v-if="item.priceOverride">
+                                外送價格平台價: {{ formatPrice(item.priceOverride) }}
                               </p>
                             </div>
 
@@ -238,18 +230,13 @@
                         </td>
                         <td>{{ getItemName(item) }}</td>
                         <td>
-                          <div
-                            v-if="item.priceOverride !== null && item.priceOverride !== undefined"
-                          >
-                            <span class="text-success fw-bold">{{
+                          <div                          >
+                            <span v-if="item.priceOverride" class="text-success"> 外送: {{
                               formatPrice(item.priceOverride)
                             }}</span>
-                            <small class="text-muted text-decoration-line-through d-block">
+                            <small class="text-muted">
                               原價: {{ formatPrice(getItemOriginalPrice(item)) }}
                             </small>
-                          </div>
-                          <div v-else>
-                            {{ formatPrice(getItemOriginalPrice(item)) }}
                           </div>
                         </td>
                         <td>
