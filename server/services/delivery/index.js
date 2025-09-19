@@ -38,30 +38,49 @@ export const {
 } = ubereatsService
 
 // === Token 管理服務導出 ===
-import { UberEatsTokenManager } from './tokenManager.js'
+import { getTokenStatus as tokenStatus, refreshToken } from './tokenManager.js'
 
-export const getTokenStatus = () => UberEatsTokenManager.getTokenStatus()
-export const refreshUserToken = () => UberEatsTokenManager.refreshUserToken()
+export const getTokenStatus = () => {
+  const status = tokenStatus()
+  return {
+    userToken: {
+      configured: status.configured,
+      cached: status.cached,
+      expires: status.expires,
+      isValid: status.isValid
+    },
+    appToken: {
+      configured: status.configured,
+      cached: status.cached,
+      expires: status.expires,
+      isValid: status.isValid
+    }
+  }
+}
+export const refreshUserToken = refreshToken
 
 // === 便捷別名導出（方便控制器調用）===
 export const getUberEatsStoreOrders = ubereatsService.getStoreOrders
 export const cancelUberEatsOrder = ubereatsService.cancelStoreOrder
 export const autoProvisionUberEatsStore = ubereatsService.autoProvisionStore
 
-// === TODO: Phase 2 功能（註解待實作）===
-/*
+// === Phase 2: UberEats 店鋪管理功能（已實作）===
 export const {
-  updateStoreStatus, // TODO: 更新店鋪營業狀態
-  getStoreStatus, // TODO: 獲取店鋪營業狀態
-  getStoreInfo, // TODO: 獲取店鋪資訊
-  configurePOSIntegration, // TODO: POS 系統配置
-  getStoreReports, // TODO: 獲取營運報表
+  getStoreDetails, // 獲取店鋪詳細資訊
+  setStoreDetails, // 設定店鋪詳細資訊
+  getStoreStatus, // 獲取店鋪營業狀態
+  setStoreStatus, // 設定店鋪營業狀態
+  setPrepTime, // 設定準備時間
+  uploadMenu, // 上傳菜單到 UberEats
 } = ubereatsService
 
-export const updateUberEatsStoreStatus = ubereatsService.updateStoreStatus
+// 便捷別名導出
+export const getUberEatsStoreDetails = ubereatsService.getStoreDetails
+export const setUberEatsStoreDetails = ubereatsService.setStoreDetails
 export const getUberEatsStoreStatus = ubereatsService.getStoreStatus
-export const getUberEatsStoreInfo = ubereatsService.getStoreInfo
-*/
+export const setUberEatsStoreStatus = ubereatsService.setStoreStatus
+export const setUberEatsPrepTime = ubereatsService.setPrepTime
+export const uploadUberEatsMenu = ubereatsService.uploadMenu
 
 // === 訂單同步服務導出 ===
 export const {

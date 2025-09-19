@@ -428,7 +428,7 @@ export const uploadMenu = async (storeId, menuId) => {
   try {
     // 使用 getMenuAllPopulateById 獲得完整菜單
     // 注意：這個函數需要從適當的地方導入，或者作為參數傳入
-    const { getMenuAllPopulateById } = await import('../../services/menu/menuService.js')
+    const { getMenuAllPopulateById } = await import('../store/menuService.js')
     const fullMenuData = await getMenuAllPopulateById(menuId)
 
     if (!fullMenuData) {

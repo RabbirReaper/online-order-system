@@ -100,5 +100,82 @@ export default function (apiClient) {
         headers,
       })
     },
+
+    // =============================================================================
+    // UberEats 店鋪管理功能
+    // =============================================================================
+
+    /**
+     * 獲取 UberEats 店鋪詳細資訊
+     * GET /api/delivery/brands/:brandId/stores/:storeId/ubereats/details
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @returns {Promise} - API 回應，包含店鋪詳細資訊
+     */
+    getUberEatsStoreDetails(brandId, storeId) {
+      return apiClient.get(`/delivery/brands/${brandId}/stores/${storeId}/ubereats/details`)
+    },
+
+    /**
+     * 設定 UberEats 店鋪詳細資訊
+     * PUT /api/delivery/brands/:brandId/stores/:storeId/ubereats/details
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @param {Object} details - 店鋪詳細資訊
+     * @returns {Promise} - API 回應
+     */
+    setUberEatsStoreDetails(brandId, storeId, details) {
+      return apiClient.put(`/delivery/brands/${brandId}/stores/${storeId}/ubereats/details`, details)
+    },
+
+    /**
+     * 獲取 UberEats 店鋪營業狀態
+     * GET /api/delivery/brands/:brandId/stores/:storeId/ubereats/status
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @returns {Promise} - API 回應，包含店鋪狀態
+     */
+    getUberEatsStoreStatus(brandId, storeId) {
+      return apiClient.get(`/delivery/brands/${brandId}/stores/${storeId}/ubereats/status`)
+    },
+
+    /**
+     * 設定 UberEats 店鋪營業狀態
+     * PUT /api/delivery/brands/:brandId/stores/:storeId/ubereats/status
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @param {Object} statusData - 狀態資料
+     * @param {string} statusData.status - 'ONLINE' | 'OFFLINE'
+     * @param {string} [statusData.reason] - 離線原因
+     * @param {string} [statusData.is_offline_until] - 離線結束時間
+     * @returns {Promise} - API 回應
+     */
+    setUberEatsStoreStatus(brandId, storeId, statusData) {
+      return apiClient.put(`/delivery/brands/${brandId}/stores/${storeId}/ubereats/status`, statusData)
+    },
+
+    /**
+     * 設定 UberEats 店鋪準備時間
+     * PUT /api/delivery/brands/:brandId/stores/:storeId/ubereats/prep-time
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @param {number} prepTime - 準備時間（秒）
+     * @returns {Promise} - API 回應
+     */
+    setUberEatsPrepTime(brandId, storeId, prepTime) {
+      return apiClient.put(`/delivery/brands/${brandId}/stores/${storeId}/ubereats/prep-time`, { prepTime })
+    },
+
+    /**
+     * 上傳菜單到 UberEats
+     * POST /api/delivery/brands/:brandId/stores/:storeId/ubereats/menu
+     * @param {string} brandId - 品牌ID
+     * @param {string} storeId - 店鋪ID
+     * @param {string} menuId - 菜單ID
+     * @returns {Promise} - API 回應
+     */
+    uploadUberEatsMenu(brandId, storeId, menuId) {
+      return apiClient.post(`/delivery/brands/${brandId}/stores/${storeId}/ubereats/menu`, { menuId })
+    },
   }
 }
