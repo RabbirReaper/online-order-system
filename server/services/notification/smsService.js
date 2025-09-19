@@ -65,7 +65,7 @@ class SMSService {
         username: this.username,
         password: this.password,
         dstaddr: this.formatPhoneNumber(phone),
-        smbody: message, // 新版API不需要額外編碼
+        smbody: this.encodeMessage(message), // 對中文內容進行URL編碼
         clientid: clientId,
         CharsetURL: 'UTF8', // 編碼格式
         smsPointFlag: '1', // 回覆扣除點數資訊
@@ -165,6 +165,24 @@ class SMSService {
     // 中文字符計算方式 (一般每 70 字為一則簡訊)
     const messageLength = [...message].length // 正確計算 Unicode 字符長度
     return Math.ceil(messageLength / 70)
+  }
+
+  /**
+   * 對簡訊內容進行URL編碼（處理中文亂碼問題）
+   * @param {string} message - 原始簡訊內容
+   * @returns {string} URL編碼後的簡訊內容
+   */
+  encodeMessage(message) {
+    // 檢查是否包含中文字符
+    const hasChinese = /[\u4e00-\u9fff]/.test(message)
+
+    if (hasChinese) {
+      // 對中文字串進行UTF-8 URL編碼
+      return encodeURIComponent(message)
+    }
+
+    // 純英文數字則不需要編碼
+    return message
   }
 
   /**
