@@ -1,283 +1,457 @@
 /**
- * UberEats API 串接服務
- * 基於實際的 Store schema 處理與 UberEats 平台的所有 API 交互
+ * UberEats API 串接服務 - 重構版（使用 axios）
+ * 基於實際的 Store schema 處理與 UberEats 平台的核心 API 交互
  */
 
 import Store from '../../models/Store/Store.js'
 import { AppError } from '../../middlewares/error.js'
-import * as orderSyncService from './orderSyncService.js'
-import {
-  UberEatsTokenManager,
-  getTokenForOperation,
-  getUserToken,
-  getAppToken,
-} from './tokenManager.js'
-import crypto from 'crypto'
+import { getAccessToken } from './tokenManager.js'
+import axios from 'axios'
 import dotenv from 'dotenv'
 
 dotenv.config()
 
 // 🔧 UberEats API 設定
 const UBEREATS_CONFIG = {
-  // 使用 production 配置
-  clientId: process.env.UBEREATS_PRODUCTION_CLIENT_ID,
-  clientSecret: process.env.UBEREATS_PRODUCTION_CLIENT_SECRET,
-
-  // ⚠️ 注意：根據 UberEats 官方文檔，webhook 簽名使用 client_secret 進行驗證
-  // 不再需要單獨的 webhook_secret 配置
-
-  // API URL 統一使用官方生產端點（符合 UberEats 官方規範）
   apiUrl: 'https://api.uber.com/v1/eats',
-
-  // OAuth URL 固定
-  oauthUrl: 'https://login.uber.com/oauth/v2/token',
-
-  scope: 'eats.store eats.order',
+  storeApiUrl: 'https://api.uber.com/v1/delivery/store',
+  menuApiUrl: 'https://api.uber.com/v2/eats/stores',
 }
 
 // 啟動時記錄配置狀態
-console.log(`🔧 UberEats Service initialized`)
-console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
-console.log(`🔑 Client ID configured: ${!!UBEREATS_CONFIG.clientId}`)
-console.log(`🔐 Client Secret configured: ${!!UBEREATS_CONFIG.clientSecret}`)
-console.log(`🔒 Webhook signature verification: Using client_secret (official method)`)
-
-// 檢查 Webhook 簽名驗證能力
-if (UBEREATS_CONFIG.clientSecret) {
-  console.log(`✅ Webhook signature verification enabled: Using client_secret`)
-} else {
-  console.log(`❌ No client secret configured: Signature verification disabled`)
-}
+// console.log(`🔧 UberEats Service initialized`)
+// console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
 
 /**
- * 驗證 UberEats webhook 簽名 - 使用官方規範的 client_secret
- * @param {String} payload - 請求內容
- * @param {String} signature - UberEats 簽名
+ * 創建通用的 axios 請求配置
+ * 這個輔助函數會自動添加認證標頭，避免重複程式碼
  */
-const verifyWebhookSignature = (payload, signature) => {
-  // 如果沒有配置 client secret，跳過驗證（僅開發環境）
-  if (!UBEREATS_CONFIG.clientSecret) {
-    console.warn('⚠️  No UberEats client secret configured, skipping signature verification')
-    return true
-  }
+const createRequestConfig = async (additionalConfig = {}) => {
+  const accessToken = await getAccessToken()
 
-  try {
-    // 移除簽名前綴（如果有的話）
-    const cleanSignature = signature.startsWith('sha256=')
-      ? signature.substring(7).toLowerCase()
-      : signature.toLowerCase()
-
-    // 🔐 使用 client_secret 進行簽名驗證（符合 UberEats 官方規範）
-    const expectedSignature = crypto
-      .createHmac('sha256', UBEREATS_CONFIG.clientSecret)
-      .update(payload, 'utf8')
-      .digest('hex')
-      .toLowerCase()
-
-    const isValid = crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, 'hex'),
-      Buffer.from(cleanSignature, 'hex'),
-    )
-
-    if (isValid) {
-      console.log('🔐 Webhook signature verified with client_secret')
-      return true
-    }
-
-    console.log('❌ Webhook signature verification FAILED')
-    console.log('💡 Ensure you are using the correct client_secret for webhook verification')
-    return false
-  } catch (error) {
-    console.error('❌ Signature verification error:', error)
-    return false
-  }
-}
-
-/**
- * 從 UberEats 接收訂單
- * @param {Object} ubereatsOrderData - UberEats webhook 資料
- * @param {String} signature - webhook 簽名（來自 X-Uber-Signature header）
- */
-export const receiveOrder = async (ubereatsOrderData, signature = null) => {
-  try {
-    console.log('📨 Processing UberEats webhook:', ubereatsOrderData.event_type)
-
-    // 驗證 webhook 簽名
-    if (signature) {
-      const isValidSignature = verifyWebhookSignature(JSON.stringify(ubereatsOrderData), signature)
-
-      if (!isValidSignature) {
-        throw new AppError('Invalid webhook signature', 401)
-      }
-    }
-
-    // 檢查事件類型
-    if (ubereatsOrderData.event_type !== 'orders.notification') {
-      console.log(`ℹ️  Ignoring non-order event: ${ubereatsOrderData.event_type}`)
-      return { success: true, message: 'Event ignored' }
-    }
-
-    // 獲取訂單詳情
-    const orderId = ubereatsOrderData.meta?.resource_id
-    if (!orderId) {
-      throw new AppError('Order ID not found in webhook data', 400)
-    }
-
-    // 使用 resource_href 獲取完整訂單資料
-    const orderDetails = await getOrderDetails(orderId)
-
-    // 查找對應的店鋪 - 使用實際的 schema 結構
-    const store = await findStoreByUberEatsId(orderDetails.store?.id)
-
-    if (!store) {
-      throw new AppError(`Store not found for UberEats store ID: ${orderDetails.store?.id}`, 404)
-    }
-
-    // 檢查店鋪是否啟用 UberEats - 使用實際的 schema 結構
-    const ubereatsConfig = store.deliveryPlatforms?.find(
-      (p) => p.platform === 'ubereats' && p.isEnabled,
-    )
-
-    if (!ubereatsConfig) {
-      throw new AppError('UberEats not configured or disabled for this store', 400)
-    }
-
-    // 轉換並創建內部訂單
-    const internalOrder = await orderSyncService.syncOrderFromPlatform(
-      'ubereats',
-      orderDetails,
-      store._id,
-    )
-
-    return internalOrder
-  } catch (error) {
-    console.error('❌ Failed to process UberEats order:', error)
-    throw error
-  }
-}
-
-/**
- * 獲取訂單詳情
- * @param {String} orderId - UberEats 訂單ID
- */
-const getOrderDetails = async (orderId) => {
-  try {
-    const accessToken = await getTokenForOperation('orders')
-
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/orders/${orderId}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`UberEats API error: ${response.status} ${response.statusText}`)
-    }
-
-    const orderData = await response.json()
-    return orderData
-  } catch (error) {
-    console.error(`❌ Failed to get order details for ${orderId}:`, error)
-
-    // 在開發階段，如果 API 失敗，可以返回模擬數據以便測試
-    if (UBEREATS_CONFIG.environment === 'sandbox') {
-      console.log('🧪 Sandbox mode: returning mock order data')
-      return createMockOrderData(orderId)
-    }
-
-    throw error
-  }
-}
-
-/**
- * 創建模擬訂單數據（僅供開發測試）
- * @param {String} orderId - 訂單ID
- */
-const createMockOrderData = (orderId) => {
   return {
-    id: orderId,
-    display_id: `TEST-${orderId.slice(-4)}`,
-    current_state: 'CREATED',
-    store: {
-      id: process.env.UBEREATS_SANDBOX_STORE_ID || 'test-store-id',
-      name: 'Test Restaurant',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      ...additionalConfig.headers, // 允許覆蓋或添加額外的標頭
     },
-    eater: {
-      id: 'test-eater-id',
-      first_name: 'Test',
-      last_name: 'Customer',
-      phone: '+1234567890',
+    timeout: 30000, // 30 秒超時，避免請求卡住
+    ...additionalConfig, // 允許覆蓋其他設定
+  }
+}
+
+/**
+ * 統一的錯誤處理函數
+ * axios 的錯誤結構與 fetch 不同，這裡統一處理
+ */
+const handleApiError = (error, operation) => {
+  console.error(`❌ ${operation}失敗:`, error.response?.data || error.message)
+
+  if (error.response) {
+    // 有回應，但狀態碼表示錯誤
+    const status = error.response.status
+    const data = error.response.data
+    throw new AppError(
+      `${operation}失敗: ${status} ${error.response.statusText} - ${JSON.stringify(data)}`,
+      status >= 500 ? 500 : 400,
+    )
+  } else if (error.request) {
+    // 請求已發送但沒有回應
+    throw new AppError(`${operation}失敗: 網路連接問題`, 500)
+  } else {
+    // 其他錯誤
+    throw new AppError(`${operation}失敗: ${error.message}`, 500)
+  }
+}
+
+/**
+ * 獲取店鋪詳細資訊
+ * @param {String} storeId - UberEats 店鋪ID
+ * @returns {Promise<Object>} 店鋪詳細資訊
+ */
+export const getStoreDetails = async (storeId) => {
+  try {
+    const config = await createRequestConfig()
+
+    const response = await axios.get(`${UBEREATS_CONFIG.storeApiUrl}/${storeId}`, config)
+
+    // console.log('✅ 成功取得商店詳細資訊')
+    return response.data // axios 自動解析 JSON，直接返回 data
+  } catch (error) {
+    handleApiError(error, '取得商店詳細資訊')
+  }
+}
+
+/**
+ * 設定店鋪詳細資訊
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {Object} details - 店鋪詳細資訊
+ * @returns {Promise<Object>} 更新結果
+ */
+export const setStoreDetails = async (storeId, details) => {
+  try {
+    const config = await createRequestConfig()
+
+    // axios.post 的第二個參數是請求體，第三個參數是配置
+    const response = await axios.post(`${UBEREATS_CONFIG.storeApiUrl}/${storeId}`, details, config)
+
+    // console.log('✅ 成功更新商店詳細資訊')
+    return response.data
+  } catch (error) {
+    handleApiError(error, '更新商店詳細資訊')
+  }
+}
+
+/**
+ * 獲取店鋪營業狀態
+ * @param {String} storeId - UberEats 店鋪ID
+ * @returns {Promise<Object>} 店鋪狀態
+ */
+export const getStoreStatus = async (storeId) => {
+  try {
+    const config = await createRequestConfig()
+
+    const response = await axios.get(`${UBEREATS_CONFIG.storeApiUrl}/${storeId}/status`, config)
+
+    // console.log('✅ 成功取得商店狀態')
+    return response.data
+  } catch (error) {
+    handleApiError(error, '取得商店狀態')
+  }
+}
+
+/**
+ * 設定店鋪營業狀態
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {Object} status - 狀態設定 { status: 'ONLINE'|'OFFLINE', reason?: string, is_offline_until?: string }
+ * @returns {Promise<Object>} 更新結果
+ */
+export const setStoreStatus = async (storeId, status) => {
+  try {
+    const config = await createRequestConfig()
+
+    const response = await axios.post(
+      `${UBEREATS_CONFIG.storeApiUrl}/${storeId}/update-store-status`,
+      status,
+      config,
+    )
+
+    // console.log('✅ 成功更新商店狀態')
+    return response.data
+  } catch (error) {
+    handleApiError(error, '更新商店狀態')
+  }
+}
+
+/**
+ * 設定準備時間
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {Number} prepTime - 準備時間（秒），最大值 10800 秒（3小時）
+ * @returns {Promise<Object>} 更新結果
+ */
+export const setPrepTime = async (storeId, prepTime) => {
+  try {
+    const config = await createRequestConfig()
+
+    const response = await axios.post(
+      `${UBEREATS_CONFIG.storeApiUrl}/${storeId}/update-store-prep-time`,
+      { default_prep_time: prepTime }, // 請求體
+      config,
+    )
+
+    // console.log('✅ 成功更新準備時間')
+    return response.data
+  } catch (error) {
+    handleApiError(error, '更新準備時間')
+  }
+}
+
+/**
+ * 轉換菜單為 UberEats 格式
+ * @param {Object} fullMenuData - 完整的菜單資料
+ * @returns {Object} UberEats 格式的菜單
+ */
+export const convertMenuToUberEatsFormat = (fullMenuData) => {
+  // console.log('開始轉換菜單資料到 UberEats 格式...')
+
+  const result = {
+    menus: [],
+    categories: [],
+    items: [],
+    modifier_groups: [],
+  }
+
+  // 用於追踪已處理的 modifier groups，避免重複
+  const processedModifierGroups = new Set()
+
+  // 建立主菜單
+  const mainMenu = {
+    id: fullMenuData._id,
+    title: {
+      translations: {
+        en_us: fullMenuData.name,
+        zh_tw: fullMenuData.name,
+      },
     },
-    cart: {
-      items: [
-        {
-          id: 'test-item-1',
-          title: 'Test Burger',
-          quantity: 1,
-          price: {
-            unit_price: { amount: 1200 },
-            total_price: { amount: 1200 },
+    service_availability: [
+      {
+        day_of_week: 'monday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+      {
+        day_of_week: 'tuesday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+      {
+        day_of_week: 'wednesday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+      {
+        day_of_week: 'thursday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+      {
+        day_of_week: 'friday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+      {
+        day_of_week: 'saturday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+      {
+        day_of_week: 'sunday',
+        time_periods: [{ start_time: '00:00', end_time: '23:59' }],
+      },
+    ],
+    category_ids: [],
+  }
+
+  // 處理分類和商品
+  fullMenuData.categories.forEach((category) => {
+    const categoryId = category._id
+
+    // 轉換分類格式
+    const uberCategory = {
+      id: categoryId,
+      title: {
+        translations: {
+          en_us: category.name,
+          zh_tw: category.name,
+        },
+      },
+      entities: [],
+    }
+
+    // 處理該分類下的商品
+    category.items.forEach((item) => {
+      if (!item.isShowing) return // 跳過不顯示的商品
+
+      const dishTemplate = item.dishTemplate
+      const itemId = dishTemplate._id
+
+      // 轉換商品格式
+      const uberItem = {
+        id: itemId,
+        title: {
+          translations: {
+            en_us: dishTemplate.name,
+            zh_tw: dishTemplate.name,
           },
         },
-      ],
-    },
-    delivery_location: {
-      address_1: '123 Test Street',
-      city: 'Test City',
-      state: 'TS',
-      postal_code: '12345',
-    },
-    special_instructions: 'Test order',
-    estimated_ready_for_pickup_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-  }
-}
+        description: {
+          translations: {
+            en_us: dishTemplate.description || '',
+            zh_tw: dishTemplate.description || '',
+          },
+        },
+        price_info: {
+          price: dishTemplate.basePrice * 100, // 轉換為分
+        },
+        tax_info: {},
+        external_data: `External data for ${dishTemplate.name}`,
+        quantity_info: {},
+      }
 
-/**
- * 根據 UberEats 店鋪ID 查找內部店鋪 - 使用實際的 schema
- * @param {String} ubereatsStoreId - UberEats 店鋪ID
- */
-const findStoreByUberEatsId = async (ubereatsStoreId) => {
-  if (!ubereatsStoreId) {
-    return null
-  }
+      // 添加圖片
+      if (dishTemplate.image?.url) {
+        uberItem.image_url = dishTemplate.image.url
+      }
 
-  // 根據實際的 schema 結構查找
-  const store = await Store.findOne({
-    'deliveryPlatforms.platform': 'ubereats',
-    'deliveryPlatforms.storeId': ubereatsStoreId,
-    'deliveryPlatforms.isEnabled': true,
+      // 處理選項群組
+      if (dishTemplate.optionCategories && dishTemplate.optionCategories.length > 0) {
+        const modifierGroupIds = []
+
+        dishTemplate.optionCategories.forEach((optionCategory) => {
+          const modifierGroupId = optionCategory.categoryId._id
+          modifierGroupIds.push(modifierGroupId)
+
+          // 如果還未處理過這個 modifier group，則加入到結果中
+          if (!processedModifierGroups.has(modifierGroupId)) {
+            const modifierGroup = convertToModifierGroup(optionCategory.categoryId)
+            result.modifier_groups.push(modifierGroup)
+            processedModifierGroups.add(modifierGroupId)
+          }
+        })
+
+        if (modifierGroupIds.length > 0) {
+          uberItem.modifier_group_ids = { ids: modifierGroupIds }
+        }
+      }
+
+      result.items.push(uberItem)
+      uberCategory.entities.push({
+        id: itemId,
+        type: 'ITEM',
+      })
+    })
+
+    result.categories.push(uberCategory)
+    mainMenu.category_ids.push(categoryId)
   })
 
-  return store
+  result.menus.push(mainMenu)
+
+  // 添加 modifier items
+  const modifierItems = createModifierItems(fullMenuData)
+  result.items.push(...modifierItems)
+
+  // console.log(`轉換完成:`)
+  // console.log(`- 菜單: ${result.menus.length} 個`)
+  // console.log(`- 分類: ${result.categories.length} 個`)
+  // console.log(`- 主要商品: ${result.items.length - modifierItems.length} 個`)
+  // console.log(`- 選項商品: ${modifierItems.length} 個`)
+  // console.log(`- 總商品數: ${result.items.length} 個`)
+  // console.log(`- 選項群組: ${result.modifier_groups.length} 個`)
+
+  return result
 }
 
 /**
- * 獲取 UberEats API 存取令牌 - 使用 App Token
- * 日常 API 操作使用 App Access Token
- * @param {String} operation - 操作類型，用於自動選擇 token
+ * 轉換選項群組為 UberEats modifier_group 格式
  */
-const getAccessToken = async (operation = 'api') => {
+const convertToModifierGroup = (optionCategory) => {
+  const modifierGroup = {
+    id: optionCategory._id,
+    title: {
+      translations: {
+        en_us: optionCategory.name,
+        zh_tw: optionCategory.name,
+      },
+    },
+    external_data: `External data for ${optionCategory.name}`,
+    modifier_options: [],
+    display_type: null,
+  }
+
+  // 設定數量限制
+  if (optionCategory.inputType === 'single') {
+    modifierGroup.quantity_info = {
+      quantity: {
+        min_permitted: 1,
+        max_permitted: 1,
+      },
+    }
+  } else if (optionCategory.inputType === 'multiple') {
+    modifierGroup.quantity_info = {
+      quantity: {
+        min_permitted: 0,
+        max_permitted: optionCategory.options.length,
+      },
+    }
+  }
+
+  // 轉換選項
+  optionCategory.options.forEach((option) => {
+    modifierGroup.modifier_options.push({
+      type: 'ITEM',
+      id: option.refOption._id,
+    })
+  })
+
+  return modifierGroup
+}
+
+/**
+ * 創建選項商品
+ */
+const createModifierItems = (fullMenuData) => {
+  const modifierItems = []
+  const processedOptionIds = new Set()
+
+  fullMenuData.categories.forEach((category) => {
+    category.items.forEach((item) => {
+      if (!item.isShowing || !item.dishTemplate.optionCategories) return
+
+      item.dishTemplate.optionCategories.forEach((optionCategory) => {
+        optionCategory.categoryId.options.forEach((option) => {
+          const optionId = option.refOption._id
+
+          if (processedOptionIds.has(optionId)) return
+          processedOptionIds.add(optionId)
+
+          const modifierItem = {
+            id: optionId,
+            title: {
+              translations: {
+                en_us: option.refOption.name,
+                zh_tw: option.refOption.name,
+              },
+            },
+            external_data: `External data for ${option.refOption.name}`,
+            price_info: {
+              price: (option.refOption.price || 0) * 100, // 轉換為分
+            },
+            tax_info: {},
+            quantity_info: {},
+          }
+
+          if (option.refOption.tags && option.refOption.tags.length > 0) {
+            modifierItem.tags = option.refOption.tags
+          }
+
+          modifierItems.push(modifierItem)
+        })
+      })
+    })
+  })
+
+  return modifierItems
+}
+
+/**
+ * 上傳菜單到 UberEats
+ * @param {String} storeId - UberEats 店鋪ID
+ * @param {String} menuId - 菜單ID（內部系統）
+ * @returns {Promise<Object>} 上傳結果
+ */
+export const uploadMenu = async (storeId, menuId) => {
   try {
-    // 使用重構後的 Token Manager 自動選擇合適的認證流程
-    const token = await getTokenForOperation(operation)
+    // 使用 getMenuAllPopulateById 獲得完整菜單
+    // 注意：這個函數需要從適當的地方導入，或者作為參數傳入
+    const { getMenuAllPopulateById } = await import('../../services/menu/menuService.js')
+    const fullMenuData = await getMenuAllPopulateById(menuId)
 
-    console.log(
-      `🔑 Using ${operation.includes('provision') ? 'Authorization Code' : 'Client Credentials'} flow for ${operation}`,
-    )
-    return token
-  } catch (error) {
-    console.error('❌ Failed to get access token:', error)
-
-    // 在開發階段提供後備方案
-    if (UBEREATS_CONFIG.environment === 'sandbox') {
-      console.log('🧪 Sandbox mode: returning mock token as fallback')
-      const flow = operation.includes('provision') ? 'authorization_code' : 'client_credentials'
-      return UberEatsTokenManager.getMockToken(flow)
+    if (!fullMenuData) {
+      throw new AppError('菜單不存在', 404)
     }
 
-    throw error
+    // 轉換菜單格式
+    const convertedMenuData = convertMenuToUberEatsFormat(fullMenuData)
+
+    // 獲取請求配置
+    const config = await createRequestConfig()
+
+    // 使用 axios.put 上傳菜單
+    const response = await axios.put(
+      `${UBEREATS_CONFIG.menuApiUrl}/${storeId}/menus`,
+      convertedMenuData, // 請求體
+      config,
+    )
+
+    // console.log('✅ 成功上傳菜單到 UberEats')
+    return { success: true, data: response.data }
+  } catch (error) {
+    handleApiError(error, '上傳菜單')
   }
 }
 
@@ -286,38 +460,28 @@ const getAccessToken = async (operation = 'api') => {
  * @returns {Object} 配置檢查結果
  */
 export const checkUberEatsConfig = () => {
+  const clientId = process.env.UBEREATS_PRODUCTION_CLIENT_ID
+  const clientSecret = process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
+
   const config = {
-    environment: UBEREATS_CONFIG.environment,
-    clientId: !!UBEREATS_CONFIG.clientId,
-    clientSecret: !!UBEREATS_CONFIG.clientSecret,
+    clientId: !!clientId,
+    clientSecret: !!clientSecret,
     apiUrl: !!UBEREATS_CONFIG.apiUrl,
   }
 
-  // 基本配置檢查 - 使用正確的必需欄位
   const requiredFields = ['clientId', 'clientSecret', 'apiUrl']
   const isComplete = requiredFields.every((field) => config[field])
 
-  const missing = Object.keys(config)
-    .filter((key) => key !== 'environment') // 排除環境設定
-    .filter((key) => !config[key])
-
-  // 簽名驗證能力評估 - 基於 client_secret
-  const signatureCapability = {
-    canVerify: config.clientSecret,
-    method: 'client_secret',
-    compliant: true, // 符合官方規範
-  }
+  const missing = Object.keys(config).filter((key) => !config[key])
 
   return {
     isComplete,
     config,
     missing,
-    environment: UBEREATS_CONFIG.environment,
     apiUrl: UBEREATS_CONFIG.apiUrl,
-    signatureCapability,
     recommendations: isComplete
-      ? ['✅ All required configurations are complete']
-      : [`❌ Missing configurations: ${missing.join(', ')}`],
+      ? ['✅ 所有必要配置已完成']
+      : [`❌ 缺少配置: ${missing.join(', ')}`],
   }
 }
 
@@ -327,341 +491,16 @@ export const checkUberEatsConfig = () => {
  */
 export const testUberEatsConnection = async () => {
   try {
-    console.log(`🧪 Testing UberEats API connection in ${UBEREATS_CONFIG.environment} mode`)
-    const accessToken = await getAccessToken('api')
-    console.log(`✅ UberEats API connection test passed (${UBEREATS_CONFIG.environment})`)
+    // console.log('🧪 測試 UberEats API 連接')
+
+    // 嘗試取得商店列表來測試連接
+    const config = await createRequestConfig()
+    await axios.get('https://api.uber.com/v1/delivery/stores', config)
+
+    // console.log('✅ UberEats API 連接測試通過')
     return true
   } catch (error) {
-    console.error(`❌ UberEats API connection test failed (${UBEREATS_CONFIG.environment}):`, error)
+    console.error('❌ UberEats API 連接測試失敗:', error.response?.data || error.message)
     return false
   }
 }
-
-// ==========================================
-// 🚀 Phase 1: 訂單同步功能 (優先實作)
-// ==========================================
-
-/**
- * 獲取店鋪訂單列表 - 優先實作
- * @param {String} storeId - UberEats 店鋪ID
- * @param {Object} options - 查詢選項
- */
-export const getStoreOrders = async (storeId, options = {}) => {
-  try {
-    const accessToken = await getTokenForOperation('orders')
-
-    const queryParams = new URLSearchParams(options)
-    const url = `${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to get store orders: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    console.log(`✅ Successfully fetched orders for store ${storeId}`)
-    return data
-  } catch (error) {
-    console.error(`❌ Failed to get store orders for ${storeId}:`, error)
-
-    // 開發階段提供模擬數據
-    if (UBEREATS_CONFIG.environment === 'sandbox') {
-      console.log('🧪 Sandbox mode: returning mock orders')
-      return {
-        orders: [createMockOrderData('mock-order-1'), createMockOrderData('mock-order-2')],
-      }
-    }
-
-    throw error
-  }
-}
-
-/**
- * 取消店鋪訂單 - 優先實作
- * @param {String} storeId - UberEats 店鋪ID
- * @param {String} orderId - 訂單ID
- * @param {String} reason - 取消原因
- */
-export const cancelStoreOrder = async (storeId, orderId, reason = 'RESTAURANT_UNAVAILABLE') => {
-  try {
-    const accessToken = await getTokenForOperation('cancel')
-
-    const response = await fetch(
-      `${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/orders/${orderId}/cancel`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason }),
-      },
-    )
-
-    if (!response.ok) {
-      throw new Error(`Failed to cancel order: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    console.log(`✅ Successfully cancelled order ${orderId} for store ${storeId}`)
-    return data
-  } catch (error) {
-    console.error(`❌ Failed to cancel order ${orderId}:`, error)
-
-    // 開發階段提供模擬回應
-    if (UBEREATS_CONFIG.environment === 'sandbox') {
-      console.log('🧪 Sandbox mode: simulating order cancellation')
-      return { success: true, message: 'Mock cancellation successful' }
-    }
-
-    throw error
-  }
-}
-
-// ==========================================
-// 📋 Phase 2: TODO - 其他 API 功能
-// ==========================================
-
-/**
- * TODO: 更新店鋪營業狀態
- * @param {String} storeId - UberEats 店鋪ID
- * @param {String} status - 狀態：'ONLINE', 'OFFLINE', 'PAUSE'
- */
-/*
-export const updateStoreStatus = async (storeId, status) => {
-  try {
-    const accessToken = await getAccessToken()
-
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/status`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to update store status: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error(`❌ Failed to update store status for ${storeId}:`, error)
-    throw error
-  }
-}
-*/
-
-/**
- * TODO: 獲取店鋪營業狀態
- * @param {String} storeId - UberEats 店鋪ID
- */
-/*
-export const getStoreStatus = async (storeId) => {
-  try {
-    const accessToken = await getAccessToken()
-
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/status`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to get store status: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error(`❌ Failed to get store status for ${storeId}:`, error)
-    throw error
-  }
-}
-*/
-
-/**
- * TODO: 獲取店鋪資訊
- * @param {String} storeId - UberEats 店鋪ID
- */
-/*
-export const getStoreInfo = async (storeId) => {
-  try {
-    const accessToken = await getAccessToken()
-
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to get store info: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error(`❌ Failed to get store info for ${storeId}:`, error)
-    throw error
-  }
-}
-*/
-
-/**
- * 自動 Provisioning 店鋪 - 實作版本
- * @param {String} ubereatsStoreId - UberEats 店鋪ID
- * @param {String} userAccessToken - 用戶存取令牌
- */
-export const autoProvisionStore = async (ubereatsStoreId, userAccessToken) => {
-  try {
-    console.log(`🔄 Auto-provisioning store: ${ubereatsStoreId}`)
-
-    // 找出內部店鋪
-    const internalStore = await Store.findOne({
-      'deliveryPlatforms.platform': 'ubereats',
-      'deliveryPlatforms.storeId': ubereatsStoreId,
-    })
-
-    if (!internalStore) {
-      throw new Error(`找不到對應的店鋪設定: ${ubereatsStoreId}`)
-    }
-
-    // 使用提供的 User Access Token 或自動獲取 provisioning token
-    const token = userAccessToken || (await getTokenForOperation('provisioning'))
-
-    if (!token) {
-      throw new Error('User Access Token 是 provisioning 操作的必需參數')
-    }
-
-    // 使用環境變數中的 SERVER_URL，如果沒有則使用預設值
-    const serverUrl =
-      process.env.SERVER_URL ||
-      process.env.VITE_API_BASE_URL?.replace('/api', '') ||
-      'http://localhost:8700'
-    const webhookUrl = `${serverUrl}/api/delivery/webhook/ubereats`
-
-    console.log(`🔑 Using User Access Token for provisioning`)
-    console.log(`🔔 Webhook URL: ${webhookUrl}`)
-
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${ubereatsStoreId}/pos_data`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        integration_enabled: true,
-        external_store_id: internalStore._id.toString(),
-        webhook_url: webhookUrl,
-        pos_provider: process.env.COMPANY_NAME || 'Online Order System',
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Provisioning failed: ${response.status} - ${errorText}`)
-    }
-
-    const data = await response.json()
-
-    // 更新內部店鋪的整合狀態
-    await Store.updateOne(
-      {
-        _id: internalStore._id,
-        'deliveryPlatforms.platform': 'ubereats',
-        'deliveryPlatforms.storeId': ubereatsStoreId,
-      },
-      {
-        $set: {
-          'deliveryPlatforms.$.isEnabled': true,
-          'deliveryPlatforms.$.lastSyncAt': new Date(),
-        },
-      },
-    )
-
-    console.log(`✅ Store ${ubereatsStoreId} auto-provisioned successfully`)
-    return {
-      ...data,
-      internalStoreId: internalStore._id.toString(),
-      webhookUrl,
-    }
-  } catch (error) {
-    console.error(`❌ Auto-provisioning failed for ${ubereatsStoreId}:`, error)
-    throw error
-  }
-}
-
-/**
- * TODO: POS 系統配置 (eats.pos_provisioning scope)
- * @param {String} storeId - UberEats 店鋪ID
- * @param {Object} posData - POS 配置數據
- */
-/*
-export const configurePOSIntegration = async (storeId, posData) => {
-  try {
-    const accessToken = await getAccessToken()
-
-    const response = await fetch(`${UBEREATS_CONFIG.apiUrl}/stores/${storeId}/pos_data`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(posData),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to configure POS: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error(`❌ Failed to configure POS for ${storeId}:`, error)
-    throw error
-  }
-}
-*/
-
-/**
- * TODO: 獲取營運報表 (eats.report scope)
- * @param {String} storeId - UberEats 店鋪ID
- * @param {Object} reportOptions - 報表選項
- */
-/*
-export const getStoreReports = async (storeId, reportOptions) => {
-  try {
-    const accessToken = await getAccessToken()
-    
-    const queryParams = new URLSearchParams(reportOptions)
-    const url = `${UBEREATS_CONFIG.apiUrl}/reports/stores/${storeId}${queryParams.toString() ? '?' + queryParams.toString() : ''}`
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to get store reports: ${response.status}`)
-    }
-
-    return await response.json()
-  } catch (error) {
-    console.error(`❌ Failed to get reports for ${storeId}:`, error)
-    throw error
-  }
-}
-*/
