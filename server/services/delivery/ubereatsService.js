@@ -189,7 +189,6 @@ export const convertMenuToUberEatsFormat = (fullMenuData) => {
     id: fullMenuData._id,
     title: {
       translations: {
-        en_us: fullMenuData.name,
         zh_tw: fullMenuData.name,
       },
     },
@@ -235,7 +234,6 @@ export const convertMenuToUberEatsFormat = (fullMenuData) => {
       id: categoryId,
       title: {
         translations: {
-          en_us: category.name,
           zh_tw: category.name,
         },
       },
@@ -254,13 +252,11 @@ export const convertMenuToUberEatsFormat = (fullMenuData) => {
         id: itemId,
         title: {
           translations: {
-            en_us: dishTemplate.name,
             zh_tw: dishTemplate.name,
           },
         },
         description: {
           translations: {
-            en_us: dishTemplate.description || '',
             zh_tw: dishTemplate.description || '',
           },
         },
@@ -334,7 +330,6 @@ const convertToModifierGroup = (optionCategory) => {
     id: optionCategory._id,
     title: {
       translations: {
-        en_us: optionCategory.name,
         zh_tw: optionCategory.name,
       },
     },
@@ -393,7 +388,6 @@ const createModifierItems = (fullMenuData) => {
             id: optionId,
             title: {
               translations: {
-                en_us: option.refOption.name,
                 zh_tw: option.refOption.name,
               },
             },
