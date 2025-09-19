@@ -129,12 +129,6 @@ apiRouter.get('/test-outbound-ip', async (req, res) => {
       expectedFixedIP: '35.201.160.235',
       isCorrectIP: ipData.ip === '35.201.160.235',
       kotsms: kotsmsResult,
-      troubleshooting: {
-        ipRegistered: ipData.ip === '35.201.160.235' ? 'IP 正確' : 'IP 不符',
-        apiPermission: '請確認是否已申請開啟 API 發送權限',
-        credentials: '請確認帳號密碼是否正確',
-        tlsVersion: '確保使用 TLS v1.2 以上版本',
-      },
     })
   } catch (error) {
     console.error('API 測試錯誤:', error)

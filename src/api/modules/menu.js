@@ -87,5 +87,20 @@ export default function (apiClient) {
     deleteMenu({ brandId, storeId, menuId }) {
       return apiClient.delete(`/menu/brands/${brandId}/${storeId}/menu/${menuId}`)
     },
+
+    /**
+     * 根據ID獲取菜單且完整填充商品與選項 - 用於外送平台上傳Menu
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.storeId - 店鋪ID
+     * @param {string} params.menuId - 菜單ID
+     * @param {boolean} [params.includeUnpublished=false] - 是否包含未發布的項目
+     * @returns {Promise} - API 回應
+     */
+    getMenuAllPopulateById({ brandId, storeId, menuId, includeUnpublished = false }) {
+      return apiClient.get(`/menu/brands/${brandId}/${storeId}/menu/${menuId}/full-populate`, {
+        params: { includeUnpublished },
+      })
+    },
   }
 }

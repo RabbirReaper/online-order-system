@@ -139,7 +139,7 @@ const itemImage = computed(() => {
 // 計算屬性 - 餐點價格
 const dishPrice = computed(() => {
   if (props.item.itemType === 'dish') {
-    return props.item.priceOverride || props.item.dishTemplate?.basePrice || 0
+    return props.item.dishTemplate.basePrice || 0
   }
   return 0
 })

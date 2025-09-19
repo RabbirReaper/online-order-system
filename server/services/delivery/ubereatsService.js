@@ -17,20 +17,11 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-// 🔧 根據環境動態配置 UberEats API 設定
-const ENVIRONMENT = process.env.UBEREATS_ENVIRONMENT || 'sandbox'
-
+// 🔧 UberEats API 設定
 const UBEREATS_CONFIG = {
-  // 根據環境選擇對應的配置
-  clientId:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
-      : process.env.UBEREATS_SANDBOX_CLIENT_ID,
-
-  clientSecret:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
-      : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
+  // 使用 production 配置
+  clientId: process.env.UBEREATS_PRODUCTION_CLIENT_ID,
+  clientSecret: process.env.UBEREATS_PRODUCTION_CLIENT_SECRET,
 
   // ⚠️ 注意：根據 UberEats 官方文檔，webhook 簽名使用 client_secret 進行驗證
   // 不再需要單獨的 webhook_secret 配置
@@ -41,13 +32,11 @@ const UBEREATS_CONFIG = {
   // OAuth URL 固定
   oauthUrl: 'https://login.uber.com/oauth/v2/token',
 
-  scope:
-    'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
-  environment: ENVIRONMENT,
+  scope: 'eats.store eats.order',
 }
 
 // 啟動時記錄配置狀態
-console.log(`🔧 UberEats Service initialized in ${ENVIRONMENT} mode`)
+console.log(`🔧 UberEats Service initialized`)
 console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
 console.log(`🔑 Client ID configured: ${!!UBEREATS_CONFIG.clientId}`)
 console.log(`🔐 Client Secret configured: ${!!UBEREATS_CONFIG.clientSecret}`)

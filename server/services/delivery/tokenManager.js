@@ -18,15 +18,8 @@ export const TOKEN_TYPES = {
 // UberEats OAuth 配置
 const OAUTH_CONFIG = {
   tokenUrl: 'https://login.uber.com/oauth/v2/token',
-  environment: process.env.UBEREATS_ENVIRONMENT || 'sandbox',
-  clientId:
-    process.env.UBEREATS_ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
-      : process.env.UBEREATS_SANDBOX_CLIENT_ID,
-  clientSecret:
-    process.env.UBEREATS_ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
-      : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
+  clientId: process.env.UBEREATS_PRODUCTION_CLIENT_ID,
+  clientSecret: process.env.UBEREATS_PRODUCTION_CLIENT_SECRET,
 }
 
 /**

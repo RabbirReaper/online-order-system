@@ -27,25 +27,12 @@ const __dirname = dirname(__filename)
 dotenv.config()
 
 // 🔧 UberEats API 配置
-const ENVIRONMENT = process.env.UBEREATS_ENVIRONMENT || 'sandbox'
-
 const UBEREATS_CONFIG = {
-  clientId:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
-      : process.env.UBEREATS_SANDBOX_CLIENT_ID,
-
-  clientSecret:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
-      : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
-
-  apiUrl:
-    ENVIRONMENT === 'production' ? 'https://api.uber.com/v1' : 'https://sandbox-api.uber.com/v1',
-
+  clientId: process.env.UBEREATS_PRODUCTION_CLIENT_ID,
+  clientSecret: process.env.UBEREATS_PRODUCTION_CLIENT_SECRET,
+  apiUrl: 'https://api.uber.com/v1',
   oauthUrl: 'https://auth.uber.com/oauth/v2/token',
   scope: 'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
-  environment: ENVIRONMENT,
 }
 
 // 🔧 axios 基本配置
@@ -58,10 +45,6 @@ axios.defaults.headers.common['User-Agent'] = 'UberEats-Test-Script/1.0'
 const getAccessToken = async () => {
   try {
     if (!UBEREATS_CONFIG.clientId || !UBEREATS_CONFIG.clientSecret) {
-      if (UBEREATS_CONFIG.environment === 'sandbox') {
-        console.log('🧪 Sandbox mode: using mock access token')
-        return 'mock_access_token_for_sandbox'
-      }
       throw new Error('UberEats client ID and secret are required')
     }
 
@@ -93,11 +76,6 @@ const getAccessToken = async () => {
     } else {
       // 網路或其他錯誤
       console.error(`   Error: ${error.message}`)
-    }
-
-    if (UBEREATS_CONFIG.environment === 'sandbox') {
-      console.log('🧪 Sandbox mode: returning mock token as fallback')
-      return 'mock_access_token_for_sandbox'
     }
 
     throw error

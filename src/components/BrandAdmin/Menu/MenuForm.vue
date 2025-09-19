@@ -91,6 +91,9 @@
       <div class="card mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
           <h5 class="mb-0">菜單分類</h5>
+          <button type="button" class="btn btn-sm btn-primary" @click="autoAddDeveryPrice">
+            <i class="bi bi-plus-circle me-1"></i>外送價格自動設定
+          </button>
           <button type="button" class="btn btn-sm btn-primary" @click="addCategory">
             <i class="bi bi-plus-circle me-1"></i>新增分類
           </button>
@@ -170,7 +173,7 @@
                     <thead class="table-light">
                       <tr>
                         <th style="width: 40%">{{ getItemColumnTitle() }}</th>
-                        <th style="width: 15%" v-if="showCashPriceColumn()">現金價格覆蓋</th>
+                        <th style="width: 15%" v-if="showCashPriceColumn()">外送價格</th>
                         <th style="width: 15%" v-if="showPointPriceColumn()">點數價格覆蓋</th>
                         <th style="width: 10%">狀態</th>
                         <th style="width: 20%">操作</th>
@@ -708,6 +711,15 @@ const addCategory = () => {
     description: '',
     items: [],
     order: formData.categories.length,
+  })
+}
+
+const autoAddDeveryPrice = () =>{
+  formData.categories.forEach((category) => {
+    category.items.forEach((item) => {
+      if(item.priceOverride) return;
+      item.priceOverride = (item.dishTemplate.basePrice/0.66).toFixed(0)
+    })
   })
 }
 

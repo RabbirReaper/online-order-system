@@ -33,35 +33,24 @@ const args = process.argv.slice(2)
 const useProduction = args.includes('--production')
 const fullTest = args.includes('--full-test')
 const storeIdArg = args.find(arg => arg.startsWith('--store-id='))
-const testStoreId = storeIdArg ? storeIdArg.split('=')[1] : null
+// 使用實際的測試店家 UUID (Rabbir - Test Store 1)
+const testStoreId = storeIdArg ? storeIdArg.split('=')[1] : 'd641fef3-0fb5-408c-b20a-d65b3c082530'
 
 console.log('🧪 UberEats 串接功能測試腳本')
 console.log('=' .repeat(50))
 
-// 🔧 環境配置
-const ENVIRONMENT = useProduction ? 'production' : (process.env.UBEREATS_ENVIRONMENT || 'sandbox')
-
+// 🔧 UberEats 配置
 const UBEREATS_CONFIG = {
-  clientId:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_ID
-      : process.env.UBEREATS_SANDBOX_CLIENT_ID,
-
-  clientSecret:
-    ENVIRONMENT === 'production'
-      ? process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
-      : process.env.UBEREATS_SANDBOX_CLIENT_SECRET,
-
-  apiUrl:
-    ENVIRONMENT === 'production' ? 'https://api.uber.com/v1' : 'https://sandbox-api.uber.com/v1',
-
+  clientId: process.env.UBEREATS_PRODUCTION_CLIENT_ID,
+  clientSecret: process.env.UBEREATS_PRODUCTION_CLIENT_SECRET,
+  apiUrl: 'https://api.uber.com/v1',
   oauthUrl: 'https://login.uber.com/oauth/v2/token',
-  
-  scope: 'eats.pos_provisioning eats.order eats.store eats.report eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
-  environment: ENVIRONMENT,
-  
+
+  // 使用基本的 scope 進行測試
+  scope: 'eats.store eats.order',
+
   // 如果環境變數中有提供現成的 access token，優先使用
-  accessToken: ENVIRONMENT === 'production' ? process.env.UBEREATS_PRODUCTION_ACCESS_TOKEN : null,
+  accessToken: process.env.UBEREATS_PRODUCTION_ACCESS_TOKEN,
 }
 
 const SERVER_CONFIG = {
@@ -69,7 +58,7 @@ const SERVER_CONFIG = {
   timeout: 30000,
 }
 
-console.log(`🌍 Environment: ${ENVIRONMENT}`)
+console.log(`🌍 Environment: production`)
 console.log(`📡 API URL: ${UBEREATS_CONFIG.apiUrl}`)
 console.log(`🔑 Client ID: ${UBEREATS_CONFIG.clientId ? '✓' : '✗'}`)
 console.log(`🔐 Client Secret: ${UBEREATS_CONFIG.clientSecret ? '✓' : '✗'}`)
@@ -224,7 +213,7 @@ const testStoreOrders = async (accessToken) => {
     return
   }
 
-  const storeId = testStoreId || 'test-store-123'
+  const storeId = testStoreId || 'd641fef3-0fb5-408c-b20a-d65b3c082530'
   
   try {
     const response = await axios({
@@ -288,7 +277,7 @@ const testOrderCancel = async (accessToken) => {
     return
   }
 
-  const storeId = testStoreId || 'test-store-123'
+  const storeId = testStoreId || 'd641fef3-0fb5-408c-b20a-d65b3c082530'
   const orderId = 'test-order-123'
   
   try {
