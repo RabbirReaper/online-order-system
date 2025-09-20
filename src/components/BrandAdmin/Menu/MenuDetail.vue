@@ -21,10 +21,26 @@
         <router-link
           v-if="menu"
           :to="`/admin/${brandId}/menus/edit/${storeId}/${menu._id}`"
-          class="btn btn-primary"
+          class="btn btn-primary me-2"
         >
           <i class="bi bi-pencil me-1"></i>編輯菜單
         </router-link>
+        <button
+          class="btn btn-primary"
+          v-if="menu && menu.isActive === true && menu.menuType === 'food'"
+          @click="uploadToUberEats"
+          :disabled="isUploading"
+        >
+          <span
+            v-if="isUploading"
+            class="spinner-border spinner-border-sm me-2"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else-if="uploadSuccess" class="bi bi-check-circle me-1"></i>
+          <i v-else class="bi bi-cloud-upload me-1"></i>
+          {{ isUploading ? '上傳中...' : uploadSuccess ? '上傳成功' : '同步到 UberEats' }}
+        </button>
       </div>
     </div>
 
@@ -39,6 +55,24 @@
     <div v-else-if="error" class="alert alert-danger">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>
       {{ error }}
+    </div>
+
+    <!-- 上傳狀態提示 -->
+    <div v-if="uploadError" class="alert alert-danger alert-dismissible fade show">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ uploadError }}
+      <button type="button" class="btn-close" @click="uploadError = ''" aria-label="Close"></button>
+    </div>
+
+    <div v-if="uploadSuccess" class="alert alert-success alert-dismissible fade show">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      菜單已成功上傳到 UberEats！
+      <button
+        type="button"
+        class="btn-close"
+        @click="uploadSuccess = false"
+        aria-label="Close"
+      ></button>
     </div>
 
     <!-- 菜單詳情內容 -->
@@ -230,10 +264,10 @@
                         </td>
                         <td>{{ getItemName(item) }}</td>
                         <td>
-                          <div                          >
-                            <span v-if="item.priceOverride" class="text-success"> 外送: {{
-                              formatPrice(item.priceOverride)
-                            }}</span>
+                          <div>
+                            <span v-if="item.priceOverride" class="text-success">
+                              外送: {{ formatPrice(item.priceOverride) }}</span
+                            >
                             <small class="text-muted">
                               原價: {{ formatPrice(getItemOriginalPrice(item)) }}
                             </small>
@@ -316,6 +350,9 @@ const menu = ref(null)
 const isLoading = ref(true)
 const error = ref('')
 const storeName = ref('載入中...')
+const isUploading = ref(false)
+const uploadSuccess = ref(false)
+const uploadError = ref('')
 
 // 計算屬性
 const sortedCategories = computed(() => {
