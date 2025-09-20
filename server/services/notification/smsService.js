@@ -57,7 +57,7 @@ class SMSService {
         dstaddr: this.formatPhoneNumber(phone),
         smbody: message, // 對中文內容進行URL編碼
         clientid: clientId,
-        CharsetURL: 'UTF8', // 指定內容為 UTF-8 編碼
+        Encoding_PostIn: 'UTF8',
         smsPointFlag: '1', // 回覆扣除點數資訊
       })
 

@@ -15,7 +15,6 @@ import orderAdminRoutes from './orderAdmin.js'
 import inventoryRoutes from './inventory.js'
 import menuRoutes from './menu.js'
 import bundleRoutes from './bundle.js'
-import deliveryPlatformRoutes from './deliveryPlatform.js'
 import cashFlowRoutes from './cashFlow.js'
 import cashFlowCategoryRoutes from './cashFlowCategory.js'
 
@@ -38,7 +37,6 @@ apiRouter.use('/admin', adminRoutes)
 apiRouter.use('/inventory', inventoryRoutes) // 庫存管理路由
 apiRouter.use('/menu', menuRoutes) // 菜單管理路由
 apiRouter.use('/bundle', bundleRoutes) // 兌換券綑綁路由
-apiRouter.use('/delivery', deliveryPlatformRoutes) // 外送平台路由
 apiRouter.use('/cash-flow', cashFlowRoutes) // 現金流記帳路由
 apiRouter.use('/cash-flow-category', cashFlowCategoryRoutes) // 記帳分類路由
 
