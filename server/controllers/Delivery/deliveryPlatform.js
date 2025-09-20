@@ -217,13 +217,13 @@ export const refreshUserToken = asyncHandler(async (req, res) => {
  * 獲取 UberEats 店鋪訂單列表
  */
 export const getUberEatsStoreOrders = asyncHandler(async (req, res) => {
-  const { storeId } = req.params
+  const { brandId, storeId } = req.params
   const options = req.query
 
-  if (!storeId) {
+  if (!brandId || !storeId) {
     return res.status(400).json({
       success: false,
-      message: '店鋪ID為必填欄位',
+      message: '品牌ID和店鋪ID為必填欄位',
     })
   }
 
@@ -241,13 +241,13 @@ export const getUberEatsStoreOrders = asyncHandler(async (req, res) => {
  * 取消 UberEats 店鋪訂單
  */
 export const cancelUberEatsOrder = asyncHandler(async (req, res) => {
-  const { storeId, orderId } = req.params
+  const { brandId, storeId, orderId } = req.params
   const { reason } = req.body
 
-  if (!storeId || !orderId) {
+  if (!brandId || !storeId || !orderId) {
     return res.status(400).json({
       success: false,
-      message: '店鋪ID和訂單ID為必填欄位',
+      message: '品牌ID、店鋪ID和訂單ID為必填欄位',
     })
   }
 
@@ -266,13 +266,13 @@ export const cancelUberEatsOrder = asyncHandler(async (req, res) => {
  * 自動 Provisioning UberEats 店鋪
  */
 export const autoProvisionUberEatsStore = asyncHandler(async (req, res) => {
-  const { storeId } = req.params
+  const { brandId, storeId } = req.params
   const { userAccessToken } = req.body
 
-  if (!storeId) {
+  if (!brandId || !storeId) {
     return res.status(400).json({
       success: false,
-      message: '店鋪ID為必填欄位',
+      message: '品牌ID和店鋪ID為必填欄位',
     })
   }
 
@@ -294,46 +294,73 @@ export const autoProvisionUberEatsStore = asyncHandler(async (req, res) => {
 })
 
 // ==========================================
-// 📋 Phase 2: TODO - 其他 UberEats API 功能
+// 📋 Phase 2: UberEats API 店鋪管理功能
 // ==========================================
 
 /**
- * TODO: 更新 UberEats 店鋪營業狀態
+ * 獲取 UberEats 店鋪詳細資訊
  */
-/*
-export const updateUberEatsStoreStatus = asyncHandler(async (req, res) => {
-  const { storeId, status } = req.body
+export const getUberEatsStoreDetails = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
 
-  if (!storeId || !status) {
+  if (!brandId || !storeId) {
     return res.status(400).json({
       success: false,
-      message: '店鋪ID和狀態為必填欄位',
+      message: '品牌ID和店鋪ID為必填欄位',
     })
   }
 
-  const result = await deliveryService.updateUberEatsStoreStatus(storeId, status)
+  const storeDetails = await deliveryService.getUberEatsStoreDetails(storeId)
 
   res.json({
     success: true,
-    message: '店鋪狀態更新成功',
+    message: '成功獲取店鋪詳細資訊',
     storeId,
-    status,
+    storeDetails,
+  })
+})
+
+/**
+ * 設定 UberEats 店鋪詳細資訊
+ */
+export const setUberEatsStoreDetails = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
+  const details = req.body
+
+  if (!brandId || !storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID和店鋪ID為必填欄位',
+    })
+  }
+
+  if (!details || Object.keys(details).length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: '店鋪詳細資訊為必填欄位',
+    })
+  }
+
+  const result = await deliveryService.setUberEatsStoreDetails(storeId, details)
+
+  res.json({
+    success: true,
+    message: '店鋪詳細資訊更新成功',
+    storeId,
     result,
   })
 })
-*/
 
 /**
- * TODO: 獲取 UberEats 店鋪營業狀態
+ * 獲取 UberEats 店鋪營業狀態
  */
-/*
 export const getUberEatsStoreStatus = asyncHandler(async (req, res) => {
-  const { storeId } = req.params
+  const { brandId, storeId } = req.params
 
-  if (!storeId) {
+  if (!brandId || !storeId) {
     return res.status(400).json({
       success: false,
-      message: '店鋪ID為必填欄位',
+      message: '品牌ID和店鋪ID為必填欄位',
     })
   }
 
@@ -346,29 +373,105 @@ export const getUberEatsStoreStatus = asyncHandler(async (req, res) => {
     status,
   })
 })
-*/
 
 /**
- * TODO: 獲取 UberEats 店鋪資訊
+ * 設定 UberEats 店鋪營業狀態
  */
-/*
-export const getUberEatsStoreInfo = asyncHandler(async (req, res) => {
-  const { storeId } = req.params
+export const setUberEatsStoreStatus = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
+  const { status, reason, is_offline_until } = req.body
 
-  if (!storeId) {
+  if (!brandId || !storeId) {
     return res.status(400).json({
       success: false,
-      message: '店鋪ID為必填欄位',
+      message: '品牌ID和店鋪ID為必填欄位',
     })
   }
 
-  const storeInfo = await deliveryService.getUberEatsStoreInfo(storeId)
+  if (!status || !['ONLINE', 'OFFLINE'].includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: '狀態必須為 ONLINE 或 OFFLINE',
+    })
+  }
+
+  const statusData = {
+    status,
+    ...(reason && { reason }),
+    ...(is_offline_until && { is_offline_until }),
+  }
+
+  const result = await deliveryService.setUberEatsStoreStatus(storeId, statusData)
 
   res.json({
     success: true,
-    message: '成功獲取店鋪資訊',
+    message: '店鋪狀態更新成功',
     storeId,
-    storeInfo,
+    status,
+    result,
   })
 })
-*/
+
+/**
+ * 設定 UberEats 店鋪準備時間
+ */
+export const setUberEatsPrepTime = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
+  const { prepTime } = req.body
+
+  if (!brandId || !storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID和店鋪ID為必填欄位',
+    })
+  }
+
+  if (typeof prepTime !== 'number' || prepTime < 0 || prepTime > 10800) {
+    return res.status(400).json({
+      success: false,
+      message: '準備時間必須為 0-10800 秒之間的數字',
+    })
+  }
+
+  const result = await deliveryService.setUberEatsPrepTime(storeId, prepTime)
+
+  res.json({
+    success: true,
+    message: '準備時間設定成功',
+    storeId,
+    prepTime,
+    result,
+  })
+})
+
+/**
+ * 上傳菜單到 UberEats
+ */
+export const uploadUberEatsMenu = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
+  const { menuId } = req.body
+
+  if (!brandId || !storeId) {
+    return res.status(400).json({
+      success: false,
+      message: '品牌ID和店鋪ID為必填欄位',
+    })
+  }
+
+  if (!menuId) {
+    return res.status(400).json({
+      success: false,
+      message: '菜單ID為必填欄位',
+    })
+  }
+
+  const result = await deliveryService.uploadUberEatsMenu(storeId, menuId)
+
+  res.json({
+    success: true,
+    message: '菜單上傳成功',
+    storeId,
+    menuId,
+    result,
+  })
+})

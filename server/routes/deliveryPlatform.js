@@ -1,6 +1,11 @@
 import express from 'express'
 import * as deliveryController from '../controllers/Delivery/deliveryPlatform.js'
-import { authenticate, requireRole } from '../middlewares/auth/index.js'
+import {
+  authenticate,
+  requireRole,
+  requireBrandAccess,
+  requireStoreAccess,
+} from '../middlewares/auth/index.js'
 
 const router = express.Router()
 
@@ -120,82 +125,130 @@ router.post(
 
 /**
  * 自動 Provisioning UberEats 店鋪整合
- * POST /api/delivery/ubereats/stores/:storeId/auto-provision
+ * POST /api/delivery/brands/:brandId/stores/:storeId/ubereats/auto-provision
  * Body: { userAccessToken: string }
  */
 router.post(
-  '/ubereats/stores/:storeId/auto-provision',
+  '/brands/:brandId/stores/:storeId/ubereats/auto-provision',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
   deliveryController.autoProvisionUberEatsStore,
 )
 
 /**
  * 獲取 UberEats 店鋪訂單列表
- * GET /api/delivery/ubereats/stores/:storeId/orders
+ * GET /api/delivery/brands/:brandId/stores/:storeId/ubereats/orders
  * Query params: limit, offset, status, etc.
  */
 router.get(
-  '/ubereats/stores/:storeId/orders',
+  '/brands/:brandId/stores/:storeId/ubereats/orders',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
   deliveryController.getUberEatsStoreOrders,
 )
 
 /**
  * 取消 UberEats 店鋪訂單
- * POST /api/delivery/ubereats/stores/:storeId/orders/:orderId/cancel
+ * POST /api/delivery/brands/:brandId/stores/:storeId/ubereats/orders/:orderId/cancel
  * Body: { reason?: string }
  */
 router.post(
-  '/ubereats/stores/:storeId/orders/:orderId/cancel',
+  '/brands/:brandId/stores/:storeId/ubereats/orders/:orderId/cancel',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
   deliveryController.cancelUberEatsOrder,
 )
 
 // =============================================================================
-// 📋 Phase 2: TODO - 其他 UberEats API 功能（註解待實作）
+// 📋 Phase 2: UberEats 店鋪管理功能
 // =============================================================================
 
 /**
- * TODO: 更新 UberEats 店鋪營業狀態
- * PATCH /api/delivery/ubereats/stores/status
- * Body: { storeId: string, status: 'ONLINE' | 'OFFLINE' | 'PAUSE' }
+ * 獲取 UberEats 店鋪詳細資訊
+ * GET /api/delivery/brands/:brandId/stores/:storeId/ubereats/details
  */
-/*
-router.patch(
-  '/ubereats/stores/status',
+router.get(
+  '/brands/:brandId/stores/:storeId/ubereats/details',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  deliveryController.updateUberEatsStoreStatus,
+  requireBrandAccess,
+  requireStoreAccess,
+  deliveryController.getUberEatsStoreDetails,
 )
-*/
 
 /**
- * TODO: 獲取 UberEats 店鋪營業狀態
- * GET /api/delivery/ubereats/stores/:storeId/status
+ * 設定 UberEats 店鋪詳細資訊
+ * PUT /api/delivery/brands/:brandId/stores/:storeId/ubereats/details
+ * Body: { name?, description?, phone?, address?, etc. }
  */
-/*
-router.get(
-  '/ubereats/stores/:storeId/status',
+router.put(
+  '/brands/:brandId/stores/:storeId/ubereats/details',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
+  deliveryController.setUberEatsStoreDetails,
+)
+
+/**
+ * 獲取 UberEats 店鋪營業狀態
+ * GET /api/delivery/brands/:brandId/stores/:storeId/ubereats/status
+ */
+router.get(
+  '/brands/:brandId/stores/:storeId/ubereats/status',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
   deliveryController.getUberEatsStoreStatus,
 )
-*/
 
 /**
- * TODO: 獲取 UberEats 店鋪資訊
- * GET /api/delivery/ubereats/stores/:storeId
+ * 設定 UberEats 店鋪營業狀態
+ * PUT /api/delivery/brands/:brandId/stores/:storeId/ubereats/status
+ * Body: { status: 'ONLINE' | 'OFFLINE', reason?: string, is_offline_until?: string }
  */
-/*
-router.get(
-  '/ubereats/stores/:storeId',
+router.put(
+  '/brands/:brandId/stores/:storeId/ubereats/status',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
-  deliveryController.getUberEatsStoreInfo,
+  requireBrandAccess,
+  requireStoreAccess,
+  deliveryController.setUberEatsStoreStatus,
 )
-*/
+
+/**
+ * 設定 UberEats 店鋪準備時間
+ * PUT /api/delivery/brands/:brandId/stores/:storeId/ubereats/prep-time
+ * Body: { prepTime: number } (0-10800 seconds)
+ */
+router.put(
+  '/brands/:brandId/stores/:storeId/ubereats/prep-time',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
+  deliveryController.setUberEatsPrepTime,
+)
+
+/**
+ * 上傳菜單到 UberEats
+ * POST /api/delivery/brands/:brandId/stores/:storeId/ubereats/menu
+ * Body: { menuId: string }
+ */
+router.post(
+  '/brands/:brandId/stores/:storeId/ubereats/menu',
+  authenticate('admin'),
+  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireBrandAccess,
+  requireStoreAccess,
+  deliveryController.uploadUberEatsMenu,
+)
 
 export default router

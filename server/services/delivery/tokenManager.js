@@ -1,335 +1,192 @@
 /**
- * UberEats Token 管理服務
- * 處理兩種不同類型的 token：User Token 和 App Token
- * 支援 token 刷新機制和過期檢測
+ * UberEats Token 管理服務 - 重構版
+ * 簡化的 token 管理，支援自動獲取和快取
  */
 
 import dotenv from 'dotenv'
-import { AppError } from '../../middlewares/error.js'
+import axios from 'axios'
 
 dotenv.config()
 
-// 重新設計 Token 類型 - 符合 UberEats 官方規範
-export const TOKEN_TYPES = {
-  CLIENT_CREDENTIALS: 'client_credentials', // 日常操作
-  AUTHORIZATION_CODE: 'authorization_code', // POS Provisioning
-}
-
-// UberEats OAuth 配置
+// OAuth 設定
 const OAUTH_CONFIG = {
-  tokenUrl: 'https://login.uber.com/oauth/v2/token',
+  tokenUrl: 'https://auth.uber.com/oauth/v2/token',
   clientId: process.env.UBEREATS_PRODUCTION_CLIENT_ID,
   clientSecret: process.env.UBEREATS_PRODUCTION_CLIENT_SECRET,
+  scope: 'eats.store eats.order eats.store.status.write',
+}
+
+// Token 快取
+let tokenCache = {
+  accessToken: null,
+  expiresAt: null,
 }
 
 /**
- * UberEats Token 管理類
+ * 獲取 Access Token（基於用戶提供的程式碼）
+ * @returns {Promise<Object>} Token 資料物件，包含 access_token 和 expires_in
  */
-export class UberEatsTokenManager {
-  /**
-   * 獲取 Client Credentials Token (用於日常 API 操作)
-   * 使用正確的 OAuth2 client_credentials 流程
-   * @returns {Promise<String>} Access Token
-   */
-  static async getClientCredentialsToken() {
-    try {
-      if (!OAUTH_CONFIG.clientId || !OAUTH_CONFIG.clientSecret) {
-        throw new Error('OAuth credentials not configured')
-      }
-
-      console.log('🔑 Requesting Client Credentials Token...')
-
-      const response = await fetch(OAUTH_CONFIG.tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: OAUTH_CONFIG.clientId,
-          client_secret: OAUTH_CONFIG.clientSecret,
-          scope:
-            'eats.store eats.order eats.store.status.write eats.store.status.read eats.store.orders.read eats.store.orders.cancel',
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(
-          `Client credentials token request failed: ${response.status} - ${errorText}`,
-        )
-      }
-
-      const tokenData = await response.json()
-      console.log('✅ Client Credentials Token obtained successfully')
-      return tokenData.access_token
-    } catch (error) {
-      console.error('❌ Failed to get Client Credentials Token:', error)
-      throw new AppError(`Token request failed: ${error.message}`, 500)
-    }
-  }
-
-  /**
-   * 獲取 Authorization Code Token (用於 POS Provisioning)
-   * 需要預先配置的 User Access Token
-   * @returns {String} User Access Token for Provisioning
-   */
-  static getAuthorizationCodeToken() {
-    const token = process.env.UBEREATS_USER_ACCESS_TOKEN
-
-    if (!token) {
-      console.warn('⚠️  User Access Token not configured for provisioning')
-      console.log(
-        '💡 For provisioning operations, you need to obtain a User Access Token through the Authorization Code flow',
-      )
-      return null
+const fetchAccessToken = async () => {
+  try {
+    if (!OAUTH_CONFIG.clientId || !OAUTH_CONFIG.clientSecret) {
+      throw new Error('UberEats OAuth credentials not configured')
     }
 
-    console.log('🔑 Using User Access Token for POS Provisioning')
-    return token
-  }
+    // console.log('🔑 正在獲取新的 Access Token...')
 
-  /**
-   * 根據 scopes 自動選擇認證流程並獲取 Token
-   * @param {Array} scopes - 所需的權限範圍，預設為基本 API 操作權限
-   * @returns {Promise<String>} 適合的 Access Token
-   */
-  static async getToken(scopes = ['eats.store', 'eats.order']) {
-    const provisioningScopes = ['eats.pos_provisioning']
-    const needsProvisioning = scopes.some((scope) => provisioningScopes.includes(scope))
+    // 使用 URLSearchParams（用戶推薦的方式）
+    const formData = new URLSearchParams({
+      client_id: OAUTH_CONFIG.clientId,
+      client_secret: OAUTH_CONFIG.clientSecret,
+      grant_type: 'client_credentials',
+      scope: OAUTH_CONFIG.scope,
+    })
 
-    if (needsProvisioning) {
-      // POS Provisioning 需要 User Access Token (Authorization Code 流程)
-      const token = this.getAuthorizationCodeToken()
-      if (!token) {
-        throw new AppError(
-          'User Access Token required for provisioning operations. Please configure UBEREATS_USER_ACCESS_TOKEN.',
-          401,
-        )
-      }
-      return token
-    } else {
-      // 日常操作使用 Client Credentials 流程
-      return await this.getClientCredentialsToken()
+    const response = await axios.post(OAUTH_CONFIG.tokenUrl, formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+
+    if (!response.data.access_token) {
+      throw new Error('No access token received from UberEats')
     }
-  }
 
-  /**
-   * 根據操作類型自動選擇合適的 Token（向後相容）
-   * @param {String} operation - 操作類型：'provisioning', 'orders', 'store', 'reports'
-   * @returns {Promise<String>} 適合的 Access Token
-   */
-  static async getTokenForOperation(operation) {
-    const provisioningOperations = ['provisioning', 'pos_data', 'setup']
-    const isProvisioningOperation = provisioningOperations.some((op) =>
-      operation.toLowerCase().includes(op),
-    )
-
-    if (isProvisioningOperation) {
-      return await this.getToken(['eats.pos_provisioning'])
-    } else {
-      return await this.getToken(['eats.store', 'eats.order'])
-    }
-  }
-
-  /**
-   * 刷新 User Access Token
-   * @returns {Promise<String>} 新的 User Access Token
-   */
-  static async refreshUserToken() {
-    try {
-      const refreshToken = process.env.UBEREATS_REFRESH_TOKEN
-
-      if (!refreshToken) {
-        throw new Error('Refresh token not available')
-      }
-
-      if (!OAUTH_CONFIG.clientId || !OAUTH_CONFIG.clientSecret) {
-        throw new Error('OAuth credentials not configured')
-      }
-
-      console.log('🔄 Refreshing User Access Token...')
-
-      const response = await fetch(OAUTH_CONFIG.tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: OAUTH_CONFIG.clientId,
-          client_secret: OAUTH_CONFIG.clientSecret,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Token refresh failed: ${response.status} - ${errorText}`)
-      }
-
-      const tokenData = await response.json()
-
-      // 記錄新的 token 資訊（不記錄實際 token 值）
-      console.log('✅ User Access Token refreshed successfully')
-      console.log(`📋 New token expires in: ${tokenData.expires_in} seconds`)
-
-      if (tokenData.refresh_token) {
-        console.log('🔄 New refresh token also received')
-      }
-
-      // 這裡您可能需要將新的 token 儲存到資料庫或更新環境變數
-      // TODO: 實作 token 持久化儲存
-      console.log('⚠️  Remember to update UBEREATS_USER_ACCESS_TOKEN in your environment')
-
-      return tokenData.access_token
-    } catch (error) {
-      console.error('❌ Failed to refresh User Access Token:', error)
-      throw new AppError(`Token refresh failed: ${error.message}`, 500)
-    }
-  }
-
-  /**
-   * 驗證 Token 是否有效
-   * @param {String} token - 要驗證的 token
-   * @param {String} flow - OAuth 流程類型
-   * @returns {Promise<Boolean>} token 是否有效
-   */
-  static async validateToken(token, flow = TOKEN_TYPES.CLIENT_CREDENTIALS) {
-    try {
-      if (!token) {
-        return false
-      }
-
-      // 使用統一的測試端點驗證 token
-      const testEndpoint = `${this.getApiUrl()}/stores`
-
-      const response = await fetch(testEndpoint, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const isValid = response.status !== 401 && response.status !== 403
-
-      if (isValid) {
-        console.log(`✅ ${flow} token validation successful`)
-      } else {
-        console.log(`❌ ${flow} token validation failed: ${response.status}`)
-      }
-
-      return isValid
-    } catch (error) {
-      console.error(`❌ Token validation error for ${flow}:`, error)
-      return false
-    }
-  }
-
-  /**
-   * 獲取 API URL - 統一使用官方生產端點
-   * @returns {String} API URL
-   */
-  static getApiUrl() {
-    return 'https://api.uber.com/v1/eats'
-  }
-
-  /**
-   * 檢查所有 token 的配置狀態
-   * @returns {Object} token 配置狀態報告
-   */
-  static getTokenStatus() {
-    const userToken = process.env.UBEREATS_USER_ACCESS_TOKEN
-    const refreshToken = process.env.UBEREATS_REFRESH_TOKEN
+    // console.log('✅ 成功獲取 Access Token')
+    // console.log(`⏰ Token 有效期: ${response.data.expires_in} 秒 (${Math.round(response.data.expires_in / 86400)} 天)`)
 
     return {
-      clientCredentials: {
-        canGenerate: !!OAUTH_CONFIG.clientId && !!OAUTH_CONFIG.clientSecret,
-        clientId: !!OAUTH_CONFIG.clientId,
-        clientSecret: !!OAUTH_CONFIG.clientSecret,
-        flow: TOKEN_TYPES.CLIENT_CREDENTIALS,
-      },
-      authorizationCode: {
-        configured: !!userToken,
-        tokenLength: userToken ? userToken.length : 0,
-        hasRefreshCapability: !!refreshToken,
-        flow: TOKEN_TYPES.AUTHORIZATION_CODE,
-      },
-      refreshToken: {
-        configured: !!refreshToken,
-        length: refreshToken ? refreshToken.length : 0,
-      },
-      environment: OAUTH_CONFIG.environment,
-      apiUrl: this.getApiUrl(),
+      access_token: response.data.access_token,
+      expires_in: response.data.expires_in || 2592000, // 預設 30 天
     }
-  }
-
-  /**
-   * 生成用於測試的模擬 token（僅開發環境）
-   * @param {String} flow - OAuth 流程類型
-   * @returns {String} 模擬 token
-   */
-  static getMockToken(flow = TOKEN_TYPES.CLIENT_CREDENTIALS) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Mock tokens are not available in production')
-    }
-
-    const mockTokens = {
-      [TOKEN_TYPES.CLIENT_CREDENTIALS]: 'mock_client_credentials_token_for_api_operations',
-      [TOKEN_TYPES.AUTHORIZATION_CODE]: 'mock_authorization_code_token_for_provisioning',
-    }
-
-    console.log(`🧪 Using mock ${flow} token for ${OAUTH_CONFIG.environment} environment`)
-    return mockTokens[flow] || mockTokens[TOKEN_TYPES.CLIENT_CREDENTIALS]
+  } catch (error) {
+    console.error('❌ 獲取 Access Token 失敗:', error.response?.data || error.message)
+    throw new Error(`Failed to get access token: ${error.message}`)
   }
 }
 
 /**
- * 便捷函數：獲取 Client Credentials Token
+ * 檢查 token 是否已過期
+ * @returns {Boolean} token 是否過期
  */
-export const getClientCredentialsToken = () => UberEatsTokenManager.getClientCredentialsToken()
+const isTokenExpired = () => {
+  if (!tokenCache.accessToken || !tokenCache.expiresAt) {
+    return true
+  }
+
+  // 提前 5 分鐘刷新 token
+  const bufferTime = 5 * 60 * 1000 // 5 分鐘
+  return Date.now() >= tokenCache.expiresAt - bufferTime
+}
 
 /**
- * 便捷函數：獲取 Authorization Code Token
+ * 獲取有效的 Access Token（自動管理版本）
+ * 這是主要的公開函數，會自動處理 token 的獲取、快取和刷新
+ * @returns {Promise<String>} 有效的 Access Token
  */
-export const getAuthorizationCodeToken = () => UberEatsTokenManager.getAuthorizationCodeToken()
+export const getAccessToken = async () => {
+  try {
+    // 檢查是否需要獲取新的 token
+    if (isTokenExpired()) {
+      // console.log('🔄 Token 已過期或不存在，正在獲取新的 token...')
+
+      const tokenData = await fetchAccessToken()
+
+      // 快取新的 token，使用 API 回應中的 expires_in 計算過期時間
+      tokenCache.accessToken = tokenData.access_token
+      tokenCache.expiresAt = Date.now() + tokenData.expires_in * 1000 // 使用實際的過期時間（秒轉毫秒）
+
+      // console.log('✅ Token 已更新並快取')
+      // console.log(`⏰ Token 將於 ${new Date(tokenCache.expiresAt).toLocaleString('zh-TW')} 過期`)
+    } else {
+      // console.log('🔄 使用快取的 Token')
+    }
+
+    return tokenCache.accessToken
+  } catch (error) {
+    console.error('❌ 獲取 Access Token 失敗:', error)
+    throw error
+  }
+}
 
 /**
- * 便捷函數：根據 scopes 自動選擇並獲取 Token
+ * 強制刷新 token（清除快取並獲取新的 token）
+ * @returns {Promise<String>} 新的 Access Token
  */
-export const getToken = (scopes) => UberEatsTokenManager.getToken(scopes)
+export const refreshToken = async () => {
+  // console.log('🔄 強制刷新 Token...')
+
+  // 清除快取
+  tokenCache.accessToken = null
+  tokenCache.expiresAt = null
+
+  // 獲取新的 token
+  return await getAccessToken()
+}
 
 /**
- * 便捷函數：根據操作自動選擇 Token（向後相容）
+ * 檢查 token 配置狀態
+ * @returns {Object} 配置狀態
  */
-export const getTokenForOperation = (operation) =>
-  UberEatsTokenManager.getTokenForOperation(operation)
+export const getTokenStatus = () => {
+  return {
+    configured: !!OAUTH_CONFIG.clientId && !!OAUTH_CONFIG.clientSecret,
+    clientId: !!OAUTH_CONFIG.clientId,
+    clientSecret: !!OAUTH_CONFIG.clientSecret,
+    cached: !!tokenCache.accessToken,
+    expires: tokenCache.expiresAt ? new Date(tokenCache.expiresAt).toISOString() : null,
+    isValid: !isTokenExpired(),
+  }
+}
 
 /**
- * 向後相容：舊的 getUserToken 和 getAppToken 函數
+ * 清除快取的 token
  */
-export const getUserToken = () => UberEatsTokenManager.getAuthorizationCodeToken()
-export const getAppToken = () => UberEatsTokenManager.getClientCredentialsToken()
+export const clearTokenCache = () => {
+  // console.log('🗑️ 清除 Token 快取')
+  tokenCache.accessToken = null
+  tokenCache.expiresAt = null
+}
 
 /**
- * 便捷函數：刷新 User Token
+ * 測試 token 是否有效（通過嘗試簡單的 API 呼叫）
+ * @returns {Promise<Boolean>} token 是否有效
  */
-export const refreshUserToken = () => UberEatsTokenManager.refreshUserToken()
+export const validateToken = async () => {
+  try {
+    const token = await getAccessToken()
 
-// 啟動時記錄 token 狀態
-const tokenStatus = UberEatsTokenManager.getTokenStatus()
-console.log('🔑 Token Manager initialized with OAuth2 flows')
-console.log(
-  `📊 Client Credentials: ${tokenStatus.clientCredentials.canGenerate ? '✅ Ready' : '❌ Missing credentials'}`,
-)
-console.log(
-  `📊 Authorization Code: ${tokenStatus.authorizationCode.configured ? '✅ Configured' : '❌ Missing user token'}`,
-)
-console.log(
-  `📊 Refresh Token: ${tokenStatus.refreshToken.configured ? '✅ Available' : '❌ Missing'}`,
-)
-console.log(`🌍 Environment: ${tokenStatus.environment}`)
-console.log(`🔗 API URL: ${tokenStatus.apiUrl}`)
+    // 嘗試呼叫一個簡單的 API 來驗證 token
+    const response = await axios.get('https://api.uber.com/v1/delivery/stores', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
 
-export default UberEatsTokenManager
+    const isValid = response.status === 200
+    // console.log(isValid ? '✅ Token 驗證成功' : '❌ Token 驗證失敗')
+    return isValid
+  } catch (error) {
+    // console.log('❌ Token 驗證失敗:', error.response?.status || error.message)
+    return false
+  }
+}
+
+// 啟動時記錄配置狀態
+const status = getTokenStatus()
+// console.log('🔑 Token Manager 已初始化')
+// console.log(`📊 配置狀態: ${status.configured ? '✅ 已配置' : '❌ 缺少配置'}`)
+if (!status.configured) {
+  // if (!status.clientId) console.log('❌ 缺少 UBEREATS_PRODUCTION_CLIENT_ID')
+  // if (!status.clientSecret) console.log('❌ 缺少 UBEREATS_PRODUCTION_CLIENT_SECRET')
+}
+
+// 預設導出
+export default {
+  getAccessToken,
+  refreshToken,
+  getTokenStatus,
+  clearTokenCache,
+  validateToken,
+}

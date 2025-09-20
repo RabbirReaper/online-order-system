@@ -44,17 +44,7 @@ class SMSService {
     try {
       // 如果沒有設定帳號密碼，在開發環境下模擬成功
       if (!this.username || !this.password) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[SMS 模擬模式] 發送簡訊到 ${phone}: ${message}`)
-          return {
-            success: true,
-            message: '簡訊已發送（開發模式）',
-            messageId: 'mock_' + Date.now(),
-            cost: 1,
-          }
-        } else {
-          throw new AppError('簡訊服務未正確配置', 500)
-        }
+        throw new AppError('簡訊服務未正確配置', 500)
       }
 
       // 生成唯一的客戶簡訊ID避免重複發送
@@ -65,9 +55,8 @@ class SMSService {
         username: this.username,
         password: this.password,
         dstaddr: this.formatPhoneNumber(phone),
-        smbody: this.encodeMessage(message), // 對中文內容進行URL編碼
+        smbody: message, // 對中文內容進行URL編碼
         clientid: clientId,
-        CharsetURL: 'UTF8', // 編碼格式
         smsPointFlag: '1', // 回覆扣除點數資訊
       })
 
