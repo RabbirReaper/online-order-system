@@ -57,6 +57,7 @@ class SMSService {
         dstaddr: this.formatPhoneNumber(phone),
         smbody: message, // 對中文內容進行URL編碼
         clientid: clientId,
+        CharsetURL: 'UTF8', // 指定內容為 UTF-8 編碼
         smsPointFlag: '1', // 回覆扣除點數資訊
       })
 
@@ -233,11 +234,11 @@ class SMSService {
     // Duplicate=Y (可選)
     // smsPoint=1 (可選)
 
-    const lines = data.split('\n').filter(line => line.trim())
+    const lines = data.split('\n').filter((line) => line.trim())
     const result = { success: false }
 
     // 解析每一行
-    lines.forEach(line => {
+    lines.forEach((line) => {
       const trimmed = line.trim()
 
       // 跳過編號行 [1], [2] 等
@@ -314,201 +315,203 @@ class SMSService {
   getStatusInfo(statusCode) {
     const statusInfo = {
       // 成功狀態
-      '1': {
+      1: {
         success: true,
         type: 'success',
         message: '簡訊發送成功',
         suggestion: '簡訊已成功送入簡訊中心系統',
-        retryable: false
+        retryable: false,
       },
 
       // 一般錯誤
-      '0': {
+      0: {
         success: false,
         type: 'general_error',
         message: '發送失敗',
         suggestion: '請檢查簡訊內容和手機號碼是否正確',
-        retryable: true
+        retryable: true,
       },
       '*': {
         success: false,
         type: 'system_error',
         message: '系統發生錯誤，請聯絡三竹資訊窗口人員',
         suggestion: '系統異常，請聯繫技術支援',
-        retryable: false
+        retryable: false,
       },
 
       // 服務狀態錯誤
-      'a': {
+      a: {
         success: false,
         type: 'service_unavailable',
         message: '簡訊發送功能暫時停止服務，請稍後再試',
         suggestion: '等待服務恢復後再試',
-        retryable: true
+        retryable: true,
       },
-      'b': {
+      b: {
         success: false,
         type: 'service_unavailable',
         message: '簡訊發送功能暫時停止服務，請稍後再試',
         suggestion: '等待服務恢復後再試',
-        retryable: true
+        retryable: true,
       },
-      'r': {
+      r: {
         success: false,
         type: 'service_unavailable',
         message: '系統暫停服務，請稍後再試',
         suggestion: '等待系統維護完成',
-        retryable: true
+        retryable: true,
       },
 
       // 認證錯誤
-      'c': {
+      c: {
         success: false,
         type: 'auth_error',
         message: '請輸入帳號',
         suggestion: '請檢查環境變數 KOTSMS_USERNAME 是否正確設定',
-        retryable: false
+        retryable: false,
       },
-      'd': {
+      d: {
         success: false,
         type: 'auth_error',
         message: '請輸入密碼',
         suggestion: '請檢查環境變數 KOTSMS_PASSWORD 是否正確設定',
-        retryable: false
+        retryable: false,
       },
-      'e': {
+      e: {
         success: false,
         type: 'auth_error',
         message: '帳號、密碼錯誤',
         suggestion: '請檢查簡訊王帳號密碼是否正確',
-        retryable: false
+        retryable: false,
       },
-      'f': {
+      f: {
         success: false,
         type: 'account_error',
         message: '帳號已過期',
         suggestion: '請聯繫簡訊王客服延長帳號有效期',
-        retryable: false
+        retryable: false,
       },
-      'h': {
+      h: {
         success: false,
         type: 'account_error',
         message: '帳號已被停用',
         suggestion: '請聯繫簡訊王客服啓用帳號',
-        retryable: false
+        retryable: false,
       },
 
       // 連線錯誤
-      'k': {
+      k: {
         success: false,
         type: 'connection_error',
         message: '無效的連線位址',
         suggestion: '請檢查伺服器IP是否已申設簡訊王API權限',
-        retryable: false
+        retryable: false,
       },
-      'l': {
+      l: {
         success: false,
         type: 'connection_error',
         message: '帳號已達到同時連線數上限',
         suggestion: '請稍後再試或減少併發連線數',
-        retryable: true
+        retryable: true,
       },
 
       // 密碼相關錯誤
-      'm': {
+      m: {
         success: false,
         type: 'password_error',
         message: '必須變更密碼，在變更密碼前，無法使用簡訊發送服務',
         suggestion: '請登入簡訊王網站更新密碼',
-        retryable: false
+        retryable: false,
       },
-      'n': {
+      n: {
         success: false,
         type: 'password_error',
         message: '密碼已逾期，在變更密碼前，將無法使用簡訊發送服務',
         suggestion: '請登入簡訊王網站更新密碼',
-        retryable: false
+        retryable: false,
       },
 
       // 權限錯誤
-      'p': {
+      p: {
         success: false,
         type: 'permission_error',
         message: '沒有權限使用外部Http程式',
         suggestion: '請聯繫簡訊王客服申訫API使用權限',
-        retryable: false
+        retryable: false,
       },
 
       // 帳務錯誤
-      's': {
+      s: {
         success: false,
         type: 'billing_error',
         message: '帳務處理失敗，無法發送簡訊',
         suggestion: '請檢查帳號餘額或聯繫客服',
-        retryable: false
+        retryable: false,
       },
 
       // 內容錯誤
-      't': {
+      t: {
         success: false,
         type: 'content_error',
         message: '簡訊已過期',
         suggestion: '請檢查預約時間是否正確',
-        retryable: true
+        retryable: true,
       },
-      'u': {
+      u: {
         success: false,
         type: 'content_error',
         message: '簡訊內容不得為空白',
         suggestion: '請輸入簡訊內容',
-        retryable: false
+        retryable: false,
       },
-      'v': {
+      v: {
         success: false,
         type: 'content_error',
         message: '無效的手機號碼',
         suggestion: '請檢查手機號碼格式是否正確 (09xxxxxxxx)',
-        retryable: false
+        retryable: false,
       },
-      'x': {
+      x: {
         success: false,
         type: 'content_error',
         message: '發送檔案過大，無法發送簡訊',
         suggestion: '請縮短簡訊內容長度',
-        retryable: false
+        retryable: false,
       },
-      'y': {
+      y: {
         success: false,
         type: 'parameter_error',
         message: '參數錯誤',
         suggestion: '請檢查請求參數是否正確',
-        retryable: false
+        retryable: false,
       },
 
       // 查詢錯誤
-      'w': {
+      w: {
         success: false,
         type: 'query_error',
         message: '查詢筆數超過上限',
         suggestion: '請減少查詢筆數或分批查詢',
-        retryable: true
+        retryable: true,
       },
-      'z': {
+      z: {
         success: false,
         type: 'query_error',
         message: '查無資料',
         suggestion: '請檢查查詢條件或時間範圍',
-        retryable: false
-      }
+        retryable: false,
+      },
     }
 
-    return statusInfo[statusCode] || {
-      success: false,
-      type: 'unknown_error',
-      message: `未知狀態碼: ${statusCode}`,
-      suggestion: '請聯繫技術支援或查看簡訊王API文檔',
-      retryable: false
-    }
+    return (
+      statusInfo[statusCode] || {
+        success: false,
+        type: 'unknown_error',
+        message: `未知狀態碼: ${statusCode}`,
+        suggestion: '請聯繫技術支援或查看簡訊王API文檔',
+        retryable: false,
+      }
+    )
   }
 
   /**
@@ -557,7 +560,7 @@ class SMSService {
       return {
         success: true,
         userMessage: '簡訊已成功發送',
-        technical: result
+        technical: result,
       }
     }
 
@@ -568,7 +571,7 @@ class SMSService {
       service_unavailable: '簡訊服務暫時無法使用，請稍後再試',
       connection_error: '網路連線問題，請稍後再試',
       billing_error: '帳務問題，請聯繫系統管理員',
-      general_error: '簡訊發送失敗，請稍後再試'
+      general_error: '簡訊發送失敗，請稍後再試',
     }
 
     return {
@@ -579,8 +582,8 @@ class SMSService {
         statusCode: result.statusCode,
         message: result.message,
         suggestion: result.suggestion,
-        type: result.statusType
-      }
+        type: result.statusType,
+      },
     }
   }
 
