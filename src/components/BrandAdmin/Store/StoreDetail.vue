@@ -430,26 +430,14 @@
               </h5>
 
               <div v-if="store.deliveryPlatforms && store.deliveryPlatforms.length > 0">
-                <div class="row g-3">
+                <div class="d-flex flex-wrap gap-3">
                   <div
                     v-for="(platform, index) in store.deliveryPlatforms"
                     :key="index"
-                    class="col-md-6"
+                    class="btn btn-outline-primary btn-lg"
                   >
-                    <div class="card border-light">
-                      <div class="card-body p-3">
-                        <div class="d-flex align-items-center mb-2">
-                          <i class="bi bi-truck me-2 text-primary"></i>
-                          <h6 class="mb-0">{{ getPlatformDisplayName(platform.platform) }}</h6>
-                        </div>
-                        <div class="small text-muted">店家 ID</div>
-                        <div class="fw-bold mb-2">{{ platform.storeId }}</div>
-                        <div class="small text-muted" v-if="platform.lastSyncAt">
-                          最後同步：{{ formatDate(platform.lastSyncAt) }}
-                        </div>
-                        <div class="small text-muted" v-else>尚未同步</div>
-                      </div>
-                    </div>
+                    <i class="bi bi-truck me-2"></i>
+                    {{ getPlatformDisplayName(platform) }}
                   </div>
                 </div>
               </div>
@@ -808,27 +796,15 @@
           <div v-for="(platform, index) in editDeliveryPlatforms" :key="index" class="card mb-3">
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-10">
                   <label :for="`modal-platform-type-${index}`" class="form-label required"
                     >外送平台</label
                   >
                   <BFormSelect
                     :id="`modal-platform-type-${index}`"
-                    v-model="platform.platform"
+                    v-model="editDeliveryPlatforms[index]"
                     :options="platformOptions"
                   />
-                </div>
-
-                <div class="col-md-6">
-                  <label :for="`modal-platform-storeId-${index}`" class="form-label required"
-                    >店家 ID</label
-                  >
-                  <BFormInput
-                    :id="`modal-platform-storeId-${index}`"
-                    v-model="platform.storeId"
-                    placeholder="請輸入平台分配的店家 ID"
-                  />
-                  <BFormText>請輸入該外送平台分配給店家的唯一識別碼</BFormText>
                 </div>
 
                 <div class="col-md-2 d-flex align-items-end">
@@ -1194,10 +1170,7 @@ const fetchStoreData = async () => {
 
 // 新增模態窗中的外送平台
 const addModalDeliveryPlatform = () => {
-  editDeliveryPlatforms.value.push({
-    platform: '',
-    storeId: '',
-  })
+  editDeliveryPlatforms.value.push('')
 }
 
 // 移除模態窗中的外送平台
@@ -1212,21 +1185,20 @@ const updateDeliveryPlatforms = async () => {
   // 驗證表單
   let isValid = true
   for (const platform of editDeliveryPlatforms.value) {
-    if (!platform.platform.trim() || !platform.storeId.trim()) {
+    if (!platform.trim()) {
       isValid = false
       break
     }
   }
 
   if (!isValid) {
-    alert('外送平台和店家 ID 都不能為空')
+    alert('外送平台不能為空')
     return
   }
 
   // 檢查是否有重複的平台
-  const platforms = editDeliveryPlatforms.value.map((p) => p.platform)
-  const uniquePlatforms = new Set(platforms)
-  if (platforms.length !== uniquePlatforms.size) {
+  const uniquePlatforms = new Set(editDeliveryPlatforms.value)
+  if (editDeliveryPlatforms.value.length !== uniquePlatforms.size) {
     alert('不能重複新增相同的外送平台')
     return
   }
@@ -1234,7 +1206,6 @@ const updateDeliveryPlatforms = async () => {
   isUpdatingDeliveryPlatforms.value = true
 
   try {
-    // 這裡需要實作對應的 API 方法
     const response = await api.store.updateStore({
       brandId: brandId.value,
       id: store.value._id,
@@ -1277,12 +1248,7 @@ const initEditData = () => {
   editAnnouncements.value = JSON.parse(JSON.stringify(store.value.announcements || []))
 
   // 深複製外送平台數據
-  editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || [])).map(
-    (platform) => ({
-      platform: platform.platform || '',
-      storeId: platform.storeId || '',
-    }),
-  )
+  editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || []))
 
   // 初始化服務設定
   Object.assign(editServiceSettings, {
@@ -1585,12 +1551,7 @@ onMounted(() => {
   // 當外送平台編輯模態框開啟時重新初始化數據
   watch(showDeliveryPlatformsModal, (newValue) => {
     if (newValue) {
-      editDeliveryPlatforms.value = JSON.parse(
-        JSON.stringify(store.value.deliveryPlatforms || []),
-      ).map((platform) => ({
-        platform: platform.platform || '',
-        storeId: platform.storeId || '',
-      }))
+      editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || []))
     }
   })
 
