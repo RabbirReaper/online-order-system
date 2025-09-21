@@ -152,7 +152,7 @@ export const createPlatformStore = async (platformStoreData) => {
   await newPlatformStore.save()
 
   // 返回包含關聯資料的配置
-  return await getPlatformStoreById(newPlatformStore._id)
+  return newPlatformStore
 }
 
 /**
@@ -283,7 +283,7 @@ export const togglePlatformStoreStatus = async (platformStoreId, status) => {
   await platformStore.save()
 
   // 返回包含關聯資料的配置
-  return await getPlatformStoreById(platformStore._id)
+  return platformStore
 }
 
 /**
