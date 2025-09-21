@@ -431,14 +431,15 @@
 
               <div v-if="store.deliveryPlatforms && store.deliveryPlatforms.length > 0">
                 <div class="d-flex flex-wrap gap-3">
-                  <div
+                  <button
                     v-for="(platform, index) in store.deliveryPlatforms"
                     :key="index"
                     class="btn btn-outline-primary btn-lg"
+                    @click="showPlatformManagerModal = true"
                   >
                     <i class="bi bi-truck me-2"></i>
                     {{ getPlatformDisplayName(platform) }}
-                  </div>
+                  </button>
                 </div>
               </div>
 
@@ -447,9 +448,15 @@
                   <i class="bi bi-truck me-1"></i>
                   尚未設置外送平台整合
                 </div>
-                <div class="small text-muted">
+                <div class="small text-muted mb-3">
                   整合外送平台後，系統可自動接收來自 foodpanda、Uber Eats 等平台的訂單
                 </div>
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  @click="showPlatformManagerModal = true"
+                >
+                  <i class="bi bi-gear me-1"></i>設置平台整合
+                </button>
               </div>
             </div>
           </div>
@@ -1005,6 +1012,16 @@
       :storeId="storeId"
       :store="store"
     />
+
+    <!-- 平台店鋪配置管理器 -->
+    <PlatformStoreManager
+      v-if="store"
+      v-model:show="showPlatformManagerModal"
+      :brandId="brandId"
+      :storeId="storeId"
+      :store="store"
+      @updated="fetchStoreData"
+    />
   </div>
 </template>
 
@@ -1022,6 +1039,7 @@ import {
 } from 'bootstrap-vue-next'
 import api from '@/api'
 import QRTableCardGenerator from './QRTableCardGenerator.vue'
+import PlatformStoreManager from './PlatformStoreManager.vue'
 
 // 路由
 const router = useRouter()
@@ -1057,6 +1075,7 @@ const showAnnouncementsModal = ref(false)
 const showServiceSettingsModal = ref(false)
 const showDeliveryPlatformsModal = ref(false)
 const showTableCardModal = ref(false)
+const showPlatformManagerModal = ref(false)
 
 // 編輯用的數據
 const editBusinessHours = ref([])
@@ -1591,6 +1610,7 @@ onMounted(() => {
 defineOptions({
   components: {
     QRTableCardGenerator,
+    PlatformStoreManager,
   },
 })
 </script>
