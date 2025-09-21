@@ -111,7 +111,7 @@ export const createPlatformStore = async (platformStoreData) => {
   }
 
   // 驗證店鋪是否屬於指定品牌
-  if (store.brand.toString() !== platformStoreData.brand) {
+  if (store.brand.toString() !== platformStoreData.brand.toString()) {
     throw new AppError('店鋪不屬於指定品牌', 400)
   }
 
