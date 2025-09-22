@@ -803,7 +803,7 @@
           <div v-for="(platform, index) in editDeliveryPlatforms" :key="index" class="card mb-3">
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-10">
+                <div class="col-md-12">
                   <label :for="`modal-platform-type-${index}`" class="form-label required"
                     >外送平台</label
                   >
@@ -812,17 +812,6 @@
                     v-model="editDeliveryPlatforms[index]"
                     :options="platformOptions"
                   />
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                  <BButton
-                    size="sm"
-                    variant="outline-danger"
-                    @click="removeModalDeliveryPlatform(index)"
-                    class="w-100"
-                  >
-                    <i class="bi bi-trash me-1"></i>移除
-                  </BButton>
                 </div>
               </div>
             </div>
@@ -1190,11 +1179,6 @@ const fetchStoreData = async () => {
 // 新增模態窗中的外送平台
 const addModalDeliveryPlatform = () => {
   editDeliveryPlatforms.value.push('')
-}
-
-// 移除模態窗中的外送平台
-const removeModalDeliveryPlatform = (index) => {
-  editDeliveryPlatforms.value.splice(index, 1)
 }
 
 // 更新外送平台設定
