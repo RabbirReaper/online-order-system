@@ -57,26 +57,20 @@
       {{ error }}
     </div>
 
-    <!-- 上傳狀態提示 -->
-    <div v-if="uploadError" class="alert alert-danger alert-dismissible fade show">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ uploadError }}
-      <button type="button" class="btn-close" @click="uploadError = ''" aria-label="Close"></button>
-    </div>
-
-    <div v-if="uploadSuccess" class="alert alert-success alert-dismissible fade show">
-      <i class="bi bi-check-circle-fill me-2"></i>
-      菜單已成功上傳到 UberEats！
-      <button
-        type="button"
-        class="btn-close"
-        @click="uploadSuccess = false"
-        aria-label="Close"
-      ></button>
-    </div>
-
     <!-- 菜單詳情內容 -->
     <div v-else-if="menu" class="row">
+      <!-- 上傳狀態提示 -->
+      <div class="col-12 mb-3">
+        <BAlert v-if="uploadError" show variant="danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ uploadError }}
+        </BAlert>
+
+        <BAlert v-if="uploadSuccess" show variant="success">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          菜單已成功同步到所有外送平台！
+        </BAlert>
+      </div>
       <div class="col-12">
         <!-- 菜單資訊卡片 -->
         <div class="card mb-4">
@@ -337,6 +331,7 @@ import {
   getItemOriginalPrice,
   getItemOriginalPoints,
 } from './menuUtils'
+import { BAlert } from 'bootstrap-vue-next'
 
 // 路由相關
 const route = useRoute()
@@ -413,6 +408,44 @@ watch([storeId, menuId, brandId], ([newStoreId, newMenuId, newBrandId]) => {
     fetchData()
   }
 })
+
+// 同步菜單到外送平台
+const uploadToUberEats = async () => {
+  if (!brandId.value || !storeId.value) {
+    uploadError.value = '缺少必要的參數'
+    return
+  }
+
+  isUploading.value = true
+  uploadError.value = ''
+  uploadSuccess.value = false
+
+  try {
+    const result = await api.delivery.syncMenuToAllPlatforms({
+      brandId: brandId.value,
+      storeId: storeId.value,
+    })
+
+    if (result && result.success) {
+      uploadSuccess.value = true
+      // 3秒後自動關閉成功提示
+      setTimeout(() => {
+        uploadSuccess.value = false
+      }, 3000)
+    } else {
+      uploadError.value = result?.message || '同步失敗，請稍後再試'
+    }
+  } catch (err) {
+    console.error('同步菜單失敗:', err)
+    if (err.response && err.response.data) {
+      uploadError.value = err.response.data.message || '同步失敗，請檢查網路連線'
+    } else {
+      uploadError.value = '同步失敗，請稍後再試'
+    }
+  } finally {
+    isUploading.value = false
+  }
+}
 
 // 生命週期鉤子
 onMounted(() => {
