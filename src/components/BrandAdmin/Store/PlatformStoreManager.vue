@@ -63,7 +63,10 @@
                   <div class="col-12">
                     <div class="detail-item">
                       <span class="text-muted">自動接單:</span>
-                      <span class="fw-bold" :class="config.autoAccept ? 'text-success' : 'text-danger'">
+                      <span
+                        class="fw-bold"
+                        :class="config.autoAccept ? 'text-success' : 'text-danger'"
+                      >
                         {{ config.autoAccept ? '啟用' : '停用' }}
                       </span>
                     </div>
@@ -130,11 +133,7 @@
                     >
                       <i class="bi bi-pencil"></i>
                     </BButton>
-                    <BButton
-                      size="sm"
-                      variant="outline-danger"
-                      @click="deleteConfig(config)"
-                    >
+                    <BButton size="sm" variant="outline-danger" @click="deleteConfig(config)">
                       <i class="bi bi-trash"></i>
                     </BButton>
                   </div>
@@ -148,7 +147,7 @@
       <!-- 無配置提示 -->
       <div v-else class="alert alert-light text-center py-4">
         <div class="text-muted mb-3">
-          <i class="bi bi-truck" style="font-size: 3rem;"></i>
+          <i class="bi bi-truck" style="font-size: 3rem"></i>
         </div>
         <h6 class="text-muted mb-2">尚未設置外送平台配置</h6>
         <p class="text-muted small mb-3">
@@ -224,11 +223,7 @@
         <!-- 營運狀態 -->
         <div class="col-md-6">
           <label for="status" class="form-label">初始營運狀態</label>
-          <BFormSelect
-            id="status"
-            v-model="configForm.status"
-            :options="statusOptions"
-          />
+          <BFormSelect id="status" v-model="configForm.status" :options="statusOptions" />
         </div>
 
         <!-- 自動接單 -->
@@ -258,7 +253,8 @@
   <BModal v-model:show="showDeleteModal" title="確認刪除" centered>
     <div v-if="deletingConfig">
       <p>
-        您確定要刪除 <strong>{{ getPlatformDisplayName(deletingConfig.platform) }}</strong> 的配置嗎？
+        您確定要刪除
+        <strong>{{ getPlatformDisplayName(deletingConfig.platform) }}</strong> 的配置嗎？
       </p>
       <div class="alert alert-warning">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -283,13 +279,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import {
-  BModal,
-  BButton,
-  BFormSelect,
-  BFormInput,
-  BFormCheckbox,
-} from 'bootstrap-vue-next'
+import { BModal, BButton, BFormSelect, BFormInput, BFormCheckbox } from 'bootstrap-vue-next'
 import api from '@/api'
 
 // Props
@@ -502,7 +492,7 @@ const confirmDelete = async () => {
 
     // 從列表中移除
     platformStores.value = platformStores.value.filter(
-      (config) => config._id !== deletingConfig.value._id
+      (config) => config._id !== deletingConfig.value._id,
     )
 
     showDeleteModal.value = false
@@ -615,7 +605,7 @@ watch(
     if (newValue) {
       fetchPlatformStores()
     }
-  }
+  },
 )
 
 // 監聽新增模態框關閉

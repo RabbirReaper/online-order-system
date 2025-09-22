@@ -29,7 +29,7 @@ export default function (apiClient) {
       const requestData = {
         orderData,
         paymentType,
-        paymentMethod
+        paymentMethod,
       }
 
       // 線上付款時需要 primeToken
@@ -37,7 +37,10 @@ export default function (apiClient) {
         requestData.primeToken = primeToken
       }
 
-      return apiClient.post(`/order-customer/brands/${brandId}/stores/${storeId}/create`, requestData)
+      return apiClient.post(
+        `/order-customer/brands/${brandId}/stores/${storeId}/create`,
+        requestData,
+      )
     },
 
     /**

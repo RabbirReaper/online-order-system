@@ -20,7 +20,10 @@ router.get('/brands/:brandId/:storeId/menus', menuController.getAllStoreMenus)
 router.get('/brands/:brandId/:storeId/menu/:menuId', menuController.getMenuById)
 
 // 🆕 根據ID獲取菜單且完整填充商品與選項 - 用於外送平台上傳Menu
-router.get('/brands/:brandId/:storeId/menu/:menuId/full-populate', menuController.getMenuAllPopulateById)
+router.get(
+  '/brands/:brandId/:storeId/menu/:menuId/full-populate',
+  menuController.getMenuAllPopulateById,
+)
 
 // 創建菜單（系統級和品牌級）
 router.post(

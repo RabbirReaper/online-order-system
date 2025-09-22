@@ -714,11 +714,11 @@ const addCategory = () => {
   })
 }
 
-const autoAddDeveryPrice = () =>{
+const autoAddDeveryPrice = () => {
   formData.categories.forEach((category) => {
     category.items.forEach((item) => {
-      if(item.priceOverride) return;
-      item.priceOverride = (item.dishTemplate.basePrice/0.66).toFixed(0)
+      if (item.priceOverride) return
+      item.priceOverride = (item.dishTemplate.basePrice / 0.66).toFixed(0)
     })
   })
 }

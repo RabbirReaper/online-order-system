@@ -60,7 +60,7 @@ export const createOrder = asyncHandler(async (req, res) => {
         totalAmount: orderData.total || orderData.totalAmount,
       },
       primeToken,
-      paymentMethod || 'credit_card'
+      paymentMethod || 'credit_card',
     )
 
     if (result.success) {

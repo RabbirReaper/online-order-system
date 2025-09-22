@@ -297,7 +297,7 @@ class TransactionService {
    * @returns {boolean} 是否有效
    */
   validateTransactionData(transactionData) {
-    const basicValidation = (
+    const basicValidation =
       transactionData &&
       transactionData.brand &&
       transactionData.store &&
@@ -308,7 +308,6 @@ class TransactionService {
       ['credit_card', 'line_pay', 'apple_pay', 'google_pay', 'cash'].includes(
         transactionData.paymentMethod,
       )
-    )
 
     // 如果沒有 orderId，則需要有 tempOrderData
     if (!transactionData.orderId && !transactionData.tempOrderData) {
@@ -318,11 +317,13 @@ class TransactionService {
     // 如果有 tempOrderData，驗證其必要欄位
     if (transactionData.tempOrderData) {
       const tempData = transactionData.tempOrderData
-      return basicValidation &&
-             tempData.totalAmount &&
-             tempData.items &&
-             Array.isArray(tempData.items) &&
-             tempData.items.length > 0
+      return (
+        basicValidation &&
+        tempData.totalAmount &&
+        tempData.items &&
+        Array.isArray(tempData.items) &&
+        tempData.items.length > 0
+      )
     }
 
     return basicValidation
@@ -337,7 +338,7 @@ class TransactionService {
       return await Transaction.find({
         tempOrderData: { $exists: true },
         orderId: { $exists: false },
-        status: 'completed'
+        status: 'completed',
       }).sort({ completedAt: -1 })
     } catch (error) {
       throw new AppError('查詢待處理交易失敗', 500, 'QUERY_PENDING_FAILED', error)

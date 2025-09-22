@@ -895,7 +895,6 @@ onMounted(() => {
   date.setMinutes(date.getMinutes() + 30)
   scheduledTime.value = date.toISOString().slice(0, 16)
 
-
   // 如果用戶已登入，獲取券資料
   if (authStore.isLoggedIn) {
     fetchUserCoupons()

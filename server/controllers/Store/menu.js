@@ -103,7 +103,11 @@ export const getMenuAllPopulateById = asyncHandler(async (req, res) => {
   const { brandId, storeId, menuId } = req.params
   const { includeUnpublished } = req.query
 
-  const menu = await menuService.getMenuAllPopulateById(storeId, menuId, includeUnpublished === 'true')
+  const menu = await menuService.getMenuAllPopulateById(
+    storeId,
+    menuId,
+    includeUnpublished === 'true',
+  )
 
   res.json({
     success: true,

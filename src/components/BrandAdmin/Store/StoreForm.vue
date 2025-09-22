@@ -247,7 +247,6 @@
             </div>
             <BFormText>設定店鋪的其他功能選項</BFormText>
           </div>
-
         </div>
 
         <!-- 營業時間區塊 -->
@@ -557,7 +556,6 @@ const fileInputRef = ref(null)
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
 
-
 // 取得星期幾名稱
 const getDayName = (day) => {
   return dayNames[day] || `未知 (${day})`
@@ -666,7 +664,6 @@ const getAnnouncementError = (index, field) => {
   }
   return errors.announcements[index][field] || ''
 }
-
 
 // 處理圖片上傳
 const handleImageChange = (event) => {
@@ -892,7 +889,6 @@ const validateForm = () => {
     isValid = false
   }
 
-
   return isValid
 }
 
@@ -952,7 +948,6 @@ const fetchStoreData = async () => {
       formData.maxDeliveryDistance =
         store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 5
       formData.advanceOrderDays = store.advanceOrderDays !== undefined ? store.advanceOrderDays : 0
-
 
       formData._id = store._id
     } else {
