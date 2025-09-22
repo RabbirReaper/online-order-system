@@ -80,6 +80,14 @@ const platformStoreSchema = new mongoose.Schema(
       // Uber Eats: { robocallEnabled, multiCourierEnabled }
       // Foodpanda: { vendorCode, commissionRate }
     },
+
+    isActive: {
+      type: Boolean,
+      default: false,
+      // 功能：軟刪除標記
+      // true  = 啟用
+      // false = 停用（不刪除資料）
+    },
   },
   {
     timestamps: true,
