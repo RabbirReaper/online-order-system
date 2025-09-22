@@ -49,7 +49,17 @@ class SMSService {
 
       const clientId = options.clientId || this.generateClientId(phone, message)
 
-      // 準備請求參數
+      // Big5 URL 編碼函數
+      const encodeBig5 = (text) => {
+        const buffer = iconv.encode(text, 'big5')
+        let encoded = ''
+        for (let i = 0; i < buffer.length; i++) {
+          encoded += '%' + buffer[i].toString(16).toUpperCase().padStart(2, '0')
+        }
+        return encoded
+      }
+
+      // 準備請求參數（不含中文欄位）
       const params = {
         username: this.username,
         password: this.password,
@@ -66,17 +76,20 @@ class SMSService {
         params.dlvtime = this.formatDateTime(options.sendTime)
       }
 
+      // 組合 query string
+      const queryParts = Object.entries(params).map(
+        ([key, value]) => `${key}=${encodeURIComponent(value)}`,
+      )
+
+      // 簡訊內容用 Big5 編碼
+      queryParts.push(`smbody=${encodeBig5(message)}`)
+
+      // 如果 objectID 有值（可能含中文），也用 Big5 編碼
       if (options.objectId) {
-        params.objectID = options.objectId
+        queryParts.push(`objectID=${encodeBig5(options.objectId)}`)
       }
 
-      // 手動構建 query string (Big5 編碼)
-      const queryString =
-        Object.entries(params)
-          .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-          .join('&') +
-        // 簡訊內容單獨處理 Big5 編碼
-        `&smbody=${encodeURIComponent(iconv.encode(message, 'big5').toString('binary'))}`
+      const queryString = queryParts.join('&')
 
       const response = await axios.post(`${this.baseURL}/kotsms/SmSend`, queryString, {
         headers: {
@@ -105,7 +118,6 @@ class SMSService {
       throw new AppError(`簡訊發送異常: ${error.message}`, 500)
     }
   }
-
   /**
    * 查詢剩餘點數
    * @returns {Promise<Object>} 點數資訊

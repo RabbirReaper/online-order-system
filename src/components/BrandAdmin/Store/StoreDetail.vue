@@ -435,7 +435,7 @@
                     v-for="(platform, index) in store.deliveryPlatforms"
                     :key="index"
                     class="btn btn-outline-primary btn-lg"
-                    @click="showPlatformManagerModal = true"
+                    @click="openPlatformConfig(platform)"
                   >
                     <i class="bi bi-truck me-2"></i>
                     {{ getPlatformDisplayName(platform) }}
@@ -803,7 +803,7 @@
           <div v-for="(platform, index) in editDeliveryPlatforms" :key="index" class="card mb-3">
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-10">
+                <div class="col-md-12">
                   <label :for="`modal-platform-type-${index}`" class="form-label required"
                     >外送平台</label
                   >
@@ -812,17 +812,6 @@
                     v-model="editDeliveryPlatforms[index]"
                     :options="platformOptions"
                   />
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                  <BButton
-                    size="sm"
-                    variant="outline-danger"
-                    @click="removeModalDeliveryPlatform(index)"
-                    class="w-100"
-                  >
-                    <i class="bi bi-trash me-1"></i>移除
-                  </BButton>
                 </div>
               </div>
             </div>
@@ -1020,6 +1009,7 @@
       :brandId="brandId"
       :storeId="storeId"
       :store="store"
+      :platform="selectedPlatform"
       @updated="fetchStoreData"
     />
   </div>
@@ -1076,6 +1066,7 @@ const showServiceSettingsModal = ref(false)
 const showDeliveryPlatformsModal = ref(false)
 const showTableCardModal = ref(false)
 const showPlatformManagerModal = ref(false)
+const selectedPlatform = ref('')
 
 // 編輯用的數據
 const editBusinessHours = ref([])
@@ -1148,6 +1139,12 @@ const getPlatformDisplayName = (platform) => {
   return platformMap[platform] || platform
 }
 
+// 開啟特定平台配置
+const openPlatformConfig = (platform) => {
+  selectedPlatform.value = platform
+  showPlatformManagerModal.value = true
+}
+
 // 按照星期順序排序的營業時間
 const sortedBusinessHours = computed(() => {
   if (!store.value || !store.value.businessHours) return []
@@ -1190,11 +1187,6 @@ const fetchStoreData = async () => {
 // 新增模態窗中的外送平台
 const addModalDeliveryPlatform = () => {
   editDeliveryPlatforms.value.push('')
-}
-
-// 移除模態窗中的外送平台
-const removeModalDeliveryPlatform = (index) => {
-  editDeliveryPlatforms.value.splice(index, 1)
 }
 
 // 更新外送平台設定
@@ -1602,6 +1594,13 @@ onMounted(() => {
         advanceOrderDays:
           store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0,
       })
+    }
+  })
+
+  // 當平台管理模態框關閉時重置選中的平台
+  watch(showPlatformManagerModal, (newValue) => {
+    if (!newValue) {
+      selectedPlatform.value = ''
     }
   })
 })
