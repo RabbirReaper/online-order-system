@@ -95,23 +95,3 @@ export const deleteMenu = asyncHandler(async (req, res) => {
     message,
   })
 })
-
-/**
- * 根據ID獲取菜單且完整填充商品與選項 - 用於外送平台上傳Menu
- */
-export const getMenuAllPopulateById = asyncHandler(async (req, res) => {
-  const { brandId, storeId, menuId } = req.params
-  const { includeUnpublished } = req.query
-
-  const menu = await menuService.getMenuAllPopulateById(
-    storeId,
-    menuId,
-    includeUnpublished === 'true',
-  )
-
-  res.json({
-    success: true,
-    message: '完整菜單獲取成功',
-    menu,
-  })
-})
