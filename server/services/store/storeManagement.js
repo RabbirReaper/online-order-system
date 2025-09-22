@@ -6,9 +6,11 @@
 import Store from '../../models/Store/Store.js'
 import Brand from '../../models/Brand/Brand.js'
 import Menu from '../../models/Menu/Menu.js'
+import PlatformStore from '../../models/DeliverPlatform/platformStore.js'
 import { AppError } from '../../middlewares/error.js'
 import * as imageHelper from '../imageHelper.js'
 import { DateTime } from 'luxon'
+import * as platformStoreService from '../delivery/core/platformStoreService.js'
 
 /**
  * 獲取所有店鋪（支援基於權限的過濾）
@@ -285,12 +287,76 @@ export const updateStore = async (storeId, updateData) => {
     throw new AppError('可預訂天數不能小於0', 400)
   }
 
+  // 檢測新增和移除的外送平台
+  let newlyAddedPlatforms = []
+  let removedPlatforms = []
+  if (updateData.deliveryPlatforms) {
+    const oldPlatforms = store.deliveryPlatforms || []
+    const newPlatforms = updateData.deliveryPlatforms
+
+    // 找出新增的平台
+    newlyAddedPlatforms = newPlatforms.filter((platform) => !oldPlatforms.includes(platform))
+
+    // 找出移除的平台
+    removedPlatforms = oldPlatforms.filter((platform) => !newPlatforms.includes(platform))
+  }
+
   // 更新店鋪
   Object.keys(updateData).forEach((key) => {
     store[key] = updateData[key]
   })
 
   await store.save()
+
+  // 為新增的平台創建平台店鋪配置
+  for (const platform of newlyAddedPlatforms) {
+    try {
+      const platformStoreData = {
+        brand: store.brand,
+        store: store._id,
+        platform: platform,
+        platformStoreId: `${store._id}_${platform}`, // 暫時使用這個格式，實際應該由平台提供
+        status: 'OFFLINE', // 預設為離線狀態
+        prepTime: store.deliveryPrepTime || 30,
+        busyPrepTime: (store.deliveryPrepTime || 30) + 15, // 忙碌時多15分鐘
+        autoAccept: true,
+        platformSpecific: {},
+      }
+
+      await platformStoreService.createPlatformStore(platformStoreData)
+      // console.log(`✅ 已為店鋪 ${store.name} 自動創建 ${platform} 平台配置`)
+    } catch (error) {
+      console.error(`❌ 為店鋪 ${store.name} 創建 ${platform} 平台配置失敗:`, error.message)
+      // 不拋出錯誤，避免影響店鋪更新流程
+    }
+  }
+
+  // 為移除的平台刪除平台店鋪配置
+  for (const platform of removedPlatforms) {
+    try {
+      const platformStore = await PlatformStore.findOne({
+        store: store._id,
+        platform: platform,
+      })
+
+      if (platformStore) {
+        await platformStoreService.deletePlatformStore(platformStore._id)
+        // console.log(`✅ 已為店鋪 ${store.name} 刪除 ${platform} 平台配置`)
+      }
+    } catch (error) {
+      console.error(`❌ 為店鋪 ${store.name} 刪除 ${platform} 平台配置失敗:`, error.message)
+      // 嘗試直接刪除以確保數據一致性
+      try {
+        await PlatformStore.findOneAndDelete({
+          store: store._id,
+          platform: platform,
+        })
+        console.log(`⚠️ 已強制刪除店鋪 ${store.name} 的 ${platform} 平台配置以維護數據一致性`)
+      } catch (forceDeleteError) {
+        console.error(`❌ 強制刪除也失敗:`, forceDeleteError.message)
+      }
+    }
+  }
 
   return store
 }
@@ -309,6 +375,31 @@ export const deleteStore = async (storeId) => {
   }
 
   // TODO: 檢查是否有關聯訂單、庫存、員工等，如果有則拒絕刪除
+
+  // 先刪除所有相關的平台店鋪配置
+  try {
+    const platformStores = await PlatformStore.find({ store: storeId })
+
+    for (const platformStore of platformStores) {
+      try {
+        await platformStoreService.deletePlatformStore(platformStore._id)
+        // console.log(`✅ 已刪除店鋪 ${store.name} 的 ${platformStore.platform} 平台配置`)
+      } catch (error) {
+        console.error(
+          `❌ 刪除店鋪 ${store.name} 的 ${platformStore.platform} 平台配置失敗:`,
+          error.message,
+        )
+        // 直接刪除以確保數據一致性
+        await PlatformStore.findByIdAndDelete(platformStore._id)
+        console.log(`⚠️ 已強制刪除平台配置以維護數據一致性`)
+      }
+    }
+
+    // console.log(`🧹 已清理店鋪 ${store.name} 的所有平台配置`)
+  } catch (error) {
+    console.error(`清理平台配置時發生錯誤: ${error.message}`)
+    // 繼續執行刪除流程，但記錄錯誤
+  }
 
   // 刪除關聯圖片
   if (store.image && store.image.key) {
@@ -558,4 +649,57 @@ export const getStoreLineBotInfo = async (storeId) => {
     enableLineOrdering: store.enableLineOrdering,
     storeName: store.name,
   }
+}
+
+/**
+ * 從店鋪移除外送平台並同步刪除相關配置
+ * @param {String} storeId - 店鋪ID
+ * @param {String} platform - 要移除的平台類型
+ * @returns {Promise<Object>} 更新後的店鋪
+ */
+export const removePlatformFromStore = async (storeId, platform) => {
+  // 檢查店鋪是否存在
+  const store = await Store.findById(storeId)
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404)
+  }
+
+  // 檢查平台是否存在於店鋪中
+  if (!store.deliveryPlatforms || !store.deliveryPlatforms.includes(platform)) {
+    throw new AppError('該店鋪未設定此外送平台', 400)
+  }
+
+  // 先刪除相關的平台店鋪配置
+  try {
+    const platformStore = await PlatformStore.findOne({
+      store: storeId,
+      platform: platform,
+    })
+
+    if (platformStore) {
+      await platformStoreService.deletePlatformStore(platformStore._id)
+      // console.log(`✅ 已刪除店鋪 ${store.name} 的 ${platform} 平台配置`)
+    }
+  } catch (error) {
+    console.error(`❌ 刪除平台配置失敗:`, error.message)
+    // 嘗試直接刪除以確保數據一致性
+    try {
+      await PlatformStore.findOneAndDelete({
+        store: storeId,
+        platform: platform,
+      })
+      console.log(`⚠️ 已強制刪除平台配置以維護數據一致性`)
+    } catch (forceDeleteError) {
+      console.error(`❌ 強制刪除也失敗:`, forceDeleteError.message)
+      throw new AppError(`無法刪除 ${platform} 平台配置`, 500)
+    }
+  }
+
+  // 從店鋪的 deliveryPlatforms 陣列中移除平台
+  store.deliveryPlatforms = store.deliveryPlatforms.filter((p) => p !== platform)
+  await store.save()
+
+  console.log(`🗑️ 已從店鋪 ${store.name} 移除 ${platform} 平台`)
+  return store
 }

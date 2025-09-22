@@ -29,6 +29,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "file-saver": "^2.0.5",
+    "iconv-lite": "^0.7.0",
     "jszip": "^3.10.1",
     "luxon": "^3.6.1",
     "mongoose": "^8.13.2",

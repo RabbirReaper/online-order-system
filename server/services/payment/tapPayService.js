@@ -15,7 +15,7 @@ class TapPayService {
       PARTNER_KEY: 'app_PTXFmsaMgILnDLwCfpQhDmYeVXfKw5sNSi2khZU6ASeL4oyJjVaF0uSDEsgx',
       MERCHANT_ID: 'tppf_RabbirReaper_GP_POS_3',
       API_BASE_URL: 'https://sandbox.tappaysdk.com',
-      SANDBOX_MODE: true
+      SANDBOX_MODE: true,
     }
   }
 
@@ -31,7 +31,7 @@ class TapPayService {
       console.log('TapPay 支付請求:', {
         amount,
         orderNumber: orderDetails.orderNumber,
-        customerName: orderDetails.customerName
+        customerName: orderDetails.customerName,
       })
 
       const requestData = {
@@ -44,10 +44,10 @@ class TapPayService {
         cardholder: {
           phone_number: orderDetails.customerPhone,
           name: orderDetails.customerName,
-          email: orderDetails.customerEmail || ''
+          email: orderDetails.customerEmail || '',
         },
         remember: false,
-        order_number: orderDetails.orderNumber
+        order_number: orderDetails.orderNumber,
       }
 
       const response = await axios.post(
@@ -56,10 +56,10 @@ class TapPayService {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': this.config.PARTNER_KEY
+            'x-api-key': this.config.PARTNER_KEY,
           },
-          timeout: 30000 // 30秒超時
-        }
+          timeout: 30000, // 30秒超時
+        },
       )
 
       console.log('TapPay 支付回應:', response.data)
@@ -73,21 +73,15 @@ class TapPayService {
           amount: response.data.amount,
           currency: response.data.currency,
           orderNumber: response.data.order_number,
-          rawResponse: response.data
+          rawResponse: response.data,
         }
       } else {
         // 支付失敗
-        throw new AppError(
-          response.data.msg || 'TapPay 支付處理失敗',
-          400,
-          'PAYMENT_FAILED',
-          {
-            tapPayStatus: response.data.status,
-            tapPayMessage: response.data.msg
-          }
-        )
+        throw new AppError(response.data.msg || 'TapPay 支付處理失敗', 400, 'PAYMENT_FAILED', {
+          tapPayStatus: response.data.status,
+          tapPayMessage: response.data.msg,
+        })
       }
-
     } catch (error) {
       console.error('TapPay payByPrime 錯誤:', error)
 
@@ -105,7 +99,7 @@ class TapPayService {
           errorData.msg || 'TapPay 支付服務錯誤',
           error.response.status,
           'TAPPAY_API_ERROR',
-          errorData
+          errorData,
         )
       }
 
@@ -122,7 +116,7 @@ class TapPayService {
     try {
       const requestData = {
         partner_key: this.config.PARTNER_KEY,
-        rec_trade_id: transactionId
+        rec_trade_id: transactionId,
       }
 
       const response = await axios.post(
@@ -131,10 +125,10 @@ class TapPayService {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': this.config.PARTNER_KEY
+            'x-api-key': this.config.PARTNER_KEY,
           },
-          timeout: 15000
-        }
+          timeout: 15000,
+        },
       )
 
       if (response.data.status === 0) {
@@ -146,16 +140,11 @@ class TapPayService {
           currency: response.data.currency,
           orderNumber: response.data.order_number,
           paymentTime: response.data.transaction_time,
-          rawResponse: response.data
+          rawResponse: response.data,
         }
       } else {
-        throw new AppError(
-          response.data.msg || '查詢交易狀態失敗',
-          400,
-          'QUERY_FAILED'
-        )
+        throw new AppError(response.data.msg || '查詢交易狀態失敗', 400, 'QUERY_FAILED')
       }
-
     } catch (error) {
       console.error('TapPay getTransactionStatus 錯誤:', error)
 
@@ -169,7 +158,7 @@ class TapPayService {
           errorData.msg || 'TapPay 查詢服務錯誤',
           error.response.status,
           'TAPPAY_QUERY_ERROR',
-          errorData
+          errorData,
         )
       }
 
@@ -190,7 +179,7 @@ class TapPayService {
         partner_key: this.config.PARTNER_KEY,
         rec_trade_id: transactionId,
         amount: amount,
-        details: reason
+        details: reason,
       }
 
       const response = await axios.post(
@@ -199,10 +188,10 @@ class TapPayService {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': this.config.PARTNER_KEY
+            'x-api-key': this.config.PARTNER_KEY,
           },
-          timeout: 30000
-        }
+          timeout: 30000,
+        },
       )
 
       if (response.data.status === 0) {
@@ -212,16 +201,11 @@ class TapPayService {
           originalTransactionId: transactionId,
           refundAmount: response.data.amount,
           refundTime: new Date().toISOString(),
-          rawResponse: response.data
+          rawResponse: response.data,
         }
       } else {
-        throw new AppError(
-          response.data.msg || '退款處理失敗',
-          400,
-          'REFUND_FAILED'
-        )
+        throw new AppError(response.data.msg || '退款處理失敗', 400, 'REFUND_FAILED')
       }
-
     } catch (error) {
       console.error('TapPay refund 錯誤:', error)
 
@@ -235,7 +219,7 @@ class TapPayService {
           errorData.msg || 'TapPay 退款服務錯誤',
           error.response.status,
           'TAPPAY_REFUND_ERROR',
-          errorData
+          errorData,
         )
       }
 
@@ -259,7 +243,7 @@ class TapPayService {
         order_number: orderInfo.orderNumber,
         product_name: orderInfo.productName || '線上點餐',
         return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/line-pay/return`,
-        notify_url: `${process.env.BACKEND_URL || 'http://localhost:8700'}/api/orders/payment/line-pay/notify`
+        notify_url: `${process.env.BACKEND_URL || 'http://localhost:8700'}/api/orders/payment/line-pay/notify`,
       }
 
       const response = await axios.post(
@@ -268,10 +252,10 @@ class TapPayService {
         {
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': this.config.PARTNER_KEY
+            'x-api-key': this.config.PARTNER_KEY,
           },
-          timeout: 30000
-        }
+          timeout: 30000,
+        },
       )
 
       if (response.data.status === 0) {
@@ -279,16 +263,11 @@ class TapPayService {
           success: true,
           paymentUrl: response.data.payment_url,
           transactionId: response.data.rec_trade_id,
-          rawResponse: response.data
+          rawResponse: response.data,
         }
       } else {
-        throw new AppError(
-          response.data.msg || 'LINE Pay 支付處理失敗',
-          400,
-          'LINE_PAY_FAILED'
-        )
+        throw new AppError(response.data.msg || 'LINE Pay 支付處理失敗', 400, 'LINE_PAY_FAILED')
       }
-
     } catch (error) {
       console.error('TapPay processLinePayment 錯誤:', error)
 

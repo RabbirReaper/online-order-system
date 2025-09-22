@@ -12,13 +12,13 @@ import { AppError } from '../../middlewares/error.js'
 import {
   getStoreOrders as getStoreOrdersCore,
   getUserOrders as getUserOrdersCore,
-  getOrderById as getOrderByIdCore
+  getOrderById as getOrderByIdCore,
 } from './orderQueries.js'
 import {
   processOrderPaymentComplete,
   processOrderPointsReward,
   restoreUsedVouchers,
-  restoreUsedCoupons
+  restoreUsedCoupons,
 } from './orderPayment.js'
 import { updateOrderAmounts } from './orderUtils.js'
 
@@ -196,4 +196,3 @@ export const cancelOrder = async (orderId, reason, adminId) => {
 
   return order
 }
-

@@ -69,15 +69,11 @@ class PaymentOrderService {
       const paymentResult = await tapPayService.payByPrime(
         primeToken,
         orderData.totalAmount,
-        tapPayOrderDetails
+        tapPayOrderDetails,
       )
 
       if (!paymentResult.success) {
-        await transactionService.markAsFailed(
-          transactionId,
-          '支付失敗',
-          paymentResult
-        )
+        await transactionService.markAsFailed(transactionId, '支付失敗', paymentResult)
         throw new AppError('支付失敗', 400, 'PAYMENT_FAILED')
       }
 
@@ -100,13 +96,12 @@ class PaymentOrderService {
         transaction: await transactionService.findByTransactionId(transactionId),
         paymentResult,
       }
-
     } catch (error) {
       // 錯誤處理：如果交易已創建，標記為失敗
       if (transaction) {
         await transactionService.markAsFailed(
           transaction.transactionId,
-          error.message || '處理失敗'
+          error.message || '處理失敗',
         )
       }
 
@@ -160,7 +155,7 @@ class PaymentOrderService {
       return '線上點餐'
     }
 
-    const itemNames = items.map(item => `${item.name} x${item.quantity}`).join(', ')
+    const itemNames = items.map((item) => `${item.name} x${item.quantity}`).join(', ')
     return `線上點餐: ${itemNames}`
   }
 
@@ -180,11 +175,10 @@ class PaymentOrderService {
       const latestTransaction = transactions[0]
 
       // 如果是線上支付且已完成，查詢最新狀態
-      if (latestTransaction.paymentMethod !== 'cash' &&
-          latestTransaction.status === 'completed') {
+      if (latestTransaction.paymentMethod !== 'cash' && latestTransaction.status === 'completed') {
         try {
           const tapPayStatus = await tapPayService.getTransactionStatus(
-            latestTransaction.transactionId
+            latestTransaction.transactionId,
           )
           return {
             status: latestTransaction.status,
@@ -218,7 +212,7 @@ class PaymentOrderService {
   async processRefund(orderId, refundAmount, reason = '訂單取消') {
     try {
       const transactions = await transactionService.findByOrderId(orderId)
-      const transaction = transactions.find(t => t.status === 'completed')
+      const transaction = transactions.find((t) => t.status === 'completed')
 
       if (!transaction) {
         throw new AppError('找不到可退款的交易', 404, 'NO_REFUNDABLE_TRANSACTION')
@@ -232,7 +226,7 @@ class PaymentOrderService {
       const refundResult = await tapPayService.refund(
         transaction.transactionId,
         refundAmount,
-        reason
+        reason,
       )
 
       if (refundResult.success) {

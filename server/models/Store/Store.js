@@ -63,27 +63,9 @@ const storeSchema = new mongoose.Schema(
     // === 新增：外送平台整合 ===
     deliveryPlatforms: [
       {
-        platform: {
-          type: String,
-          enum: ['foodpanda', 'ubereats'],
-          required: true,
-        },
-        storeId: {
-          type: String, // 該平台分配給店家的ID
-          required: true,
-          trim: true,
-        },
-        isEnabled: {
-          type: Boolean,
-          default: false, // 預設未啟用，需要經過 provisioning 後才啟用
-        },
-        settings: {
-          autoAcceptOrders: { type: Boolean, default: true },
-          prepTime: { type: Number, default: 30 }, // 準備時間（分鐘）
-        },
-        lastSyncAt: { type: Date },
-        createdAt: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now },
+        type: String,
+        enum: ['foodpanda', 'ubereats'],
+        required: true,
       },
     ],
   },
