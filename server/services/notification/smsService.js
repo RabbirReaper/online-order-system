@@ -2,6 +2,7 @@ import axios from 'axios'
 import dotenv from 'dotenv'
 import crypto from 'crypto'
 import { AppError } from '../../middlewares/error.js'
+import iconv from 'iconv-lite'
 
 dotenv.config()
 
@@ -42,60 +43,58 @@ class SMSService {
    */
   async sendSMS(phone, message, options = {}) {
     try {
-      // 如果沒有設定帳號密碼，在開發環境下模擬成功
       if (!this.username || !this.password) {
         throw new AppError('簡訊服務未正確配置', 500)
       }
 
-      // 生成唯一的客戶簡訊ID避免重複發送
       const clientId = options.clientId || this.generateClientId(phone, message)
 
-      // 準備請求參數（依據新版API規格）
-      const params = new URLSearchParams({
+      // 準備請求參數
+      const params = {
         username: this.username,
         password: this.password,
         dstaddr: this.formatPhoneNumber(phone),
-        smbody: message, // 對中文內容進行URL編碼
         clientid: clientId,
-        Encoding_PostIn: 'UTF8',
-        smsPointFlag: '1', // 回覆扣除點數資訊
-      })
+        smsPointFlag: '1',
+      }
 
-      // 如果有回調網址
       if (options.callbackUrl) {
-        params.append('response', options.callbackUrl)
+        params.response = options.callbackUrl
       }
 
-      // 如果有預約時間
       if (options.sendTime) {
-        params.append('dlvtime', this.formatDateTime(options.sendTime))
+        params.dlvtime = this.formatDateTime(options.sendTime)
       }
 
-      // 如果有批次名稱
       if (options.objectId) {
-        params.append('objectID', options.objectId)
+        params.objectID = options.objectId
       }
 
-      // 發送 SMS（使用新版API端點）
-      const response = await axios.post(`${this.baseURL}/kotsms/SmSend`, params.toString(), {
+      // 手動構建 query string (Big5 編碼)
+      const queryString =
+        Object.entries(params)
+          .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+          .join('&') +
+        // 簡訊內容單獨處理 Big5 編碼
+        `&smbody=${encodeURIComponent(iconv.encode(message, 'big5').toString('binary'))}`
+
+      const response = await axios.post(`${this.baseURL}/kotsms/SmSend`, queryString, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded; charset=big5',
           Accept: 'text/plain',
         },
-        timeout: 30000, // 30 秒超時
+        timeout: 30000,
       })
 
       return this.parseResponse(response.data)
     } catch (error) {
       console.error('SMS 發送失敗:', error)
 
-      // 處理網路連線錯誤
       const networkError = this.handleNetworkError(error)
       if (networkError) {
         throw networkError
       }
 
-      // 處理 HTTP 狀態碼錯誤
       if (error.response) {
         const httpError = this.handleHttpError(error.response)
         if (httpError) {
@@ -103,7 +102,6 @@ class SMSService {
         }
       }
 
-      // 其他未知錯誤
       throw new AppError(`簡訊發送異常: ${error.message}`, 500)
     }
   }
