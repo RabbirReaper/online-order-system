@@ -39,7 +39,7 @@
           ></span>
           <i v-else-if="uploadSuccess" class="bi bi-check-circle me-1"></i>
           <i v-else class="bi bi-cloud-upload me-1"></i>
-          {{ isUploading ? '上傳中...' : uploadSuccess ? '上傳成功' : '同步到 UberEats' }}
+          {{ isUploading ? '上傳中...' : uploadSuccess ? '上傳成功' : '同步到外送平台' }}
         </button>
       </div>
     </div>
