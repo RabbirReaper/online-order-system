@@ -1739,7 +1739,7 @@ const getAccessToken = async () => {
  * 轉換您的菜單資料為 Uber Eats 格式
  */
 function convertToUberEatsFormat(fullMenuData) {
-  console.log('開始轉換菜單資料...')
+  // console.log('開始轉換菜單資料...')
 
   const result = {
     menus: [],
@@ -1883,13 +1883,13 @@ function convertToUberEatsFormat(fullMenuData) {
   const modifierItems = createModifierItems(fullMenuData)
   result.items.push(...modifierItems)
 
-  console.log(`轉換完成:`)
-  console.log(`- 菜單: ${result.menus.length} 個`)
-  console.log(`- 分類: ${result.categories.length} 個`)
-  console.log(`- 主要商品: ${result.items.length - modifierItems.length} 個`)
-  console.log(`- 選項商品: ${modifierItems.length} 個`)
-  console.log(`- 總商品數: ${result.items.length} 個`)
-  console.log(`- 選項群組: ${result.modifier_groups.length} 個`)
+  // console.log(`轉換完成:`)
+  // console.log(`- 菜單: ${result.menus.length} 個`)
+  // console.log(`- 分類: ${result.categories.length} 個`)
+  // console.log(`- 主要商品: ${result.items.length - modifierItems.length} 個`)
+  // console.log(`- 選項商品: ${modifierItems.length} 個`)
+  // console.log(`- 總商品數: ${result.items.length} 個`)
+  // console.log(`- 選項群組: ${result.modifier_groups.length} 個`)
 
   return result
 }
@@ -1995,25 +1995,25 @@ function createModifierItems(fullMenuData) {
 const uploadMenu = async (accessToken, storeId, menuData) => {
   try {
     if (menuData.items[0]?.modifier_group_ids) {
-      console.log(
-        '- modifier_group_ids 格式:',
-        JSON.stringify(menuData.items[0]?.modifier_group_ids, null, 2),
-      )
+      // console.log(
+      //   '- modifier_group_ids 格式:',
+      //   JSON.stringify(menuData.items[0]?.modifier_group_ids, null, 2),
+      // )
     }
     if (menuData.modifier_groups[0]) {
-      console.log(
-        '- 選項群組格式:',
-        JSON.stringify(
-          {
-            id: menuData.modifier_groups[0].id,
-            title: menuData.modifier_groups[0].title,
-            quantity_info: menuData.modifier_groups[0].quantity_info,
-            modifier_options: menuData.modifier_groups[0].modifier_options,
-          },
-          null,
-          2,
-        ),
-      )
+      // console.log(
+      //   '- 選項群組格式:',
+      //   JSON.stringify(
+      //     {
+      //       id: menuData.modifier_groups[0].id,
+      //       title: menuData.modifier_groups[0].title,
+      //       quantity_info: menuData.modifier_groups[0].quantity_info,
+      //       modifier_options: menuData.modifier_groups[0].modifier_options,
+      //     },
+      //     null,
+      //     2,
+      //   ),
+      // )
     }
 
     const response = await axios.put(`${BaseUrl}/${storeId}/menus`, menuData, {
@@ -2052,10 +2052,26 @@ const getMenu = async (accessToken, storeId) => {
       },
     })
 
-    console.log(response.data)
+    // console.log(response.data)
     return response.data
   } catch (error) {
     console.error('取得菜單失敗:', error.response?.data || error.message)
+    return null
+  }
+}
+
+const updateItem = async (accessToken, storeId, itemId, itemData) => {
+  try {
+    const response = await axios.post(`${BaseUrl}/${storeId}/menus/items/${itemId}`, itemData, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    return response.data
+  } catch (error) {
+    console.error('更新商品失敗:', error.response?.data || error.message)
     return null
   }
 }
@@ -2085,7 +2101,18 @@ const main = async () => {
     console.log('✓ 菜單資料轉換完成\n')
     await uploadMenu(token, testStoreId, convertedMenuData)
 
-    await getMenu(token, testStoreId)
+    // await updateItem(token, testStoreId, '6818dccdb0d9e9f31333623b', {
+    //   suspension_info: {
+    //     suspension: {
+    //       suspend_until: 8640000000, // 設定為一個很遠的未來時間
+    //       reason: null,
+    //     },
+    //   },
+    // })
+    const menuRes = await getMenu(token, testStoreId)
+    console.log(
+      menuRes.items.find((item) => item.id === '6818dccdb0d9e9f31333623b').suspension_info,
+    )
   } catch (error) {
     console.error('\n❌ 程序執行失敗:')
     console.error(error.message)
