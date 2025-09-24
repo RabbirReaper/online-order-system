@@ -27,14 +27,6 @@ const DishInstanceSchema = new mongoose.Schema(
       },
     ],
 
-    relatedInventoryOptions: [
-      {
-        dishTemplateId: { type: mongoose.Schema.Types.ObjectId, ref: 'DishTemplate' },
-        quantity: { type: Number, required: true, default: 1 },
-        optionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Option' }, // 來源選項
-        optionName: { type: String }, // 選項名稱
-      },
-    ],
     finalPrice: { type: Number, required: true }, // 計算後的最終價格
   },
   { timestamps: true },
