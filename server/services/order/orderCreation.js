@@ -22,8 +22,8 @@ export const createOrder = async (orderData) => {
     // Step 1: 初始化訂單預設值
     initializeOrderDefaults(orderData)
 
-    // Step 2: 執行所有預檢查驗證
-    await validateOrderBeforeCreation(orderData)
+    // Step 2: 執行所有預檢查驗證並獲得庫存扣除Map
+    const inventoryMap = await validateOrderBeforeCreation(orderData)
 
     // Step 3: 處理訂單項目
     const { items, dishSubtotal, bundleSubtotal } = await processOrderItems(
@@ -45,9 +45,9 @@ export const createOrder = async (orderData) => {
       `Order created: dishes $${dishSubtotal} + bundles $${bundleSubtotal} = total $${order.total}`,
     )
 
-    // Step 6: 實際扣除庫存 (這時應該不會失敗，因為已經預檢查過)
+    // Step 6: 實際扣除庫存 (使用預處理的inventoryMap)
     try {
-      await inventoryService.reduceInventoryForOrder(order)
+      await inventoryService.reduceInventoryForOrder(order, inventoryMap)
     } catch (inventoryError) {
       console.error('Inventory reduction failed after pre-validation:', inventoryError)
       await cleanupFailedOrder(order._id, items)

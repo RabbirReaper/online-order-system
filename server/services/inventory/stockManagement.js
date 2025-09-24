@@ -372,11 +372,73 @@ export const reduceStock = async (reduceData) => {
 }
 
 /**
- * 為訂單減少庫存（新增函數）
+ * 為訂單減少庫存（改進版 - 使用預處理的庫存Map）
+ * @param {Object} order - 訂單對象
+ * @param {Map} inventoryMap - 預處理的庫存扣除Map (templateId -> quantity)
+ * @returns {Promise<Boolean>} 操作是否成功
+ */
+export const reduceInventoryForOrder = async (order, inventoryMap) => {
+  try {
+    console.log(`Reducing inventory for order ${order._id} using pre-processed inventory map`)
+
+    // 如果沒有提供inventoryMap，回退到舊邏輯
+    if (!inventoryMap || inventoryMap.size === 0) {
+      console.warn('No inventory map provided, falling back to legacy logic')
+      return await reduceInventoryForOrderLegacy(order)
+    }
+
+    // 遍歷庫存Map，減少對應庫存
+    for (const [templateId, quantity] of inventoryMap) {
+      try {
+        // 查找對應的庫存項目
+        const inventoryItem = await getInventoryItemByDishTemplate(order.store, templateId)
+
+        if (!inventoryItem) {
+          console.warn(`餐點模板 ${templateId} 在店鋪 ${order.store} 沒有庫存記錄，跳過庫存扣除`)
+          continue
+        }
+
+        if (inventoryItem.isSoldOut) {
+          console.warn(`餐點 ${inventoryItem.itemName} 已停售，跳過庫存扣除`)
+          continue
+        }
+
+        // 如果沒有啟用庫存追蹤，跳過
+        if (!inventoryItem.isInventoryTracked) {
+          console.log(`餐點 ${inventoryItem.itemName} 未啟用庫存追蹤，跳過庫存扣除`)
+          continue
+        }
+
+        // 減少庫存
+        await reduceStock({
+          storeId: order.store,
+          inventoryId: inventoryItem._id,
+          quantity: quantity,
+          reason: `訂單消耗: #${order.orderDateCode}${order.sequence.toString().padStart(3, '0')}`,
+          orderId: order._id,
+        })
+
+        console.log(`✅ Reduced inventory for ${inventoryItem.itemName}: -${quantity}`)
+      } catch (error) {
+        console.error(`Failed to reduce inventory for template ${templateId}:`, error)
+        throw error
+      }
+    }
+
+    console.log(`✅ Successfully reduced inventory for ${inventoryMap.size} items`)
+    return true
+  } catch (error) {
+    console.error('為訂單減少庫存時發生錯誤:', error)
+    throw error
+  }
+}
+
+/**
+ * 舊版為訂單減少庫存邏輯（保留作為備用）
  * @param {Object} order - 訂單對象
  * @returns {Promise<Boolean>} 操作是否成功
  */
-export const reduceInventoryForOrder = async (order) => {
+const reduceInventoryForOrderLegacy = async (order) => {
   try {
     // 遍歷訂單項目，減少對應庫存
     for (const item of order.items) {
@@ -403,8 +465,7 @@ export const reduceInventoryForOrder = async (order) => {
       }
 
       if (inventoryItem.isSoldOut) {
-        // throw new AppError(`餐點 ${inventoryItem.itemName} 已停售`, 400);
-        continue // 之後要處理 回滾邏輯
+        continue
       }
 
       // 如果沒有啟用庫存追蹤，跳過
