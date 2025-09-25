@@ -195,6 +195,37 @@ export const validateInventoryBeforeOrder = async (orderData) => {
 }
 
 /**
+ * 🔍 預先檢查 Bundle 購買資格
+ */
+export const validateBundlesBeforeOrder = async (orderData) => {
+  const bundleItems = orderData.items.filter((item) => item.itemType === 'bundle')
+
+  if (bundleItems.length === 0) {
+    return // 沒有Bundle項目，跳過檢查
+  }
+
+  console.log(`Validating bundle purchase eligibility for ${bundleItems.length} bundle items...`)
+
+  for (const item of bundleItems) {
+    try {
+      await bundleService.validateBundlePurchase(
+        item.bundleId || item.templateId,
+        orderData.user,
+        item.quantity,
+        orderData.store,
+      )
+
+      console.log(`✅ Bundle ${item.name} purchase eligibility check passed`)
+    } catch (error) {
+      console.error(`Bundle ${item.name} purchase eligibility check failed:`, error)
+      throw error // 直接拋出，因為 bundleService 已經包裝了適當的錯誤訊息
+    }
+  }
+
+  console.log('✅ All bundle purchase eligibility validation passed')
+}
+
+/**
  * 綜合驗證函數 - 執行所有預檢查
  */
 export const validateOrderBeforeCreation = async (orderData) => {
