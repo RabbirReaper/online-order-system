@@ -17,8 +17,6 @@ import { processOrderPaymentComplete } from './orderPayment.js'
  */
 export const createOrder = async (orderData) => {
   try {
-    console.log('Creating order with voucher support...')
-
     // Step 1: 初始化訂單預設值
     initializeOrderDefaults(orderData)
 
@@ -41,10 +39,6 @@ export const createOrder = async (orderData) => {
     updateOrderAmounts(order)
     await order.save()
 
-    console.log(
-      `Order created: dishes $${dishSubtotal} + bundles $${bundleSubtotal} = total $${order.total}`,
-    )
-
     // Step 6: 實際扣除庫存 (使用預處理的inventoryMap)
     try {
       await inventoryService.reduceInventoryForOrder(order, inventoryMap)
@@ -58,7 +52,6 @@ export const createOrder = async (orderData) => {
     let result = { ...order.toObject(), pointsAwarded: 0 }
 
     if (order.status === 'paid') {
-      console.log('Processing immediate payment completion...')
       result = await processOrderPaymentComplete(order)
     }
 
@@ -79,12 +72,10 @@ const processOrderItems = async (items, orderData) => {
 
   for (const item of items) {
     if (item.itemType === 'dish') {
-      console.log(`Processing dish: ${item.name}`)
       const dishItem = await createDishItem(item, orderData.brand)
       processedItems.push(dishItem)
       dishSubtotal += dishItem.subtotal
     } else if (item.itemType === 'bundle') {
-      console.log(`Processing bundle: ${item.name}`)
       const bundleItem = await createBundleItem(
         item,
         orderData.user,
