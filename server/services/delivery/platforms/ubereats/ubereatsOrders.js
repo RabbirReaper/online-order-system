@@ -7,7 +7,8 @@ import axios from 'axios'
 import { withPlatformToken } from '../../core/tokenManager.js'
 import { AppError } from '../../../../middlewares/error.js'
 
-const BASE_URL = 'https://api.uber.com/v2/eats'
+// 🔧 修正 API 基礎 URL - 使用正確的 delivery API
+const BASE_URL = 'https://api.uber.com/v1/delivery'
 
 /**
  * 從 resource_href 獲取完整訂單詳情
@@ -64,6 +65,57 @@ export const getOrderDetails = async (resourceHref) => {
 }
 
 /**
+ * 直接根據訂單 ID 獲取訂單詳情
+ * @param {String} orderId - 訂單 ID
+ * @returns {Promise<Object>} 完整訂單資料
+ */
+export const getOrderById = async (orderId) => {
+  return await withPlatformToken('ubereats', async (token) => {
+    try {
+      console.log('🔍 根據 ID 獲取 Uber Eats 訂單詳情:', orderId)
+
+      // 🔧 使用正確的 delivery API 端點
+      const response = await axios.get(`${BASE_URL}/order/${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+        timeout: 30000,
+      })
+
+      if (!response.data) {
+        throw new AppError('獲取訂單詳情失敗：空回應', 500)
+      }
+
+      console.log('✅ 成功獲取訂單詳情 (by ID):', {
+        orderId: response.data.id,
+        displayId: response.data.display_id,
+        state: response.data.state,
+        status: response.data.status,
+      })
+
+      return response.data
+    } catch (error) {
+      if (error.response) {
+        console.error('❌ 根據 ID 獲取訂單詳情失敗:', {
+          orderId,
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        })
+        throw new AppError(
+          `獲取 Uber Eats 訂單詳情失敗: ${error.response.status} ${error.response.statusText}`,
+          error.response.status,
+        )
+      } else {
+        console.error('❌ 獲取訂單詳情時發生錯誤:', error.message)
+        throw error
+      }
+    }
+  })
+}
+
+/**
  * 接受訂單 (必須在 11.5 分鐘內完成)
  * @param {String} orderId - 訂單 ID
  * @param {String} reason - 接受原因
@@ -74,8 +126,9 @@ export const acceptOrder = async (orderId, reason = 'Order accepted by POS syste
     try {
       console.log('✅ 接受 Uber Eats 訂單:', orderId)
 
+      // 🔧 使用正確的 delivery API 端點
       const response = await axios.post(
-        `${BASE_URL}/orders/${orderId}/accept_pos_order`,
+        `${BASE_URL}/order/${orderId}/accept`,
         {
           reason: reason,
         },
@@ -97,6 +150,7 @@ export const acceptOrder = async (orderId, reason = 'Order accepted by POS syste
           status: error.response.status,
           statusText: error.response.statusText,
           data: error.response.data,
+          requestUrl: `${BASE_URL}/order/${orderId}/accept`,
         })
 
         // 如果訂單已被接受或超時，不要拋出錯誤
@@ -133,8 +187,9 @@ export const denyOrder = async (
     try {
       console.log('❌ 拒絕 Uber Eats 訂單:', orderId)
 
+      // 🔧 使用正確的 delivery API 端點
       const response = await axios.post(
-        `${BASE_URL}/orders/${orderId}/deny_pos_order`,
+        `${BASE_URL}/order/${orderId}/deny`,
         {
           reason: reason,
           reason_code: reasonCode,
@@ -181,8 +236,9 @@ export const markOrderInProgress = async (orderId) => {
     try {
       console.log('🍳 標記 Uber Eats 訂單為準備中:', orderId)
 
+      // 🔧 使用正確的 delivery API 端點
       const response = await axios.patch(
-        `${BASE_URL}/orders/${orderId}`,
+        `${BASE_URL}/order/${orderId}`,
         {
           status: 'in_progress',
         },
@@ -228,8 +284,9 @@ export const markOrderReady = async (orderId) => {
     try {
       console.log('✅ 標記 Uber Eats 訂單為準備完成:', orderId)
 
+      // 🔧 使用正確的 delivery API 端點
       const response = await axios.patch(
-        `${BASE_URL}/orders/${orderId}`,
+        `${BASE_URL}/order/${orderId}`,
         {
           status: 'ready_for_pickup',
         },
@@ -296,6 +353,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
         params.append('status', status)
       }
 
+      // 🔧 使用正確的 delivery API 端點
       const response = await axios.get(
         `${BASE_URL}/stores/${storeId}/orders?${params.toString()}`,
         {
@@ -345,8 +403,9 @@ export const cancelOrder = async (orderId, reason = 'Order cancelled by restaura
     try {
       console.log('🚫 取消 Uber Eats 訂單:', orderId)
 
+      // 🔧 使用正確的 delivery API 端點
       const response = await axios.post(
-        `${BASE_URL}/orders/${orderId}/cancel`,
+        `${BASE_URL}/order/${orderId}/cancel`,
         {
           reason: reason,
         },

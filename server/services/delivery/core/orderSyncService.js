@@ -183,8 +183,30 @@ const convertUberOrderToInternal = async (uberOrder, platformStore) => {
     // 生成內部訂單編號
     const orderNumber = await generateOrderNumber(platformStore.store._id)
 
-    // TODO: 完整實作訂單轉換邏輯
-    // 目前先建立基本結構，後續需要根據實際需求完善
+    // 🔧 輔助函數：提取 Uber Eats 金額數值
+    const extractAmount = (uberMoneyObject) => {
+      if (!uberMoneyObject || typeof uberMoneyObject !== 'object') {
+        return 0
+      }
+      // Uber Eats 金額通常以分為單位，需要轉換為元
+      const amountInCents = uberMoneyObject.amount || 0
+      return Math.round((amountInCents / 100) * 100) / 100 // 轉為元並保留兩位小數
+    }
+
+    // 🔧 提取各種金額
+    const totalAmount = extractAmount(uberOrder.payment?.charges?.total)
+    const subtotalAmount = extractAmount(uberOrder.payment?.charges?.subtotal)
+    const serviceFeeAmount = extractAmount(uberOrder.payment?.charges?.service_fee)
+    const deliveryFeeAmount = extractAmount(uberOrder.payment?.charges?.delivery_fee)
+
+    console.log('💰 金額轉換結果:', {
+      原始總金額: uberOrder.payment?.charges?.total,
+      轉換後總金額: totalAmount,
+      小計: subtotalAmount,
+      服務費: serviceFeeAmount,
+      配送費: deliveryFeeAmount,
+    })
+
     const internalOrder = {
       // 基本資訊
       store: platformStore.store._id,
@@ -224,7 +246,7 @@ const convertUberOrderToInternal = async (uberOrder, platformStore) => {
         estimatedTime: uberOrder.estimated_ready_for_pickup_at
           ? new Date(uberOrder.estimated_ready_for_pickup_at)
           : null,
-        deliveryFee: uberOrder.payment?.charges?.delivery_fee || 0,
+        deliveryFee: deliveryFeeAmount,
         platformDeliveryInfo: {
           trackingUrl: uberOrder.tracking_url,
           estimatedArrival: uberOrder.delivery?.estimated_delivery_time
@@ -233,16 +255,16 @@ const convertUberOrderToInternal = async (uberOrder, platformStore) => {
         },
       },
 
-      // 金額資訊 (TODO: 需要詳細計算)
+      // 🔧 修復後的金額資訊
       items: [], // TODO: 轉換訂單項目
-      subtotal: uberOrder.payment?.charges?.total || 0,
-      dishSubtotal: uberOrder.payment?.charges?.subtotal || 0,
+      subtotal: subtotalAmount,
+      dishSubtotal: subtotalAmount, // 目前先設為相同，待完善項目轉換後調整
       bundleSubtotal: 0,
-      serviceCharge: uberOrder.payment?.charges?.service_fee || 0,
+      serviceCharge: serviceFeeAmount,
       discounts: [],
       manualAdjustment: 0,
       totalDiscount: 0,
-      total: uberOrder.payment?.charges?.total || 0,
+      total: totalAmount,
 
       // 付款資訊
       paymentType: 'Online',
@@ -252,10 +274,12 @@ const convertUberOrderToInternal = async (uberOrder, platformStore) => {
       notes: uberOrder.special_instructions || '',
     }
 
-    console.log('🔄 Uber Eats 訂單轉換完成 (基本結構):', {
+    console.log('🔄 Uber Eats 訂單轉換完成:', {
       platformOrderId: uberOrder.id,
       internalOrderNumber: `${orderNumber.orderDateCode}${orderNumber.sequence.toString().padStart(3, '0')}`,
       total: internalOrder.total,
+      subtotal: internalOrder.subtotal,
+      serviceCharge: internalOrder.serviceCharge,
     })
 
     return internalOrder
