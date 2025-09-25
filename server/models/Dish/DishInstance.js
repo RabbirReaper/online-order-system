@@ -6,7 +6,6 @@ const DishInstanceSchema = new mongoose.Schema(
     templateId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'DishTemplate',
-      required: true,
     },
     // 冗餘儲存一些模板資訊
     name: { type: String, required: true },
