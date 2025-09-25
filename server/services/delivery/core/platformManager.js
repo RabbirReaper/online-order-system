@@ -5,6 +5,7 @@
 
 import PlatformStore from '../../../models/DeliverPlatform/platformStore.js'
 import Menu from '../../../models/Menu/Menu.js'
+import Store from '../../../models/Store/Store.js'
 import { AppError } from '../../../middlewares/error.js'
 import * as ubereatsMenu from '../platforms/ubereats/ubereatsMenu.js'
 import * as foodpandaMenu from '../platforms/foodpanda/foodpandaMenu.js'
@@ -64,6 +65,10 @@ export const syncMenu = async (brandId, storeId) => {
     throw new AppError('找不到啟用的食品菜單', 404)
   }
 
+  // 獲取營業時間
+  const store = await Store.findById(storeId).select('businessHours')
+  // console.log(store.businessHours)
+
   // 同步到各平台
   const results = []
 
@@ -76,6 +81,7 @@ export const syncMenu = async (brandId, storeId) => {
           result = await ubereatsMenu.syncMenuToUberEats(
             platformStore.platformStoreId,
             menu.toObject(),
+            store.businessHours,
           )
           break
 
@@ -83,6 +89,7 @@ export const syncMenu = async (brandId, storeId) => {
           result = await foodpandaMenu.syncMenuToFoodpanda(
             platformStore.platformStoreId,
             menu.toObject(),
+            store.businessHours,
           )
           break
 
