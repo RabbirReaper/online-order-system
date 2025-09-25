@@ -343,7 +343,7 @@ const getItemId = (item) => {
 
 const getItemPrice = (item) => {
   if (item.itemType === 'dish') {
-    return item.priceOverride || item.dishTemplate?.basePrice || 0
+    return item.dishTemplate?.basePrice || 0
   } else if (item.itemType === 'bundle') {
     return item.priceOverride || item.bundle?.sellingPrice || 0
   }

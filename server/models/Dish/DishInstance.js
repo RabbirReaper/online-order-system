@@ -26,6 +26,7 @@ const DishInstanceSchema = new mongoose.Schema(
         ],
       },
     ],
+
     finalPrice: { type: Number, required: true }, // 計算後的最終價格
   },
   { timestamps: true },

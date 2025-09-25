@@ -315,7 +315,7 @@ export const updateStore = async (storeId, updateData) => {
         brand: store.brand,
         store: store._id,
         platform: platform,
-        platformStoreId: `${store._id}_${platform}`, // 暫時使用這個格式，實際應該由平台提供
+        platformStoreId: `platform_id`, // 暫時使用這個格式，實際應該由平台提供
         status: 'OFFLINE', // 預設為離線狀態
         prepTime: store.deliveryPrepTime || 30,
         busyPrepTime: (store.deliveryPrepTime || 30) + 15, // 忙碌時多15分鐘

@@ -88,6 +88,13 @@
             自動接單 {{ configForm.autoAccept ? '✓' : '✗' }}
           </BFormCheckbox>
         </div>
+
+        <!-- 平台整合啟用狀態 -->
+        <div class="col-md-6 d-flex align-items-end">
+          <BFormCheckbox v-model="configForm.isActive" switch>
+            啟用平台整合 {{ configForm.isActive ? '✓' : '✗' }}
+          </BFormCheckbox>
+        </div>
       </div>
     </form>
 
@@ -178,6 +185,7 @@ const configForm = reactive({
   busyPrepTime: 45,
   status: 'OFFLINE',
   autoAccept: true,
+  isActive: false,
 })
 
 // 選項配置
@@ -228,6 +236,7 @@ const loadPlatformConfig = async () => {
         busyPrepTime: existingConfig.busyPrepTime,
         status: existingConfig.status,
         autoAccept: existingConfig.autoAccept,
+        isActive: existingConfig.isActive !== undefined ? existingConfig.isActive : false,
       })
     } else {
       // 新增模式
@@ -263,6 +272,7 @@ const saveConfig = async () => {
       busyPrepTime: configForm.busyPrepTime || 45,
       status: configForm.status || 'OFFLINE',
       autoAccept: configForm.autoAccept,
+      isActive: configForm.isActive,
     }
 
     if (editingConfig.value) {
@@ -312,6 +322,7 @@ const resetForm = () => {
     busyPrepTime: 45,
     status: 'OFFLINE',
     autoAccept: true,
+    isActive: false,
   })
   editingConfig.value = null
 }
