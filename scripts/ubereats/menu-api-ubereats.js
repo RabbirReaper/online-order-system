@@ -2097,9 +2097,9 @@ const main = async () => {
     //   console.log('! 沒有現有菜單或取得失敗')
     // }
 
-    const convertedMenuData = convertToUberEatsFormat(fullMenuData)
-    console.log('✓ 菜單資料轉換完成\n')
-    await uploadMenu(token, testStoreId, convertedMenuData)
+    // const convertedMenuData = convertToUberEatsFormat(fullMenuData)
+    // console.log('✓ 菜單資料轉換完成\n')
+    // await uploadMenu(token, testStoreId, convertedMenuData)
 
     // await updateItem(token, testStoreId, '6818dccdb0d9e9f31333623b', {
     //   suspension_info: {
@@ -2110,9 +2110,7 @@ const main = async () => {
     //   },
     // })
     const menuRes = await getMenu(token, testStoreId)
-    console.log(
-      menuRes.items.find((item) => item.id === '6818dccdb0d9e9f31333623b').suspension_info,
-    )
+    console.log(menuRes.menus[0].service_availability[0])
   } catch (error) {
     console.error('\n❌ 程序執行失敗:')
     console.error(error.message)
