@@ -25,7 +25,7 @@ export const validateAndProcessVouchersBeforeOrder = async (orderData) => {
     return // 沒有 voucher 折扣，跳過檢查
   }
 
-  console.log(`Validating ${voucherDiscounts.length} voucher discounts...`)
+  // console.log(`Validating ${voucherDiscounts.length} voucher discounts...`)
 
   for (const voucherDiscount of voucherDiscounts) {
     try {
@@ -59,22 +59,22 @@ export const validateAndProcessVouchersBeforeOrder = async (orderData) => {
       // 計算並驗證折扣金額（應該等於餐點基礎價格）
       const expectedDiscountAmount = targetDish.basePrice
       if (voucherDiscount.amount !== expectedDiscountAmount) {
-        console.log(
-          `Auto-correcting voucher discount amount: ${voucherDiscount.amount} -> ${expectedDiscountAmount}`,
-        )
+        // console.log(
+        //   `Auto-correcting voucher discount amount: ${voucherDiscount.amount} -> ${expectedDiscountAmount}`,
+        // )
         voucherDiscount.amount = expectedDiscountAmount
       }
 
-      console.log(
-        `✅ Voucher ${voucher.voucherName} validation passed (discount: $${voucherDiscount.amount})`,
-      )
+      // console.log(
+      //   `✅ Voucher ${voucher.voucherName} validation passed (discount: $${voucherDiscount.amount})`,
+      // )
     } catch (error) {
       console.error(`Voucher validation failed:`, error)
       throw error
     }
   }
 
-  console.log('✅ All voucher validations passed')
+  // console.log('✅ All voucher validations passed')
 }
 
 /**
@@ -87,7 +87,7 @@ export const validateInventoryBeforeOrder = async (orderData) => {
     return new Map() // 沒有餐點項目，返回空Map
   }
 
-  console.log(`Validating inventory for ${dishItems.length} dish items...`)
+  // console.log(`Validating inventory for ${dishItems.length} dish items...`)
 
   // Step 1: 預處理所有需要扣除庫存的餐點（包含主餐點和關聯餐點）
   const inventoryMap = new Map()
@@ -112,9 +112,9 @@ export const validateInventoryBeforeOrder = async (orderData) => {
                     refTemplateId,
                     (inventoryMap.get(refTemplateId) || 0) + item.quantity,
                   )
-                  console.log(
-                    `Found option ${option.name} linked to dish template ${refTemplateId}`,
-                  )
+                  // console.log(
+                  //   `Found option ${option.name} linked to dish template ${refTemplateId}`,
+                  // )
                 }
               } catch (error) {
                 console.error(`Error checking option ${selection.optionId}:`, error)
@@ -127,7 +127,7 @@ export const validateInventoryBeforeOrder = async (orderData) => {
     }
   }
 
-  console.log(`Total templates to check inventory: ${inventoryMap.size}`)
+  // console.log(`Total templates to check inventory: ${inventoryMap.size}`)
 
   // Step 2: 檢查所有需要扣除庫存的餐點
   for (const [templateId, requiredQuantity] of inventoryMap) {
@@ -140,7 +140,7 @@ export const validateInventoryBeforeOrder = async (orderData) => {
 
       // 如果沒有庫存記錄，跳過檢查
       if (!inventoryItem) {
-        console.log(`Template ${templateId} has no inventory record, skipping check`)
+        // console.log(`Template ${templateId} has no inventory record, skipping check`)
         continue
       }
 
@@ -151,9 +151,9 @@ export const validateInventoryBeforeOrder = async (orderData) => {
 
       // 🔥 核心邏輯：enableAvailableStock 只有在 isInventoryTracked = true 時才有效
       if (inventoryItem.isInventoryTracked) {
-        console.log(
-          `📊 ${inventoryItem.itemName} inventory tracking enabled - will record stock changes`,
-        )
+        // console.log(
+        //   `📊 ${inventoryItem.itemName} inventory tracking enabled - will record stock changes`,
+        // )
 
         // 只有在追蹤庫存 + 啟用可用庫存控制時，才檢查庫存限制
         if (inventoryItem.enableAvailableStock) {
@@ -163,16 +163,16 @@ export const validateInventoryBeforeOrder = async (orderData) => {
               400,
             )
           }
-          console.log(
-            `✅ ${inventoryItem.itemName} stock limit check passed (need: ${requiredQuantity}, available: ${inventoryItem.availableStock})`,
-          )
+          // console.log(
+          //   `✅ ${inventoryItem.itemName} stock limit check passed (need: ${requiredQuantity}, available: ${inventoryItem.availableStock})`,
+          // )
         } else {
-          console.log(`✅ ${inventoryItem.itemName} inventory tracked but no purchase limit`)
+          // console.log(`✅ ${inventoryItem.itemName} inventory tracked but no purchase limit`)
         }
       } else {
-        console.log(
-          `📊 ${inventoryItem.itemName} inventory tracking disabled - no stock recording or limits`,
-        )
+        // console.log(
+        //   `📊 ${inventoryItem.itemName} inventory tracking disabled - no stock recording or limits`,
+        // )
         // isInventoryTracked = false 時，enableAvailableStock 應該也是 false
         if (inventoryItem.enableAvailableStock) {
           console.warn(
@@ -190,46 +190,15 @@ export const validateInventoryBeforeOrder = async (orderData) => {
     }
   }
 
-  console.log('✅ All dish inventory validation passed')
+  // console.log('✅ All dish inventory validation passed')
   return inventoryMap
-}
-
-/**
- * 🔍 預先檢查 Bundle 購買資格
- */
-export const validateBundlesBeforeOrder = async (orderData) => {
-  const bundleItems = orderData.items.filter((item) => item.itemType === 'bundle')
-
-  if (bundleItems.length === 0) {
-    return // 沒有Bundle項目，跳過檢查
-  }
-
-  console.log(`Validating bundle purchase eligibility for ${bundleItems.length} bundle items...`)
-
-  for (const item of bundleItems) {
-    try {
-      await bundleService.validateBundlePurchase(
-        item.bundleId || item.templateId,
-        orderData.user,
-        item.quantity,
-        orderData.store,
-      )
-
-      console.log(`✅ Bundle ${item.name} purchase eligibility check passed`)
-    } catch (error) {
-      console.error(`Bundle ${item.name} purchase eligibility check failed:`, error)
-      throw error // 直接拋出，因為 bundleService 已經包裝了適當的錯誤訊息
-    }
-  }
-
-  console.log('✅ All bundle purchase eligibility validation passed')
 }
 
 /**
  * 綜合驗證函數 - 執行所有預檢查
  */
 export const validateOrderBeforeCreation = async (orderData) => {
-  console.log('Starting comprehensive order validation...')
+  // console.log('Starting comprehensive order validation...')
 
   // Step 1: 預先檢查所有餐點庫存（包含關聯餐點）
   const inventoryMap = await validateInventoryBeforeOrder(orderData)
@@ -240,7 +209,7 @@ export const validateOrderBeforeCreation = async (orderData) => {
   // Step 3: 預先驗證並處理 Voucher 折扣
   await validateAndProcessVouchersBeforeOrder(orderData)
 
-  console.log('✅ All order validations completed successfully')
+  // console.log('✅ All order validations completed successfully')
 
   return inventoryMap
 }
