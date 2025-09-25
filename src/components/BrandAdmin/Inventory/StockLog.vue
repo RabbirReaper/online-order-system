@@ -212,6 +212,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { BDropdown } from 'bootstrap-vue-next'
 import api from '@/api'
+import brand from '@/api/modules/brand'
 
 // 路由
 const route = useRoute()
@@ -354,6 +355,7 @@ const fetchStockLogs = async () => {
 
   try {
     const params = {
+      brandId: brandId.value,
       storeId: storeId.value,
       page: currentPage.value,
       limit: pagination.limit,

@@ -398,8 +398,15 @@ const fetchStats = async () => {
 
 // 獲取最近變更記錄
 const fetchRecentLogs = async () => {
+  console.log('Fetching recent logs for', {
+    brandId: brandId.value,
+    storeId: storeId.value,
+    inventoryId: itemId.value,
+    inventoryType: inventoryItem.value.inventoryType,
+  })
   try {
     const response = await api.inventory.getInventoryLogs({
+      brandId: brandId.value,
       storeId: storeId.value,
       inventoryId: itemId.value,
       inventoryType: inventoryItem.value.inventoryType,
