@@ -7,8 +7,8 @@ import Order from '../../../models/Order/Order.js'
 import PlatformStore from '../../../models/DeliverPlatform/platformStore.js'
 import * as ubereatsOrders from '../platforms/ubereats/order/index.js'
 import * as foodpandaOrders from '../platforms/foodpanda/foodpandaOrders.js'
+import { convertUberOrderToInternal } from '../platforms/ubereats/order/convertOrder.js'
 import { AppError } from '../../../middlewares/error.js'
-import { generateOrderNumber } from '../../order/orderUtils.js'
 
 /**
  * 處理 Uber Eats webhook 事件
@@ -73,7 +73,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
     console.log('📋 獲取到訂單詳情:', {
       orderId: orderDetails.id,
       displayId: orderDetails.display_id,
-      state: orderDetails.state,
+      state: orderDetails.current_state,
       storeId: orderDetails.store?.id,
     })
 
@@ -155,142 +155,6 @@ const findPlatformStoreByUberStoreId = async (uberStoreId) => {
     console.error('❌ 查找平台店鋪配置失敗:', error)
     return null
   }
-}
-
-/**
- * 轉換 Uber Eats 訂單格式為內部格式
- * @param {Object} uberOrder - Uber Eats 訂單資料
- * @param {Object} platformStore - 平台店鋪配置
- * @returns {Promise<Object>} 內部訂單格式
- */
-const convertUberOrderToInternal = async (uberOrder, platformStore) => {
-  try {
-    // 生成內部訂單編號
-    const orderNumber = await generateOrderNumber(platformStore.store._id)
-
-    // 🔧 輔助函數：提取 Uber Eats 金額數值
-    const extractAmount = (uberMoneyObject) => {
-      if (!uberMoneyObject || typeof uberMoneyObject !== 'object') {
-        return 0
-      }
-      // Uber Eats 金額通常以分為單位，需要轉換為元
-      const amountInCents = uberMoneyObject.amount || 0
-      return Math.round((amountInCents / 100) * 100) / 100 // 轉為元並保留兩位小數
-    }
-
-    // 🔧 提取各種金額
-    const totalAmount = extractAmount(uberOrder.payment?.charges?.total)
-    const subtotalAmount = extractAmount(uberOrder.payment?.charges?.subtotal)
-    const serviceFeeAmount = extractAmount(uberOrder.payment?.charges?.service_fee)
-    const deliveryFeeAmount = extractAmount(uberOrder.payment?.charges?.delivery_fee)
-
-    console.log('💰 金額轉換結果:', {
-      原始總金額: uberOrder.payment?.charges?.total,
-      轉換後總金額: totalAmount,
-      小計: subtotalAmount,
-      服務費: serviceFeeAmount,
-      配送費: deliveryFeeAmount,
-    })
-
-    const internalOrder = {
-      // 基本資訊
-      store: platformStore.store._id,
-      brand: platformStore.brand._id,
-      orderDateCode: orderNumber.orderDateCode,
-      sequence: orderNumber.sequence,
-
-      // 外送平台資訊
-      deliveryPlatform: 'ubereats',
-      platformOrderId: uberOrder.id,
-      platformInfo: {
-        platform: 'ubereats',
-        platformOrderId: uberOrder.id,
-        platformStatus: uberOrder.state,
-        platformCustomerInfo: {
-          customerId: uberOrder.eater?.uuid,
-          customerName: uberOrder.eater?.first_name,
-          customerPhone: uberOrder.eater?.phone_number,
-        },
-        rawOrderData: uberOrder,
-        lastSyncAt: new Date(),
-      },
-
-      // 訂單類型和狀態
-      orderType: 'delivery',
-      status: 'paid', // 外送平台訂單預設為已付款
-
-      // 客戶資訊
-      customerInfo: {
-        name: uberOrder.eater?.first_name || 'Uber Eats 顧客',
-        phone: uberOrder.eater?.phone_number || '',
-      },
-
-      // 配送資訊
-      deliveryInfo: {
-        address: formatUberDeliveryAddress(uberOrder.delivery?.location),
-        estimatedTime: uberOrder.estimated_ready_for_pickup_at
-          ? new Date(uberOrder.estimated_ready_for_pickup_at)
-          : null,
-        deliveryFee: deliveryFeeAmount,
-        platformDeliveryInfo: {
-          trackingUrl: uberOrder.tracking_url,
-          estimatedArrival: uberOrder.delivery?.estimated_delivery_time
-            ? new Date(uberOrder.delivery.estimated_delivery_time)
-            : null,
-        },
-      },
-
-      // 🔧 修復後的金額資訊
-      items: [], // TODO: 轉換訂單項目
-      subtotal: subtotalAmount,
-      dishSubtotal: subtotalAmount, // 目前先設為相同，待完善項目轉換後調整
-      bundleSubtotal: 0,
-      serviceCharge: serviceFeeAmount,
-      discounts: [],
-      manualAdjustment: 0,
-      totalDiscount: 0,
-      total: totalAmount,
-
-      // 付款資訊
-      paymentType: 'Online',
-      paymentMethod: 'other', // Uber Eats 處理付款
-
-      // 備註
-      notes: uberOrder.special_instructions || '',
-    }
-
-    console.log('🔄 Uber Eats 訂單轉換完成:', {
-      platformOrderId: uberOrder.id,
-      internalOrderNumber: `${orderNumber.orderDateCode}${orderNumber.sequence.toString().padStart(3, '0')}`,
-      total: internalOrder.total,
-      subtotal: internalOrder.subtotal,
-      serviceCharge: internalOrder.serviceCharge,
-    })
-
-    return internalOrder
-  } catch (error) {
-    console.error('❌ 轉換 Uber Eats 訂單格式失敗:', error)
-    throw new AppError('訂單格式轉換失敗', 500)
-  }
-}
-
-/**
- * 格式化 Uber Eats 配送地址
- * @param {Object} location - Uber Eats 位置資訊
- * @returns {String} 格式化的地址
- */
-const formatUberDeliveryAddress = (location) => {
-  if (!location) return ''
-
-  const addressParts = [
-    location.street_address_1,
-    location.street_address_2,
-    location.city,
-    location.state,
-    location.country,
-  ].filter(Boolean)
-
-  return addressParts.join(', ')
 }
 
 /**
