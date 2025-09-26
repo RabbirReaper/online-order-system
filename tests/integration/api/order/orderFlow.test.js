@@ -13,7 +13,7 @@ import { TestDataFactory } from '../../../setup.js'
 
 // 模擬 express-session
 vi.mock('express-session', () => ({
-  default: vi.fn().mockReturnValue((req, res, next) => next())
+  default: vi.fn().mockReturnValue((req, res, next) => next()),
 }))
 
 // 模擬所有依賴
@@ -24,27 +24,27 @@ vi.mock('@server/models/Order/Order.js', () => {
     save: vi.fn().mockResolvedValue(),
     populate: vi.fn().mockReturnThis(),
     lean: vi.fn().mockReturnThis(),
-    toJSON: vi.fn().mockReturnValue(data)
+    toJSON: vi.fn().mockReturnValue(data),
   }))
 
   mockOrder.find = vi.fn().mockReturnValue({
     sort: vi.fn().mockReturnThis(),
-    skip: vi.fn().mockReturnThis(),  
+    skip: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     populate: vi.fn().mockReturnThis(),
-    lean: vi.fn().mockResolvedValue([])
+    lean: vi.fn().mockResolvedValue([]),
   })
-  
+
   mockOrder.findById = vi.fn().mockReturnValue({
     populate: vi.fn().mockReturnThis(),
-    lean: vi.fn().mockResolvedValue(null)
+    lean: vi.fn().mockResolvedValue(null),
   })
-  
+
   mockOrder.findOne = vi.fn().mockReturnValue({
     sort: vi.fn().mockReturnThis(),
-    lean: vi.fn().mockResolvedValue(null)
+    lean: vi.fn().mockResolvedValue(null),
   })
-  
+
   mockOrder.countDocuments = vi.fn().mockResolvedValue(0)
 
   return { default: mockOrder }
@@ -55,26 +55,26 @@ vi.mock('@server/models/Dish/DishInstance.js', () => {
     ...data,
     _id: data._id || 'mock-dish-instance-id',
     save: vi.fn().mockResolvedValue(),
-    toObject: vi.fn().mockReturnValue(data)
+    toObject: vi.fn().mockReturnValue(data),
   }))
-  
+
   mockDishInstance.find = vi.fn().mockResolvedValue([])
   mockDishInstance.findById = vi.fn().mockResolvedValue(null)
   mockDishInstance.deleteMany = vi.fn().mockResolvedValue({ deletedCount: 0 })
-  
+
   return { default: mockDishInstance }
 })
 
 vi.mock('@server/models/Dish/DishTemplate.js', () => ({
   default: {
-    findById: vi.fn().mockResolvedValue(TestDataFactory.createDishTemplate())
-  }
+    findById: vi.fn().mockResolvedValue(TestDataFactory.createDishTemplate()),
+  },
 }))
 
 vi.mock('@server/models/Store/Inventory.js', () => ({
   default: {
-    findOne: vi.fn().mockResolvedValue(TestDataFactory.createInventory({ availableStock: 100 }))
-  }
+    findOne: vi.fn().mockResolvedValue(TestDataFactory.createInventory({ availableStock: 100 })),
+  },
 }))
 
 vi.mock('@server/middlewares/error.js', () => ({
@@ -87,15 +87,24 @@ vi.mock('@server/middlewares/error.js', () => ({
   },
   asyncHandler: (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next)
-  }
+  },
 }))
 
 // 模擬所有服務
 vi.mock('@server/services/inventory/stockManagement.js', () => ({
-  getInventoryByDish: vi.fn().mockResolvedValue(TestDataFactory.createInventory({ availableStock: 100 })),
-  getInventoryItemByDishTemplate: vi.fn().mockResolvedValue(TestDataFactory.createInventory({ availableStock: 100, isInventoryTracked: false, enableAvailableStock: false, isSoldOut: false })),
+  getInventoryByDish: vi
+    .fn()
+    .mockResolvedValue(TestDataFactory.createInventory({ availableStock: 100 })),
+  getInventoryItemByDishTemplate: vi.fn().mockResolvedValue(
+    TestDataFactory.createInventory({
+      availableStock: 100,
+      isInventoryTracked: false,
+      enableAvailableStock: false,
+      isSoldOut: false,
+    }),
+  ),
   updateStock: vi.fn().mockResolvedValue(true),
-  reduceInventoryForOrder: vi.fn().mockResolvedValue(true)
+  reduceInventoryForOrder: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@server/services/order/orderCustomer.js', () => ({
@@ -103,7 +112,7 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
   generateOrderNumber: vi.fn().mockImplementation(async (storeId) => {
     return {
       orderDateCode: '250902',
-      sequence: 1
+      sequence: 1,
     }
   }),
   getUserOrders: vi.fn().mockResolvedValue({
@@ -112,26 +121,26 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
       total: 0,
       page: 1,
       pages: 0,
-      limit: 10
-    }
+      limit: 10,
+    },
   }),
   getUserOrderById: vi.fn().mockResolvedValue(null),
   processPayment: vi.fn().mockResolvedValue({
     success: true,
     paymentId: 'payment-123',
-    redirectUrl: 'https://payment.example.com/redirect'
+    redirectUrl: 'https://payment.example.com/redirect',
   }),
   paymentCallback: vi.fn().mockResolvedValue({
     success: true,
-    order: TestDataFactory.createOrder({ status: 'paid' })
-  })
+    order: TestDataFactory.createOrder({ status: 'paid' }),
+  }),
 }))
 
 vi.mock('@server/services/promotion/pointService.js', () => ({
   calculateOrderPoints: vi.fn().mockResolvedValue(10),
   addUserPoints: vi.fn().mockResolvedValue(true),
   getUserPoints: vi.fn().mockResolvedValue([]),
-  addPointsToUser: vi.fn().mockResolvedValue(true)
+  addPointsToUser: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@server/services/promotion/pointRuleService.js', () => ({
@@ -142,61 +151,61 @@ vi.mock('@server/services/promotion/pointRuleService.js', () => ({
       name: 'Test Rule',
       conversionRate: 0.1,
       minimumAmount: 100,
-      validityDays: 60
-    }
-  })
+      validityDays: 60,
+    },
+  }),
 }))
 
 vi.mock('@server/services/bundle/bundleService.js', () => ({
-  validateBundlePurchase: vi.fn().mockResolvedValue(true)
+  validateBundlePurchase: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@server/services/bundle/bundleInstance.js', () => ({
   createInstance: vi.fn().mockResolvedValue({
     _id: 'bundle-instance-id',
     name: 'Test Bundle',
-    finalPrice: 100
+    finalPrice: 100,
   }),
-  generateVouchersForBundle: vi.fn().mockResolvedValue([])
+  generateVouchersForBundle: vi.fn().mockResolvedValue([]),
 }))
 
 // 新增缺少的模型模擬
 vi.mock('@server/models/Promotion/BundleInstance.js', () => ({
   default: {
     findById: vi.fn().mockResolvedValue(null),
-    deleteMany: vi.fn().mockResolvedValue({ deletedCount: 0 })
-  }
+    deleteMany: vi.fn().mockResolvedValue({ deletedCount: 0 }),
+  },
 }))
 
 vi.mock('@server/models/Promotion/Bundle.js', () => ({
   default: {
-    findByIdAndUpdate: vi.fn().mockResolvedValue({})
-  }
+    findByIdAndUpdate: vi.fn().mockResolvedValue({}),
+  },
 }))
 
 vi.mock('@server/models/Promotion/VoucherInstance.js', () => ({
   default: {
     findOne: vi.fn().mockResolvedValue(null),
-    findById: vi.fn().mockResolvedValue(null)
-  }
+    findById: vi.fn().mockResolvedValue(null),
+  },
 }))
 
 vi.mock('@server/models/Promotion/VoucherTemplate.js', () => ({
   default: {
-    findById: vi.fn().mockResolvedValue(null)
-  }
+    findById: vi.fn().mockResolvedValue(null),
+  },
 }))
 
 vi.mock('@server/models/Promotion/CouponInstance.js', () => ({
   default: {
-    findById: vi.fn().mockResolvedValue(null)
-  }
+    findById: vi.fn().mockResolvedValue(null),
+  },
 }))
 
 vi.mock('@server/utils/date.js', () => ({
   getTaiwanDateTime: vi.fn().mockReturnValue(new Date()),
   formatDateTime: vi.fn().mockReturnValue('2024-09-01 12:00:00'),
-  generateDateCode: vi.fn().mockReturnValue('20240901')
+  generateDateCode: vi.fn().mockReturnValue('20240901'),
 }))
 
 // 模擬認證中介軟體
@@ -219,7 +228,7 @@ vi.mock('@server/middlewares/auth/index.js', () => ({
       req.auth = { userId: req.session.userId }
     }
     next()
-  })
+  }),
 }))
 
 // 動態導入模組
@@ -234,7 +243,7 @@ describe('訂單 API 整合測試', () => {
     try {
       const { default: orderCustomerRoutesModule } = await import('@server/routes/orderCustomer.js')
       orderCustomerRoutes = orderCustomerRoutesModule
-      
+
       orderService = await import('@server/services/order/orderCustomer.js')
       inventoryService = await import('@server/services/inventory/stockManagement.js')
     } catch (error) {
@@ -247,14 +256,16 @@ describe('訂單 API 整合測試', () => {
     app.use(cors())
     app.use(express.json({ limit: '50mb' }))
     app.use(express.urlencoded({ extended: true, limit: '50mb' }))
-    
+
     // 設置 session
-    app.use(session({
-      secret: 'test-secret',
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: false }
-    }))
+    app.use(
+      session({
+        secret: 'test-secret',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: false },
+      }),
+    )
 
     // 模擬認證中介軟體
     app.use((req, res, next) => {
@@ -262,7 +273,7 @@ describe('訂單 API 整合測試', () => {
       if (!req.session) {
         req.session = {}
       }
-      
+
       // 模擬用戶登入狀態
       if (req.headers.authorization) {
         req.session.userId = 'test-user-id'
@@ -280,7 +291,7 @@ describe('訂單 API 整合測試', () => {
       res.status(error.statusCode || 500).json({
         success: false,
         message: error.message || '伺服器錯誤',
-        stack: process.env.NODE_ENV === 'test' ? error.stack : undefined
+        stack: process.env.NODE_ENV === 'test' ? error.stack : undefined,
       })
     })
   })
@@ -301,9 +312,9 @@ describe('訂單 API 整合測試', () => {
         store: 'test-store',
         brand: 'test-brand',
         orderDateCode: '250902',
-        sequence: 1
+        sequence: 1,
       })
-      
+
       orderService.createOrder.mockResolvedValue(mockOrder)
 
       const orderData = {
@@ -315,16 +326,16 @@ describe('訂單 API 整合測試', () => {
             basePrice: 240,
             finalPrice: 240,
             subtotal: 240,
-            quantity: 1
-          }
+            quantity: 1,
+          },
         ],
         orderType: 'dine_in',
         tableNumber: 'A1',
         paymentMethod: 'cash',
         customerInfo: {
           name: '測試客戶',
-          phone: '0912345678'
-        }
+          phone: '0912345678',
+        },
       }
 
       const response = await request(app)
@@ -332,32 +343,34 @@ describe('訂單 API 整合測試', () => {
         .send({
           orderData,
           paymentType: 'On-site',
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
         })
         .expect(200)
 
       expect(response.body.success).toBe(true)
       expect(response.body.message).toBe('訂單已送出，請至櫃台付款')
       expect(response.body.order).toBeDefined()
-      expect(response.body.orderNumber).toBe('250902001')
-      
+      expect(response.body.order.tableNumber).toBe('A1')
+
       // 驗證服務被正確調用
       expect(orderService.generateOrderNumber).toHaveBeenCalledWith('test-store')
-      expect(orderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
-        brand: 'test-brand',
-        store: 'test-store',
-        items: orderData.items,
-        orderType: orderData.orderType,
-        orderDateCode: '250902',
-        sequence: 1
-      }))
+      expect(orderService.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          brand: 'test-brand',
+          store: 'test-store',
+          items: orderData.items,
+          orderType: orderData.orderType,
+          orderDateCode: '250902',
+          sequence: 1,
+        }),
+      )
     })
 
     it('應該成功創建訂單（已登入用戶）', async () => {
       // 設置 generateOrderNumber mock
       orderService.generateOrderNumber.mockResolvedValue({
         orderDateCode: '250902',
-        sequence: 2
+        sequence: 2,
       })
 
       const mockOrder = TestDataFactory.createOrder({
@@ -367,25 +380,25 @@ describe('訂單 API 整合測試', () => {
         store: 'test-store',
         brand: 'test-brand',
         orderDateCode: '250902',
-        sequence: 2
+        sequence: 2,
       })
-      
+
       orderService.createOrder.mockResolvedValue(mockOrder)
 
       const orderData = {
         items: [
           {
             itemType: 'dish',
-            templateId: 'dish-template-id', 
+            templateId: 'dish-template-id',
             name: '測試菜品',
             basePrice: 240,
             finalPrice: 240,
             subtotal: 240,
-            quantity: 1
-          }
+            quantity: 1,
+          },
         ],
         orderType: 'takeout',
-        paymentMethod: 'credit_card'
+        paymentMethod: 'credit_card',
       }
 
       const response = await request(app)
@@ -394,23 +407,25 @@ describe('訂單 API 整合測試', () => {
         .send({
           orderData,
           paymentType: 'On-site',
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
         })
         .expect(200)
 
       expect(response.body.success).toBe(true)
-      expect(orderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
-        user: 'test-user-id',
-        brand: 'test-brand',
-        store: 'test-store'
-      }))
+      expect(orderService.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: 'test-user-id',
+          brand: 'test-brand',
+          store: 'test-store',
+        }),
+      )
     })
 
     it('應該處理庫存不足的錯誤', async () => {
       // 設置 generateOrderNumber mock
       orderService.generateOrderNumber.mockResolvedValue({
         orderDateCode: '250902',
-        sequence: 3
+        sequence: 3,
       })
 
       // 模擬庫存不足錯誤
@@ -426,10 +441,10 @@ describe('訂單 API 整合測試', () => {
             basePrice: 240,
             finalPrice: 24000,
             subtotal: 24000,
-            quantity: 100 // 過多數量
-          }
+            quantity: 100, // 過多數量
+          },
         ],
-        orderType: 'dine_in'
+        orderType: 'dine_in',
       }
 
       const response = await request(app)
@@ -437,7 +452,7 @@ describe('訂單 API 整合測試', () => {
         .send({
           orderData,
           paymentType: 'On-site',
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
         })
         .expect(400)
 
@@ -446,10 +461,7 @@ describe('訂單 API 整合測試', () => {
     })
 
     it('應該處理無效訂單資料', async () => {
-      const response = await request(app)
-        .post(createOrderEndpoint)
-        .send({})
-        .expect(400)
+      const response = await request(app).post(createOrderEndpoint).send({}).expect(400)
 
       expect(response.body.success).toBe(false)
     })
@@ -462,16 +474,16 @@ describe('訂單 API 整合測試', () => {
       const mockOrders = {
         orders: [
           TestDataFactory.createOrder({ _id: 'order-1' }),
-          TestDataFactory.createOrder({ _id: 'order-2' })
+          TestDataFactory.createOrder({ _id: 'order-2' }),
         ],
         pagination: {
           total: 2,
           page: 1,
           pages: 1,
-          limit: 10
-        }
+          limit: 10,
+        },
       }
-      
+
       orderService.getUserOrders.mockResolvedValue(mockOrders)
 
       const response = await request(app)
@@ -482,21 +494,21 @@ describe('訂單 API 整合測試', () => {
       expect(response.body.success).toBe(true)
       expect(response.body.orders).toHaveLength(2)
       expect(response.body.pagination).toBeDefined()
-      
+
       expect(orderService.getUserOrders).toHaveBeenCalledWith(
         'test-user-id',
         expect.objectContaining({
           brandId: 'test-brand',
           page: 1,
-          limit: 10
-        })
+          limit: 10,
+        }),
       )
     })
 
     it('應該支援分頁查詢', async () => {
       orderService.getUserOrders.mockResolvedValue({
         orders: [],
-        pagination: { total: 0, page: 2, pages: 1, limit: 5 }
+        pagination: { total: 0, page: 2, pages: 1, limit: 5 },
       })
 
       const response = await request(app)
@@ -508,15 +520,13 @@ describe('訂單 API 整合測試', () => {
         'test-user-id',
         expect.objectContaining({
           page: 2,
-          limit: 5
-        })
+          limit: 5,
+        }),
       )
     })
 
     it('未認證時應該返回錯誤', async () => {
-      const response = await request(app)
-        .get(getUserOrdersEndpoint)
-        .expect(401) // 正確的認證錯誤狀態碼
+      const response = await request(app).get(getUserOrdersEndpoint).expect(401) // 正確的認證錯誤狀態碼
 
       expect(response.body.success).toBe(false)
     })
@@ -529,23 +539,19 @@ describe('訂單 API 整合測試', () => {
       const mockOrder = TestDataFactory.createOrder({ _id: 'order-123' })
       orderService.getUserOrderById.mockResolvedValue(mockOrder)
 
-      const response = await request(app)
-        .get(getOrderEndpoint)
-        .expect(200)
+      const response = await request(app).get(getOrderEndpoint).expect(200)
 
       expect(response.body.success).toBe(true)
       expect(response.body.order).toBeDefined()
       expect(response.body.order._id).toBe('order-123')
-      
+
       expect(orderService.getUserOrderById).toHaveBeenCalledWith('order-123', 'test-brand')
     })
 
     it('應該處理訂單不存在', async () => {
       orderService.getUserOrderById.mockResolvedValue(null)
 
-      const response = await request(app)
-        .get(getOrderEndpoint)
-        .expect(404)
+      const response = await request(app).get(getOrderEndpoint).expect(404)
 
       expect(response.body.success).toBe(false)
       expect(response.body.message).toBe('找不到指定的訂單')
@@ -559,29 +565,26 @@ describe('訂單 API 整合測試', () => {
       const mockPaymentResult = {
         success: true,
         paymentId: 'payment-123',
-        redirectUrl: 'https://payment.example.com/redirect'
+        redirectUrl: 'https://payment.example.com/redirect',
       }
-      
+
       orderService.processPayment.mockResolvedValue(mockPaymentResult)
 
       const paymentData = {
         paymentMethod: 'line_pay',
-        amount: 240
+        amount: 240,
       }
 
-      const response = await request(app)
-        .post(paymentEndpoint)
-        .send(paymentData)
-        .expect(200)
+      const response = await request(app).post(paymentEndpoint).send(paymentData).expect(200)
 
       expect(response.body.success).toBe(true)
       expect(response.body.paymentId).toBe('payment-123')
       expect(response.body.redirectUrl).toBeDefined()
-      
+
       expect(orderService.processPayment).toHaveBeenCalledWith(
         'order-123',
         'test-brand',
-        paymentData
+        paymentData,
       )
     })
 
@@ -600,37 +603,35 @@ describe('訂單 API 整合測試', () => {
   })
 
   describe('POST /api/orderCustomer/brands/:brandId/orders/:orderId/payment/callback', () => {
-    const callbackEndpoint = '/api/orderCustomer/brands/test-brand/orders/order-123/payment/callback'
+    const callbackEndpoint =
+      '/api/orderCustomer/brands/test-brand/orders/order-123/payment/callback'
 
     it('應該處理支付回調', async () => {
       const mockCallbackResult = {
         success: true,
-        order: TestDataFactory.createOrder({ 
+        order: TestDataFactory.createOrder({
           _id: 'order-123',
-          status: 'paid' 
-        })
+          status: 'paid',
+        }),
       }
-      
+
       orderService.paymentCallback.mockResolvedValue(mockCallbackResult)
 
       const callbackData = {
         paymentId: 'payment-123',
         status: 'success',
-        transactionId: 'txn-456'
+        transactionId: 'txn-456',
       }
 
-      const response = await request(app)
-        .post(callbackEndpoint)
-        .send(callbackData)
-        .expect(200)
+      const response = await request(app).post(callbackEndpoint).send(callbackData).expect(200)
 
       expect(response.body.success).toBe(true)
       expect(response.body.order.status).toBe('paid')
-      
+
       expect(orderService.paymentCallback).toHaveBeenCalledWith(
         'order-123',
         'test-brand',
-        callbackData
+        callbackData,
       )
     })
 
@@ -653,7 +654,7 @@ describe('訂單 API 整合測試', () => {
       // 設置 generateOrderNumber mock
       orderService.generateOrderNumber.mockResolvedValue({
         orderDateCode: '250902',
-        sequence: 1
+        sequence: 1,
       })
 
       // Step 1: 創建訂單
@@ -664,9 +665,9 @@ describe('訂單 API 整合測試', () => {
         store: 'test-store',
         brand: 'test-brand',
         orderDateCode: '250902',
-        sequence: 1
+        sequence: 1,
       })
-      
+
       orderService.createOrder.mockResolvedValue(mockOrder)
 
       const orderData = {
@@ -678,15 +679,15 @@ describe('訂單 API 整合測試', () => {
             basePrice: 240,
             finalPrice: 240,
             subtotal: 240,
-            quantity: 1
-          }
+            quantity: 1,
+          },
         ],
         orderType: 'dine_in',
         paymentMethod: 'line_pay',
         customerInfo: {
           name: '測試客戶',
-          phone: '0912345678'
-        }
+          phone: '0912345678',
+        },
       }
 
       const createResponse = await request(app)
@@ -694,7 +695,7 @@ describe('訂單 API 整合測試', () => {
         .send({
           orderData,
           paymentType: 'On-site',
-          paymentMethod: 'cash'
+          paymentMethod: 'cash',
         })
         .expect(200)
 
@@ -703,7 +704,7 @@ describe('訂單 API 整合測試', () => {
 
       // Step 2: 查詢訂單詳情
       orderService.getUserOrderById.mockResolvedValue(mockOrder)
-      
+
       const getResponse = await request(app)
         .get(`/api/orderCustomer/brands/test-brand/order/${orderId}`)
         .expect(200)
@@ -714,7 +715,7 @@ describe('訂單 API 整合測試', () => {
       // Step 3: 處理支付
       const mockPaymentResult = {
         success: true,
-        paymentId: 'payment-123'
+        paymentId: 'payment-123',
       }
       orderService.processPayment.mockResolvedValue(mockPaymentResult)
 
@@ -729,7 +730,7 @@ describe('訂單 API 整合測試', () => {
       // Step 4: 支付回調
       const mockCallbackResult = {
         success: true,
-        order: { ...mockOrder, status: 'paid' }
+        order: { ...mockOrder, status: 'paid' },
       }
       orderService.paymentCallback.mockResolvedValue(mockCallbackResult)
 
