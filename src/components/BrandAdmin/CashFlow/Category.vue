@@ -182,7 +182,7 @@
 
     <!-- 刪除確認對話框 -->
     <BModal
-      v-model:show="showDeleteModal"
+      v-model="showDeleteModal"
       id="deleteCategoryModal"
       title="確認刪除"
       centered
@@ -205,7 +205,7 @@
 
     <!-- 新增預設類別確認對話框 -->
     <BModal
-      v-model:show="showAddDefaultModal"
+      v-model="showAddDefaultModal"
       id="addDefaultCategoriesModal"
       title="新增預設類別"
       centered
@@ -225,7 +225,7 @@
 
     <!-- 結果提示對話框 -->
     <BModal
-      v-model:show="showResultModal"
+      v-model="showResultModal"
       id="resultModal"
       :title="resultModal.title"
       centered

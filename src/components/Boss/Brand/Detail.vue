@@ -83,7 +83,7 @@
                   ></i>
                   {{ brand.isActive ? '停用品牌' : '啟用品牌' }}
                 </BButton>
-                <!-- 刪除按鈕，使用 v-model:show 控制 modal -->
+                <!-- 刪除按鈕，使用 v-model 控制 modal -->
                 <BButton size="sm" variant="outline-danger" @click="showDeleteModal = true">
                   <i class="bi bi-trash me-1"></i>刪除品牌
                 </BButton>
@@ -176,7 +176,7 @@
 
     <!-- 刪除確認對話框 - 使用 BModal 元件 -->
     <BModal
-      v-model:show="showDeleteModal"
+      v-model="showDeleteModal"
       id="deleteBrandModal"
       title="確認刪除"
       centered
