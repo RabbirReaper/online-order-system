@@ -12,7 +12,7 @@ const BASE_URL = 'https://api.uber.com/v1/delivery'
 export const getOrderById = async (orderId) => {
   return await withPlatformToken('ubereats', async (token) => {
     try {
-      console.log('🔍 根據 ID 獲取 Uber Eats 訂單詳情:', orderId)
+      // console.log('🔍 根據 ID 獲取 Uber Eats 訂單詳情:', orderId)
 
       const response = await axios.get(`${BASE_URL}/order/${orderId}`, {
         headers: {
@@ -26,12 +26,12 @@ export const getOrderById = async (orderId) => {
         throw new AppError('獲取訂單詳情失敗：空回應', 500)
       }
 
-      console.log('✅ 成功獲取訂單詳情 (by ID):', {
-        orderId: response.data.id,
-        displayId: response.data.display_id,
-        state: response.data.state,
-        status: response.data.status,
-      })
+      // console.log('✅ 成功獲取訂單詳情 (by ID):', {
+      //   orderId: response.data.id,
+      //   displayId: response.data.display_id,
+      //   state: response.data.state,
+      //   status: response.data.status,
+      // })
 
       return response.data
     } catch (error) {

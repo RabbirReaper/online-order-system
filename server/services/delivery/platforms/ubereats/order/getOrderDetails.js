@@ -10,7 +10,7 @@ import { AppError } from '../../../../../middlewares/error.js'
 export const getOrderDetails = async (resourceHref) => {
   return await withPlatformToken('ubereats', async (token) => {
     try {
-      console.log('🔍 獲取 Uber Eats 訂單詳情:', resourceHref)
+      // console.log('🔍 獲取 Uber Eats 訂單詳情:', resourceHref)
 
       const response = await axios.get(resourceHref, {
         headers: {
@@ -25,13 +25,13 @@ export const getOrderDetails = async (resourceHref) => {
         throw new AppError('獲取訂單詳情失敗：空回應', 500)
       }
 
-      console.log('✅ 成功獲取訂單詳情:', {
-        orderId: response.data.id,
-        displayId: response.data.display_id,
-        state: response.data.state,
-        status: response.data.status,
-        total: response.data.payment?.charges?.total,
-      })
+      // console.log('✅ 成功獲取訂單詳情:', {
+      //   orderId: response.data.id,
+      //   displayId: response.data.display_id,
+      //   state: response.data.state,
+      //   status: response.data.status,
+      //   total: response.data.payment?.charges?.total,
+      // })
 
       return response.data
     } catch (error) {

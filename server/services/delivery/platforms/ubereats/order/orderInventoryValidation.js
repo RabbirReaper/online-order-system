@@ -24,7 +24,7 @@ export const validateDeliveryOrderInventory = async (orderData) => {
     }
   }
 
-  console.log(`🔍 [外送訂單] 開始驗證 ${dishItems.length} 個餐點項目的庫存...`)
+  // console.log(`🔍 [外送訂單] 開始驗證 ${dishItems.length} 個餐點項目的庫存...`)
 
   // 預處理所有需要扣除庫存的餐點（包含主餐點和關聯餐點）
   const inventoryMap = new Map()
@@ -37,11 +37,11 @@ export const validateDeliveryOrderInventory = async (orderData) => {
       if (item.templateId && mongoose.Types.ObjectId.isValid(item.templateId)) {
         const mainTemplateId = item.templateId.toString()
         inventoryMap.set(mainTemplateId, (inventoryMap.get(mainTemplateId) || 0) + item.quantity)
-        console.log(
-          `📋 [外送訂單] 主餐點已加入檢查清單: ${item.itemName} (模板ID: ${mainTemplateId})`,
-        )
+        // console.log(
+        //   `📋 [外送訂單] 主餐點已加入檢查清單: ${item.itemName} (模板ID: ${mainTemplateId})`,
+        // )
       } else {
-        console.log(`⚠️ [外送訂單] 跳過無效或缺失的餐點模板ID: ${item.itemName}`)
+        // console.log(`⚠️ [外送訂單] 跳過無效或缺失的餐點模板ID: ${item.itemName}`)
         continue // 跳過沒有有效模板ID的項目
       }
 
@@ -63,9 +63,9 @@ export const validateDeliveryOrderInventory = async (orderData) => {
                       refTemplateId,
                       (inventoryMap.get(refTemplateId) || 0) + item.quantity,
                     )
-                    console.log(
-                      `🔗 [外送訂單] 關聯餐點已加入檢查清單: ${option.name} -> ${refTemplateId}`,
-                    )
+                    // console.log(
+                    //   `🔗 [外送訂單] 關聯餐點已加入檢查清單: ${option.name} -> ${refTemplateId}`,
+                    // )
                   }
                 } catch (error) {
                   console.warn(
@@ -75,7 +75,7 @@ export const validateDeliveryOrderInventory = async (orderData) => {
                   // 繼續處理其他選項，不中斷流程
                 }
               } else {
-                console.log(`⚠️ [外送訂單] 跳過無效的選項ID: ${selection.name}`)
+                // console.log(`⚠️ [外送訂單] 跳過無效的選項ID: ${selection.name}`)
               }
             }
           }
@@ -91,7 +91,7 @@ export const validateDeliveryOrderInventory = async (orderData) => {
     }
   }
 
-  console.log(`📊 [外送訂單] 共需檢查 ${inventoryMap.size} 個餐點模板的庫存`)
+  // console.log(`📊 [外送訂單] 共需檢查 ${inventoryMap.size} 個餐點模板的庫存`)
 
   // Step 2: 檢查所有需要扣除庫存的餐點
   for (const [templateId, requiredQuantity] of inventoryMap) {
@@ -104,11 +104,11 @@ export const validateDeliveryOrderInventory = async (orderData) => {
 
       // 如果沒有庫存記錄，記錄問題但繼續處理
       if (!inventoryItem) {
-        console.log(`⚠️ [外送訂單] 餐點模板 ${templateId} 沒有庫存記錄，跳過檢查`)
+        // console.log(`⚠️ [外送訂單] 餐點模板 ${templateId} 沒有庫存記錄，跳過檢查`)
         continue
       }
 
-      console.log(`🔍 [外送訂單] 檢查庫存: ${inventoryItem.itemName}`)
+      // console.log(`🔍 [外送訂單] 檢查庫存: ${inventoryItem.itemName}`)
 
       // 檢查是否手動設為售完
       if (inventoryItem.isSoldOut) {
@@ -125,7 +125,7 @@ export const validateDeliveryOrderInventory = async (orderData) => {
 
       // 庫存追蹤檢查
       if (inventoryItem.isInventoryTracked) {
-        console.log(`📊 [外送訂單] ${inventoryItem.itemName} 已啟用庫存追蹤`)
+        // console.log(`📊 [外送訂單] ${inventoryItem.itemName} 已啟用庫存追蹤`)
 
         // 只有在追蹤庫存 + 啟用可用庫存控制時，才檢查庫存限制
         if (inventoryItem.enableAvailableStock) {
@@ -142,14 +142,14 @@ export const validateDeliveryOrderInventory = async (orderData) => {
             })
             continue // 記錄問題但不拋出錯誤
           }
-          console.log(
-            `✅ [外送訂單] ${inventoryItem.itemName} 庫存檢查通過 (需要: ${requiredQuantity}, 可用: ${inventoryItem.availableStock})`,
-          )
+          // console.log(
+          //   `✅ [外送訂單] ${inventoryItem.itemName} 庫存檢查通過 (需要: ${requiredQuantity}, 可用: ${inventoryItem.availableStock})`,
+          // )
         } else {
-          console.log(`✅ [外送訂單] ${inventoryItem.itemName} 有庫存追蹤但無購買限制`)
+          // console.log(`✅ [外送訂單] ${inventoryItem.itemName} 有庫存追蹤但無購買限制`)
         }
       } else {
-        console.log(`📊 [外送訂單] ${inventoryItem.itemName} 未啟用庫存追蹤，跳過庫存檢查`)
+        // console.log(`📊 [外送訂單] ${inventoryItem.itemName} 未啟用庫存追蹤，跳過庫存檢查`)
       }
     } catch (error) {
       console.error(`❌ [外送訂單] 檢查餐點模板 ${templateId} 庫存時發生錯誤:`, error)
@@ -170,7 +170,7 @@ export const validateDeliveryOrderInventory = async (orderData) => {
       console.warn(`   - ${issue.itemName}: ${issue.issue}`)
     })
   } else {
-    console.log(`✅ [外送訂單] 所有餐點庫存驗證通過`)
+    // console.log(`✅ [外送訂單] 所有餐點庫存驗證通過`)
   }
 
   return {

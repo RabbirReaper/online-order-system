@@ -35,12 +35,12 @@ export const convertUberOrderToInternal = async (uberOrder, platformStore) => {
     const subtotalAmount = extractAmount(uberOrder.payment?.charges?.sub_total)
     const totalFeeAmount = extractAmount(uberOrder.payment?.charges?.total_fee)
 
-    console.log('💰 金額轉換結果:', {
-      原始總金額: uberOrder.payment?.charges?.total,
-      轉換後總金額: totalAmount,
-      小計: subtotalAmount,
-      總手續費: totalFeeAmount,
-    })
+    // console.log('💰 金額轉換結果:', {
+    //   原始總金額: uberOrder.payment?.charges?.total,
+    //   轉換後總金額: totalAmount,
+    //   小計: subtotalAmount,
+    //   總手續費: totalFeeAmount,
+    // })
 
     // 🍽️ 轉換訂單項目
     const { processedItems, itemSubtotal } = await processUberOrderItems(
@@ -115,14 +115,14 @@ export const convertUberOrderToInternal = async (uberOrder, platformStore) => {
       notes: uberOrder.special_instructions || '',
     }
 
-    console.log('🔄 Uber Eats 訂單轉換完成:', {
-      platformOrderId: uberOrder.id,
-      internalOrderNumber: `${orderNumber.orderDateCode}${orderNumber.sequence.toString().padStart(3, '0')}`,
-      itemsCount: processedItems.length,
-      total: internalOrder.total,
-      subtotal: internalOrder.subtotal,
-      serviceCharge: internalOrder.serviceCharge,
-    })
+    // console.log('🔄 Uber Eats 訂單轉換完成:', {
+    //   platformOrderId: uberOrder.id,
+    //   internalOrderNumber: `${orderNumber.orderDateCode}${orderNumber.sequence.toString().padStart(3, '0')}`,
+    //   itemsCount: processedItems.length,
+    //   total: internalOrder.total,
+    //   subtotal: internalOrder.subtotal,
+    //   serviceCharge: internalOrder.serviceCharge,
+    // })
 
     return internalOrder
   } catch (error) {
@@ -141,7 +141,7 @@ const processUberOrderItems = async (uberItems, brandId) => {
   const processedItems = []
   let itemSubtotal = 0
 
-  console.log(`🍽️ 開始處理 ${uberItems.length} 個 Uber Eats 訂單項目`)
+  // console.log(`🍽️ 開始處理 ${uberItems.length} 個 Uber Eats 訂單項目`)
 
   for (const uberItem of uberItems) {
     try {
@@ -150,7 +150,7 @@ const processUberOrderItems = async (uberItems, brandId) => {
       const itemQuantity = uberItem.quantity || 1
       const itemPrice = extractItemPrice(uberItem.price)
 
-      console.log(`處理項目: ${itemName} x${itemQuantity} = $${itemPrice * itemQuantity}`)
+      // console.log(`處理項目: ${itemName} x${itemQuantity} = $${itemPrice * itemQuantity}`)
 
       // 🔍 嘗試匹配 DishTemplate
       const matchedTemplate = await findMatchingDishTemplate(uberItem.id, brandId)
@@ -189,16 +189,16 @@ const processUberOrderItems = async (uberItems, brandId) => {
       processedItems.push(orderItem)
       itemSubtotal += orderItem.subtotal
 
-      console.log(
-        `✅ 項目處理完成: ${itemName}${matchedTemplate ? ' (已匹配模板)' : ' (無匹配模板)'}`,
-      )
+      // console.log(
+      //   `✅ 項目處理完成: ${itemName}${matchedTemplate ? ' (已匹配模板)' : ' (無匹配模板)'}`,
+      // )
     } catch (error) {
       console.error(`❌ 處理項目失敗: ${uberItem.title}`, error)
       // 繼續處理其他項目，不因單一項目失敗而中斷整個訂單
     }
   }
 
-  console.log(`🎯 項目處理總結: 共 ${processedItems.length} 個項目，小計 $${itemSubtotal}`)
+  // console.log(`🎯 項目處理總結: 共 ${processedItems.length} 個項目，小計 $${itemSubtotal}`)
 
   return { processedItems, itemSubtotal }
 }
@@ -211,7 +211,7 @@ const processUberOrderItems = async (uberItems, brandId) => {
  */
 const findMatchingDishTemplate = async (uberItemId, brandId) => {
   if (!uberItemId || !isValidMongoId(uberItemId)) {
-    console.log('🔍 無效的 Uber 項目ID，跳過模板匹配')
+    // console.log('🔍 無效的 Uber 項目ID，跳過模板匹配')
     return null
   }
 
@@ -223,10 +223,10 @@ const findMatchingDishTemplate = async (uberItemId, brandId) => {
     })
 
     if (template) {
-      console.log(`✅ 找到匹配的餐點模板: ${template.name}`)
+      // console.log(`✅ 找到匹配的餐點模板: ${template.name}`)
       return template
     } else {
-      console.log(`⚠️ 未找到匹配的餐點模板: ${uberItemId}`)
+      // console.log(`⚠️ 未找到匹配的餐點模板: ${uberItemId}`)
       return null
     }
   } catch (error) {
@@ -264,7 +264,7 @@ const processModifierGroups = async (modifierGroups, brandId) => {
         }
 
         selections.push(selection)
-        console.log(`  ├─ 選項: ${optionName}${matchedOption ? ' (已匹配)' : ' (無匹配)'}`)
+        // console.log(`  ├─ 選項: ${optionName}${matchedOption ? ' (已匹配)' : ' (無匹配)'}`)
       }
 
       if (selections.length > 0) {
@@ -291,7 +291,7 @@ const processModifierGroups = async (modifierGroups, brandId) => {
  */
 const findMatchingOption = async (uberOptionId, brandId) => {
   if (!uberOptionId || !isValidMongoId(uberOptionId)) {
-    console.log('🔍 無效的 Uber 選項ID，跳過選項匹配')
+    // console.log('🔍 無效的 Uber 選項ID，跳過選項匹配')
     return null
   }
 
@@ -303,10 +303,10 @@ const findMatchingOption = async (uberOptionId, brandId) => {
     })
 
     if (option) {
-      console.log(`✅ 找到匹配的選項: ${option.name}`)
+      // console.log(`✅ 找到匹配的選項: ${option.name}`)
       return option
     } else {
-      console.log(`⚠️ 未找到匹配的選項: ${uberOptionId}`)
+      // console.log(`⚠️ 未找到匹配的選項: ${uberOptionId}`)
       return null
     }
   } catch (error) {

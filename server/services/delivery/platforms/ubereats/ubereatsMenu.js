@@ -247,7 +247,7 @@ function convertBusinessHoursToServiceAvailability(businessHours) {
   }
 
   const serviceAvailability = []
-  console.log(businessHours)
+  // console.log(businessHours)
   // 如果沒有營業時間資料，預設全天營業
   if (!businessHours || businessHours.length === 0) {
     return [

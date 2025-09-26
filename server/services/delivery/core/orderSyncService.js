@@ -22,12 +22,12 @@ export const processUberEatsWebhook = async (webhookData) => {
   try {
     switch (event_type) {
       case 'orders.notification':
-        console.log('🍔 處理新訂單通知')
+        // console.log('🍔 處理新訂單通知')
         await handleUberEatsOrderNotification(resource_href, meta)
         break
 
       default:
-        console.log(`⚠️ 未處理的 Uber Eats 事件類型: ${event_type}`)
+      // console.log(`⚠️ 未處理的 Uber Eats 事件類型: ${event_type}`)
     }
   } catch (error) {
     console.error('❌ 處理 Uber Eats webhook 失敗:', error)
@@ -45,17 +45,17 @@ export const processFoodpandaWebhook = async (webhookData) => {
   try {
     switch (event_type) {
       case 'order.created':
-        console.log('🐼 處理新訂單創建')
+        // console.log('🐼 處理新訂單創建')
         await handleFoodpandaOrderCreated(order_id, vendor_code)
         break
 
       case 'order.updated':
-        console.log('🐼 處理訂單更新')
+        // console.log('🐼 處理訂單更新')
         await handleFoodpandaOrderUpdated(order_id, vendor_code)
         break
 
       default:
-        console.log(`⚠️ 未處理的 Foodpanda 事件類型: ${event_type}`)
+      // console.log(`⚠️ 未處理的 Foodpanda 事件類型: ${event_type}`)
     }
   } catch (error) {
     console.error('❌ 處理 Foodpanda webhook 失敗:', error)
@@ -72,12 +72,12 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
   try {
     // 1. 從 resource_href 獲取完整訂單資料
     const orderDetails = await ubereatsOrders.getOrderDetails(resourceHref)
-    console.log('📋 獲取到訂單詳情:', {
-      orderId: orderDetails.id,
-      displayId: orderDetails.display_id,
-      state: orderDetails.current_state,
-      storeId: orderDetails.store?.id,
-    })
+    // console.log('📋 獲取到訂單詳情:', {
+    //   orderId: orderDetails.id,
+    //   displayId: orderDetails.display_id,
+    //   state: orderDetails.current_state,
+    //   storeId: orderDetails.store?.id,
+    // })
 
     // 2. 查找對應的平台店鋪配置
     const platformStore = await findPlatformStoreByUberStoreId(orderDetails.store?.id)
@@ -93,7 +93,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
     })
 
     if (existingOrder) {
-      console.log('⚠️ 訂單已存在，跳過處理:', orderDetails.id)
+      // console.log('⚠️ 訂單已存在，跳過處理:', orderDetails.id)
       return
     }
 
@@ -101,7 +101,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
     const internalOrder = await convertUberOrderToInternal(orderDetails, platformStore)
 
     // 🔍 4.5. 檢查庫存狀況 (新增)
-    console.log('🔍 開始檢查外送訂單庫存狀況...')
+    // console.log('🔍 開始檢查外送訂單庫存狀況...')
     const inventoryValidation = await validateDeliveryOrderInventory(internalOrder)
 
     if (!inventoryValidation.success) {
@@ -125,7 +125,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
 
     // 🔽 4.6. 如果庫存檢查通過，嘗試扣除庫存 (新增)
     if (inventoryValidation.success && inventoryValidation.inventoryMap.size > 0) {
-      console.log('🔽 開始扣除外送訂單庫存...')
+      // console.log('🔽 開始扣除外送訂單庫存...')
       const inventoryReduction = await reduceDeliveryOrderInventory(
         savedOrder,
         inventoryValidation.inventoryMap,
@@ -137,19 +137,19 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
           errors: inventoryReduction.errors.length,
         })
       } else {
-        console.log(`✅ 成功扣除庫存: ${inventoryReduction.processed} 項`)
+        // console.log(`✅ 成功扣除庫存: ${inventoryReduction.processed} 項`)
       }
     }
 
     // 5. 自動接受訂單 (只有在庫存檢查通過的情況下)
     if (inventoryValidation.success) {
       await ubereatsOrders.acceptOrder(orderDetails.id)
-      console.log('✅ 已自動接受 Uber Eats 訂單:', orderDetails.id)
+      // console.log('✅ 已自動接受 Uber Eats 訂單:', orderDetails.id)
 
       // 更新訂單狀態為已接受
       await updateOrderSyncStatus(savedOrder._id, 'accepted')
     } else {
-      console.log('⚠️ 由於庫存問題，未自動接受訂單，需手動處理:', orderDetails.id)
+      // console.log('⚠️ 由於庫存問題，未自動接受訂單，需手動處理:', orderDetails.id)
 
       // 更新訂單狀態為需手動處理
       await updateOrderSyncStatus(savedOrder._id, 'pending_manual_review')
@@ -157,12 +157,12 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
       // TODO: 可以在這裡添加通知邏輯，提醒店家手動處理此訂單
     }
 
-    console.log('✅ 外送訂單處理完成:', {
-      internalOrderId: savedOrder._id,
-      platformOrderId: orderDetails.id,
-      displayId: orderDetails.display_id,
-      autoAccepted: inventoryValidation.success,
-    })
+    // console.log('✅ 外送訂單處理完成:', {
+    //   internalOrderId: savedOrder._id,
+    //   platformOrderId: orderDetails.id,
+    //   displayId: orderDetails.display_id,
+    //   autoAccepted: inventoryValidation.success,
+    // })
   } catch (error) {
     console.error('❌ 處理 Uber Eats 訂單通知失敗:', error)
     // TODO: 考慮拒絕訂單或記錄錯誤到資料庫
@@ -178,7 +178,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
 const handleFoodpandaOrderCreated = async (orderId, vendorCode) => {
   try {
     // TODO: 實作 Foodpanda 訂單處理，包括庫存檢查
-    console.log('🐼 Foodpanda 訂單處理待實作:', { orderId, vendorCode })
+    // console.log('🐼 Foodpanda 訂單處理待實作:', { orderId, vendorCode })
   } catch (error) {
     console.error('❌ 處理 Foodpanda 訂單失敗:', error)
     throw error
@@ -219,7 +219,7 @@ const saveOrderToDatabase = async (orderData) => {
     const newOrder = new Order(orderData)
     const savedOrder = await newOrder.save()
 
-    console.log('💾 訂單已保存至資料庫:', savedOrder._id)
+    // console.log('💾 訂單已保存至資料庫:', savedOrder._id)
     return savedOrder
   } catch (error) {
     console.error('❌ 保存訂單到資料庫失敗:', error)
@@ -239,7 +239,7 @@ const updateOrderSyncStatus = async (orderId, status) => {
       'platformInfo.syncStatus': status,
     })
 
-    console.log('🔄 訂單同步狀態已更新:', { orderId, status })
+    // console.log('🔄 訂單同步狀態已更新:', { orderId, status })
   } catch (error) {
     console.error('❌ 更新訂單同步狀態失敗:', error)
     // 不拋出錯誤，避免影響主流程

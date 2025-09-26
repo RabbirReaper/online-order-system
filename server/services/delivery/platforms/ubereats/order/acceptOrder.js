@@ -13,7 +13,7 @@ const BASE_URL = 'https://api.uber.com/v1/delivery'
 export const acceptOrder = async (orderId, reason = 'Order accepted by POS system') => {
   return await withPlatformToken('ubereats', async (token) => {
     try {
-      console.log('✅ 接受 Uber Eats 訂單:', orderId)
+      // console.log('✅ 接受 Uber Eats 訂單:', orderId)
 
       const response = await axios.post(
         `${BASE_URL}/order/${orderId}/accept`,
@@ -29,7 +29,7 @@ export const acceptOrder = async (orderId, reason = 'Order accepted by POS syste
         },
       )
 
-      console.log('✅ 訂單接受成功:', orderId)
+      // console.log('✅ 訂單接受成功:', orderId)
       return response.data
     } catch (error) {
       if (error.response) {

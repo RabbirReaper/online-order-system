@@ -15,7 +15,7 @@ import * as inventoryService from '../../../../inventory/stockManagement.js'
  */
 export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
   if (!inventoryMap || inventoryMap.size === 0) {
-    console.log(`📋 [外送訂單] 沒有需要扣除的庫存項目`)
+    // console.log(`📋 [外送訂單] 沒有需要扣除的庫存項目`)
     return {
       success: true,
       processed: 0,
@@ -24,8 +24,8 @@ export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
     }
   }
 
-  console.log(`🔽 [外送訂單] 開始扣除庫存 (訂單: ${order._id})`)
-  console.log(`📊 [外送訂單] 共需處理 ${inventoryMap.size} 個餐點模板的庫存`)
+  // console.log(`🔽 [外送訂單] 開始扣除庫存 (訂單: ${order._id})`)
+  // console.log(`📊 [外送訂單] 共需處理 ${inventoryMap.size} 個餐點模板的庫存`)
 
   const results = {
     success: true,
@@ -39,7 +39,7 @@ export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
     try {
       // 驗證模板ID是否有效
       if (!templateId || !mongoose.Types.ObjectId.isValid(templateId)) {
-        console.log(`⚠️ [外送訂單] 跳過無效的餐點模板ID: ${templateId}`)
+        // console.log(`⚠️ [外送訂單] 跳過無效的餐點模板ID: ${templateId}`)
         results.skipped++
         continue
       }
@@ -66,13 +66,13 @@ export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
 
       // 如果沒有啟用庫存追蹤，跳過
       if (!inventoryItem.isInventoryTracked) {
-        console.log(`📊 [外送訂單] 餐點 ${inventoryItem.itemName} 未啟用庫存追蹤，跳過庫存扣除`)
+        // console.log(`📊 [外送訂單] 餐點 ${inventoryItem.itemName} 未啟用庫存追蹤，跳過庫存扣除`)
         results.skipped++
         continue
       }
 
       // 嘗試減少庫存
-      console.log(`🔽 [外送訂單] 正在扣除庫存: ${inventoryItem.itemName} (-${quantity})`)
+      // console.log(`🔽 [外送訂單] 正在扣除庫存: ${inventoryItem.itemName} (-${quantity})`)
 
       await inventoryService.reduceStock({
         storeId: order.store,
@@ -82,7 +82,7 @@ export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
         orderId: order._id,
       })
 
-      console.log(`✅ [外送訂單] 成功扣除庫存: ${inventoryItem.itemName} (-${quantity})`)
+      // console.log(`✅ [外送訂單] 成功扣除庫存: ${inventoryItem.itemName} (-${quantity})`)
       results.processed++
     } catch (error) {
       console.error(`❌ [外送訂單] 扣除餐點模板 ${templateId} 庫存失敗:`, error)
@@ -101,10 +101,10 @@ export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
   }
 
   // 記錄最終結果
-  console.log(`📊 [外送訂單] 庫存扣除完成:`)
-  console.log(`   ✅ 成功處理: ${results.processed} 項`)
-  console.log(`   ⚠️ 跳過處理: ${results.skipped} 項`)
-  console.log(`   ❌ 處理失敗: ${results.errors.length} 項`)
+  // console.log(`📊 [外送訂單] 庫存扣除完成:`)
+  // console.log(`   ✅ 成功處理: ${results.processed} 項`)
+  // console.log(`   ⚠️ 跳過處理: ${results.skipped} 項`)
+  // console.log(`   ❌ 處理失敗: ${results.errors.length} 項`)
 
   if (results.errors.length > 0) {
     console.warn(`⚠️ [外送訂單] 庫存扣除過程中出現錯誤:`)
@@ -123,12 +123,12 @@ export const reduceDeliveryOrderInventory = async (order, inventoryMap) => {
  */
 export const restoreDeliveryOrderInventory = async (order) => {
   try {
-    console.log(`🔄 [外送訂單] 開始還原已取消訂單的庫存 (訂單: ${order._id})`)
+    // console.log(`🔄 [外送訂單] 開始還原已取消訂單的庫存 (訂單: ${order._id})`)
 
     // 使用現有的還原庫存函數，但加上錯誤處理
     await inventoryService.restoreInventoryForCancelledOrder(order)
 
-    console.log(`✅ [外送訂單] 成功還原訂單庫存`)
+    // console.log(`✅ [外送訂單] 成功還原訂單庫存`)
 
     return {
       success: true,

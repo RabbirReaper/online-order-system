@@ -46,7 +46,7 @@ export const getAccessToken = async () => {
       },
     })
 
-    console.log('✅ 成功獲取 Uber Eats Access Token')
+    // console.log('✅ 成功獲取 Uber Eats Access Token')
 
     // 返回格式：
     // {
