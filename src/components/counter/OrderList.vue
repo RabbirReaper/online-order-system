@@ -379,12 +379,7 @@ const formatOrderType = (orderType) => {
 
 const calculateOrderTotal = (order) => {
   if (!order.items) return 0
-
-  const itemsTotal = order.items.reduce((total, item) => total + (item.subtotal || 0), 0)
-  const adjustment = order.manualAdjustment || 0
-  const discounts = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0
-
-  return Math.max(0, itemsTotal + adjustment - discounts)
+  return order.total
 }
 
 const printOrder = () => {
