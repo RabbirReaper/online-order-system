@@ -5,7 +5,7 @@
 
 import Order from '../../../models/Order/Order.js'
 import PlatformStore from '../../../models/DeliverPlatform/platformStore.js'
-import * as ubereatsOrders from '../platforms/ubereats/ubereatsOrders.js'
+import * as ubereatsOrders from '../platforms/ubereats/order/index.js'
 import * as foodpandaOrders from '../platforms/foodpanda/foodpandaOrders.js'
 import { AppError } from '../../../middlewares/error.js'
 import { generateOrderNumber } from '../../order/orderUtils.js'
