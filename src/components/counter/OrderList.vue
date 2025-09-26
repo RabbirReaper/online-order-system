@@ -94,7 +94,8 @@
             }"
           >
             <td>{{ counterStore.formatTime(order.createdAt) }}</td>
-            <td class="fs-5">{{ order.sequence }}</td>
+            <td v-if="order.platformOrderId" class="fs-5">{{ order.platformOrderId }}</td>
+            <td v-else class="fs-5">{{ order.sequence }}</td>
             <td>
               <span :class="getOrderTypeClass(order.orderType)">
                 {{ formatOrderType(order.orderType) }}
@@ -382,6 +383,7 @@ const formatOrderType = (orderType) => {
 
 const calculateOrderTotal = (order) => {
   if (!order.items) return 0
+  console.log(order)
   return order.total
 }
 
