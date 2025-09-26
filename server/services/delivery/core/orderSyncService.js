@@ -8,6 +8,8 @@ import PlatformStore from '../../../models/DeliverPlatform/platformStore.js'
 import * as ubereatsOrders from '../platforms/ubereats/order/index.js'
 import * as foodpandaOrders from '../platforms/foodpanda/foodpandaOrders.js'
 import { convertUberOrderToInternal } from '../platforms/ubereats/order/convertOrder.js'
+import { validateDeliveryOrderInventory } from '../platforms/ubereats/order/orderInventoryValidation.js'
+import { reduceDeliveryOrderInventory } from '../platforms/ubereats/order/orderInventoryReduction.js'
 import { AppError } from '../../../middlewares/error.js'
 
 /**
@@ -62,7 +64,7 @@ export const processFoodpandaWebhook = async (webhookData) => {
 }
 
 /**
- * 處理 Uber Eats 訂單通知 (最重要的事件)
+ * 處理 Uber Eats 訂單通知 (最重要的事件) - 已整合庫存檢查
  * @param {String} resourceHref - 訂單資源連結
  * @param {Object} meta - webhook meta 資料
  */
@@ -95,22 +97,72 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
       return
     }
 
-    // 4. 轉換訂單格式並保存到資料庫
+    // 4. 轉換訂單格式
     const internalOrder = await convertUberOrderToInternal(orderDetails, platformStore)
+
+    // 🔍 4.5. 檢查庫存狀況 (新增)
+    console.log('🔍 開始檢查外送訂單庫存狀況...')
+    const inventoryValidation = await validateDeliveryOrderInventory(internalOrder)
+
+    if (!inventoryValidation.success) {
+      console.warn('⚠️ 庫存檢查未通過，將不自動接受訂單:', {
+        orderId: orderDetails.id,
+        displayId: orderDetails.display_id,
+        issues: inventoryValidation.issues,
+      })
+
+      // 記錄庫存問題到訂單備註
+      const inventoryIssuesSummary = inventoryValidation.issues
+        .map((issue) => `${issue.itemName}: ${issue.issue}`)
+        .join('; ')
+
+      internalOrder.notes =
+        `${internalOrder.notes || ''} [庫存問題: ${inventoryIssuesSummary}]`.trim()
+    }
+
+    // 保存訂單到資料庫
     const savedOrder = await saveOrderToDatabase(internalOrder)
 
-    console.log('✅ 外送訂單已保存至資料庫:', {
+    // 🔽 4.6. 如果庫存檢查通過，嘗試扣除庫存 (新增)
+    if (inventoryValidation.success && inventoryValidation.inventoryMap.size > 0) {
+      console.log('🔽 開始扣除外送訂單庫存...')
+      const inventoryReduction = await reduceDeliveryOrderInventory(
+        savedOrder,
+        inventoryValidation.inventoryMap,
+      )
+
+      if (!inventoryReduction.success) {
+        console.warn('⚠️ 庫存扣除時發生問題，但不影響訂單接受:', {
+          processed: inventoryReduction.processed,
+          errors: inventoryReduction.errors.length,
+        })
+      } else {
+        console.log(`✅ 成功扣除庫存: ${inventoryReduction.processed} 項`)
+      }
+    }
+
+    // 5. 自動接受訂單 (只有在庫存檢查通過的情況下)
+    if (inventoryValidation.success) {
+      await ubereatsOrders.acceptOrder(orderDetails.id)
+      console.log('✅ 已自動接受 Uber Eats 訂單:', orderDetails.id)
+
+      // 更新訂單狀態為已接受
+      await updateOrderSyncStatus(savedOrder._id, 'accepted')
+    } else {
+      console.log('⚠️ 由於庫存問題，未自動接受訂單，需手動處理:', orderDetails.id)
+
+      // 更新訂單狀態為需手動處理
+      await updateOrderSyncStatus(savedOrder._id, 'pending_manual_review')
+
+      // TODO: 可以在這裡添加通知邏輯，提醒店家手動處理此訂單
+    }
+
+    console.log('✅ 外送訂單處理完成:', {
       internalOrderId: savedOrder._id,
       platformOrderId: orderDetails.id,
       displayId: orderDetails.display_id,
+      autoAccepted: inventoryValidation.success,
     })
-
-    // 5. 自動接受訂單 (重要：必須在 11.5 分鐘內)
-    await ubereatsOrders.acceptOrder(orderDetails.id)
-    console.log('✅ 已自動接受 Uber Eats 訂單:', orderDetails.id)
-
-    // 6. 更新訂單的平台同步狀態
-    await updateOrderSyncStatus(savedOrder._id, 'accepted')
   } catch (error) {
     console.error('❌ 處理 Uber Eats 訂單通知失敗:', error)
     // TODO: 考慮拒絕訂單或記錄錯誤到資料庫
@@ -125,7 +177,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
  */
 const handleFoodpandaOrderCreated = async (orderId, vendorCode) => {
   try {
-    // TODO: 實作 Foodpanda 訂單處理
+    // TODO: 實作 Foodpanda 訂單處理，包括庫存檢查
     console.log('🐼 Foodpanda 訂單處理待實作:', { orderId, vendorCode })
   } catch (error) {
     console.error('❌ 處理 Foodpanda 訂單失敗:', error)
