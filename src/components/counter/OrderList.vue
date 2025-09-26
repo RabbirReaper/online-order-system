@@ -94,13 +94,17 @@
             }"
           >
             <td>{{ counterStore.formatTime(order.createdAt) }}</td>
-            <td class="fs-5">{{ order.sequence }}</td>
+            <td v-if="order.platformOrderId" class="fs-5">{{ order.platformOrderId }}</td>
+            <td v-else class="fs-5">{{ order.sequence }}</td>
             <td>
               <span :class="getOrderTypeClass(order.orderType)">
                 {{ formatOrderType(order.orderType) }}
               </span>
               <span v-if="order.dineInInfo?.tableNumber" class="ms-1 badge bg-info">
                 桌號: {{ order.dineInInfo.tableNumber }}
+              </span>
+              <span v-if="order.orderType === 'delivery'" class="ms-1 badge bg-info">
+                {{ order.platformInfo.platform }}
               </span>
               <!-- 載入 spinner -->
               <div
@@ -379,12 +383,8 @@ const formatOrderType = (orderType) => {
 
 const calculateOrderTotal = (order) => {
   if (!order.items) return 0
-
-  const itemsTotal = order.items.reduce((total, item) => total + (item.subtotal || 0), 0)
-  const adjustment = order.manualAdjustment || 0
-  const discounts = order.discounts?.reduce((total, discount) => total + discount.amount, 0) || 0
-
-  return Math.max(0, itemsTotal + adjustment - discounts)
+  console.log(order)
+  return order.total
 }
 
 const printOrder = () => {
