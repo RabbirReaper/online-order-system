@@ -102,6 +102,9 @@
               <span v-if="order.dineInInfo?.tableNumber" class="ms-1 badge bg-info">
                 桌號: {{ order.dineInInfo.tableNumber }}
               </span>
+              <span v-if="order.orderType === 'delivery'" class="ms-1 badge bg-info">
+                {{ order.platformInfo.platform }}
+              </span>
               <!-- 載入 spinner -->
               <div
                 v-if="selectedOrderId === order._id && isSelectingOrder"
