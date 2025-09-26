@@ -63,43 +63,4 @@ router.post('/webhooks/ubereats', deliveryController.handleUberEatsWebhook)
  */
 router.post('/webhooks/foodpanda', deliveryController.handleFoodpandaWebhook)
 
-/**
- * 獲取外送平台訂單列表
- * GET /delivery/brands/:brandId/:storeId/orders
- */
-router.get(
-  '/brands/:brandId/:storeId/orders',
-  authenticate('admin'),
-  requireRole(
-    'primary_system_admin',
-    'system_admin',
-    'primary_brand_admin',
-    'brand_admin',
-    'primary_store_admin',
-    'store_admin',
-  ),
-  requireBrandAccess,
-  requireStoreAccess,
-  deliveryController.getDeliveryOrders,
-)
-
-/**
- * 手動同步特定平台訂單
- * POST /delivery/brands/:brandId/:storeId/sync-orders
- */
-router.post(
-  '/brands/:brandId/:storeId/sync-orders',
-  authenticate('admin'),
-  requireRole(
-    'primary_system_admin',
-    'system_admin',
-    'primary_brand_admin',
-    'brand_admin',
-    'primary_store_admin',
-  ),
-  requireBrandAccess,
-  requireStoreAccess,
-  deliveryController.syncOrdersFromPlatform,
-)
-
 export default router
