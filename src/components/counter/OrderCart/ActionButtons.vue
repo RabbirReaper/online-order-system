@@ -6,7 +6,7 @@
         <button
           class="btn btn-danger btn-lg"
           style="width: 48%"
-          @click="$emit('updateOrderStatus', selectedOrder._id, 'cancelled')"
+          @click="showCancelOrderModal"
           :disabled="selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'"
         >
           <i class="bi bi-x-circle me-1"></i> 取消訂單
@@ -36,7 +36,7 @@
           class="btn btn-danger btn-lg"
           style="width: 48%"
           :disabled="cartLength === 0"
-          @click="$emit('cancelOrder')"
+          @click="showCancelCartModal"
         >
           <i class="bi bi-x-circle me-1"></i> 取消訂單
         </button>
@@ -60,10 +60,27 @@
         <template v-else> <i class="bi bi-check-circle me-1"></i> 提交訂單 </template>
       </button>
     </template>
+
+    <!-- 取消訂單確認對話框 -->
+    <BModal
+      v-model="showCancelModal"
+      title="確認取消訂單"
+      ok-title="確認取消"
+      cancel-title="返回"
+      ok-variant="danger"
+      @ok="handleCancelConfirm"
+    >
+      <p class="mb-0">
+        {{ cancelModalMessage }}
+      </p>
+    </BModal>
   </div>
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+import { BModal } from 'bootstrap-vue-next'
+
 const props = defineProps({
   isOrdersActive: {
     type: Boolean,
@@ -84,6 +101,41 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['updateOrderStatus', 'printOrder', 'cancelOrder', 'submitOrder'])
+
+// 取消確認對話框狀態
+const showCancelModal = ref(false)
+const cancelType = ref('')
+
+// 動態確認訊息
+const cancelModalMessage = computed(() => {
+  if (cancelType.value === 'order') {
+    return `確定要取消訂單 #${props.selectedOrder?.orderNumber || props.selectedOrder?._id} 嗎？此操作將無法復原。`
+  } else {
+    return '確定要清空購物車嗎？這將移除所有已選擇的商品。'
+  }
+})
+
+// 顯示取消訂單確認對話框（訂單管理模式）
+const showCancelOrderModal = () => {
+  cancelType.value = 'order'
+  showCancelModal.value = true
+}
+
+// 顯示取消購物車確認對話框（購物車模式）
+const showCancelCartModal = () => {
+  cancelType.value = 'cart'
+  showCancelModal.value = true
+}
+
+// 處理確認取消
+const handleCancelConfirm = () => {
+  if (cancelType.value === 'order') {
+    emit('updateOrderStatus', props.selectedOrder._id, 'cancelled')
+  } else {
+    emit('cancelOrder')
+  }
+  showCancelModal.value = false
+}
 
 // 處理提交按鈕點擊
 const handleSubmit = () => {
