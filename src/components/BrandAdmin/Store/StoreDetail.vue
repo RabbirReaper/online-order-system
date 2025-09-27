@@ -996,7 +996,7 @@
     <!-- QR Code 桌牌生成器 -->
     <QRTableCardGenerator
       v-if="store"
-      v-model="showTableCardModal"
+      v-model:show="showTableCardModal"
       :brandId="brandId"
       :storeId="storeId"
       :store="store"
@@ -1005,7 +1005,7 @@
     <!-- 平台店鋪配置管理器 -->
     <PlatformStoreManager
       v-if="store"
-      v-model="showPlatformManagerModal"
+      v-model:show="showPlatformManagerModal"
       :brandId="brandId"
       :storeId="storeId"
       :store="store"
