@@ -156,7 +156,7 @@
 
     <!-- 刪除確認對話框 -->
     <BModal
-      v-model:show="showDeleteModal"
+      v-model="showDeleteModal"
       id="deleteRecordModal"
       title="確認刪除"
       centered

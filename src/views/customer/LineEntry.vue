@@ -124,6 +124,36 @@ const processLineEntry = async () => {
     }
 
     console.log('✅ 用戶已登入')
+    try {
+      console.log('👤 正在獲取用戶資訊...')
+
+      // 方法 1: 使用 getProfile() 獲取用戶基本資訊
+      const profile = await liff.getProfile()
+      const userId = profile.userId
+      const displayName = profile.displayName
+      const pictureUrl = profile.pictureUrl
+      const statusMessage = profile.statusMessage
+
+      console.log('📋 用戶資訊:', {
+        userId,
+        displayName,
+        pictureUrl,
+        statusMessage,
+      })
+
+      // 方法 2: 如果需要 ID Token (用於 OpenID Connect)
+      const idToken = liff.getIDToken()
+      console.log('🎫 ID Token:', idToken)
+
+      // 保存用戶 ID 到 store 或 localStorage
+      // 例如保存到購物車 store
+      cartStore.setUserId(userId)
+
+      // 或者保存到 localStorage
+      localStorage.setItem('lineUserId', userId)
+    } catch (userError) {
+      console.error('❌ 獲取用戶資訊失敗:', userError)
+    }
     await new Promise((resolve) => setTimeout(resolve, 300))
 
     // Step 3: 驗證參數完整性

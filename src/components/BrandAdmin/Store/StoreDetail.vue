@@ -633,7 +633,7 @@
     </div>
 
     <!-- 刪除確認對話框 -->
-    <BModal v-model:show="showDeleteModal" title="確認刪除" centered>
+    <BModal v-model="showDeleteModal" title="確認刪除" centered>
       <div v-if="store">
         <p>
           您確定要刪除店鋪 <strong>{{ store.name }}</strong> 嗎？
@@ -659,7 +659,7 @@
     </BModal>
 
     <!-- 營業時間快速編輯對話框 -->
-    <BModal v-model:show="showBusinessHoursModal" title="編輯營業時間" size="lg" centered>
+    <BModal v-model="showBusinessHoursModal" title="編輯營業時間" size="lg" centered>
       <div class="table-responsive">
         <table class="table">
           <thead>
@@ -738,7 +738,7 @@
     </BModal>
 
     <!-- 公告快速編輯對話框 -->
-    <BModal v-model:show="showAnnouncementsModal" title="編輯店鋪公告" size="lg" centered>
+    <BModal v-model="showAnnouncementsModal" title="編輯店鋪公告" size="lg" centered>
       <div v-if="editAnnouncements.length > 0">
         <div v-for="(announcement, index) in editAnnouncements" :key="index" class="card mb-3">
           <div class="card-body">
@@ -790,7 +790,7 @@
     </BModal>
 
     <!-- 外送平台整合快速編輯對話框 -->
-    <BModal v-model:show="showDeliveryPlatformsModal" title="編輯外送平台整合" size="lg" centered>
+    <BModal v-model="showDeliveryPlatformsModal" title="編輯外送平台整合" size="lg" centered>
       <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="mb-0">外送平台設定</h6>
@@ -848,7 +848,7 @@
     </BModal>
 
     <!-- 服務設定快速編輯對話框 -->
-    <BModal v-model:show="showServiceSettingsModal" title="編輯服務設定" size="lg" centered>
+    <BModal v-model="showServiceSettingsModal" title="編輯服務設定" size="lg" centered>
       <div class="mb-4">
         <h6 class="border-bottom pb-2 mb-3">服務類型</h6>
         <div class="d-flex flex-wrap gap-3">
@@ -996,7 +996,7 @@
     <!-- QR Code 桌牌生成器 -->
     <QRTableCardGenerator
       v-if="store"
-      v-model:show="showTableCardModal"
+      v-model="showTableCardModal"
       :brandId="brandId"
       :storeId="storeId"
       :store="store"
@@ -1005,7 +1005,7 @@
     <!-- 平台店鋪配置管理器 -->
     <PlatformStoreManager
       v-if="store"
-      v-model:show="showPlatformManagerModal"
+      v-model="showPlatformManagerModal"
       :brandId="brandId"
       :storeId="storeId"
       :store="store"
