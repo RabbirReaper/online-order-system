@@ -93,20 +93,6 @@
             <div class="card-body">
               <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
                 <span>選項列表</span>
-                <div>
-                  <router-link
-                    :to="`/admin/${brandId}/option-categories/edit/${category._id}`"
-                    class="btn btn-sm btn-outline-primary me-1"
-                  >
-                    <i class="bi bi-pencil me-1"></i>管理選項
-                  </router-link>
-                  <router-link
-                    :to="`/admin/${brandId}/options/create`"
-                    class="btn btn-sm btn-outline-primary"
-                  >
-                    <i class="bi bi-plus-lg me-1"></i>新增選項
-                  </router-link>
-                </div>
               </h5>
 
               <div v-if="!isLoadingOptions && optionDetails.length > 0">
