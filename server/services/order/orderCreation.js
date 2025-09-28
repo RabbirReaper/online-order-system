@@ -11,6 +11,8 @@ import * as bundleInstanceService from '../bundle/bundleInstance.js'
 import { validateOrderBeforeCreation } from './orderValidation.js'
 import { initializeOrderDefaults, updateOrderAmounts, cleanupFailedOrder } from './orderUtils.js'
 import { processOrderPaymentComplete } from './orderPayment.js'
+import Store from '../../models/Store/Store.js'
+import { sendLineMessage, buildOrderConfirmationMessage } from '../notification/lineService.js'
 
 /**
  * 創建訂單 - 支援 Bundle 購買 + 預先庫存檢查 + Voucher 折扣
@@ -53,6 +55,14 @@ export const createOrder = async (orderData) => {
 
     if (order.status === 'paid') {
       result = await processOrderPaymentComplete(order)
+    }
+
+    // Step 8: 發送LINE確認訊息（自取或外送訂單）
+    try {
+      await sendOrderConfirmationLineMessage(order)
+    } catch (lineError) {
+      // LINE訊息發送失敗不影響訂單創建
+      console.error('LINE訊息發送失敗，但訂單創建成功:', lineError)
     }
 
     return result
@@ -141,5 +151,69 @@ export const createBundleItem = async (item, userId, storeId, brandId) => {
     quantity: item.quantity,
     subtotal: item.subtotal || bundleInstance.finalPrice * item.quantity,
     note: item.note || '',
+  }
+}
+
+/**
+ * 發送LINE訂單確認訊息
+ * @param {Object} order - 訂單物件
+ * @returns {Promise<boolean>} 是否發送成功
+ */
+export const sendOrderConfirmationLineMessage = async (order) => {
+  try {
+    // 檢查訂單類型是否為自取或外送
+    if (!['takeout', 'delivery'].includes(order.orderType)) {
+      console.log(`訂單類型 ${order.orderType} 不需要發送LINE訊息`)
+      return false
+    }
+
+    // 檢查是否有LINE用戶ID
+    if (!order.customerInfo?.lineUniqueId) {
+      console.log('訂單沒有LINE用戶ID，無法發送LINE訊息')
+      return false
+    }
+
+    // 獲取店家資訊
+    const store = await Store.findById(order.store).lean()
+    if (!store) {
+      console.error('找不到店家資訊')
+      return false
+    }
+
+    // 檢查店家是否啟用LINE點餐功能
+    if (!store.enableLineOrdering) {
+      console.log('店家未啟用LINE點餐功能')
+      return false
+    }
+
+    // 檢查店家是否有LINE Channel Access Token
+    if (!store.lineChannelAccessToken || store.lineChannelAccessToken.trim() === '') {
+      console.log('店家未設定LINE Channel Access Token')
+      return false
+    }
+
+    // 建立確認訂單的網址
+    const confirmUrl = `${'https://rabbirorder.com' || 'http://localhost:5173'}/stores/${order.brand}/${order.store}/order-confirm/${order._id}`
+
+    // 建立訊息內容
+    const message = buildOrderConfirmationMessage(order, confirmUrl)
+
+    // 發送LINE訊息
+    const success = await sendLineMessage(
+      store.lineChannelAccessToken,
+      order.customerInfo.lineUniqueId,
+      message,
+    )
+
+    if (success) {
+      console.log(`訂單 ${order._id} LINE確認訊息發送成功`)
+    } else {
+      console.error(`訂單 ${order._id} LINE確認訊息發送失敗`)
+    }
+
+    return success
+  } catch (error) {
+    console.error('發送LINE訂單確認訊息時發生錯誤:', error)
+    return false
   }
 }

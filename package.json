@@ -19,6 +19,7 @@
     "@line/liff": "^2.27.1",
     "@popperjs/core": "^2.11.8",
     "@types/bootstrap": "^5.2.10",
+    "axios": "^1.12.2",
     "bcrypt": "^5.1.1",
     "bootstrap": "^5.3.5",
     "bootstrap-icons": "^1.13.1",
