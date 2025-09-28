@@ -122,7 +122,7 @@ export const getStoreById = async (storeId) => {
  */
 export const getStorePublicInfo = async (storeId) => {
   const store = await Store.findById(storeId)
-    .select('name image announcements businessHours address isActive')
+    .select('-lineChannelAccessToken -__v -image.key')
     .lean()
 
   if (!store) {
