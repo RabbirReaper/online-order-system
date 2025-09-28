@@ -223,19 +223,38 @@
 
               <!-- LINE Bot ID 設定 (只有在啟用 LINE 點餐時顯示) -->
               <div v-if="formData.enableLineOrdering" class="ms-3 mt-2">
-                <label for="lineBotId" class="form-label small">LINE 官方帳號 ID</label>
-                <BFormInput
-                  id="lineBotId"
-                  v-model="formData.lineBotId"
-                  placeholder="例如：@example-bot (不需要包含@)"
-                  :state="errors.lineBotId ? false : null"
-                />
-                <BFormInvalidFeedback v-if="errors.lineBotId">{{
-                  errors.lineBotId
-                }}</BFormInvalidFeedback>
-                <BFormText class="text-muted small">
-                  輸入店家的 LINE 官方帳號 ID，用於客戶加好友功能。留空則使用系統預設的官方帳號
-                </BFormText>
+                <div class="mb-3">
+                  <label for="lineBotId" class="form-label small">LINE 官方帳號 ID</label>
+                  <BFormInput
+                    id="lineBotId"
+                    v-model="formData.lineBotId"
+                    placeholder="例如：@example-bot (不需要包含@)"
+                    :state="errors.lineBotId ? false : null"
+                  />
+                  <BFormInvalidFeedback v-if="errors.lineBotId">{{
+                    errors.lineBotId
+                  }}</BFormInvalidFeedback>
+                  <BFormText class="text-muted small">
+                    輸入店家的 LINE 官方帳號 ID，用於客戶加好友功能。留空則使用系統預設的官方帳號
+                  </BFormText>
+                </div>
+
+                <div class="mb-3">
+                  <label for="lineChannelAccessToken" class="form-label small">LINE Channel Access Token</label>
+                  <BFormInput
+                    id="lineChannelAccessToken"
+                    v-model="formData.lineChannelAccessToken"
+                    placeholder="輸入 LINE Channel Access Token"
+                    :state="errors.lineChannelAccessToken ? false : null"
+                    type="password"
+                  />
+                  <BFormInvalidFeedback v-if="errors.lineChannelAccessToken">{{
+                    errors.lineChannelAccessToken
+                  }}</BFormInvalidFeedback>
+                  <BFormText class="text-muted small">
+                    輸入店家專用的 LINE Channel Access Token，用於發送訊息到聊天室
+                  </BFormText>
+                </div>
               </div>
 
               <BFormCheckbox v-model="formData.showTaxId" switch>
@@ -523,6 +542,7 @@ const formData = reactive({
   // 新增的欄位
   enableLineOrdering: false,
   lineBotId: '',
+  lineChannelAccessToken: '',
   showTaxId: false,
   provideReceipt: true,
   enableDineIn: true,
@@ -543,6 +563,8 @@ const errors = reactive({
   address: '',
   phone: '',
   image: '',
+  lineBotId: '',
+  lineChannelAccessToken: '',
   businessHours: [],
   announcements: [],
 })
@@ -719,6 +741,7 @@ const resetForm = () => {
     // 重置新增欄位
     formData.enableLineOrdering = false
     formData.lineBotId = ''
+    formData.lineChannelAccessToken = ''
     formData.showTaxId = false
     formData.provideReceipt = true
     formData.enableDineIn = true
@@ -739,6 +762,8 @@ const resetForm = () => {
   errors.address = ''
   errors.phone = ''
   errors.image = ''
+  errors.lineBotId = ''
+  errors.lineChannelAccessToken = ''
   errors.businessHours = []
   errors.announcements = []
   formErrors.value = []
@@ -933,6 +958,7 @@ const fetchStoreData = async () => {
       formData.enableLineOrdering =
         store.enableLineOrdering !== undefined ? store.enableLineOrdering : false
       formData.lineBotId = store.lineBotId || ''
+      formData.lineChannelAccessToken = store.lineChannelAccessToken || ''
       formData.showTaxId = store.showTaxId !== undefined ? store.showTaxId : false
       formData.provideReceipt = store.provideReceipt !== undefined ? store.provideReceipt : true
       formData.enableDineIn = store.enableDineIn !== undefined ? store.enableDineIn : true
@@ -995,6 +1021,7 @@ const submitForm = async () => {
       // 新增的欄位
       enableLineOrdering: formData.enableLineOrdering,
       lineBotId: formData.lineBotId,
+      lineChannelAccessToken: formData.lineChannelAccessToken,
       showTaxId: formData.showTaxId,
       provideReceipt: formData.provideReceipt,
       enableDineIn: formData.enableDineIn,
