@@ -25,11 +25,11 @@ export const getAllStores = async (req, res, next) => {
   })
 }
 
-// 獲取單個店家
+// 獲取單個店家（完整資料，需要權限）
 export const getStoreById = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
-    const store = await storeService.getStoreById(id)
+    const { storeId } = req.params
+    const store = await storeService.getStoreById(storeId)
 
     res.json({
       success: true,
@@ -37,6 +37,25 @@ export const getStoreById = asyncHandler(async (req, res) => {
     })
   } catch (error) {
     console.error('Error getting store:', error)
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    })
+  }
+})
+
+// 獲取店家公開資訊（給客戶端使用）
+export const getStorePublicInfo = asyncHandler(async (req, res) => {
+  try {
+    const { storeId } = req.params
+    const store = await storeService.getStorePublicInfo(storeId)
+
+    res.json({
+      success: true,
+      store,
+    })
+  } catch (error) {
+    console.error('Error getting store public info:', error)
     res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || 'Internal server error',

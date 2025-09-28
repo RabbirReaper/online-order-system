@@ -101,7 +101,7 @@ function buildStorePermissionFilters(adminInfo, requestedBrandId) {
 }
 
 /**
- * 根據ID獲取店鋪
+ * 根據ID獲取店鋪（完整資料，需要權限）
  * @param {String} storeId - 店鋪ID
  * @returns {Promise<Object>} 店鋪
  */
@@ -110,6 +110,28 @@ export const getStoreById = async (storeId) => {
 
   if (!store) {
     throw new AppError('店鋪不存在', 404)
+  }
+
+  return store
+}
+
+/**
+ * 根據ID獲取店鋪公開資訊（給客戶端使用）
+ * @param {String} storeId - 店鋪ID
+ * @returns {Promise<Object>} 店鋪公開資訊
+ */
+export const getStorePublicInfo = async (storeId) => {
+  const store = await Store.findById(storeId)
+    .select('name image announcements businessHours address isActive')
+    .lean()
+
+  if (!store) {
+    throw new AppError('店鋪不存在', 404)
+  }
+
+  // 只有啟用的店鋪才回傳資料
+  if (!store.isActive) {
+    throw new AppError('店鋪暫停營業', 403)
   }
 
   return store

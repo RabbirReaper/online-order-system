@@ -26,8 +26,25 @@ router.get(
   storeController.getAllStores,
 )
 
-// 獲取單個店鋪
-router.get('/brands/:brandId/:id', storeController.getStoreById)
+// 獲取單個店鋪（完整資料，需要權限）
+router.get(
+  '/brands/:brandId/:storeId',
+  authenticate('admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
+  requireBrandAccess,
+  requireStoreAccess,
+  storeController.getStoreById,
+)
+
+// 獲取店鋪公開資訊（給客戶端使用）
+router.get('/public/brands/:brandId/:storeId', storeController.getStorePublicInfo)
 
 // 創建店鋪（系統級和品牌級管理員）
 router.post(

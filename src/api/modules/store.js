@@ -17,7 +17,7 @@ export default function (apiClient) {
     },
 
     /**
-     * 獲取特定店鋪詳情
+     * 獲取特定店鋪詳情（完整資料，需要權限）
      * @param {Object} params - 查詢參數
      * @param {string} params.brandId - 品牌ID（必填）
      * @param {string} params.id - 店鋪ID
@@ -25,6 +25,17 @@ export default function (apiClient) {
      */
     getStoreById({ brandId, id }) {
       return apiClient.get(`/store/brands/${brandId}/${id}`)
+    },
+
+    /**
+     * 獲取店鋪公開資訊（給客戶端使用）
+     * @param {Object} params - 查詢參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.id - 店鋪ID
+     * @returns {Promise} - API 回應
+     */
+    getStorePublicInfo({ brandId, id }) {
+      return apiClient.get(`/store/public/brands/${brandId}/${id}`)
     },
 
     /**
