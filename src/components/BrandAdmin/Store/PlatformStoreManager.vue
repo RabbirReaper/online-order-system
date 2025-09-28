@@ -1,6 +1,6 @@
 <template>
   <BModal
-    v-model:show="show"
+    v-model="show"
     :title="modalTitle"
     size="lg"
     centered

@@ -44,11 +44,17 @@
       <input
         type="text"
         class="form-control"
+        :class="{ 'is-invalid': tableNumberError }"
         id="tableNumber"
         v-model="localTableNumber"
         placeholder="請輸入桌號"
+        @input="validateTableNumber"
+        maxlength="6"
       />
-      <small class="text-muted">請向服務人員確認您的桌號</small>
+      <div v-if="tableNumberError" class="invalid-feedback">
+        {{ tableNumberError }}
+      </div>
+      <small class="text-muted">請輸入英文或數字，最多6個字元</small>
     </div>
 
     <!-- 外送選項 -->
@@ -173,6 +179,9 @@ const localPickupTime = ref(props.pickupTime)
 const localScheduledTime = ref(props.scheduledTime)
 const deliveryFee = ref(60) // 默認外送費
 
+// 驗證狀態
+const tableNumberError = ref('')
+
 // 店鋪資訊
 const storeData = ref(props.storeInfo || {})
 
@@ -193,6 +202,34 @@ const minScheduledTime = computed(() => {
   return date.toISOString().slice(0, 16)
 })
 
+// 桌號驗證函數
+const validateTableNumber = () => {
+  const value = localTableNumber.value
+
+  // 清空錯誤
+  tableNumberError.value = ''
+
+  if (!value) {
+    tableNumberError.value = '請輸入桌號'
+    return false
+  }
+
+  // 檢查長度
+  if (value.length > 6) {
+    tableNumberError.value = '桌號不能超過6個字元'
+    return false
+  }
+
+  // 檢查格式（只允許英文字母和數字）
+  const alphanumericRegex = /^[a-zA-Z0-9]+$/
+  if (!alphanumericRegex.test(value)) {
+    tableNumberError.value = '桌號只能包含英文字母和數字'
+    return false
+  }
+
+  return true
+}
+
 // 載入店鋪資訊
 const loadStoreInfo = async () => {
   try {
@@ -200,7 +237,7 @@ const loadStoreInfo = async () => {
     const storeId = sessionStorage.getItem('currentStoreId')
 
     if (brandId && storeId) {
-      const response = await api.store.getStoreById({
+      const response = await api.store.getStorePublicInfo({
         brandId: brandId,
         id: storeId,
       })
@@ -233,6 +270,10 @@ watch(
   () => props.tableNumber,
   (newVal) => {
     localTableNumber.value = newVal
+    // 當外部設定桌號時清除錯誤狀態
+    if (tableNumberError.value) {
+      tableNumberError.value = ''
+    }
   },
 )
 
@@ -284,6 +325,10 @@ watch(localOrderType, (newVal) => {
 
 watch(localTableNumber, (newVal) => {
   emit('update:tableNumber', newVal)
+  // 當桌號改變時清除錯誤狀態（用戶正在輸入時）
+  if (tableNumberError.value) {
+    tableNumberError.value = ''
+  }
 })
 
 watch(localDeliveryAddress, (newVal) => {

@@ -147,13 +147,6 @@
                 <button class="btn btn-outline-primary btn-sm" @click.stop="showOrderDetail(order)">
                   查看詳情
                 </button>
-                <button
-                  v-if="canReorder(order)"
-                  class="btn btn-primary btn-sm ms-2"
-                  @click.stop="reorder(order)"
-                >
-                  再次訂購
-                </button>
               </div>
             </div>
           </div>
@@ -171,23 +164,6 @@
               {{ selectedStatus === 'all' ? '快去點餐吧！' : '切換到其他狀態查看訂單' }}
             </p>
           </div>
-        </div>
-
-        <!-- 載入更多按鈕 -->
-        <div v-if="hasMoreOrders" class="load-more-section">
-          <button
-            class="btn btn-outline-secondary"
-            @click="loadMoreOrders"
-            :disabled="isLoadingMore"
-          >
-            <span
-              v-if="isLoadingMore"
-              class="spinner-border spinner-border-sm me-2"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            載入更多訂單
-          </button>
         </div>
       </div>
     </div>
@@ -377,13 +353,6 @@
     <template #footer>
       <div class="modal-footer-actions">
         <BButton variant="secondary" @click="$refs.orderDetailModal.hide()"> 關閉 </BButton>
-        <BButton
-          v-if="selectedOrder && canReorder(selectedOrder)"
-          variant="primary"
-          @click="reorder(selectedOrder)"
-        >
-          再次訂購
-        </BButton>
       </div>
     </template>
   </BModal>
@@ -405,15 +374,12 @@ const orderDetailModal = ref(null)
 
 // 狀態管理
 const isLoading = ref(true)
-const isLoadingMore = ref(false)
 const errorMessage = ref('')
 const selectedStatus = ref('all')
 const selectedOrder = ref(null)
 
 // 訂單資料
 const orders = ref([])
-const currentPage = ref(1)
-const hasMoreOrders = ref(false)
 const pageLimit = ref(30)
 
 // 品牌ID計算屬性
@@ -551,10 +517,6 @@ const formatDateTime = (dateString) => {
   return date.toLocaleString('zh-TW')
 }
 
-// 判斷是否可以重新訂購
-const canReorder = (order) => {
-  return ['paid', 'cancelled'].includes(order.status)
-}
 
 // 顯示訂單詳情
 const showOrderDetail = async (order) => {
@@ -565,51 +527,6 @@ const showOrderDetail = async (order) => {
   }
 }
 
-// 重新訂購
-const reorder = (order) => {
-  // TODO: 實作重新訂購邏輯
-  console.log('重新訂購:', order)
-  // 可以跳轉到購物車頁面，預填訂單項目
-  // router.push('/cart');
-}
-
-// 載入更多訂單
-const loadMoreOrders = async () => {
-  if (!hasMoreOrders.value || isLoadingMore.value) {
-    return
-  }
-
-  try {
-    isLoadingMore.value = true
-
-    const currentBrandId = brandId.value
-    if (!currentBrandId) {
-      throw new Error('無法獲取品牌資訊')
-    }
-
-    const nextPage = currentPage.value + 1
-    const response = await api.orderCustomer.getUserOrders({
-      brandId: currentBrandId,
-      page: nextPage,
-      limit: pageLimit.value,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-    })
-
-    if (response.orders && response.orders.length > 0) {
-      orders.value = [...orders.value, ...response.orders]
-      currentPage.value = nextPage
-      hasMoreOrders.value = response.pagination?.hasNextPage || false
-    } else {
-      hasMoreOrders.value = false
-    }
-  } catch (error) {
-    console.error('載入更多訂單失敗:', error)
-    errorMessage.value = '載入更多訂單失敗'
-  } finally {
-    isLoadingMore.value = false
-  }
-}
 
 // 載入訂單資料
 const loadOrdersData = async () => {
@@ -637,8 +554,6 @@ const loadOrdersData = async () => {
 
     if (response) {
       orders.value = response.orders || []
-      currentPage.value = 1
-      hasMoreOrders.value = response.pagination?.hasNextPage || false
     }
   } catch (error) {
     console.error('載入訂單資料失敗:', error)
@@ -971,12 +886,6 @@ onMounted(async () => {
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* 載入更多 */
-.load-more-section {
-  text-align: center;
-  padding: 1rem;
 }
 
 /* 訂單詳情模態框 */

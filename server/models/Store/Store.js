@@ -35,6 +35,7 @@ const storeSchema = new mongoose.Schema(
     // === 新增的功能設定欄位 ===
     enableLineOrdering: { type: Boolean, default: false }, // 啟用LINE點餐
     lineBotId: { type: String, trim: true }, // LINE Bot ID（加好友用）
+    lineChannelAccessToken: { type: String, trim: true }, // LINE Channel Secret
     showTaxId: { type: Boolean, default: false }, // 顯示統一編號欄位
     provideReceipt: { type: Boolean, default: true }, // 提供收據
 

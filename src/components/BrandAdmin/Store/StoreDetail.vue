@@ -546,69 +546,7 @@
               <h5 class="card-title mb-3">快速操作</h5>
 
               <div class="row g-3">
-                <div class="col-md-6">
-                  <router-link
-                    :to="`/admin/${brandId}/menus?storeId=${store._id}`"
-                    class="card action-card h-100"
-                  >
-                    <div
-                      class="card-body d-flex flex-column align-items-center justify-content-center p-3"
-                    >
-                      <i class="bi bi-menu-button-wide action-icon mb-2"></i>
-                      <h6 class="mb-1">管理菜單</h6>
-                      <p class="small text-muted text-center mb-0">
-                        {{ store.menuId ? '編輯現有菜單' : '建立店鋪菜單' }}
-                      </p>
-                    </div>
-                  </router-link>
-                </div>
-
-                <div class="col-md-6">
-                  <router-link
-                    :to="`/admin/${brandId}/inventory?storeId=${store._id}`"
-                    class="card action-card h-100"
-                  >
-                    <div
-                      class="card-body d-flex flex-column align-items-center justify-content-center p-3"
-                    >
-                      <i class="bi bi-box-seam action-icon mb-2"></i>
-                      <h6 class="mb-1">庫存管理</h6>
-                      <p class="small text-muted text-center mb-0">管理店鋪餐點庫存</p>
-                    </div>
-                  </router-link>
-                </div>
-
-                <div class="col-md-6">
-                  <router-link
-                    :to="`/admin/${brandId}/orders?storeId=${store._id}`"
-                    class="card action-card h-100"
-                  >
-                    <div
-                      class="card-body d-flex flex-column align-items-center justify-content-center p-3"
-                    >
-                      <i class="bi bi-receipt action-icon mb-2"></i>
-                      <h6 class="mb-1">訂單管理</h6>
-                      <p class="small text-muted text-center mb-0">查看店鋪訂單</p>
-                    </div>
-                  </router-link>
-                </div>
-
-                <div class="col-md-6">
-                  <router-link
-                    :to="`/admin/${brandId}/orders/reports?storeId=${store._id}`"
-                    class="card action-card h-100"
-                  >
-                    <div
-                      class="card-body d-flex flex-column align-items-center justify-content-center p-3"
-                    >
-                      <i class="bi bi-bar-chart action-icon mb-2"></i>
-                      <h6 class="mb-1">銷售報表</h6>
-                      <p class="small text-muted text-center mb-0">查看銷售統計數據</p>
-                    </div>
-                  </router-link>
-                </div>
-
-                <div class="col-md-6">
+                <div class="col-md-3">
                   <div
                     class="card action-card h-100"
                     style="cursor: pointer"
@@ -996,7 +934,7 @@
     <!-- QR Code 桌牌生成器 -->
     <QRTableCardGenerator
       v-if="store"
-      v-model="showTableCardModal"
+      v-model:show="showTableCardModal"
       :brandId="brandId"
       :storeId="storeId"
       :store="store"
@@ -1005,7 +943,7 @@
     <!-- 平台店鋪配置管理器 -->
     <PlatformStoreManager
       v-if="store"
-      v-model="showPlatformManagerModal"
+      v-model:show="showPlatformManagerModal"
       :brandId="brandId"
       :storeId="storeId"
       :store="store"

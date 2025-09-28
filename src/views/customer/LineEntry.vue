@@ -145,12 +145,18 @@ const processLineEntry = async () => {
       const idToken = liff.getIDToken()
       console.log('🎫 ID Token:', idToken)
 
-      // 保存用戶 ID 到 store 或 localStorage
-      // 例如保存到購物車 store
-      cartStore.setUserId(userId)
+      // 保存 LINE 用戶資訊到購物車 store
+      cartStore.setLineUserInfo({
+        userId,
+        displayName,
+        pictureUrl
+      })
 
-      // 或者保存到 localStorage
+      console.log('✅ LINE 用戶資訊已保存到購物車')
+
+      // 也保存到 localStorage 作為備份
       localStorage.setItem('lineUserId', userId)
+      localStorage.setItem('lineDisplayName', displayName)
     } catch (userError) {
       console.error('❌ 獲取用戶資訊失敗:', userError)
     }

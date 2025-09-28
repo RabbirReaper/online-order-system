@@ -192,9 +192,7 @@ export const useCounterCartStore = defineStore('counterCart', () => {
 
   // 取消訂單
   const cancelOrder = () => {
-    if (confirm('確定要取消當前訂單嗎？')) {
-      clearCart()
-    }
+    clearCart()
   }
 
   // 合併相同配置的購物車項目

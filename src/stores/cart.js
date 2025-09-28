@@ -10,6 +10,7 @@ export const useCartStore = defineStore('cart', () => {
   const customerInfo = ref({
     name: '',
     phone: '',
+    lineUniqueId: '', // LINE 用戶的 userId
   }) // 顧客基本資訊
   const deliveryInfo = ref({
     address: '',
@@ -236,6 +237,7 @@ export const useCartStore = defineStore('cart', () => {
       customerInfo.value = {
         name: '',
         phone: '',
+        lineUniqueId: '',
       }
     }
 
@@ -284,6 +286,15 @@ export const useCartStore = defineStore('cart', () => {
 
   function setCustomerInfo(info) {
     customerInfo.value = { ...customerInfo.value, ...info }
+  }
+
+  // 新增：設定 LINE 用戶資訊
+  function setLineUserInfo(lineUserData) {
+    customerInfo.value = {
+      ...customerInfo.value,
+      name: lineUserData.displayName || customerInfo.value.name,
+      lineUniqueId: lineUserData.userId || '',
+    }
   }
 
   function setDeliveryInfo(info) {
@@ -597,6 +608,7 @@ export const useCartStore = defineStore('cart', () => {
     resetOrderTypeSpecificInfo,
     setOrderType,
     setCustomerInfo,
+    setLineUserInfo, // 新增：設定 LINE 用戶資訊
     setDeliveryInfo,
     setDineInInfo,
     setPickupTime,

@@ -69,9 +69,6 @@
               <h6 class="menu-title">我的點數</h6>
               <p class="menu-desc">查看點數餘額與使用記錄</p>
             </div>
-            <div class="menu-badge">
-              <span class="badge bg-primary">{{ pointsBalance }} 點</span>
-            </div>
             <div class="menu-arrow">
               <i class="bi bi-chevron-right"></i>
             </div>
@@ -84,9 +81,6 @@
             <div class="menu-content">
               <h6 class="menu-title">我的優惠券</h6>
               <p class="menu-desc">查看可用的優惠券</p>
-            </div>
-            <div class="menu-badge">
-              <span class="badge bg-success">{{ availableCoupons }} 張</span>
             </div>
             <div class="menu-arrow">
               <i class="bi bi-chevron-right"></i>

@@ -235,7 +235,7 @@ const loadStoreData = async () => {
   if (store.value.name && hasInitialized.value) return
 
   try {
-    const storeData = await api.store.getStoreById({
+    const storeData = await api.store.getStorePublicInfo({
       brandId: brandId.value,
       id: storeId.value,
     })

@@ -343,22 +343,15 @@ describe('Counter Cart Store', () => {
       expect(store.isEditMode).toBe(false)
     })
 
-    it('用戶確認時應該取消訂單', () => {
-      global.confirm.mockReturnValue(true)
-
+    it('應該清空購物車和重置所有狀態', () => {
       store.cancelOrder()
 
       expect(store.cart).toEqual([])
-      expect(global.confirm).toHaveBeenCalledWith('確定要取消當前訂單嗎？')
-    })
-
-    it('用戶取消時不應清空購物車', () => {
-      global.confirm.mockReturnValue(false)
-      const originalCartLength = store.cart.length
-
-      store.cancelOrder()
-
-      expect(store.cart).toHaveLength(originalCartLength)
+      expect(store.currentItem).toBeNull()
+      expect(store.currentItemIndex).toBeNull()
+      expect(store.manualAdjustment).toBe(0)
+      expect(store.totalDiscount).toBe(0)
+      expect(store.isEditMode).toBe(false)
     })
   })
 

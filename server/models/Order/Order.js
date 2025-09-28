@@ -188,6 +188,7 @@ const orderSchema = new mongoose.Schema(
     onlinePaymentCode: { type: String }, // 線上付款代碼 (例如：LINE Pay)
     customerInfo: {
       name: { type: String }, // 顧客名稱
+      lineUniqueId: { type: String }, // 顧客 LINE Unique ID
       phone: { type: String }, // 顧客電話
     }, // 顧客資訊
     deliveryInfo: {
