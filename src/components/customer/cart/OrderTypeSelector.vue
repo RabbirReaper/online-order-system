@@ -237,7 +237,7 @@ const loadStoreInfo = async () => {
     const storeId = sessionStorage.getItem('currentStoreId')
 
     if (brandId && storeId) {
-      const response = await api.store.getStoreById({
+      const response = await api.store.getStorePublicInfo({
         brandId: brandId,
         id: storeId,
       })
