@@ -288,7 +288,7 @@ const selectedCategory = computed(() => {
 })
 
 const dishOptionCategories = computed(() => {
-  if (!selectedDish.value) return []
+  if (!selectedDish.value || !selectedDish.value.optionCategories) return []
 
   const categories = []
   selectedDish.value.optionCategories.forEach((categoryRef) => {
