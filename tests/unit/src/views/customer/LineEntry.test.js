@@ -8,6 +8,7 @@ const mockLiff = {
   isLoggedIn: vi.fn(),
   login: vi.fn(),
   getProfile: vi.fn(),
+  getIDToken: vi.fn(),
   getFriendship: vi.fn()
 }
 
@@ -15,13 +16,6 @@ vi.mock('@line/liff', () => ({
   default: mockLiff
 }))
 
-// Mock useLineParams composable
-const mockGetCleanParams = vi.fn()
-vi.mock('@/composables/useLineParams', () => ({
-  useLineParams: () => ({
-    getCleanParams: mockGetCleanParams
-  })
-}))
 
 // Mock API
 const mockApi = {
@@ -35,7 +29,8 @@ vi.mock('@/api', () => ({
 
 // Mock cart store
 const mockCartStore = {
-  setBrandAndStore: vi.fn()
+  setBrandAndStore: vi.fn(),
+  setLineUserInfo: vi.fn()
 }
 vi.mock('@/stores/cart', () => ({
   useCartStore: () => mockCartStore
@@ -47,11 +42,16 @@ const mockRouter = {
   push: vi.fn()
 }
 
+const mockRoute = {
+  query: {}
+}
+
 vi.mock('vue-router', async () => {
   const actual = await vi.importActual('vue-router')
   return {
     ...actual,
-    useRouter: () => mockRouter
+    useRouter: () => mockRouter,
+    useRoute: () => mockRoute
   }
 })
 
@@ -77,11 +77,14 @@ describe('LineEntry.vue', () => {
   beforeEach(async () => {
     // 重置所有 mocks
     vi.clearAllMocks()
-    
+
+    // 重置 route.query
+    mockRoute.query = {}
+
     // 設置 Pinia
     pinia = createPinia()
     setActivePinia(pinia)
-    
+
     // 動態導入組件
     const module = await import('@/views/customer/LineEntry.vue')
     LineEntry = module.default
@@ -119,13 +122,13 @@ describe('LineEntry.vue', () => {
     it('應該有正確的初始響應式數據', async () => {
       // Mock 正常的 LIFF 行為避免錯誤
       mockLiff.init.mockResolvedValue()
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand',
         storeId: 'test-store'
-      })
-      
+      }
+
       wrapper = createWrapper()
-      
+
       // 檢查初始狀態（在任何異步操作之前）
       expect(wrapper.vm.isLoading).toBe(true)
       expect(wrapper.vm.error).toBe(null)
@@ -137,10 +140,10 @@ describe('LineEntry.vue', () => {
 
   describe('LIFF 初始化', () => {
     beforeEach(() => {
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand',
         storeId: 'test-store'
-      })
+      }
     })
 
     it('應該成功初始化 LIFF', async () => {
@@ -175,20 +178,20 @@ describe('LineEntry.vue', () => {
   describe('登入狀態檢查', () => {
     beforeEach(() => {
       mockLiff.init.mockResolvedValue()
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand',
         storeId: 'test-store'
-      })
+      }
     })
 
     it('應該在未登入時調用 liff.login() 並保存參數', async () => {
       mockLiff.isLoggedIn.mockReturnValue(false)
       mockLiff.login.mockImplementation(() => {})
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand-123',
         storeId: 'test-store-456'
-      })
-      
+      }
+
       // Mock sessionStorage
       const sessionStorageMock = {
         setItem: vi.fn(),
@@ -198,12 +201,12 @@ describe('LineEntry.vue', () => {
       Object.defineProperty(window, 'sessionStorage', {
         value: sessionStorageMock
       })
-      
+
       wrapper = createWrapper()
-      
+
       // 等待異步操作完成
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       expect(mockLiff.login).toHaveBeenCalled()
       expect(sessionStorageMock.setItem).toHaveBeenCalledWith('temp-brandId', 'test-brand-123')
       expect(sessionStorageMock.setItem).toHaveBeenCalledWith('temp-storeId', 'test-store-456')
@@ -211,13 +214,30 @@ describe('LineEntry.vue', () => {
 
     it('應該在已登入時繼續處理流程', async () => {
       mockLiff.isLoggedIn.mockReturnValue(true)
-      
+      mockLiff.getProfile.mockResolvedValue({
+        userId: 'test-user-123',
+        displayName: 'Test User',
+        pictureUrl: 'https://example.com/avatar.jpg'
+      })
+      mockLiff.getIDToken.mockReturnValue('mock-id-token')
+
+      // Mock localStorage
+      const localStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'localStorage', {
+        value: localStorageMock
+      })
+
       wrapper = createWrapper()
-      
-      // 等待異步操作完成
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
+
+      // 等待足夠的時間讓異步操作完成
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       expect(mockLiff.login).not.toHaveBeenCalled()
+      expect(mockLiff.getProfile).toHaveBeenCalled()
     })
   })
 
@@ -228,47 +248,54 @@ describe('LineEntry.vue', () => {
     })
 
     it('應該正確解析 URL 參數', async () => {
-      const testParams = {
+      mockRoute.query = {
         brandId: 'brand-123',
         storeId: 'store-456',
         tableNumber: '5',
-        campaign: 'summer2023'
+        campaign: 'summer2023',
+        liffId: 'custom-liff-id'
       }
-      mockGetCleanParams.mockReturnValue(testParams)
-      
+
       wrapper = createWrapper()
-      
+
       // 等待處理完成
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 100))
       await wrapper.vm.$nextTick()
-      
-      expect(mockGetCleanParams).toHaveBeenCalled()
+
+      // 檢查 LIFF 初始化是否使用正確的 liffId
+      expect(mockLiff.init).toHaveBeenCalledWith({ liffId: 'custom-liff-id' })
     })
 
     it('應該在缺少必要參數時仍能處理', async () => {
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand'
         // 缺少 storeId
-      })
-      
+      }
+
       wrapper = createWrapper()
-      
+
       // 等待處理完成
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       // 應該會顯示警告，但不會拋出錯誤
-      expect(console.warn).toHaveBeenCalledWith(
-        '⚠️ 缺少必要參數 brandId 或 storeId:',
-        expect.any(Object)
-      )
+      expect(console.warn).toHaveBeenCalledWith('⚠️ 缺少必要參數 brandId 或 storeId')
     })
 
     it('應該能從 sessionStorage 恢復參數', async () => {
-      // Mock 參數解析失敗
-      mockGetCleanParams.mockImplementation(() => {
-        throw new Error('參數解析失敗')
+      // 設定 LIFF mocks
+      mockLiff.isLoggedIn.mockReturnValue(true)
+      mockLiff.getProfile.mockResolvedValue({
+        userId: 'test-user-123',
+        displayName: 'Test User',
+        pictureUrl: 'https://example.com/avatar.jpg'
       })
-      
+      mockLiff.getIDToken.mockReturnValue('mock-id-token')
+
+      // Mock 路由參數完全缺少 brandId 和 storeId
+      mockRoute.query = {
+        // 只有 liffId，沒有 brandId 和 storeId
+      }
+
       // Mock sessionStorage 有保存的參數
       const sessionStorageMock = {
         getItem: vi.fn((key) => {
@@ -282,22 +309,85 @@ describe('LineEntry.vue', () => {
       Object.defineProperty(window, 'sessionStorage', {
         value: sessionStorageMock
       })
-      
+
+      // Mock localStorage
+      const localStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'localStorage', {
+        value: localStorageMock
+      })
+
       wrapper = createWrapper()
-      
-      // 等待處理完成
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
+
+      // 等待處理完成，給夠的時間讓所有異步操作完成
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
       expect(sessionStorageMock.getItem).toHaveBeenCalledWith('temp-brandId')
       expect(sessionStorageMock.getItem).toHaveBeenCalledWith('temp-storeId')
-      expect(console.log).toHaveBeenCalledWith(
-        '🔄 從 sessionStorage 恢復參數:',
-        expect.objectContaining({
-          brandId: 'recovered-brand-123',
-          storeId: 'recovered-store-456',
-          source: 'recovered'
-        })
-      )
+      expect(console.log).toHaveBeenCalledWith('🔄 從 sessionStorage 恢復參數')
+    })
+  })
+
+  describe('購物車 store 測試', () => {
+    beforeEach(() => {
+      mockLiff.init.mockResolvedValue()
+      mockLiff.isLoggedIn.mockReturnValue(true)
+      mockLiff.getProfile.mockResolvedValue({
+        userId: 'test-user-123',
+        displayName: 'Test User',
+        pictureUrl: 'https://example.com/avatar.jpg',
+        statusMessage: 'Hello World'
+      })
+      mockLiff.getIDToken.mockReturnValue('mock-id-token')
+      mockRoute.query = {
+        brandId: 'test-brand',
+        storeId: 'test-store'
+      }
+
+      // Mock sessionStorage
+      const sessionStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'sessionStorage', {
+        value: sessionStorageMock
+      })
+
+      // Mock localStorage
+      const localStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'localStorage', {
+        value: localStorageMock
+      })
+    })
+
+    it('應該設定 LINE 用戶資訊到購物車', async () => {
+      wrapper = createWrapper()
+
+      // 等待處理完成
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      expect(mockCartStore.setLineUserInfo).toHaveBeenCalledWith({
+        userId: 'test-user-123',
+        displayName: 'Test User',
+        pictureUrl: 'https://example.com/avatar.jpg'
+      })
+    })
+
+    it('應該設定品牌和店家到購物車', async () => {
+      wrapper = createWrapper()
+
+      // 等待處理完成
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      expect(mockCartStore.setBrandAndStore).toHaveBeenCalledWith('test-brand', 'test-store')
     })
   })
 
@@ -307,6 +397,12 @@ describe('LineEntry.vue', () => {
     beforeEach(() => {
       mockLiff.init.mockResolvedValue()
       mockLiff.isLoggedIn.mockReturnValue(true)
+      mockLiff.getProfile.mockResolvedValue({
+        userId: 'test-user-123',
+        displayName: 'Test User',
+        pictureUrl: 'https://example.com/avatar.jpg'
+      })
+      mockLiff.getIDToken.mockReturnValue('mock-id-token')
 
       // Mock sessionStorage
       sessionStorageMock = {
@@ -317,22 +413,33 @@ describe('LineEntry.vue', () => {
       Object.defineProperty(window, 'sessionStorage', {
         value: sessionStorageMock
       })
+
+      // Mock localStorage
+      const localStorageMock = {
+        setItem: vi.fn(),
+        getItem: vi.fn(),
+        removeItem: vi.fn()
+      }
+      Object.defineProperty(window, 'localStorage', {
+        value: localStorageMock
+      })
     })
 
     it('應該跳轉到正確的菜單路由', async () => {
-      const testParams = {
+      mockRoute.query = {
         brandId: 'brand-123',
         storeId: 'store-456',
-        tableNumber: '5'
+        tableNumber: '5',
+        campaign: 'summer2023',
+        promo: 'discount10'
       }
-      mockGetCleanParams.mockReturnValue(testParams)
-      
+
       wrapper = createWrapper()
-      
+
       // 等待所有異步操作完成
       await new Promise(resolve => setTimeout(resolve, 2000))
       await wrapper.vm.$nextTick()
-      
+
       // 驗證路由跳轉參數
       expect(mockRouter.replace).toHaveBeenCalledWith({
         name: 'menu',
@@ -342,25 +449,27 @@ describe('LineEntry.vue', () => {
         },
         query: expect.objectContaining({
           fromLine: 'true',
+          source: 'line',
           tableNumber: '5',
+          campaign: 'summer2023',
+          promo: 'discount10',
           timestamp: expect.any(Number)
         })
       })
     })
 
     it('應該清理臨時保存的參數', async () => {
-      const testParams = {
+      mockRoute.query = {
         brandId: 'brand-123',
         storeId: 'store-456'
       }
-      mockGetCleanParams.mockReturnValue(testParams)
-      
+
       wrapper = createWrapper()
-      
+
       // 等待所有異步操作完成
       await new Promise(resolve => setTimeout(resolve, 1000))
       await wrapper.vm.$nextTick()
-      
+
       // 驗證臨時參數被清理
       expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('temp-brandId')
       expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('temp-storeId')
@@ -423,17 +532,17 @@ describe('LineEntry.vue', () => {
 
     it('應該能夠重試操作', async () => {
       const retryButton = wrapper.find('.retry-btn')
-      
+
       // 重置 mock 讓重試成功
       mockLiff.init.mockResolvedValue()
       mockLiff.isLoggedIn.mockReturnValue(true)
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand',
         storeId: 'test-store'
-      })
-      
+      }
+
       await retryButton.trigger('click')
-      
+
       expect(wrapper.vm.error).toBe(null)
       expect(wrapper.vm.isLoading).toBe(true)
     })
@@ -478,18 +587,18 @@ describe('LineEntry.vue', () => {
     it('應該顯示成功狀態', async () => {
       mockLiff.init.mockResolvedValue()
       mockLiff.isLoggedIn.mockReturnValue(true)
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand',
         storeId: 'test-store'
-      })
-      
+      }
+
       wrapper = createWrapper()
-      
+
       // 手動設置成功狀態用於測試
       wrapper.vm.success = true
       wrapper.vm.isLoading = false
       await wrapper.vm.$nextTick()
-      
+
       expect(wrapper.find('.success-container').exists()).toBe(true)
       expect(wrapper.find('.success-icon').exists()).toBe(true)
     })
@@ -549,10 +658,10 @@ describe('LineEntry.vue', () => {
       // Mock 避免初始化錯誤
       mockLiff.init.mockResolvedValue()
       mockLiff.isLoggedIn.mockReturnValue(true)
-      mockGetCleanParams.mockReturnValue({
+      mockRoute.query = {
         brandId: 'test-brand',
         storeId: 'test-store'
-      })
+      }
 
       wrapper = createWrapper()
       

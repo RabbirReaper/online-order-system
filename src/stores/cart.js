@@ -586,6 +586,7 @@ export const useCartStore = defineStore('cart', () => {
     currentStore,
     isSubmitting,
     validationErrors,
+    serviceChargeRate,
 
     // 計算屬性
     subtotal,

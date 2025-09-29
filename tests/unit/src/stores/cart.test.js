@@ -69,12 +69,13 @@ describe('Cart Store', () => {
     it('should have empty initial state', () => {
       expect(cartStore.items).toEqual([])
       expect(cartStore.orderType).toBe('')
-      expect(cartStore.customerInfo).toEqual({ name: '', phone: '' })
+      expect(cartStore.customerInfo).toEqual({ name: '', phone: '', lineUniqueId: '' })
       expect(cartStore.appliedCoupons).toEqual([])
       expect(cartStore.paymentType).toBe('On-site')
       expect(cartStore.paymentMethod).toBe('cash')
       expect(cartStore.isStaffMode).toBe(false)
       expect(cartStore.notes).toBe('')
+      expect(cartStore.serviceChargeRate).toBe(0)
     })
 
     it('should have correct initial computed properties', () => {
@@ -84,6 +85,7 @@ describe('Cart Store', () => {
       expect(cartStore.total).toBe(0)
       expect(cartStore.itemCount).toBe(0)
       expect(cartStore.isCartEmpty).toBe(true)
+      expect(cartStore.isValid).toBe(false)
     })
   })
 
@@ -180,7 +182,11 @@ describe('Cart Store', () => {
 
       cartStore.setCustomerInfo(customerInfo)
 
-      expect(cartStore.customerInfo).toEqual(customerInfo)
+      expect(cartStore.customerInfo).toEqual({
+        name: 'John Doe',
+        phone: '0912345678',
+        lineUniqueId: ''
+      })
     })
 
     it('should merge customer info', () => {
@@ -189,7 +195,8 @@ describe('Cart Store', () => {
 
       expect(cartStore.customerInfo).toEqual({
         name: 'John',
-        phone: '0912345678'
+        phone: '0912345678',
+        lineUniqueId: ''
       })
     })
 
@@ -213,6 +220,35 @@ describe('Cart Store', () => {
       cartStore.setDineInInfo(dineInInfo)
 
       expect(cartStore.dineInInfo).toEqual(dineInInfo)
+    })
+
+    it('should set LINE user info correctly', () => {
+      const lineUserData = {
+        displayName: 'LINE User',
+        userId: 'line-user-123'
+      }
+
+      cartStore.setLineUserInfo(lineUserData)
+
+      expect(cartStore.customerInfo.name).toBe('LINE User')
+      expect(cartStore.customerInfo.lineUniqueId).toBe('line-user-123')
+      expect(cartStore.customerInfo.phone).toBe('') // Should preserve existing phone
+    })
+
+    it('should preserve existing name when setting LINE user info with empty displayName', () => {
+      // Set existing customer info
+      cartStore.setCustomerInfo({ name: 'John Doe', phone: '0912345678' })
+
+      // Set LINE user data without displayName
+      const lineUserData = {
+        userId: 'line-user-456'
+      }
+
+      cartStore.setLineUserInfo(lineUserData)
+
+      expect(cartStore.customerInfo.name).toBe('John Doe') // Should preserve existing name
+      expect(cartStore.customerInfo.lineUniqueId).toBe('line-user-456')
+      expect(cartStore.customerInfo.phone).toBe('0912345678') // Should preserve existing phone
     })
   })
 
@@ -519,7 +555,7 @@ describe('Cart Store', () => {
       expect(cartStore.validationErrors).toEqual({})
 
       // Customer info should be cleared for non-staff mode
-      expect(cartStore.customerInfo).toEqual({ name: '', phone: '' })
+      expect(cartStore.customerInfo).toEqual({ name: '', phone: '', lineUniqueId: '' })
 
       // Order type specific info should be cleared
       expect(cartStore.deliveryInfo).toEqual({
@@ -531,12 +567,12 @@ describe('Cart Store', () => {
 
     it('should preserve customer info in staff mode', () => {
       cartStore.toggleStaffMode() // Enable staff mode
-      cartStore.setCustomerInfo({ name: 'John', phone: '0912345678' })
+      cartStore.setCustomerInfo({ name: 'John', phone: '0912345678', lineUniqueId: 'line-123' })
 
       cartStore.clearCart()
 
       // In staff mode, customer info should NOT be cleared
-      expect(cartStore.customerInfo).toEqual({ name: 'John', phone: '0912345678' })
+      expect(cartStore.customerInfo).toEqual({ name: 'John', phone: '0912345678', lineUniqueId: 'line-123' })
     })
   })
 })
