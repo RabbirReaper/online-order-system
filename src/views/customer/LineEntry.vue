@@ -27,24 +27,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useLineParams } from '@/composables/useLineParams'
+import { useRouter, useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import api from '@/api'
 import liff from '@line/liff'
 
-// 組合式 API
 const router = useRouter()
-const { getCleanParams } = useLineParams()
+const route = useRoute()
 const cartStore = useCartStore()
 
-// 響應式狀態
 const isLoading = ref(true)
 const error = ref(null)
 const success = ref(false)
 const currentStep = ref('init')
 
-// 載入訊息
 const loadingMessage = computed(() => {
   const messages = {
     init: '正在初始化...',
@@ -57,62 +53,48 @@ const loadingMessage = computed(() => {
   return messages[currentStep.value] || '處理中...'
 })
 
-// 主要處理邏輯
+const getQueryParams = () => {
+  const query = route.query
+
+  const params = {
+    liffId: query.liffId || '2007974797-rvmVYQB0',
+    brandId: query.brandId,
+    storeId: query.storeId,
+    tableNumber: query.tableNumber,
+    campaign: query.campaign,
+    promo: query.promo,
+    source: query.source || 'line',
+    timestamp: Date.now(),
+  }
+
+  console.log('📋 從 query 解析的參數:', params)
+  return params
+}
+
 const processLineEntry = async () => {
   try {
-    // Step 1: 初始化 LIFF
     currentStep.value = 'liff'
     console.log('🔗 開始初始化 LIFF...')
 
-    // 獲取固定的 liffId 從環境變數
-    const liffId = '2007974797-rvmVYQB0'
+    const params = getQueryParams()
 
-    if (!liffId) {
-      throw new Error('LIFF ID 未設定，請檢查環境變數 VITE_LIFF_ID')
+    if (!params.liffId) {
+      throw new Error('LIFF ID 未設定')
     }
 
-    await liff.init({ liffId })
+    if (params.brandId && params.storeId) {
+      sessionStorage.setItem('temp-brandId', params.brandId)
+      sessionStorage.setItem('temp-storeId', params.storeId)
+      console.log('💾 已預先保存參數到 sessionStorage')
+    } else {
+      console.warn('⚠️ 缺少必要參數 brandId 或 storeId')
+    }
+
+    await liff.init({ liffId: params.liffId })
     console.log('✅ LIFF 初始化成功')
 
-    // 🔥 重要：在檢查登入狀態前先獲取並保存參數
-    // 獲取 URL 參數（不包含 liffId，因為它是固定的）
-    let params
-    try {
-      params = getCleanParams()
-      console.log('📋 解析到的參數:', params)
-
-      // 🔥 預先保存參數到 sessionStorage，避免登錄過程中遺失
-      if (params.brandId && params.storeId) {
-        sessionStorage.setItem('temp-brandId', params.brandId)
-        sessionStorage.setItem('temp-storeId', params.storeId)
-        console.log('💾 已預先保存參數到 sessionStorage')
-      } else {
-        console.warn('⚠️ 缺少必要參數 brandId 或 storeId:', params)
-      }
-    } catch (paramError) {
-      console.warn('⚠️ 參數解析失敗，嘗試從 sessionStorage 恢復:', paramError.message)
-
-      // 嘗試從 sessionStorage 恢復參數
-      const tempBrandId = sessionStorage.getItem('temp-brandId')
-      const tempStoreId = sessionStorage.getItem('temp-storeId')
-
-      if (tempBrandId && tempStoreId) {
-        params = {
-          brandId: tempBrandId,
-          storeId: tempStoreId,
-          source: 'recovered',
-          timestamp: Date.now(),
-        }
-        console.log('🔄 從 sessionStorage 恢復參數:', params)
-      } else {
-        throw new Error('無法獲取必要的店鋪參數，請確認連結正確')
-      }
-    }
-
-    // 短暫延遲，讓用戶看到載入過程
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 2: 檢查登入狀態
     currentStep.value = 'auth'
     console.log('🔐 檢查登入狀態...')
 
@@ -127,7 +109,6 @@ const processLineEntry = async () => {
     try {
       console.log('👤 正在獲取用戶資訊...')
 
-      // 方法 1: 使用 getProfile() 獲取用戶基本資訊
       const profile = await liff.getProfile()
       const userId = profile.userId
       const displayName = profile.displayName
@@ -141,20 +122,17 @@ const processLineEntry = async () => {
         statusMessage,
       })
 
-      // 方法 2: 如果需要 ID Token (用於 OpenID Connect)
       const idToken = liff.getIDToken()
       console.log('🎫 ID Token:', idToken)
 
-      // 保存 LINE 用戶資訊到購物車 store
       cartStore.setLineUserInfo({
         userId,
         displayName,
-        pictureUrl
+        pictureUrl,
       })
 
       console.log('✅ LINE 用戶資訊已保存到購物車')
 
-      // 也保存到 localStorage 作為備份
       localStorage.setItem('lineUserId', userId)
       localStorage.setItem('lineDisplayName', displayName)
     } catch (userError) {
@@ -162,37 +140,48 @@ const processLineEntry = async () => {
     }
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 3: 驗證參數完整性
     currentStep.value = 'params'
-    console.log('📋 最終使用的參數:', params)
-    console.log('🔧 使用的 LIFF ID:', liffId)
 
-    // 短暫延遲，讓用戶看到載入過程
+    let finalBrandId = params.brandId
+    let finalStoreId = params.storeId
+
+    if (!finalBrandId || !finalStoreId) {
+      const tempBrandId = sessionStorage.getItem('temp-brandId')
+      const tempStoreId = sessionStorage.getItem('temp-storeId')
+
+      if (tempBrandId && tempStoreId) {
+        finalBrandId = tempBrandId
+        finalStoreId = tempStoreId
+        console.log('🔄 從 sessionStorage 恢復參數')
+      } else {
+        throw new Error('無法獲取必要的店鋪參數，請確認連結正確')
+      }
+    }
+
+    console.log('📋 最終使用的參數:', { brandId: finalBrandId, storeId: finalStoreId })
+    console.log('🔧 使用的 LIFF ID:', params.liffId)
+
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    // Step 4: 設定購物車上下文
     currentStep.value = 'context'
-    cartStore.setBrandAndStore(params.brandId, params.storeId)
+    cartStore.setBrandAndStore(finalBrandId, finalStoreId)
     console.log('🛒 設定購物車上下文:', {
-      brandId: params.brandId,
-      storeId: params.storeId,
+      brandId: finalBrandId,
+      storeId: finalStoreId,
     })
 
-    // 清理臨時保存的參數
     sessionStorage.removeItem('temp-brandId')
     sessionStorage.removeItem('temp-storeId')
     console.log('🧹 清理臨時參數')
 
-    // Step 5: 準備跳轉
     currentStep.value = 'redirect'
     success.value = true
 
-    // 構建目標 URL
     const targetRoute = {
       name: 'menu',
       params: {
-        brandId: params.brandId,
-        storeId: params.storeId,
+        brandId: finalBrandId,
+        storeId: finalStoreId,
       },
       query: {
         fromLine: 'true',
@@ -206,7 +195,6 @@ const processLineEntry = async () => {
 
     console.log('🔄 準備跳轉到:', targetRoute)
 
-    // 延遲跳轉，讓用戶看到成功訊息
     setTimeout(() => {
       router.replace(targetRoute)
     }, 800)
@@ -221,7 +209,6 @@ const processLineEntry = async () => {
       userAgent: navigator.userAgent,
     })
 
-    // 針對 LIFF 特定錯誤提供更友善的錯誤訊息
     let errorMessage = '處理失敗，請重新嘗試'
 
     if (err.code) {
@@ -242,7 +229,6 @@ const processLineEntry = async () => {
       errorMessage = err.message
     }
 
-    // 如果是參數相關錯誤，提供更具體的指導
     if (err.message && err.message.includes('參數')) {
       errorMessage +=
         '\n\n💡 這可能是因為：\n• 連結中缺少必要參數\n• 首次登錄時參數被清除\n• 請嘗試重新開啟連結'
@@ -253,7 +239,6 @@ const processLineEntry = async () => {
   }
 }
 
-// 重試邏輯
 const retry = () => {
   error.value = null
   success.value = false
@@ -262,14 +247,11 @@ const retry = () => {
   processLineEntry()
 }
 
-// 返回首頁
 const goHome = () => {
   router.replace({ name: 'landing-home' })
 }
 
-// 生命週期
 onMounted(() => {
-  // 記錄來源資訊（用於除錯）
   const userAgent = navigator.userAgent
   const isInLineApp = userAgent.includes('Line/')
 
@@ -283,11 +265,9 @@ onMounted(() => {
     console.warn('⚠️ 不在 LINE App 環境中')
   }
 
-  // 開始處理
   processLineEntry()
 })
 
-// 錯誤邊界處理
 window.addEventListener('unhandledrejection', (event) => {
   console.error('未處理的 Promise 錯誤:', event.reason)
   if (isLoading.value) {
@@ -320,7 +300,6 @@ window.addEventListener('unhandledrejection', (event) => {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* 載入動畫 */
 .spinner {
   width: 50px;
   height: 50px;
@@ -346,7 +325,6 @@ window.addEventListener('unhandledrejection', (event) => {
   margin: 0;
 }
 
-/* 錯誤狀態 */
 .error-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -400,7 +378,6 @@ window.addEventListener('unhandledrejection', (event) => {
   background: #e9ecef;
 }
 
-/* 成功狀態 */
 .success-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -412,7 +389,6 @@ window.addEventListener('unhandledrejection', (event) => {
   margin: 0;
 }
 
-/* 響應式設計 */
 @media (max-width: 480px) {
   .line-entry-page {
     padding: 16px;
