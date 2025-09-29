@@ -6,6 +6,7 @@
 
 import mongoose from 'mongoose'
 import Option from '../../../../../models/Dish/Option.js'
+import DishInstance from '../../../../../models/Dish/DishInstance.js'
 import * as inventoryService from '../../../../inventory/stockManagement.js'
 
 /**
@@ -33,21 +34,35 @@ export const validateDeliveryOrderInventory = async (orderData) => {
   // Step 1: 收集所有需要檢查的餐點模板ID
   for (const item of dishItems) {
     try {
-      // 檢查主餐點的模板ID
-      if (item.templateId && mongoose.Types.ObjectId.isValid(item.templateId)) {
-        const mainTemplateId = item.templateId.toString()
-        inventoryMap.set(mainTemplateId, (inventoryMap.get(mainTemplateId) || 0) + item.quantity)
-        // console.log(
-        //   `📋 [外送訂單] 主餐點已加入檢查清單: ${item.itemName} (模板ID: ${mainTemplateId})`,
-        // )
-      } else {
-        // console.log(`⚠️ [外送訂單] 跳過無效或缺失的餐點模板ID: ${item.itemName}`)
+      // 檢查主餐點的模板ID - 從 DishInstance 取得
+      if (!item.dishInstance || !mongoose.Types.ObjectId.isValid(item.dishInstance)) {
+        // console.log(`⚠️ [外送訂單] 跳過無效或缺失的 dishInstance ID: ${item.itemName}`)
+        continue // 跳過沒有有效 dishInstance ID 的項目
+      }
+
+      let dishInstance
+      try {
+        dishInstance = await DishInstance.findById(item.dishInstance)
+      } catch (error) {
+        console.warn(`⚠️ [外送訂單] 查詢 DishInstance 失敗: ${item.dishInstance}`, error.message)
+        continue // 跳過查詢失敗的項目
+      }
+
+      if (!dishInstance?.templateId || !mongoose.Types.ObjectId.isValid(dishInstance.templateId)) {
+        // console.log(`⚠️ [外送訂單] DishInstance ${item.dishInstance} 沒有有效的 templateId: ${item.itemName}`)
         continue // 跳過沒有有效模板ID的項目
       }
 
-      // 檢查 Option 關聯餐點
-      if (item.options && item.options.length > 0) {
-        for (const optionCategory of item.options) {
+      // 加入主餐點模板ID到檢查清單
+      const mainTemplateId = dishInstance.templateId.toString()
+      inventoryMap.set(mainTemplateId, (inventoryMap.get(mainTemplateId) || 0) + item.quantity)
+      // console.log(
+      //   `📋 [外送訂單] 主餐點已加入檢查清單: ${item.itemName} (模板ID: ${mainTemplateId})`,
+      // )
+
+      // 檢查 Option 關聯餐點 - 從 DishInstance 取得選項資訊
+      if (dishInstance?.options && dishInstance.options.length > 0) {
+        for (const optionCategory of dishInstance.options) {
           if (optionCategory.selections && optionCategory.selections.length > 0) {
             for (const selection of optionCategory.selections) {
               if (selection.optionId && mongoose.Types.ObjectId.isValid(selection.optionId)) {
