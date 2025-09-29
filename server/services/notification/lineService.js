@@ -36,7 +36,7 @@ export const sendLineMessage = async (accessToken, userId, message) => {
           Authorization: `Bearer ${accessToken}`,
         },
         timeout: 10000, // 10秒超時
-      }
+      },
     )
 
     if (response.status === 200) {
@@ -66,9 +66,9 @@ export const sendLineMessage = async (accessToken, userId, message) => {
  */
 export const buildOrderConfirmationMessage = (order, confirmUrl) => {
   const orderTypeText = {
-    takeout: '外帶',
+    takeout: '自取',
     delivery: '外送',
-    dine_in: '內用'
+    dine_in: '內用',
   }
 
   const message = `
