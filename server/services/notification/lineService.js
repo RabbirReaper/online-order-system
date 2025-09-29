@@ -1,15 +1,10 @@
-/**
- * LINE通知服務
- * 處理LINE Bot訊息發送
- */
-
 import axios from 'axios'
 
 /**
  * 發送LINE訊息
  * @param {string} accessToken - LINE Channel Access Token
  * @param {string} userId - LINE用戶ID（lineUniqueId）
- * @param {string} message - 要發送的訊息內容
+ * @param {Object} message - 要發送的訊息內容（可以是文字或Flex Message）
  * @returns {Promise<boolean>} 是否發送成功
  */
 export const sendLineMessage = async (accessToken, userId, message) => {
@@ -23,19 +18,14 @@ export const sendLineMessage = async (accessToken, userId, message) => {
       'https://api.line.me/v2/bot/message/push',
       {
         to: userId,
-        messages: [
-          {
-            type: 'text',
-            text: message,
-          },
-        ],
+        messages: [message],
       },
       {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        timeout: 10000, // 10秒超時
+        timeout: 10000,
       },
     )
 
@@ -59,10 +49,10 @@ export const sendLineMessage = async (accessToken, userId, message) => {
 }
 
 /**
- * 建立訂單確認訊息內容
+ * 建立訂單確認訊息內容（Flex Message）
  * @param {Object} order - 訂單物件
  * @param {string} confirmUrl - 確認訂單的網址
- * @returns {string} 格式化的訊息內容
+ * @returns {Object} Flex Message 物件
  */
 export const buildOrderConfirmationMessage = (order, confirmUrl) => {
   const orderTypeText = {
@@ -71,18 +61,144 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
     dine_in: '內用',
   }
 
-  const message = `
-🛒 訂單確認通知
+  const orderNumber = `${order.orderDateCode}-${order.sequence.toString().padStart(3, '0')}`
 
-訂單編號：${order.orderDateCode}-${order.sequence.toString().padStart(3, '0')}
-訂單類型：${orderTypeText[order.orderType] || order.orderType}
-訂單金額：$${order.total}
-
-請點擊以下連結確認您的訂單：
-${confirmUrl}
-
-如有任何問題，請聯繫店家。
-  `.trim()
-
-  return message
+  return {
+    type: 'flex',
+    altText: `訂單確認通知 - ${orderNumber}`,
+    contents: {
+      type: 'bubble',
+      hero: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'text',
+            text: '🛒 訂單確認通知',
+            weight: 'bold',
+            size: 'xl',
+            color: '#ffffff',
+          },
+        ],
+        backgroundColor: '#17c964',
+        paddingAll: '20px',
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'md',
+            contents: [
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '訂單編號',
+                    color: '#aaaaaa',
+                    size: 'sm',
+                    flex: 0,
+                  },
+                  {
+                    type: 'text',
+                    text: orderNumber,
+                    wrap: true,
+                    color: '#666666',
+                    size: 'sm',
+                    align: 'end',
+                  },
+                ],
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '訂單類型',
+                    color: '#aaaaaa',
+                    size: 'sm',
+                    flex: 0,
+                  },
+                  {
+                    type: 'text',
+                    text: orderTypeText[order.orderType] || order.orderType,
+                    wrap: true,
+                    color: '#666666',
+                    size: 'sm',
+                    align: 'end',
+                  },
+                ],
+              },
+              {
+                type: 'separator',
+                margin: 'md',
+              },
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '訂單金額',
+                    color: '#aaaaaa',
+                    size: 'sm',
+                    flex: 0,
+                  },
+                  {
+                    type: 'text',
+                    text: `$${order.total}`,
+                    wrap: true,
+                    color: '#17c964',
+                    size: 'xl',
+                    weight: 'bold',
+                    align: 'end',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        paddingAll: '20px',
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            height: 'sm',
+            action: {
+              type: 'uri',
+              label: '查看訂單',
+              uri: confirmUrl,
+            },
+            color: '#17c964',
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: '如有任何問題，請聯繫店家',
+                color: '#aaaaaa',
+                size: 'xxs',
+                align: 'center',
+                wrap: true,
+              },
+            ],
+            paddingTop: 'md',
+          },
+        ],
+        flex: 0,
+      },
+    },
+  }
 }
