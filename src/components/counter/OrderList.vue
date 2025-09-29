@@ -375,7 +375,7 @@ const getOrderTypeClass = (orderType) => {
 const formatOrderType = (orderType) => {
   const typeMap = {
     dine_in: '內用',
-    takeout: '外帶',
+    takeout: '自取',
     delivery: '外送',
   }
   return typeMap[orderType] || orderType

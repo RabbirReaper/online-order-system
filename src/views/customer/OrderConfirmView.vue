@@ -384,7 +384,7 @@ const getItemName = (item) => {
 const formatOrderType = (type) => {
   const types = {
     dine_in: '內用',
-    takeout: '外帶',
+    takeout: '自取',
     delivery: '外送',
   }
   return types[type] || type
