@@ -309,7 +309,7 @@ watch(
     if ((newBrandId !== oldBrandId || newStoreId !== oldStoreId) && newBrandId && newStoreId) {
       loadInventoryData()
     }
-  }
+  },
 )
 </script>
 

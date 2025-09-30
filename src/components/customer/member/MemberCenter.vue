@@ -100,7 +100,6 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -156,7 +155,6 @@ const errorModal = ref(null)
 const isLoading = ref(true)
 const errorMessage = ref('')
 const userProfile = ref({})
-
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
@@ -228,7 +226,6 @@ const loadUserData = async () => {
     // 載入用戶基本資料
     const profileResponse = await authStore.getUserProfile()
     userProfile.value = profileResponse
-
   } catch (error) {
     console.error('載入用戶資料失敗:', error)
 
@@ -432,7 +429,6 @@ onMounted(() => {
   color: #6c757d;
 }
 
-
 /* 按鈕樣式 */
 .btn-primary {
   background-color: #d35400;
@@ -473,6 +469,5 @@ onMounted(() => {
   .user-actions {
     margin-left: 0;
   }
-
 }
 </style>

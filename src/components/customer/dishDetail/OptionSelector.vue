@@ -8,7 +8,12 @@
 
         <!-- 單選類型 -->
         <div v-if="category.inputType === 'single'" class="d-flex flex-wrap">
-          <div v-for="option in category.options" :key="option._id" class="form-check me-4 mb-3" :class="{ 'option-disabled': isOptionDisabled(option) }">
+          <div
+            v-for="option in category.options"
+            :key="option._id"
+            class="form-check me-4 mb-3"
+            :class="{ 'option-disabled': isOptionDisabled(option) }"
+          >
             <input
               class="form-check-input"
               type="radio"
@@ -27,7 +32,12 @@
 
         <!-- 多選類型 -->
         <div v-else-if="category.inputType === 'multiple'" class="d-flex flex-wrap">
-          <div v-for="option in category.options" :key="option._id" class="form-check me-4 mb-3" :class="{ 'option-disabled': isOptionDisabled(option) }">
+          <div
+            v-for="option in category.options"
+            :key="option._id"
+            class="form-check me-4 mb-3"
+            :class="{ 'option-disabled': isOptionDisabled(option) }"
+          >
             <input
               class="form-check-input"
               type="checkbox"
