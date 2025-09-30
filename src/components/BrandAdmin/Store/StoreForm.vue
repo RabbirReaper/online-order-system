@@ -240,7 +240,9 @@
                 </div>
 
                 <div class="mb-3">
-                  <label for="lineChannelAccessToken" class="form-label small">LINE Channel Access Token</label>
+                  <label for="lineChannelAccessToken" class="form-label small"
+                    >LINE Channel Access Token</label
+                  >
                   <BFormInput
                     id="lineChannelAccessToken"
                     v-model="formData.lineChannelAccessToken"

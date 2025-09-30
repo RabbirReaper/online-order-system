@@ -517,7 +517,6 @@ const formatDateTime = (dateString) => {
   return date.toLocaleString('zh-TW')
 }
 
-
 // 顯示訂單詳情
 const showOrderDetail = async (order) => {
   console.log('顯示訂單詳情:', order)
@@ -526,7 +525,6 @@ const showOrderDetail = async (order) => {
     orderDetailModal.value.show()
   }
 }
-
 
 // 載入訂單資料
 const loadOrdersData = async () => {

@@ -40,24 +40,32 @@ const chartData = computed(() => {
   // 付費方式色彩配置
   const colorConfig = {
     現金: {
-      background: 'rgba(46, 204, 113, 0.8)',
-      border: 'rgba(46, 204, 113, 1)',
+      background: 'rgba(46, 204, 113, 0.9)',
+      border: 'rgba(39, 174, 96, 1)',
     },
     'LINE Pay': {
-      background: 'rgba(52, 152, 219, 0.8)',
-      border: 'rgba(52, 152, 219, 1)',
+      background: 'rgba(52, 152, 219, 0.9)',
+      border: 'rgba(41, 128, 185, 1)',
     },
     信用卡: {
-      background: 'rgba(155, 89, 182, 0.8)',
-      border: 'rgba(155, 89, 182, 1)',
+      background: 'rgba(155, 89, 182, 0.9)',
+      border: 'rgba(142, 68, 173, 1)',
     },
     其他: {
-      background: 'rgba(241, 196, 15, 0.8)',
-      border: 'rgba(241, 196, 15, 1)',
+      background: 'rgba(241, 196, 15, 0.9)',
+      border: 'rgba(243, 156, 18, 1)',
+    },
+    Foodpanda: {
+      background: 'rgba(236, 112, 169, 0.9)',
+      border: 'rgba(219, 68, 144, 1)',
+    },
+    UberEats: {
+      background: 'rgba(39, 174, 96, 0.9)',
+      border: 'rgba(34, 153, 84, 1)',
     },
     未付款: {
-      background: 'rgba(149, 165, 166, 0.7)',
-      border: 'rgba(149, 165, 166, 1)',
+      background: 'rgba(189, 195, 199, 0.8)',
+      border: 'rgba(127, 140, 141, 1)',
     },
   }
 

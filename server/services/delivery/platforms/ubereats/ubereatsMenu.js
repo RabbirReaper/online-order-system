@@ -236,7 +236,15 @@ function createModifierItems(menuData) {
  * @returns {Array} Uber Eats 格式的營業時間
  */
 function convertBusinessHoursToServiceAvailability(businessHours) {
-  const dayMapping = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  const dayMapping = {
+    1: 'monday',
+    2: 'tuesday',
+    3: 'wednesday',
+    4: 'thursday',
+    5: 'friday',
+    6: 'saturday',
+    0: 'sunday',
+  }
 
   const serviceAvailability = []
   // console.log(businessHours)

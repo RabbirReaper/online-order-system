@@ -60,6 +60,8 @@
           :option-categories="optionCategories"
           :is-edit-mode="isEditMode"
           :existing-item="existingItem"
+          :inventory-data="inventoryData"
+          :is-loading-inventory="isLoadingInventory"
           @add-to-cart="addToCart"
           @update-cart="updateCart"
         />
@@ -69,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 import OptionSelector from '@/components/customer/dishDetail/OptionSelector.vue'
@@ -91,6 +93,10 @@ const dish = ref({})
 const optionCategories = ref([])
 const isLoading = ref(true)
 const existingItem = ref(null)
+
+// 庫存相關數據
+const inventoryData = ref({})
+const isLoadingInventory = ref(false)
 
 const loadDishData = async () => {
   try {
@@ -155,6 +161,7 @@ const loadDishData = async () => {
                       name: opt.refOption.name,
                       price: opt.refOption.price || 0,
                       order: opt.order || 0,
+                      refDishTemplate: opt.refOption.refDishTemplate || null,
                     }
                   } else {
                     return {
@@ -162,6 +169,7 @@ const loadDishData = async () => {
                       name: opt.name || '未命名選項',
                       price: opt.price || 0,
                       order: opt.order || 0,
+                      refDishTemplate: null,
                     }
                   }
                 })
@@ -203,6 +211,57 @@ const loadExistingItem = () => {
   }
 }
 
+// 載入庫存資料
+const loadInventoryData = async () => {
+  if (!brandId.value || !storeId.value) {
+    console.warn('缺少 brandId 或 storeId，無法載入庫存資料')
+    return
+  }
+
+  isLoadingInventory.value = true
+
+  try {
+    // 獲取店鋪所有餐點庫存
+    const response = await api.inventory.getStoreInventory({
+      brandId: brandId.value,
+      storeId: storeId.value,
+      inventoryType: 'DishTemplate',
+    })
+
+    if (response.success) {
+      const inventoryMap = {}
+
+      // 將庫存資料按餐點模板 ID 建立對應關係
+      response.inventory.forEach((item) => {
+        if (item.dish && item.dish._id) {
+          inventoryMap[item.dish._id] = {
+            inventoryId: item._id,
+            enableAvailableStock: item.enableAvailableStock,
+            availableStock: item.availableStock,
+            totalStock: item.totalStock,
+            isSoldOut: item.isSoldOut,
+            isInventoryTracked: item.isInventoryTracked,
+          }
+        }
+      })
+
+      inventoryData.value = inventoryMap
+    } else {
+      console.warn('庫存資料載入失敗:', response.message)
+    }
+  } catch (error) {
+    console.error('載入庫存資料時發生錯誤:', error)
+  } finally {
+    isLoadingInventory.value = false
+  }
+}
+
+// 獲取項目的庫存資訊（用於關聯餐點的選項）
+const getInventoryInfo = (dishTemplateId) => {
+  if (!dishTemplateId) return null
+  return inventoryData.value[dishTemplateId] || null
+}
+
 const goBack = () => {
   router.back()
 }
@@ -237,7 +296,21 @@ const updateCart = (dishInstance) => {
 
 onMounted(async () => {
   await loadDishData()
+  // 載入庫存資料
+  if (brandId.value && storeId.value) {
+    await loadInventoryData()
+  }
 })
+
+// 監聽參數變化，重新載入庫存資料
+watch(
+  [() => brandId.value, () => storeId.value],
+  ([newBrandId, newStoreId], [oldBrandId, oldStoreId]) => {
+    if ((newBrandId !== oldBrandId || newStoreId !== oldStoreId) && newBrandId && newStoreId) {
+      loadInventoryData()
+    }
+  },
+)
 </script>
 
 <style scoped>

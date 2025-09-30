@@ -145,6 +145,7 @@
                       class="card option-card position-relative"
                       :class="{
                         selected: isOptionSelected(optionCategory._id, getOptionId(option)),
+                        'option-disabled': isOptionDisabled(option),
                       }"
                       @click="selectOption(optionCategory, option, 'single')"
                     >
@@ -178,6 +179,7 @@
                       class="card option-card position-relative"
                       :class="{
                         selected: isOptionSelected(optionCategory._id, getOptionId(option)),
+                        'option-disabled': isOptionDisabled(option),
                       }"
                       @click="selectOption(optionCategory, option, 'multiple')"
                     >
@@ -286,7 +288,7 @@ const selectedCategory = computed(() => {
 })
 
 const dishOptionCategories = computed(() => {
-  if (!selectedDish.value) return []
+  if (!selectedDish.value || !selectedDish.value.optionCategories) return []
 
   const categories = []
   selectedDish.value.optionCategories.forEach((categoryRef) => {
@@ -398,6 +400,50 @@ const getOptionName = (option) => {
 
 const getOptionPrice = (option) => {
   return option.refOption ? option.refOption.price || 0 : option.price || 0
+}
+
+// 檢查選項是否因庫存問題而被禁用
+const isOptionDisabled = (option) => {
+  // 獲取選項的 refDishTemplate
+  let refDishTemplate = null
+
+  if (option.refOption && option.refOption.refDishTemplate) {
+    refDishTemplate = option.refOption.refDishTemplate
+  } else if (option.refDishTemplate) {
+    refDishTemplate = option.refDishTemplate
+  }
+
+  // 如果沒有關聯餐點，則不禁用
+  if (!refDishTemplate || !refDishTemplate._id) {
+    return false
+  }
+
+  // 如果正在載入庫存資料，暫時不禁用
+  if (isLoadingInventory.value) {
+    return false
+  }
+
+  // 檢查關聯餐點的庫存狀況
+  const dishTemplateId = refDishTemplate._id
+  const inventoryInfo = getInventoryInfo(dishTemplateId)
+
+  if (!inventoryInfo) {
+    // 沒有庫存資料，預設不禁用
+    return false
+  }
+
+  // 如果商品被標記為售罄，則禁用
+  if (inventoryInfo.isSoldOut) {
+    return true
+  }
+
+  // 如果啟用庫存追蹤且可用庫存為 0，則禁用
+  if (inventoryInfo.isInventoryTracked && inventoryInfo.enableAvailableStock) {
+    return inventoryInfo.availableStock <= 0
+  }
+
+  // 其他情況不禁用
+  return false
 }
 
 // 庫存相關方法
@@ -541,6 +587,11 @@ const quickSelectBundle = (bundle) => {
 
 // 選擇選項
 const selectOption = (category, option, inputType) => {
+  // 檢查選項是否被禁用
+  if (isOptionDisabled(option)) {
+    return
+  }
+
   const categoryId = category._id
   const optionId = getOptionId(option)
 
@@ -1021,15 +1072,36 @@ watch(menuCategories, async (newCategories) => {
   background-color: #c4b5fd; /* 原本 #a855f7 調淺 */
 }
 
-.option-card:hover {
+.option-card:not(.option-disabled):hover {
   border-color: #d1d5db;
   transform: translateY(-1px);
 }
 
-.option-card.selected {
+/* 禁用選項樣式 */
+.option-card.option-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.option-card.selected:not(.option-disabled) {
   border-color: #f97316;
   background-color: #fff7ed;
   border-width: 2px;
+}
+
+.option-card.option-disabled .option-name {
+  color: #6c757d;
+}
+
+.option-card.option-disabled .option-price {
+  color: #6c757d;
+}
+
+.option-card.option-disabled .option-category-badge {
+  opacity: 0.6;
 }
 
 .option-name {

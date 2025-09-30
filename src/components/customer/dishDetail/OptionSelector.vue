@@ -8,7 +8,12 @@
 
         <!-- 單選類型 -->
         <div v-if="category.inputType === 'single'" class="d-flex flex-wrap">
-          <div v-for="option in category.options" :key="option._id" class="form-check me-4 mb-3">
+          <div
+            v-for="option in category.options"
+            :key="option._id"
+            class="form-check me-4 mb-3"
+            :class="{ 'option-disabled': isOptionDisabled(option) }"
+          >
             <input
               class="form-check-input"
               type="radio"
@@ -16,6 +21,7 @@
               v-model="selectedOptions[category._id]"
               :value="option._id"
               :name="'category-' + category._id"
+              :disabled="isOptionDisabled(option)"
             />
             <label class="form-check-label fs-5" :for="'option-' + option._id">
               {{ option.name }}
@@ -26,13 +32,19 @@
 
         <!-- 多選類型 -->
         <div v-else-if="category.inputType === 'multiple'" class="d-flex flex-wrap">
-          <div v-for="option in category.options" :key="option._id" class="form-check me-4 mb-3">
+          <div
+            v-for="option in category.options"
+            :key="option._id"
+            class="form-check me-4 mb-3"
+            :class="{ 'option-disabled': isOptionDisabled(option) }"
+          >
             <input
               class="form-check-input"
               type="checkbox"
               :id="'option-' + option._id"
               v-model="multiSelectedOptions[category._id]"
               :value="option._id"
+              :disabled="isOptionDisabled(option)"
             />
             <label class="form-check-label fs-5" :for="'option-' + option._id">
               {{ option.name }}
@@ -101,6 +113,14 @@ const props = defineProps({
   existingItem: {
     type: Object,
     default: null,
+  },
+  inventoryData: {
+    type: Object,
+    default: () => ({}),
+  },
+  isLoadingInventory: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -194,6 +214,41 @@ const loadExistingOptions = () => {
   //   quantity: quantity.value,
   //   note: note.value
   // });
+}
+
+// 檢查選項是否因庫存問題而被禁用
+const isOptionDisabled = (option) => {
+  // 如果沒有關聯餐點，則不禁用
+  if (!option.refDishTemplate || !option.refDishTemplate._id) {
+    return false
+  }
+
+  // 如果正在載入庫存資料，暫時不禁用
+  if (props.isLoadingInventory) {
+    return false
+  }
+
+  // 檢查關聯餐點的庫存狀況
+  const dishTemplateId = option.refDishTemplate._id
+  const inventoryInfo = props.inventoryData[dishTemplateId]
+
+  if (!inventoryInfo) {
+    // 沒有庫存資料，預設不禁用
+    return false
+  }
+
+  // 如果商品被標記為售罄，則禁用
+  if (inventoryInfo.isSoldOut) {
+    return true
+  }
+
+  // 如果啟用庫存追蹤且可用庫存為 0，則禁用
+  if (inventoryInfo.isInventoryTracked && inventoryInfo.enableAvailableStock) {
+    return inventoryInfo.availableStock <= 0
+  }
+
+  // 其他情況不禁用
+  return false
 }
 
 // 數量控制
@@ -440,5 +495,20 @@ watch(
 .btn-success:hover {
   background-color: #218838;
   border-color: #1e7e34;
+}
+
+/* 禁用選項樣式 */
+.option-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.option-disabled .form-check-label {
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.option-disabled .form-check-input:disabled {
+  opacity: 0.3;
 }
 </style>
