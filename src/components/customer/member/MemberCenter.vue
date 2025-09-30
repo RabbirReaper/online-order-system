@@ -101,38 +101,6 @@
           </div>
         </div>
 
-        <!-- 快速統計 -->
-        <div class="stats-section">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-icon">
-                <i class="bi bi-star-fill text-warning"></i>
-              </div>
-              <div class="stat-content">
-                <h6 class="stat-number">{{ pointsBalance }}</h6>
-                <p class="stat-label">可用點數</p>
-              </div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-icon">
-                <i class="bi bi-ticket-perforated-fill text-success"></i>
-              </div>
-              <div class="stat-content">
-                <h6 class="stat-number">{{ availableCoupons }}</h6>
-                <p class="stat-label">可用優惠券</p>
-              </div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-icon">
-                <i class="bi bi-bag-fill text-primary"></i>
-              </div>
-              <div class="stat-content">
-                <h6 class="stat-number">{{ totalOrders }}</h6>
-                <p class="stat-label">總訂單數</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -189,10 +157,6 @@ const isLoading = ref(true)
 const errorMessage = ref('')
 const userProfile = ref({})
 
-// 假資料 (後續會被 API 替換)
-const pointsBalance = ref(0)
-const availableCoupons = ref(0)
-const totalOrders = ref(0)
 
 // 品牌ID計算屬性
 const brandId = computed(() => {
@@ -265,23 +229,6 @@ const loadUserData = async () => {
     const profileResponse = await authStore.getUserProfile()
     userProfile.value = profileResponse
 
-    // TODO: 後續加入這些 API 調用
-    // 載入點數餘額
-    // const pointsResponse = await api.promotion.getUserPoints(currentBrandId);
-    // pointsBalance.value = pointsResponse.balance || 0;
-
-    // 載入優惠券數量
-    // const couponsResponse = await api.promotion.getUserCoupons(currentBrandId);
-    // availableCoupons.value = couponsResponse.available || 0;
-
-    // 載入訂單總數
-    // const ordersResponse = await api.orderCustomer.getUserOrderCount(currentBrandId);
-    // totalOrders.value = ordersResponse.total || 0;
-
-    // 暫時使用假資料
-    pointsBalance.value = 1250
-    availableCoupons.value = 3
-    totalOrders.value = 18
   } catch (error) {
     console.error('載入用戶資料失敗:', error)
 
@@ -485,47 +432,6 @@ onMounted(() => {
   color: #6c757d;
 }
 
-/* 快速統計 */
-.stats-section {
-  background-color: white;
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 1rem 0.5rem;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-}
-
-.stat-icon {
-  margin-bottom: 0.5rem;
-}
-
-.stat-icon i {
-  font-size: 1.5rem;
-}
-
-.stat-number {
-  margin-bottom: 0.25rem;
-  color: #333;
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.stat-label {
-  margin: 0;
-  color: #6c757d;
-  font-size: 0.8rem;
-}
 
 /* 按鈕樣式 */
 .btn-primary {
@@ -568,25 +474,5 @@ onMounted(() => {
     margin-left: 0;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .stat-item {
-    display: flex;
-    align-items: center;
-    text-align: left;
-    padding: 0.75rem;
-  }
-
-  .stat-icon {
-    margin-right: 0.75rem;
-    margin-bottom: 0;
-  }
-
-  .stat-content {
-    flex: 1;
-  }
 }
 </style>
