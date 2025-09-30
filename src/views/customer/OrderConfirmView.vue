@@ -40,7 +40,17 @@
             <h5 class="mb-0">訂單進度</h5>
           </div>
 
-          <div class="progress-steps">
+          <!-- 訂單已取消提示 -->
+          <div v-if="orderDetails.status === 'cancelled'" class="cancelled-notice text-center py-4">
+            <div class="cancelled-icon mb-3">
+              <i class="bi bi-x-circle-fill text-danger fs-1"></i>
+            </div>
+            <h5 class="text-danger mb-2">訂單已取消</h5>
+            <p class="text-muted mb-0">此訂單已被取消</p>
+          </div>
+
+          <!-- 正常進度條 -->
+          <div v-else class="progress-steps">
             <!-- 進度線 -->
             <div class="progress-line">
               <div
@@ -591,6 +601,26 @@ onMounted(async () => {
 
 .points-reward-card {
   border: 1px solid #ffc107 !important;
+}
+
+/* 訂單已取消樣式 */
+.cancelled-notice {
+  padding: 2rem 0;
+}
+
+.cancelled-icon {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 進度條樣式 */
