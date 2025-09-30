@@ -14,366 +14,399 @@
     </div>
 
     <div v-if="!isLoading && !error">
-      <!-- 頁面頂部工具列 -->
+      <!-- 頁面頂部 -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">{{ brandName }} 品牌儀表板</h4>
-        <div class="btn-group">
-          <button class="btn btn-outline-secondary" @click="refreshData" :disabled="isRefreshing">
-            <span
-              v-if="isRefreshing"
-              class="spinner-border spinner-border-sm me-1"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            <i v-else class="bi bi-arrow-clockwise me-1"></i>
-            {{ isRefreshing ? '刷新中...' : '刷新數據' }}
-          </button>
-          <router-link :to="`/admin/${brandId}/stores`" class="btn btn-primary">
-            <i class="bi bi-shop me-1"></i>管理店鋪
-          </router-link>
-        </div>
+        <h4 class="mb-0">{{ brandName }} 營業儀表板</h4>
+        <button class="btn btn-outline-secondary" @click="refreshData" :disabled="isRefreshing">
+          <span
+            v-if="isRefreshing"
+            class="spinner-border spinner-border-sm me-1"
+            role="status"
+            aria-hidden="true"
+          ></span>
+          <i v-else class="bi bi-arrow-clockwise me-1"></i>
+          {{ isRefreshing ? '刷新中...' : '刷新數據' }}
+        </button>
       </div>
 
-      <!-- 統計卡片 -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-4">
-          <div class="card h-100 border-primary">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="text-primary mb-0">店鋪數量</h6>
-                  <p class="small text-muted mb-1">品牌旗下店鋪</p>
-                </div>
-                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                  <i class="bi bi-shop text-primary fs-4"></i>
-                </div>
-              </div>
-              <h2 class="mt-3">{{ stats.storeCount }}</h2>
-              <div class="small mt-2">
-                <span class="badge bg-success me-1">
-                  <i class="bi bi-check-circle me-1"></i>{{ stats.activeStoreCount }} 間啟用中
-                </span>
-                <span
-                  class="badge bg-secondary"
-                  v-if="stats.storeCount - stats.activeStoreCount > 0"
-                >
-                  <i class="bi bi-dash-circle me-1"></i
-                  >{{ stats.storeCount - stats.activeStoreCount }} 間已停用
-                </span>
-              </div>
-            </div>
-            <div class="card-footer bg-white border-0">
-              <router-link
-                :to="`/admin/${brandId}/stores`"
-                class="btn btn-sm btn-outline-primary w-100"
-              >
-                查看店鋪列表
-              </router-link>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-success">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="text-success mb-0">本週銷售額</h6>
-                  <p class="small text-muted mb-1">所有店鋪總計</p>
-                </div>
-                <div class="rounded-circle bg-success bg-opacity-10 p-3">
-                  <i class="bi bi-cash text-success fs-4"></i>
-                </div>
-              </div>
-              <h2 class="mt-3">NT$ {{ formatNumber(stats.weeklySales || 0) }}</h2>
-              <div class="small mt-2">
-                <span class="badge bg-success me-1" v-if="stats.salesGrowth > 0">
-                  <i class="bi bi-graph-up me-1"></i>較上週 +{{ stats.salesGrowth.toFixed(1) }}%
-                </span>
-                <span class="badge bg-danger me-1" v-else-if="stats.salesGrowth < 0">
-                  <i class="bi bi-graph-down me-1"></i>較上週 {{ stats.salesGrowth.toFixed(1) }}%
-                </span>
-                <span class="badge bg-secondary" v-else>
-                  <i class="bi bi-dash me-1"></i>與上週持平
-                </span>
-              </div>
-            </div>
-            <div class="card-footer bg-white border-0">
-              <router-link
-                :to="`/admin/${brandId}/orders/reports`"
-                class="btn btn-sm btn-outline-success w-100"
-              >
-                查看詳細報表
-              </router-link>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-info">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="text-info mb-0">本週訂單數</h6>
-                  <p class="small text-muted mb-1">所有店鋪總計</p>
-                </div>
-                <div class="rounded-circle bg-info bg-opacity-10 p-3">
-                  <i class="bi bi-receipt text-info fs-4"></i>
-                </div>
-              </div>
-              <h2 class="mt-3">{{ formatNumber(stats.weeklyOrders || 0) }}</h2>
-              <div class="small mt-2">
-                <span class="badge bg-info me-1">
-                  <i class="bi bi-people me-1"></i>客單價 NT$
-                  {{ formatNumber(stats.averageOrderValue || 0) }}
-                </span>
-              </div>
-            </div>
-            <div class="card-footer bg-white border-0">
-              <router-link
-                :to="`/admin/${brandId}/orders`"
-                class="btn btn-sm btn-outline-info w-100"
-              >
-                查看訂單列表
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 店鋪概覽 -->
+      <!-- 時間選擇按鈕 -->
       <div class="card mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-          <h5 class="mb-0">店鋪概覽</h5>
-          <router-link :to="`/admin/${brandId}/stores/create`" class="btn btn-sm btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>新增店鋪
-          </router-link>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2">
+            <button
+              class="btn btn-outline-primary"
+              :class="{ active: currentPeriod === 'today' }"
+              @click="setPeriod('today')"
+            >
+              今日
+            </button>
+            <button
+              class="btn btn-outline-primary"
+              :class="{ active: currentPeriod === 'yesterday' }"
+              @click="setPeriod('yesterday')"
+            >
+              昨日
+            </button>
+            <button
+              class="btn btn-outline-primary"
+              :class="{ active: currentPeriod === 'thisWeek' }"
+              @click="setPeriod('thisWeek')"
+            >
+              本週
+            </button>
+            <button
+              class="btn btn-outline-primary"
+              :class="{ active: currentPeriod === 'lastWeek' }"
+              @click="setPeriod('lastWeek')"
+            >
+              上週
+            </button>
+            <button
+              class="btn btn-outline-primary"
+              :class="{ active: currentPeriod === 'thisMonth' }"
+              @click="setPeriod('thisMonth')"
+            >
+              本月
+            </button>
+            <button
+              class="btn btn-outline-primary"
+              :class="{ active: currentPeriod === 'lastMonth' }"
+              @click="setPeriod('lastMonth')"
+            >
+              上個月
+            </button>
+          </div>
+          <div class="mt-2 text-muted small">
+            {{ formatDateRange(dateRange.fromDate, dateRange.toDate) }}
+          </div>
         </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>店鋪名稱</th>
-                  <th>狀態</th>
-                  <th>營業時間</th>
-                  <th>本週銷售額</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="store in stores" :key="store._id">
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <div class="store-img me-2">
-                        <img
-                          :src="store.image?.url || '/placeholder.jpg'"
-                          :alt="store.name"
-                          class="rounded"
-                        />
-                      </div>
+      </div>
+
+      <!-- 第一排：營業額與訂單數 -->
+      <div class="row mb-4">
+        <!-- 營業額總覽 -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0"><i class="bi bi-cash-stack text-success me-2"></i>營業額總覽</h5>
+            </div>
+            <div class="card-body">
+              <div class="text-center py-4 mb-4 border-bottom">
+                <i class="bi bi-cash-coin display-1 text-success mb-3"></i>
+                <h2 class="text-success mb-1 mt-3 fw-bold">
+                  NT$ {{ formatNumber(revenueStats.total) }}
+                </h2>
+                <p class="text-muted mb-0">總營業額</p>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
                       <div>
-                        <h6 class="mb-0">{{ store.name }}</h6>
-                        <span class="small text-muted"
-                          >菜單: {{ store.menuId ? '已設定' : '未設定' }}</span
-                        >
+                        <p class="text-muted mb-1 small">內用</p>
+                        <h5 class="mb-0">NT$ {{ formatNumber(revenueStats.dineIn) }}</h5>
                       </div>
+                      <i class="bi bi-shop text-primary fs-2"></i>
                     </div>
-                  </td>
-                  <td>
-                    <span
-                      class="badge rounded-pill"
-                      :class="store.isActive ? 'bg-success' : 'bg-secondary'"
-                    >
-                      {{ store.isActive ? '營業中' : '已停業' }}
-                    </span>
-                  </td>
-                  <td>
-                    <div v-if="isTodayOpen(store)">
-                      <span class="text-success small">
-                        <i class="bi bi-clock me-1"></i>
-                        今日營業: {{ formatBusinessHours(getTodayBusinessHours(store)) }}
-                      </span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">自取</p>
+                        <h5 class="mb-0">NT$ {{ formatNumber(revenueStats.takeout) }}</h5>
+                      </div>
+                      <i class="bi bi-bag text-success fs-2"></i>
                     </div>
-                    <div v-else>
-                      <span class="text-danger small">
-                        <i class="bi bi-calendar-x me-1"></i>
-                        今日公休
-                      </span>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">外送</p>
+                        <h5 class="mb-0">NT$ {{ formatNumber(revenueStats.delivery) }}</h5>
+                      </div>
+                      <i class="bi bi-truck text-info fs-2"></i>
                     </div>
-                  </td>
-                  <td>
-                    <div class="d-flex flex-column">
-                      <span>NT$ {{ formatNumber(getStoreSales(store._id)) }}</span>
-                      <small
-                        :class="
-                          getStoreGrowth(store._id) > 0
-                            ? 'text-success'
-                            : getStoreGrowth(store._id) < 0
-                              ? 'text-danger'
-                              : 'text-muted'
-                        "
-                      >
-                        <i
-                          class="bi"
-                          :class="
-                            getStoreGrowth(store._id) > 0
-                              ? 'bi-arrow-up'
-                              : getStoreGrowth(store._id) < 0
-                                ? 'bi-arrow-down'
-                                : 'bi-dash'
-                          "
-                        ></i>
-                        {{ getStoreGrowth(store._id) > 0 ? '+' : ''
-                        }}{{ getStoreGrowth(store._id).toFixed(1) }}%
-                      </small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">Foodpanda</p>
+                        <h5 class="mb-0">NT$ {{ formatNumber(revenueStats.foodpanda) }}</h5>
+                      </div>
+                      <i class="bi bi-bicycle text-danger fs-2"></i>
                     </div>
-                  </td>
-                  <td>
-                    <div class="btn-group">
-                      <router-link
-                        :to="`/admin/${brandId}/stores/detail/${store._id}`"
-                        class="btn btn-sm btn-outline-primary"
-                      >
-                        <i class="bi bi-eye"></i>
-                      </router-link>
-                      <router-link
-                        :to="`/admin/${brandId}/stores/edit/${store._id}`"
-                        class="btn btn-sm btn-outline-primary"
-                      >
-                        <i class="bi bi-pencil"></i>
-                      </router-link>
-                      <router-link
-                        :to="`/admin/${brandId}/inventory?storeId=${store._id}`"
-                        class="btn btn-sm btn-outline-primary"
-                      >
-                        <i class="bi bi-box-seam"></i>
-                      </router-link>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">UberEats</p>
+                        <h5 class="mb-0">NT$ {{ formatNumber(revenueStats.ubereats) }}</h5>
+                      </div>
+                      <i class="bi bi-scooter text-dark fs-2"></i>
                     </div>
-                  </td>
-                </tr>
-                <tr v-if="stores.length === 0">
-                  <td colspan="5" class="text-center py-4">
-                    <div class="text-muted">尚未創建任何店鋪</div>
-                    <router-link
-                      :to="`/admin/${brandId}/stores/create`"
-                      class="btn btn-sm btn-primary mt-2"
-                    >
-                      <i class="bi bi-plus-circle me-1"></i>新增第一間店鋪
-                    </router-link>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="card-footer bg-white text-center" v-if="stores.length > 5">
-          <router-link :to="`/admin/${brandId}/stores`" class="text-decoration-none">
-            查看全部 {{ stats.storeCount }} 間店鋪 <i class="bi bi-chevron-right"></i>
-          </router-link>
+
+        <!-- 訂單數總覽 -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0"><i class="bi bi-receipt text-primary me-2"></i>訂單數總覽</h5>
+            </div>
+            <div class="card-body">
+              <div class="text-center py-4 mb-4 border-bottom">
+                <i class="bi bi-receipt-cutoff display-1 text-primary mb-3"></i>
+                <h2 class="text-primary mb-1 mt-3 fw-bold">{{ orderStats.total }}</h2>
+                <p class="text-muted mb-0">總訂單數</p>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">內用</p>
+                        <h5 class="mb-0">{{ orderStats.dineIn }} 筆</h5>
+                      </div>
+                      <i class="bi bi-shop text-primary fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">自取</p>
+                        <h5 class="mb-0">{{ orderStats.takeout }} 筆</h5>
+                      </div>
+                      <i class="bi bi-bag text-success fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">外送</p>
+                        <h5 class="mb-0">{{ orderStats.delivery }} 筆</h5>
+                      </div>
+                      <i class="bi bi-truck text-info fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">Foodpanda</p>
+                        <h5 class="mb-0">{{ orderStats.foodpanda }} 筆</h5>
+                      </div>
+                      <i class="bi bi-bicycle text-danger fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        <p class="text-muted mb-1 small">UberEats</p>
+                        <h5 class="mb-0">{{ orderStats.ubereats }} 筆</h5>
+                      </div>
+                      <i class="bi bi-scooter text-dark fs-2"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 最近訂單 -->
-      <div class="card mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-          <h5 class="mb-0">最近訂單</h5>
-          <router-link :to="`/admin/${brandId}/orders`" class="btn btn-sm btn-primary">
-            <i class="bi bi-list-ul me-1"></i>查看全部
-          </router-link>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>訂單編號</th>
-                  <th>店鋪</th>
-                  <th>取餐方式</th>
-                  <th>金額</th>
-                  <th>狀態</th>
-                  <th>下單時間</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="order in recentOrders" :key="order._id">
-                  <td>
-                    <span class="fw-medium">{{ getOrderNumber(order) }}</span>
-                  </td>
-                  <td>{{ order.storeName }}</td>
-                  <td>{{ formatOrderType(order.orderType) }}</td>
-                  <td>NT$ {{ formatNumber(order.total) }}</td>
-                  <td>
-                    <span class="badge rounded-pill" :class="getOrderStatusClass(order.status)">
-                      {{ getOrderStatusText(order.status) }}
-                    </span>
-                  </td>
-                  <td>{{ formatDate(order.createdAt) }}</td>
-                </tr>
-                <tr v-if="recentOrders.length === 0">
-                  <td colspan="6" class="text-center py-4">
-                    <div class="text-muted">尚無訂單記錄</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+      <!-- 第二排：付款方式與實際收入 -->
+      <div class="row mb-4">
+        <!-- 付款方式圓餅圖 -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0"><i class="bi bi-credit-card text-info me-2"></i>付款方式分布</h5>
+            </div>
+            <div class="card-body">
+              <PaymentMethodsPieChart :payment-methods="paymentMethodsData" :height="400" />
+            </div>
           </div>
         </div>
-        <div class="card-footer bg-white text-center" v-if="recentOrders.length > 0">
-          <router-link :to="`/admin/${brandId}/orders`" class="text-decoration-none">
-            查看全部訂單 <i class="bi bi-chevron-right"></i>
-          </router-link>
+
+        <!-- 店家實際收入 -->
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div
+              class="card-header bg-white d-flex justify-content-between align-items-center py-3"
+            >
+              <h5 class="mb-0"><i class="bi bi-wallet2 text-warning me-2"></i>店家實際收入估算</h5>
+              <button class="btn btn-sm btn-outline-primary" @click="showCommissionSettings = true">
+                <i class="bi bi-gear me-1"></i>調整抽成
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="text-center py-3 mb-4 bg-light rounded">
+                <h3 class="mb-1 fw-bold">NT$ {{ formatNumber(actualIncomeStats.total) }}</h3>
+                <p class="text-muted mb-0">扣除平台抽成後</p>
+              </div>
+
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                  <span>總營業額:</span>
+                  <span class="fw-bold">NT$ {{ formatNumber(revenueStats.total) }}</span>
+                </div>
+                <hr />
+              </div>
+
+              <div class="mb-3">
+                <h6 class="mb-3">平台抽成明細</h6>
+                <div class="mb-2">
+                  <div class="d-flex justify-content-between text-muted small mb-1">
+                    <span>Foodpanda ({{ commissionRates.foodpanda }}%)</span>
+                    <span>-NT$ {{ formatNumber(actualIncomeStats.foodpandaDeduction) }}</span>
+                  </div>
+                  <div class="progress" style="height: 6px">
+                    <div
+                      class="progress-bar bg-danger"
+                      :style="{
+                        width:
+                          revenueStats.total > 0
+                            ? ((revenueStats.foodpanda / revenueStats.total) * 100).toFixed(1) + '%'
+                            : '0%',
+                      }"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <div class="d-flex justify-content-between text-muted small mb-1">
+                    <span>UberEats ({{ commissionRates.ubereats }}%)</span>
+                    <span>-NT$ {{ formatNumber(actualIncomeStats.uberEatsDeduction) }}</span>
+                  </div>
+                  <div class="progress" style="height: 6px">
+                    <div
+                      class="progress-bar bg-dark"
+                      :style="{
+                        width:
+                          revenueStats.total > 0
+                            ? ((revenueStats.ubereats / revenueStats.total) * 100).toFixed(1) + '%'
+                            : '0%',
+                      }"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <div class="d-flex justify-content-between text-muted small mb-1">
+                    <span>線上付款手續費 ({{ commissionRates.onlinePayment }}%)</span>
+                    <span>-NT$ {{ formatNumber(actualIncomeStats.onlinePaymentFee) }}</span>
+                  </div>
+                  <div class="progress" style="height: 6px">
+                    <div
+                      class="progress-bar bg-info"
+                      :style="{
+                        width:
+                          revenueStats.total > 0
+                            ? (
+                                (actualIncomeStats.onlinePaymentFee / revenueStats.total) *
+                                100
+                              ).toFixed(1) + '%'
+                            : '0%',
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-light p-3 rounded">
+                <div class="d-flex justify-content-between mb-2">
+                  <span class="text-muted">總扣除金額:</span>
+                  <span class="text-danger fw-bold"
+                    >-NT$ {{ formatNumber(actualIncomeStats.totalDeduction) }}</span
+                  >
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span class="fw-bold">實際收入:</span>
+                  <span class="text-success fw-bold"
+                    >NT$ {{ formatNumber(actualIncomeStats.total) }}</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- 快速操作區 -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-6 col-lg-3">
-          <router-link :to="`/admin/${brandId}/menus`" class="card action-card h-100">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
-              <div class="icon-circle bg-primary bg-opacity-10 mb-3">
-                <i class="bi bi-menu-button-wide text-primary"></i>
-              </div>
-              <h5 class="card-title mb-2">菜單管理</h5>
-              <p class="text-muted text-center small mb-0">管理店鋪菜單與餐點項目</p>
+    <!-- 抽成設定彈窗 -->
+    <div v-if="showCommissionSettings" class="modal-backdrop show"></div>
+    <div v-if="showCommissionSettings" class="modal fade show d-block" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">平台抽成設定</h5>
+            <button type="button" class="btn-close" @click="cancelCommissionSettings"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Foodpanda 抽成比例 (%)</label>
+              <input
+                type="number"
+                class="form-control"
+                v-model.number="tempCommissionRates.foodpanda"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <small class="text-muted">預設: 25%</small>
             </div>
-          </router-link>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <router-link :to="`/admin/${brandId}/inventory`" class="card action-card h-100">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
-              <div class="icon-circle bg-success bg-opacity-10 mb-3">
-                <i class="bi bi-box-seam text-success"></i>
-              </div>
-              <h5 class="card-title mb-2">庫存管理</h5>
-              <p class="text-muted text-center small mb-0">監控與管理店鋪餐點庫存</p>
+            <div class="mb-3">
+              <label class="form-label">UberEats 抽成比例 (%)</label>
+              <input
+                type="number"
+                class="form-control"
+                v-model.number="tempCommissionRates.ubereats"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <small class="text-muted">預設: 34%</small>
             </div>
-          </router-link>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <router-link :to="`/admin/${brandId}/coupons`" class="card action-card h-100">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
-              <div class="icon-circle bg-warning bg-opacity-10 mb-3">
-                <i class="bi bi-ticket-perforated text-warning"></i>
-              </div>
-              <h5 class="card-title mb-2">促銷管理</h5>
-              <p class="text-muted text-center small mb-0">設置優惠券與點數規則</p>
+            <div class="mb-3">
+              <label class="form-label">線上付款手續費 (%)</label>
+              <input
+                type="number"
+                class="form-control"
+                v-model.number="tempCommissionRates.onlinePayment"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <small class="text-muted">預設: 3%</small>
             </div>
-          </router-link>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <router-link :to="`/admin/${brandId}/orders/reports`" class="card action-card h-100">
-            <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
-              <div class="icon-circle bg-info bg-opacity-10 mb-3">
-                <i class="bi bi-bar-chart text-info"></i>
-              </div>
-              <h5 class="card-title mb-2">銷售報表</h5>
-              <p class="text-muted text-center small mb-0">查看詳細銷售數據與分析</p>
-            </div>
-          </router-link>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="cancelCommissionSettings">
+              取消
+            </button>
+            <button type="button" class="btn btn-primary" @click="saveCommissionSettings">
+              儲存設定
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -381,162 +414,310 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/api'
+import PaymentMethodsPieChart from '@/components/BrandAdmin/Order/Charts/PaymentMethodsPieChart.vue'
 
-// 從路由中獲取品牌ID
 const route = useRoute()
 const brandId = computed(() => route.params.brandId)
 
-// 狀態變數
 const isLoading = ref(true)
 const isRefreshing = ref(false)
 const error = ref('')
 const brandName = ref('')
 const stores = ref([])
-const recentOrders = ref([])
-const stats = ref({
-  storeCount: 0,
-  activeStoreCount: 0,
-  weeklySales: 0,
-  salesGrowth: 0,
-  weeklyOrders: 0,
-  averageOrderValue: 0,
+const allOrders = ref([])
+const currentPeriod = ref('today')
+const showCommissionSettings = ref(false)
+
+const dateRange = reactive({
+  fromDate: '',
+  toDate: '',
 })
-const orderTypeMap = {
-  dine_in: '內用',
-  takeout: '外帶',
-  delivery: '外送',
-  foodpanda: 'Foodpanda',
-  ubereats: 'UberEats',
-}
 
-// 店鋪銷售數據
-const storeSalesData = ref({})
+const commissionRates = reactive({
+  foodpanda: 25,
+  ubereats: 34,
+  onlinePayment: 3,
+})
 
-// 格式化數字 (加入千位分隔符)
-const formatNumber = (num) => {
-  return new Intl.NumberFormat('zh-TW').format(num)
-}
+const tempCommissionRates = reactive({
+  foodpanda: 25,
+  ubereats: 34,
+  onlinePayment: 3,
+})
 
-// 獲取當天星期幾 (0-6，0代表星期日)
-const getTodayDayOfWeek = () => {
-  return new Date().getDay()
-}
-
-// 獲取當天的營業時間
-const getTodayBusinessHours = (store) => {
-  if (!store.businessHours || store.businessHours.length === 0) {
-    return null
-  }
-
-  const today = getTodayDayOfWeek()
-  const todayHours = store.businessHours.find((h) => h.day === today)
-
-  return todayHours
-}
-
-// 檢查今天是否營業
-const isTodayOpen = (store) => {
-  const todayHours = getTodayBusinessHours(store)
-  return todayHours && !todayHours.isClosed && todayHours.periods && todayHours.periods.length > 0
-}
-
-// 格式化營業時間
-const formatBusinessHours = (businessHours) => {
-  if (!businessHours || !businessHours.periods || businessHours.periods.length === 0) {
-    return '無資料'
-  }
-
-  return businessHours.periods
-    .map((period) => {
-      return `${period.open}-${period.close}`
-    })
-    .join(', ')
-}
-
-const formatOrderType = (orderType) => {
-  return orderTypeMap[orderType] || '其他'
-}
-
-// 獲取店鋪本週銷售額
-const getStoreSales = (storeId) => {
-  return storeSalesData.value[storeId]?.weeklySales || 0
-}
-
-// 獲取店鋪銷售成長率
-const getStoreGrowth = (storeId) => {
-  return storeSalesData.value[storeId]?.salesGrowth || 0
-}
-
-// 獲取訂單編號
-const getOrderNumber = (order) => {
-  if (order.platformOrderId) return order.platformOrderId
-  if (order.orderDateCode && order.sequence) {
-    return `${order.orderDateCode}-${String(order.sequence).padStart(3, '0')}`
-  }
-  return order._id || ''
-}
-
-// 根據訂單狀態返回對應的樣式類
-const getOrderStatusClass = (status) => {
-  switch (status) {
-    case 'paid':
-      return 'bg-success'
-    case 'unpaid':
-      return 'bg-warning'
-    case 'cancelled':
-      return 'bg-danger'
-    default:
-      return 'bg-secondary'
+// 載入儲存的設定
+const loadCommissionSettings = () => {
+  const saved = localStorage.getItem(`commission_rates_${brandId.value}`)
+  if (saved) {
+    const rates = JSON.parse(saved)
+    commissionRates.foodpanda = rates.foodpanda
+    commissionRates.ubereats = rates.ubereats
+    commissionRates.onlinePayment = rates.onlinePayment
   }
 }
 
-// 根據訂單狀態返回對應的文字
-const getOrderStatusText = (status) => {
-  switch (status) {
-    case 'paid':
-      return '已付款'
-    case 'unpaid':
-      return '未付款'
-    case 'cancelled':
-      return '已取消'
-    default:
-      return '未知'
-  }
+// 儲存設定
+const saveCommissionSettings = () => {
+  commissionRates.foodpanda = tempCommissionRates.foodpanda
+  commissionRates.ubereats = tempCommissionRates.ubereats
+  commissionRates.onlinePayment = tempCommissionRates.onlinePayment
+
+  localStorage.setItem(`commission_rates_${brandId.value}`, JSON.stringify(commissionRates))
+  showCommissionSettings.value = false
 }
 
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '無資料'
+// 取消設定
+const cancelCommissionSettings = () => {
+  tempCommissionRates.foodpanda = commissionRates.foodpanda
+  tempCommissionRates.ubereats = commissionRates.ubereats
+  tempCommissionRates.onlinePayment = commissionRates.onlinePayment
+  showCommissionSettings.value = false
+}
 
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-TW', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+// 判斷訂單所屬平台
+const getPlatform = (order) => {
+  // 優先檢查 platformInfo
+  if (order.platformInfo?.platform) {
+    return order.platformInfo.platform
+  }
+  // 如果是 delivery 但沒有 platformInfo，視為 direct
+  if (order.orderType === 'delivery') {
+    return 'direct'
+  }
+  return null
+}
+
+// 營業額統計
+const revenueStats = computed(() => {
+  const stats = {
+    total: 0,
+    dineIn: 0,
+    takeout: 0,
+    delivery: 0,
+    foodpanda: 0,
+    ubereats: 0,
+  }
+
+  allOrders.value.forEach((order) => {
+    const amount = order.total || 0
+    stats.total += amount
+
+    const platform = getPlatform(order)
+
+    // 根據 orderType 和 platform 分類
+    if (order.orderType === 'dine_in') {
+      stats.dineIn += amount
+    } else if (order.orderType === 'takeout') {
+      stats.takeout += amount
+    } else if (order.orderType === 'delivery') {
+      if (platform === 'foodpanda') {
+        stats.foodpanda += amount
+      } else if (platform === 'ubereats') {
+        stats.ubereats += amount
+      } else {
+        // direct 或其他情況，算在外送
+        stats.delivery += amount
+      }
+    }
   })
+
+  return stats
+})
+
+// 訂單數統計
+const orderStats = computed(() => {
+  const stats = {
+    total: allOrders.value.length,
+    dineIn: 0,
+    takeout: 0,
+    delivery: 0,
+    foodpanda: 0,
+    ubereats: 0,
+  }
+
+  allOrders.value.forEach((order) => {
+    const platform = getPlatform(order)
+
+    if (order.orderType === 'dine_in') {
+      stats.dineIn++
+    } else if (order.orderType === 'takeout') {
+      stats.takeout++
+    } else if (order.orderType === 'delivery') {
+      if (platform === 'foodpanda') {
+        stats.foodpanda++
+      } else if (platform === 'ubereats') {
+        stats.ubereats++
+      } else {
+        stats.delivery++
+      }
+    }
+  })
+
+  return stats
+})
+
+// 付款方式統計（細分平台）
+const paymentMethodsData = computed(() => {
+  const methods = {}
+
+  allOrders.value.forEach((order) => {
+    const platform = getPlatform(order)
+    let methodKey = ''
+
+    if (order.status === 'unpaid') {
+      methodKey = '未付款'
+    } else {
+      const baseMethod = formatPaymentMethod(order.paymentMethod)
+
+      // 如果是外送平台，標註平台名稱
+      if (platform === 'foodpanda') {
+        methodKey = `${baseMethod} (Foodpanda)`
+      } else if (platform === 'ubereats') {
+        methodKey = `UberEats`
+      } else {
+        methodKey = baseMethod
+      }
+    }
+
+    methods[methodKey] = (methods[methodKey] || 0) + 1
+  })
+
+  // 調試：顯示付款方式統計
+  console.log('付款方式統計:', methods)
+
+  return methods
+})
+
+// 實際收入計算
+const actualIncomeStats = computed(() => {
+  const foodpandaRevenue = revenueStats.value.foodpanda
+  const uberEatsRevenue = revenueStats.value.ubereats
+  const totalRevenue = revenueStats.value.total
+
+  // 計算平台抽成
+  const foodpandaDeduction = (foodpandaRevenue * commissionRates.foodpanda) / 100
+  const uberEatsDeduction = (uberEatsRevenue * commissionRates.ubereats) / 100
+
+  // 計算線上付款手續費（排除外送平台的訂單）
+  let onlinePaymentRevenue = 0
+  allOrders.value.forEach((order) => {
+    const platform = getPlatform(order)
+
+    // 只計算非外送平台、已付款、且使用線上付款方式的訂單
+    if (
+      platform !== 'foodpanda' &&
+      platform !== 'ubereats' &&
+      order.status === 'paid' &&
+      order.paymentMethod &&
+      order.paymentMethod !== 'cash'
+    ) {
+      onlinePaymentRevenue += order.total || 0
+    }
+  })
+
+  const onlinePaymentFee = (onlinePaymentRevenue * commissionRates.onlinePayment) / 100
+
+  const totalDeduction = foodpandaDeduction + uberEatsDeduction + onlinePaymentFee
+  const actualIncome = totalRevenue - totalDeduction
+
+  return {
+    total: actualIncome,
+    totalDeduction,
+    foodpandaDeduction,
+    uberEatsDeduction,
+    onlinePaymentFee,
+  }
+})
+
+// 格式化數字
+const formatNumber = (num) => {
+  return new Intl.NumberFormat('zh-TW').format(Math.round(num))
 }
 
-// 日期處理函數
-const getWeekStart = (date) => {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day // Sunday is 0
-  return new Date(d.setDate(diff))
+// 格式化付款方式
+const formatPaymentMethod = (method) => {
+  const methodMap = {
+    cash: '現金',
+    credit_card: '信用卡',
+    line_pay: 'LINE Pay',
+    other: '其他',
+  }
+  return methodMap[method] || method || '其他'
 }
 
-const getWeekEnd = (date) => {
-  const weekStart = getWeekStart(date)
-  const weekEnd = new Date(weekStart)
-  weekEnd.setDate(weekStart.getDate() + 6)
-  return weekEnd
+// 格式化日期範圍
+const formatDateRange = (from, to) => {
+  if (!from || !to) return ''
+  const fromDate = new Date(from + 'T00:00:00')
+  const toDate = new Date(to + 'T00:00:00')
+  return `${fromDate.toLocaleDateString('zh-TW')} - ${toDate.toLocaleDateString('zh-TW')}`
 }
 
-const formatDateForAPI = (date) => {
-  return date.toISOString().split('T')[0]
+// 設定時間範圍
+const setPeriod = (period) => {
+  currentPeriod.value = period
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  switch (period) {
+    case 'today':
+      dateRange.fromDate = formatDate(today)
+      dateRange.toDate = formatDate(today)
+      break
+    case 'yesterday':
+      const yesterday = new Date(today)
+      yesterday.setDate(today.getDate() - 1)
+      dateRange.fromDate = formatDate(yesterday)
+      dateRange.toDate = formatDate(yesterday)
+      break
+    case 'thisWeek':
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - today.getDay())
+      dateRange.fromDate = formatDate(weekStart)
+      dateRange.toDate = formatDate(today)
+      break
+    case 'lastWeek':
+      const lastWeekEnd = new Date(today)
+      lastWeekEnd.setDate(today.getDate() - today.getDay() - 1)
+      const lastWeekStart = new Date(lastWeekEnd)
+      lastWeekStart.setDate(lastWeekEnd.getDate() - 6)
+      dateRange.fromDate = formatDate(lastWeekStart)
+      dateRange.toDate = formatDate(lastWeekEnd)
+      break
+    case 'thisMonth':
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+      dateRange.fromDate = formatDate(monthStart)
+      dateRange.toDate = formatDate(today)
+      break
+    case 'lastMonth':
+      const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+      const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+      dateRange.fromDate = formatDate(lastMonthStart)
+      dateRange.toDate = formatDate(lastMonthEnd)
+      break
+  }
+
+  loadData(true)
+}
+
+// 格式化日期 - 使用本地時區
+const formatDate = (date) => {
+  return date.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
+}
+
+// 獲取品牌資訊
+const fetchBrandInfo = async () => {
+  try {
+    const brandResponse = await api.brand.getBrandById(brandId.value)
+    if (brandResponse && brandResponse.brand) {
+      brandName.value = brandResponse.brand.name
+    }
+  } catch (err) {
+    console.error('獲取品牌資訊失敗:', err)
+  }
 }
 
 // 獲取店鋪列表
@@ -544,11 +725,7 @@ const fetchStores = async () => {
   try {
     const response = await api.store.getAllStores({ brandId: brandId.value })
     if (response && response.stores) {
-      stores.value = response.stores.slice(0, 5) // 僅顯示前5間店鋪
-
-      // 更新統計數據
-      stats.value.storeCount = response.stores.length
-      stats.value.activeStoreCount = response.stores.filter((store) => store.isActive).length
+      stores.value = response.stores
     }
   } catch (err) {
     console.error('獲取店鋪列表失敗:', err)
@@ -556,130 +733,39 @@ const fetchStores = async () => {
   }
 }
 
-// 獲取訂單數據並計算統計
-const fetchOrdersAndCalculateStats = async () => {
+// 獲取訂單資料
+const fetchOrders = async () => {
   try {
-    // 獲取本週和上週的日期範圍
-    const today = new Date()
-    const thisWeekStart = getWeekStart(today)
-    const thisWeekEnd = getWeekEnd(today)
-
-    const lastWeekStart = new Date(thisWeekStart)
-    lastWeekStart.setDate(thisWeekStart.getDate() - 7)
-    const lastWeekEnd = new Date(thisWeekEnd)
-    lastWeekEnd.setDate(thisWeekEnd.getDate() - 7)
-
-    // 獲取所有店鋪列表（如果還沒有的話）
-    if (stores.value.length === 0) {
-      const storesResponse = await api.store.getAllStores({ brandId: brandId.value })
-      if (storesResponse && storesResponse.stores) {
-        stores.value = storesResponse.stores
-      }
-    }
-
-    // 獲取本週訂單
-    const thisWeekOrdersPromises = stores.value.map((store) =>
+    const allOrdersPromises = stores.value.map((store) =>
       api.orderAdmin
         .getStoreOrders({
           brandId: brandId.value,
           storeId: store._id,
-          fromDate: formatDateForAPI(thisWeekStart),
-          toDate: formatDateForAPI(thisWeekEnd),
+          fromDate: dateRange.fromDate,
+          toDate: dateRange.toDate,
           page: 1,
-          limit: 1000,
+          limit: 10000,
         })
         .catch((err) => {
-          console.warn(`獲取店鋪 ${store._id} 本週訂單失敗:`, err)
+          console.warn(`獲取店鋪 ${store._id} 訂單失敗:`, err)
           return { success: false, orders: [] }
         }),
     )
 
-    // 獲取上週訂單
-    const lastWeekOrdersPromises = stores.value.map((store) =>
-      api.orderAdmin
-        .getStoreOrders({
-          brandId: brandId.value,
-          storeId: store._id,
-          fromDate: formatDateForAPI(lastWeekStart),
-          toDate: formatDateForAPI(lastWeekEnd),
-          page: 1,
-          limit: 1000,
-        })
-        .catch((err) => {
-          console.warn(`獲取店鋪 ${store._id} 上週訂單失敗:`, err)
-          return { success: false, orders: [] }
-        }),
-    )
-
-    const [thisWeekResponses, lastWeekResponses] = await Promise.all([
-      Promise.all(thisWeekOrdersPromises),
-      Promise.all(lastWeekOrdersPromises),
-    ])
-
-    // 合併本週訂單
-    const thisWeekOrders = thisWeekResponses.flatMap((response) => {
-      if (response.success && response.orders) {
-        return response.orders.map((order) => ({
-          ...order,
-          storeName: stores.value.find((s) => s._id === order.store)?.name || '未知店鋪',
-        }))
-      }
-      return []
-    })
-
-    // 合併上週訂單
-    const lastWeekOrders = lastWeekResponses.flatMap((response) => {
+    const responses = await Promise.all(allOrdersPromises)
+    allOrders.value = responses.flatMap((response) => {
       if (response.success && response.orders) {
         return response.orders
       }
       return []
     })
-
-    // 計算統計數據
-    const thisWeekSales = thisWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-    const lastWeekSales = lastWeekOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-    const thisWeekOrderCount = thisWeekOrders.length
-
-    stats.value.weeklySales = thisWeekSales
-    stats.value.weeklyOrders = thisWeekOrderCount
-    stats.value.averageOrderValue = thisWeekOrderCount > 0 ? thisWeekSales / thisWeekOrderCount : 0
-    stats.value.salesGrowth =
-      lastWeekSales > 0 ? ((thisWeekSales - lastWeekSales) / lastWeekSales) * 100 : 0
-
-    // 計算每個店鋪的銷售數據
-    stores.value.forEach((store) => {
-      const storeThisWeekOrders = thisWeekOrders.filter((order) => order.store === store._id)
-      const storeLastWeekOrders = lastWeekOrders.filter((order) => order.store === store._id)
-
-      const storeThisWeekSales = storeThisWeekOrders.reduce(
-        (sum, order) => sum + (order.total || 0),
-        0,
-      )
-      const storeLastWeekSales = storeLastWeekOrders.reduce(
-        (sum, order) => sum + (order.total || 0),
-        0,
-      )
-
-      storeSalesData.value[store._id] = {
-        weeklySales: storeThisWeekSales,
-        salesGrowth:
-          storeLastWeekSales > 0
-            ? ((storeThisWeekSales - storeLastWeekSales) / storeLastWeekSales) * 100
-            : 0,
-      }
-    })
-
-    // 設置最近訂單（按時間排序，取前5筆）
-    recentOrders.value = thisWeekOrders
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 5)
   } catch (err) {
-    console.error('獲取訂單數據失敗:', err)
+    console.error('獲取訂單資料失敗:', err)
     throw err
   }
 }
 
-// 加載數據
+// 載入資料
 const loadData = async (isRefresh = false) => {
   if (!brandId.value) return
 
@@ -692,17 +778,9 @@ const loadData = async (isRefresh = false) => {
   error.value = ''
 
   try {
-    // 獲取品牌信息
-    const brandResponse = await api.brand.getBrandById(brandId.value)
-    if (brandResponse && brandResponse.brand) {
-      brandName.value = brandResponse.brand.name
-    }
-
-    // 獲取店鋪列表
+    await fetchBrandInfo()
     await fetchStores()
-
-    // 獲取訂單數據並計算統計
-    await fetchOrdersAndCalculateStats()
+    await fetchOrders()
   } catch (err) {
     console.error('獲取數據失敗:', err)
     error.value = '無法載入數據，請稍後再試'
@@ -712,14 +790,15 @@ const loadData = async (isRefresh = false) => {
   }
 }
 
-// 刷新數據
+// 刷新資料
 const refreshData = () => {
   loadData(true)
 }
 
-// 生命週期鉤子
+// 初始化
 onMounted(() => {
-  loadData()
+  loadCommissionSettings()
+  setPeriod('today')
 })
 </script>
 
@@ -733,58 +812,30 @@ onMounted(() => {
   border-bottom: 1px solid rgba(0, 0, 0, 0.125);
 }
 
-/* 店鋪圖片 */
-.store-img {
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-}
-
-.store-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 操作卡片 */
-.action-card {
+.stat-card {
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  background-color: #f8f9fa;
   transition: all 0.2s ease;
-  cursor: pointer;
-  border: 1px solid #dee2e6;
-  text-decoration: none;
-  color: inherit;
 }
 
-.action-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.icon-circle {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.btn-outline-primary.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
 }
 
-.icon-circle i {
-  font-size: 1.75rem;
+.modal {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* 頁面內標題 */
-h5.card-title {
+h5.mb-0 {
   font-weight: 600;
-}
-
-/* 表格樣式優化 */
-.table th {
-  font-weight: 600;
-}
-
-.table td,
-.table th {
-  padding: 0.75rem 1rem;
 }
 </style>
