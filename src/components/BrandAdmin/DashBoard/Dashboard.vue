@@ -254,7 +254,7 @@
               class="card-header bg-white d-flex justify-content-between align-items-center py-3"
             >
               <h5 class="mb-0"><i class="bi bi-wallet2 text-warning me-2"></i>店家實際收入估算</h5>
-              <button class="btn btn-sm btn-outline-primary" @click="showCommissionSettings = true">
+              <button class="btn btn-sm btn-outline-primary" @click="openCommissionSettings">
                 <i class="bi bi-gear me-1"></i>調整抽成
               </button>
             </div>
@@ -352,70 +352,66 @@
       </div>
     </div>
 
-    <!-- 抽成設定彈窗 -->
-    <div v-if="showCommissionSettings" class="modal-backdrop show"></div>
-    <div v-if="showCommissionSettings" class="modal fade show d-block" tabindex="-1" role="dialog">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">平台抽成設定</h5>
-            <button type="button" class="btn-close" @click="cancelCommissionSettings"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label">Foodpanda 抽成比例 (%)</label>
-              <input
-                type="number"
-                class="form-control"
-                v-model.number="tempCommissionRates.foodpanda"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-              <small class="text-muted">預設: 25%</small>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">UberEats 抽成比例 (%)</label>
-              <input
-                type="number"
-                class="form-control"
-                v-model.number="tempCommissionRates.ubereats"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-              <small class="text-muted">預設: 34%</small>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">線上付款手續費 (%)</label>
-              <input
-                type="number"
-                class="form-control"
-                v-model.number="tempCommissionRates.onlinePayment"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-              <small class="text-muted">預設: 3%</small>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="cancelCommissionSettings">
-              取消
-            </button>
-            <button type="button" class="btn btn-primary" @click="saveCommissionSettings">
-              儲存設定
-            </button>
-          </div>
-        </div>
+    <!-- 抽成設定彈窗 (改用 BModal) -->
+    <BModal
+      v-model="showCommissionSettings"
+      id="commissionSettingsModal"
+      title="平台抽成設定"
+      centered
+      @ok="saveCommissionSettings"
+      @cancel="cancelCommissionSettings"
+      no-close-on-backdrop
+      no-close-on-esc
+    >
+      <div class="mb-3">
+        <label class="form-label">Foodpanda 抽成比例 (%)</label>
+        <input
+          type="number"
+          class="form-control"
+          v-model.number="tempCommissionRates.foodpanda"
+          min="0"
+          max="100"
+          step="0.1"
+        />
+        <small class="text-muted">預設: 25%</small>
       </div>
-    </div>
+      <div class="mb-3">
+        <label class="form-label">UberEats 抽成比例 (%)</label>
+        <input
+          type="number"
+          class="form-control"
+          v-model.number="tempCommissionRates.ubereats"
+          min="0"
+          max="100"
+          step="0.1"
+        />
+        <small class="text-muted">預設: 34%</small>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">線上付款手續費 (%)</label>
+        <input
+          type="number"
+          class="form-control"
+          v-model.number="tempCommissionRates.onlinePayment"
+          min="0"
+          max="100"
+          step="0.1"
+        />
+        <small class="text-muted">預設: 3%</small>
+      </div>
+
+      <template #footer>
+        <BButton variant="secondary" @click="cancelCommissionSettings">取消</BButton>
+        <BButton variant="primary" @click="saveCommissionSettings">儲存設定</BButton>
+      </template>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { BModal, BButton } from 'bootstrap-vue-next'
 import api from '@/api'
 import PaymentMethodsPieChart from '@/components/BrandAdmin/Order/Charts/PaymentMethodsPieChart.vue'
 
@@ -457,6 +453,19 @@ const loadCommissionSettings = () => {
     commissionRates.ubereats = rates.ubereats
     commissionRates.onlinePayment = rates.onlinePayment
   }
+  // 同步到 temp 變數
+  tempCommissionRates.foodpanda = commissionRates.foodpanda
+  tempCommissionRates.ubereats = commissionRates.ubereats
+  tempCommissionRates.onlinePayment = commissionRates.onlinePayment
+}
+
+// 打開設定彈窗
+const openCommissionSettings = () => {
+  // 打開前先同步當前數值到 temp
+  tempCommissionRates.foodpanda = commissionRates.foodpanda
+  tempCommissionRates.ubereats = commissionRates.ubereats
+  tempCommissionRates.onlinePayment = commissionRates.onlinePayment
+  showCommissionSettings.value = true
 }
 
 // 儲存設定
@@ -829,10 +838,6 @@ onMounted(() => {
   background-color: #0d6efd;
   border-color: #0d6efd;
   color: white;
-}
-
-.modal {
-  background-color: rgba(0, 0, 0, 0.5);
 }
 
 h5.mb-0 {
