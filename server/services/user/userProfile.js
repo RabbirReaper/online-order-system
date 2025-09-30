@@ -45,17 +45,17 @@ export const updateUserProfile = async (userId, updateData) => {
   delete updateData.resetPasswordToken
   delete updateData.resetPasswordExpire
 
-  // 如果要更改電子郵件，檢查是否已被使用
+  // 如果要更改電子郵件，檢查是否已被使用（同品牌內）
   if (updateData.email && updateData.email !== user.email) {
-    const existingUser = await User.findOne({ email: updateData.email })
+    const existingUser = await User.findOne({ email: updateData.email, brand: user.brand })
     if (existingUser) {
       throw new AppError('此電子郵件已被使用', 400)
     }
   }
 
-  // 如果要更改電話，檢查是否已被使用
+  // 如果要更改電話，檢查是否已被使用（同品牌內）
   if (updateData.phone && updateData.phone !== user.phone) {
-    const existingUser = await User.findOne({ phone: updateData.phone })
+    const existingUser = await User.findOne({ phone: updateData.phone, brand: user.brand })
     if (existingUser) {
       throw new AppError('此電話號碼已被使用', 400)
     }
