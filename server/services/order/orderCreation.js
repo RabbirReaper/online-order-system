@@ -13,6 +13,7 @@ import { initializeOrderDefaults, updateOrderAmounts, cleanupFailedOrder } from 
 import { processOrderPaymentComplete } from './orderPayment.js'
 import Store from '../../models/Store/Store.js'
 import { sendLineMessage, buildOrderConfirmationMessage } from '../notification/lineService.js'
+import { markUsedVouchers } from './orderPayment.js'
 
 /**
  * 創建訂單 - 支援 Bundle 購買 + 預先庫存檢查 + Voucher 折扣
@@ -50,14 +51,22 @@ export const createOrder = async (orderData) => {
       throw new AppError('庫存扣除失敗，請重新下單', 400)
     }
 
-    // Step 7: 如果是即時付款，處理後續流程
+    // Step 7: 立即標記使用的折價券為已使用（修復折價券重複使用問題）
+    try {
+      await markUsedVouchers(order)
+    } catch (voucherError) {
+      console.error('Failed to mark vouchers as used:', voucherError)
+      // 不拋出錯誤，避免影響主要流程，但記錄錯誤
+    }
+
+    // Step 8: 如果是即時付款，處理後續流程
     let result = { ...order.toObject(), pointsAwarded: 0 }
 
     if (order.status === 'paid') {
       result = await processOrderPaymentComplete(order)
     }
 
-    // Step 8: 發送LINE確認訊息（自取或外送訂單）
+    // Step 9: 發送LINE確認訊息（自取或外送訂單）
     try {
       await sendOrderConfirmationLineMessage(order)
     } catch (lineError) {
