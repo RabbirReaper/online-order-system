@@ -34,22 +34,16 @@ export const processOrderPaymentComplete = async (order) => {
       }
     }
 
-    // 2. 標記使用的 Voucher 為已使用
-    await markUsedVouchers(order)
-
-    // 3. 標記使用的 Coupon 為已使用
-    await markUsedCoupons(order)
-
-    // 4. 更新 Bundle 銷售統計
+    // 2. 更新 Bundle 銷售統計
     await updateBundleSalesStats(order)
 
-    // 5. 處理點數給予
+    // 3. 處理點數給予
     if (order.user) {
       console.log('Processing points reward...')
       pointsReward = await processOrderPointsReward(order)
     }
 
-    // 6. 保存訂單更新
+    // 4. 保存訂單更新
     await order.save()
 
     console.log(`✅ Payment completion processed:`)
@@ -66,69 +60,84 @@ export const processOrderPaymentComplete = async (order) => {
 }
 
 /**
- * 標記使用的 Voucher 為已使用
+ * 統一標記使用的優惠券（Voucher + Coupon）為已使用
+ * 在訂單創建時調用，避免重複使用
  */
-export const markUsedVouchers = async (order) => {
-  const voucherDiscounts = order.discounts.filter(
-    (discount) => discount.discountModel === 'VoucherInstance',
-  )
-
-  if (voucherDiscounts.length === 0) {
+export const markUsedPromotions = async (order) => {
+  if (!order.discounts || order.discounts.length === 0) {
     return
   }
 
-  console.log(`Marking ${voucherDiscounts.length} vouchers as used...`)
+  const voucherDiscounts = order.discounts.filter(
+    (discount) => discount.discountModel === 'VoucherInstance',
+  )
+  const couponDiscounts = order.discounts.filter(
+    (discount) => discount.discountModel === 'CouponInstance',
+  )
 
-  for (const voucherDiscount of voucherDiscounts) {
-    try {
-      const voucher = await VoucherInstance.findById(voucherDiscount.refId)
+  // 標記 Vouchers
+  if (voucherDiscounts.length > 0) {
+    console.log(`Marking ${voucherDiscounts.length} vouchers as used...`)
 
-      if (voucher && !voucher.isUsed) {
-        voucher.isUsed = true
-        voucher.usedAt = new Date()
-        voucher.orderId = order._id // 記錄在哪個訂單中使用
-        await voucher.save()
+    for (const voucherDiscount of voucherDiscounts) {
+      try {
+        const voucher = await VoucherInstance.findById(voucherDiscount.refId)
 
-        console.log(`✅ Marked voucher ${voucher.voucherName} as used`)
+        if (voucher && !voucher.isUsed) {
+          voucher.isUsed = true
+          voucher.usedAt = new Date()
+          voucher.orderId = order._id
+          await voucher.save()
+
+          console.log(`✅ Marked voucher ${voucher.voucherName} as used`)
+        }
+      } catch (error) {
+        console.error(`Failed to mark voucher ${voucherDiscount.refId} as used:`, error)
+        // 不拋出錯誤，避免影響主要流程
       }
-    } catch (error) {
-      console.error(`Failed to mark voucher ${voucherDiscount.refId} as used:`, error)
-      // 不拋出錯誤，避免影響主要流程
+    }
+  }
+
+  // 標記 Coupons
+  if (couponDiscounts.length > 0) {
+    console.log(`Marking ${couponDiscounts.length} coupons as used...`)
+
+    for (const couponDiscount of couponDiscounts) {
+      try {
+        const coupon = await CouponInstance.findById(couponDiscount.refId)
+
+        if (coupon && !coupon.isUsed) {
+          coupon.isUsed = true
+          coupon.usedAt = new Date()
+          coupon.order = order._id
+          await coupon.save()
+
+          console.log(`✅ Marked coupon as used`)
+        }
+      } catch (error) {
+        console.error(`Failed to mark coupon ${couponDiscount.refId} as used:`, error)
+        // 不拋出錯誤，避免影響主要流程
+      }
     }
   }
 }
 
 /**
+ * @deprecated 使用 markUsedPromotions 代替
+ * 標記使用的 Voucher 為已使用
+ */
+export const markUsedVouchers = async (order) => {
+  console.warn('markUsedVouchers is deprecated, use markUsedPromotions instead')
+  await markUsedPromotions(order)
+}
+
+/**
+ * @deprecated 使用 markUsedPromotions 代替
  * 標記使用的 Coupon 為已使用
  */
 export const markUsedCoupons = async (order) => {
-  const couponDiscounts = order.discounts.filter(
-    (discount) => discount.discountModel === 'CouponInstance',
-  )
-
-  if (couponDiscounts.length === 0) {
-    return
-  }
-
-  console.log(`Marking ${couponDiscounts.length} coupons as used...`)
-
-  for (const couponDiscount of couponDiscounts) {
-    try {
-      const coupon = await CouponInstance.findById(couponDiscount.refId)
-
-      if (coupon && !coupon.isUsed) {
-        coupon.isUsed = true
-        coupon.usedAt = new Date()
-        coupon.order = order._id
-        await coupon.save()
-
-        console.log(`✅ Marked coupon as used`)
-      }
-    } catch (error) {
-      console.error(`Failed to mark coupon ${couponDiscount.refId} as used:`, error)
-      // 不拋出錯誤，避免影響主要流程
-    }
-  }
+  console.warn('markUsedCoupons is deprecated, use markUsedPromotions instead')
+  await markUsedPromotions(order)
 }
 
 /**

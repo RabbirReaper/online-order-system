@@ -792,22 +792,8 @@ const submitOrder = async () => {
     if (result.success) {
       showConfirmModal.value = false
 
-      // 如果有使用兌換券，需要調用API標記為已使用
-      if (usedVouchers.value.length > 0) {
-        try {
-          for (const voucher of usedVouchers.value) {
-            await api.promotion.useVoucher({
-              brandId: authStore.currentBrandId,
-              data: {
-                voucherId: voucher.voucherId,
-                orderId: result.orderId,
-              },
-            })
-          }
-        } catch (voucherError) {
-          console.error('標記兌換券使用狀態失敗:', voucherError)
-        }
-      }
+      // 優惠券標記已由後端統一處理，前端不需要額外調用
+      // 後端在訂單創建時會自動標記所有使用的 Voucher 和 Coupon
 
       router.push({
         name: 'order-confirm',
