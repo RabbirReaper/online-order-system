@@ -274,10 +274,16 @@ export const setDefaultAddress = async (userId, addressId) => {
  * @returns {Promise<Object>} 用戶列表與分頁資訊
  */
 export const getAllUsers = async (options = {}) => {
-  const { search, activeOnly = false, page = 1, limit = 20 } = options
+  const { brandId, search, activeOnly = false, page = 1, limit = 20 } = options
 
   // 構建查詢條件
   const queryConditions = {}
+
+  if (brandId) {
+    queryConditions.brand = brandId
+  } else {
+    throw new AppError('缺少品牌ID', 400)
+  }
 
   if (search) {
     queryConditions.$or = [
