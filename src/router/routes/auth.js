@@ -12,15 +12,6 @@ export const authRoutes = [
     },
   },
   {
-    path: '/auth/register',
-    name: 'customer-register',
-    component: () => import('@/components/customer/auth/Register.vue'),
-    beforeEnter: requireNoAuth,
-    meta: {
-      title: '會員註冊',
-    },
-  },
-  {
     path: '/auth/forgot-password',
     name: 'customer-forgot-password',
     component: () => import('@/components/customer/auth/ForgotPassword.vue'),
@@ -28,5 +19,20 @@ export const authRoutes = [
     meta: {
       title: '忘記密碼',
     },
+  },
+  {
+    path: '/auth/register',
+    name: 'register',
+    component: () => import('@/components/customer/auth/RegisterPhone.vue'),
+  },
+  {
+    path: '/auth/register/verify',
+    name: 'register-verify',
+    component: () => import('@/components/customer/auth/RegisterVerifyCode.vue'),
+  },
+  {
+    path: '/auth/register/profile',
+    name: 'register-profile',
+    component: () => import('@/components/customer/auth/RegisterProfile.vue'),
   },
 ]
