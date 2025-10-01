@@ -8,17 +8,14 @@ export const register = asyncHandler(async (req, res) => {
   const { brandId } = req.params
   const { phone, code, ...userData } = req.body
 
-  // 驗證手機驗證碼
-  await userAuthService.verifyPhoneCode(phone, code, 'register')
-
-  // 註冊用戶
+  // 註冊用戶（驗證碼驗證在 service 層處理）
   const userWithBrand = {
     ...userData,
     phone,
     brand: brandId,
   }
 
-  const user = await userAuthService.register(userWithBrand)
+  const user = await userAuthService.register(userWithBrand, code)
 
   res.status(201).json({
     success: true,

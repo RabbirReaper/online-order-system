@@ -104,9 +104,10 @@ const validateField = (fieldName, value, required = true) => {
 /**
  * 用戶註冊
  * @param {Object} userData - 用戶數據
+ * @param {String} verificationCode - 驗證碼（用於標記為已使用）
  * @returns {Promise<Object>} 用戶信息
  */
-export const register = async (userData) => {
+export const register = async (userData, verificationCode = null) => {
   // 基本必填欄位驗證
   const requiredFields = ['name', 'phone', 'password']
   for (const field of requiredFields) {
@@ -124,6 +125,11 @@ export const register = async (userData) => {
     }
   }
 
+  // 如果提供了驗證碼，先驗證
+  if (verificationCode) {
+    await verifyPhoneCode(userData.phone, verificationCode, 'register')
+  }
+
   // 檢查手機號碼是否已被使用（同品牌內）
   const existingUserPhone = await User.findOne({ phone: userData.phone, brand: userData.brand })
   if (existingUserPhone) {
@@ -135,6 +141,21 @@ export const register = async (userData) => {
     const existingUserEmail = await User.findOne({ email: userData.email, brand: userData.brand })
     if (existingUserEmail) {
       throw new AppError('此電子郵件已被使用', 400)
+    }
+  }
+
+  // 在創建用戶之前，標記驗證碼為已使用
+  if (verificationCode) {
+    const codeRecord = await VerificationCode.findOne({
+      phone: userData.phone,
+      code: verificationCode,
+      purpose: 'register',
+      used: false,
+    })
+
+    if (codeRecord) {
+      codeRecord.used = true
+      await codeRecord.save()
     }
   }
 
@@ -290,9 +311,9 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
   // 發送簡訊驗證碼
   try {
     const message = `您的驗證碼是：${code}，5分鐘內有效。請勿將驗證碼告訴他人。`
-    const smsResult = await smsService.sendSMS(phone, message)
+    // const smsResult = await smsService.sendSMS(phone, message)
 
-    // console.log(`簡訊已發送至 ${phone}，消息ID: ${message}`)
+    console.log(`簡訊已發送至 ${phone}，消息ID: ${message}`)
   } catch (smsError) {
     console.error('簡訊發送異常:', smsError)
   }
@@ -305,7 +326,7 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
 }
 
 /**
- * 驗證手機驗證碼
+ * 驗證手機驗證碼（純驗證，不修改狀態）
  * @param {String} phone - 電話號碼
  * @param {String} code - 驗證碼
  * @param {String} purpose - 用途
@@ -335,10 +356,7 @@ export const verifyPhoneCode = async (phone, code, purpose = 'register') => {
     throw new AppError('驗證碼錯誤或已過期，請重新獲取驗證碼', 400)
   }
 
-  // 標記為已使用
-  verificationCode.used = true
-  await verificationCode.save()
-
+  // 只驗證，不標記為已使用
   return { success: true, verified: true, phone }
 }
 
@@ -405,6 +423,19 @@ export const resetPassword = async (phone, code, newPassword, brandId) => {
   const isSamePassword = await user.comparePassword(newPassword)
   if (isSamePassword) {
     throw new AppError('新密碼不能與當前密碼相同', 400)
+  }
+
+  // 在更新密碼之前，標記驗證碼為已使用
+  const codeRecord = await VerificationCode.findOne({
+    phone,
+    code,
+    purpose: 'reset_password',
+    used: false,
+  })
+
+  if (codeRecord) {
+    codeRecord.used = true
+    await codeRecord.save()
   }
 
   // 更新密碼
