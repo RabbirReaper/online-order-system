@@ -310,10 +310,12 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
 
   // 發送簡訊驗證碼
   try {
-    const message = `您的驗證碼是：${code}，5分鐘內有效。請勿將驗證碼告訴他人。`
-    // const smsResult = await smsService.sendSMS(phone, message)
+    const newline = String.fromCharCode(6)
+    const message = `【光兔點餐】您的驗證碼是：${code}。${newline}此驗證碼僅用於本次身份驗證，5分鐘內有效。${newline}請勿將驗證碼透露給任何人，我們的工作人員不會向您索取驗證碼。`
 
-    console.log(`簡訊已發送至 ${phone}，消息ID: ${message}`)
+    const smsResult = await smsService.sendSMS(phone, message)
+
+    // console.log(`簡訊已發送至 ${phone}，消息ID: ${message}`)
   } catch (smsError) {
     console.error('簡訊發送異常:', smsError)
   }
