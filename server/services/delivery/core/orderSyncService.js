@@ -25,6 +25,10 @@ export const processUberEatsWebhook = async (webhookData) => {
         // console.log('🍔 處理新訂單通知')
         await handleUberEatsOrderNotification(resource_href, meta)
         break
+      case 'orders.scheduled.notification':
+        // console.log('🍔 處理預約訂單通知')
+        await handleUberEatsOrderNotification(resource_href, meta)
+        break
 
       default:
       // console.log(`⚠️ 未處理的 Uber Eats 事件類型: ${event_type}`)

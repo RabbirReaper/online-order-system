@@ -89,7 +89,7 @@ function convertToUberEatsFormat(menuData, businessHours) {
           },
         },
         price_info: {
-          price: dish.basePrice * 100,
+          price: (item.priceOverride || dish.basePrice) * 100,
         },
         tax_info: {},
         external_data: `External data for ${dish.name}`,

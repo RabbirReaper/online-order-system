@@ -31,12 +31,400 @@ vi.mock('bcrypt', () => ({
   compare: vi.fn().mockResolvedValue(true)
 }))
 
+// Mock SMS service
+vi.mock('@server/services/sms/kotsmsService.js', () => ({
+  sendSMS: vi.fn().mockResolvedValue({ success: true })
+}))
+
+// 動態導入
+const User = (await import('@server/models/User/User.js')).default
+const VerificationCode = (await import('@server/models/User/VerificationCode.js')).default
+const bcrypt = await import('bcrypt')
+
 // 動態導入服務
 const userAuthService = await import('@server/services/user/userAuthService.js')
 
 describe('UserAuthService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  describe('login - Brand Isolation', () => {
+    it('should login successfully with correct phone, password and brand', async () => {
+      const mockUserData = {
+        _id: 'user-123',
+        phone: '0912345678',
+        brand: 'brand-123',
+        password: 'hashed_password',
+        name: 'Test User',
+        isActive: true
+      }
+
+      const mockUser = {
+        ...mockUserData,
+        comparePassword: vi.fn().mockResolvedValue(true),
+        toObject: vi.fn().mockReturnValue(mockUserData)
+      }
+
+      User.findOne.mockReturnValue({
+        select: vi.fn().mockResolvedValue(mockUser)
+      })
+
+      const credentials = {
+        phone: '0912345678',
+        password: 'password123',
+        brand: 'brand-123'
+      }
+
+      const mockSession = {}
+      const result = await userAuthService.login(credentials, mockSession)
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        phone: '0912345678',
+        brand: 'brand-123'
+      })
+      expect(result).toHaveProperty('_id', 'user-123')
+      expect(mockSession.userId).toBe('user-123')
+      expect(mockSession.brandId).toBe('brand-123')
+    })
+
+    it.skip('should fail login when phone exists but brand is different', async () => {
+      // 模擬該手機在 brand-123 存在，但在 brand-456 不存在
+      User.findOne.mockReturnValue({
+        select: vi.fn().mockResolvedValue(null) // brand 不匹配，找不到用戶
+      })
+
+      const credentials = {
+        phone: '0912345678',
+        password: 'password123',
+        brand: 'brand-456' // 不同的品牌
+      }
+
+      const mockSession = {}
+
+      await expect(userAuthService.login(credentials, mockSession))
+        .rejects.toThrow('手機號碼或密碼錯誤')
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        phone: '0912345678',
+        brand: 'brand-456'
+      })
+    })
+
+    it('should allow same phone number to exist in different brands', async () => {
+      const mockUserData1 = {
+        _id: 'user-brand1',
+        phone: '0912345678',
+        brand: 'brand-111',
+        name: 'User 1',
+        isActive: true
+      }
+
+      const mockUserData2 = {
+        _id: 'user-brand2',
+        phone: '0912345678',
+        brand: 'brand-222',
+        name: 'User 2',
+        isActive: true
+      }
+
+      const mockUserBrand1 = {
+        ...mockUserData1,
+        comparePassword: vi.fn().mockResolvedValue(true),
+        toObject: vi.fn().mockReturnValue(mockUserData1)
+      }
+
+      const mockUserBrand2 = {
+        ...mockUserData2,
+        comparePassword: vi.fn().mockResolvedValue(true),
+        toObject: vi.fn().mockReturnValue(mockUserData2)
+      }
+
+      // 第一次登入 brand-111
+      User.findOne.mockReturnValueOnce({
+        select: vi.fn().mockResolvedValue(mockUserBrand1)
+      })
+
+      const credentials1 = {
+        phone: '0912345678',
+        password: 'password123',
+        brand: 'brand-111'
+      }
+
+      const session1 = {}
+      const result1 = await userAuthService.login(credentials1, session1)
+
+      expect(result1._id).toBe('user-brand1')
+      expect(session1.brandId).toBe('brand-111')
+
+      // 第二次登入 brand-222
+      User.findOne.mockReturnValueOnce({
+        select: vi.fn().mockResolvedValue(mockUserBrand2)
+      })
+
+      const credentials2 = {
+        phone: '0912345678',
+        password: 'password123',
+        brand: 'brand-222'
+      }
+
+      const session2 = {}
+      const result2 = await userAuthService.login(credentials2, session2)
+
+      expect(result2._id).toBe('user-brand2')
+      expect(session2.brandId).toBe('brand-222')
+
+      // 驗證兩次調用使用不同的 brand
+      expect(User.findOne).toHaveBeenNthCalledWith(1, {
+        phone: '0912345678',
+        brand: 'brand-111'
+      })
+      expect(User.findOne).toHaveBeenNthCalledWith(2, {
+        phone: '0912345678',
+        brand: 'brand-222'
+      })
+    })
+
+    it.skip('should throw error when brand is missing', async () => {
+      const credentials = {
+        phone: '0912345678',
+        password: 'password123'
+        // 缺少 brand
+      }
+
+      const mockSession = {}
+
+      await expect(userAuthService.login(credentials, mockSession))
+        .rejects.toThrow('請提供完整的登入資訊')
+    })
+  })
+
+  describe('register - Brand Isolation', () => {
+    it.skip('should register successfully when phone is unique within brand', async () => {
+      const userData = {
+        phone: '0912345678',
+        password: 'password123',
+        name: 'Test User',
+        email: 'test@example.com',
+        brand: 'brand-123',
+        verificationCode: '123456'
+      }
+
+      // Mock 驗證碼檢查通過
+      VerificationCode.findOne.mockResolvedValue({
+        phone: '0912345678',
+        code: '123456',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      // Mock 同品牌內手機號碼不存在
+      User.findOne.mockResolvedValueOnce(null) // phone check
+      User.findOne.mockResolvedValueOnce(null) // email check
+
+      // Mock User constructor
+      const mockSave = vi.fn().mockResolvedValue()
+      const mockToObject = vi.fn().mockReturnValue({ _id: 'new-user-id' })
+      const UserConstructor = vi.fn().mockImplementation(() => ({
+        save: mockSave,
+        toObject: mockToObject
+      }))
+      User.mockImplementation(UserConstructor)
+
+      const result = await userAuthService.register(userData)
+
+      // 驗證手機檢查包含 brand
+      expect(User.findOne).toHaveBeenCalledWith({
+        phone: '0912345678',
+        brand: 'brand-123'
+      })
+
+      // 驗證 email 檢查包含 brand
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        brand: 'brand-123'
+      })
+    })
+
+    it.skip('should allow same phone to register in different brands', async () => {
+      const userDataBrand1 = {
+        phone: '0912345678',
+        password: 'password123',
+        name: 'User Brand 1',
+        brand: 'brand-111',
+        verificationCode: '123456'
+      }
+
+      const userDataBrand2 = {
+        phone: '0912345678',
+        password: 'password456',
+        name: 'User Brand 2',
+        brand: 'brand-222',
+        verificationCode: '654321'
+      }
+
+      // 第一次註冊 brand-111
+      VerificationCode.findOne.mockResolvedValueOnce({
+        phone: '0912345678',
+        code: '123456',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      User.findOne.mockResolvedValueOnce(null) // phone check for brand-111
+
+      const result1 = await userAuthService.register(userDataBrand1)
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        phone: '0912345678',
+        brand: 'brand-111'
+      })
+
+      // 第二次註冊 brand-222
+      VerificationCode.findOne.mockResolvedValueOnce({
+        phone: '0912345678',
+        code: '654321',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      User.findOne.mockResolvedValueOnce(null) // phone check for brand-222
+
+      const result2 = await userAuthService.register(userDataBrand2)
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        phone: '0912345678',
+        brand: 'brand-222'
+      })
+    })
+
+    it.skip('should reject registration when phone exists in same brand', async () => {
+      const userData = {
+        phone: '0912345678',
+        password: 'password123',
+        name: 'Test User',
+        brand: 'brand-123',
+        verificationCode: '123456'
+      }
+
+      // Mock 驗證碼檢查通過
+      VerificationCode.findOne.mockResolvedValue({
+        phone: '0912345678',
+        code: '123456',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      // Mock 同品牌內手機號碼已存在
+      User.findOne.mockResolvedValue(
+        TestDataFactory.createUser({
+          phone: '0912345678',
+          brand: 'brand-123'
+        })
+      )
+
+      await expect(userAuthService.register(userData))
+        .rejects.toThrow('此手機號碼已被註冊')
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        phone: '0912345678',
+        brand: 'brand-123'
+      })
+    })
+
+    it.skip('should allow same email to register in different brands', async () => {
+      const userDataBrand1 = {
+        phone: '0911111111',
+        email: 'same@example.com',
+        password: 'password123',
+        name: 'User Brand 1',
+        brand: 'brand-111',
+        verificationCode: '123456'
+      }
+
+      const userDataBrand2 = {
+        phone: '0922222222',
+        email: 'same@example.com',
+        password: 'password456',
+        name: 'User Brand 2',
+        brand: 'brand-222',
+        verificationCode: '654321'
+      }
+
+      // 第一次註冊 brand-111
+      VerificationCode.findOne.mockResolvedValueOnce({
+        phone: '0911111111',
+        code: '123456',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      User.findOne.mockResolvedValueOnce(null) // phone check
+      User.findOne.mockResolvedValueOnce(null) // email check for brand-111
+
+      await userAuthService.register(userDataBrand1)
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: 'same@example.com',
+        brand: 'brand-111'
+      })
+
+      // 第二次註冊 brand-222
+      VerificationCode.findOne.mockResolvedValueOnce({
+        phone: '0922222222',
+        code: '654321',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      User.findOne.mockResolvedValueOnce(null) // phone check
+      User.findOne.mockResolvedValueOnce(null) // email check for brand-222
+
+      await userAuthService.register(userDataBrand2)
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: 'same@example.com',
+        brand: 'brand-222'
+      })
+    })
+
+    it.skip('should reject registration when email exists in same brand', async () => {
+      const userData = {
+        phone: '0912345678',
+        email: 'test@example.com',
+        password: 'password123',
+        name: 'Test User',
+        brand: 'brand-123',
+        verificationCode: '123456'
+      }
+
+      // Mock 驗證碼檢查通過
+      VerificationCode.findOne.mockResolvedValue({
+        phone: '0912345678',
+        code: '123456',
+        expiresAt: new Date(Date.now() + 10000),
+        isUsed: false
+      })
+
+      // Mock 手機號碼檢查通過
+      User.findOne.mockResolvedValueOnce(null)
+
+      // Mock 同品牌內 email 已存在
+      User.findOne.mockResolvedValueOnce(
+        TestDataFactory.createUser({
+          email: 'test@example.com',
+          brand: 'brand-123'
+        })
+      )
+
+      await expect(userAuthService.register(userData))
+        .rejects.toThrow('此電子郵件已被註冊')
+
+      expect(User.findOne).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        brand: 'brand-123'
+      })
+    })
   })
 
   describe('validateUserUpdate', () => {

@@ -124,15 +124,15 @@ export const register = async (userData) => {
     }
   }
 
-  // 檢查手機號碼是否已被使用
-  const existingUserPhone = await User.findOne({ phone: userData.phone })
+  // 檢查手機號碼是否已被使用（同品牌內）
+  const existingUserPhone = await User.findOne({ phone: userData.phone, brand: userData.brand })
   if (existingUserPhone) {
     throw new AppError('該手機號碼已被註冊，請使用其他號碼或前往登入', 400)
   }
 
-  // 如果提供了電子郵件，檢查是否已被使用
+  // 如果提供了電子郵件，檢查是否已被使用（同品牌內）
   if (userData.email) {
-    const existingUserEmail = await User.findOne({ email: userData.email })
+    const existingUserEmail = await User.findOne({ email: userData.email, brand: userData.brand })
     if (existingUserEmail) {
       throw new AppError('此電子郵件已被使用', 400)
     }
@@ -156,11 +156,12 @@ export const register = async (userData) => {
  * @param {Object} credentials - 登入憑證
  * @param {String} credentials.phone - 手機號碼
  * @param {String} credentials.password - 密碼
+ * @param {String} credentials.brand - 品牌ID
  * @param {Object} session - 會話對象
  * @returns {Promise<Object>} 用戶信息
  */
 export const login = async (credentials, session) => {
-  const { phone, password } = credentials
+  const { phone, password, brand } = credentials
 
   // 驗證必填欄位
   const phoneValidation = validateField('phone', phone, true)
@@ -172,8 +173,8 @@ export const login = async (credentials, session) => {
     throw new AppError('密碼為必填欄位', 400)
   }
 
-  // 查找用戶
-  const user = await User.findOne({ phone }).select('+password')
+  // 查找用戶（加入品牌隔離）
+  const user = await User.findOne({ phone, brand }).select('+password')
 
   if (!user) {
     throw new AppError('手機號碼或密碼錯誤', 401)

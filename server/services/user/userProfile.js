@@ -45,17 +45,17 @@ export const updateUserProfile = async (userId, updateData) => {
   delete updateData.resetPasswordToken
   delete updateData.resetPasswordExpire
 
-  // 如果要更改電子郵件，檢查是否已被使用
+  // 如果要更改電子郵件，檢查是否已被使用（同品牌內）
   if (updateData.email && updateData.email !== user.email) {
-    const existingUser = await User.findOne({ email: updateData.email })
+    const existingUser = await User.findOne({ email: updateData.email, brand: user.brand })
     if (existingUser) {
       throw new AppError('此電子郵件已被使用', 400)
     }
   }
 
-  // 如果要更改電話，檢查是否已被使用
+  // 如果要更改電話，檢查是否已被使用（同品牌內）
   if (updateData.phone && updateData.phone !== user.phone) {
-    const existingUser = await User.findOne({ phone: updateData.phone })
+    const existingUser = await User.findOne({ phone: updateData.phone, brand: user.brand })
     if (existingUser) {
       throw new AppError('此電話號碼已被使用', 400)
     }
@@ -274,10 +274,16 @@ export const setDefaultAddress = async (userId, addressId) => {
  * @returns {Promise<Object>} 用戶列表與分頁資訊
  */
 export const getAllUsers = async (options = {}) => {
-  const { search, activeOnly = false, page = 1, limit = 20 } = options
+  const { brandId, search, activeOnly = false, page = 1, limit = 20 } = options
 
   // 構建查詢條件
   const queryConditions = {}
+
+  if (brandId) {
+    queryConditions.brand = brandId
+  } else {
+    throw new AppError('缺少品牌ID', 400)
+  }
 
   if (search) {
     queryConditions.$or = [

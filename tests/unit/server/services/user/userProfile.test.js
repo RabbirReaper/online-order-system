@@ -110,6 +110,7 @@ describe('UserProfile Service', () => {
         _id: 'user-id-123',
         email: 'old@example.com',
         phone: '0912345678',
+        brand: 'brand-123',
         save: vi.fn().mockResolvedValue(),
         toObject: vi.fn().mockReturnValue({
           _id: 'user-id-123',
@@ -140,15 +141,17 @@ describe('UserProfile Service', () => {
         .rejects.toThrow('用戶不存在')
     })
 
-    it('should throw error when email already exists', async () => {
+    it('should throw error when email already exists in same brand', async () => {
       const mockUserData = TestDataFactory.createUser({
         _id: 'user-id-123',
-        email: 'old@example.com'
+        email: 'old@example.com',
+        brand: 'brand-123'
       })
 
       const existingUser = TestDataFactory.createUser({
         _id: 'other-user-id',
-        email: 'new@example.com'
+        email: 'new@example.com',
+        brand: 'brand-123'
       })
 
       mockUser.findById.mockResolvedValue(mockUserData)
@@ -158,19 +161,54 @@ describe('UserProfile Service', () => {
 
       await expect(userProfileService.updateUserProfile('user-id-123', updateData))
         .rejects.toThrow('此電子郵件已被使用')
+
+      // 驗證查詢包含 brand
+      expect(mockUser.findOne).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        brand: 'brand-123'
+      })
     })
 
-    it('should throw error when phone already exists', async () => {
+    it('should allow same email in different brands', async () => {
+      const mockUserData = TestDataFactory.createUser({
+        _id: 'user-id-123',
+        email: 'old@example.com',
+        brand: 'brand-123',
+        save: vi.fn().mockResolvedValue(),
+        toObject: vi.fn().mockReturnValue({
+          _id: 'user-id-123',
+          email: 'same@example.com'
+        })
+      })
+
+      mockUser.findById.mockResolvedValue(mockUserData)
+      // 同品牌內沒有重複，但其他品牌有相同 email
+      mockUser.findOne.mockResolvedValue(null)
+
+      const updateData = { email: 'same@example.com' }
+
+      const result = await userProfileService.updateUserProfile('user-id-123', updateData)
+
+      expect(mockUser.findOne).toHaveBeenCalledWith({
+        email: 'same@example.com',
+        brand: 'brand-123'
+      })
+      expect(result.email).toBe('same@example.com')
+    })
+
+    it('should throw error when phone already exists in same brand', async () => {
       const mockUserData = TestDataFactory.createUser({
         _id: 'user-id-123',
         phone: '0912345678',
+        brand: 'brand-123',
         save: vi.fn().mockResolvedValue(),
         toObject: vi.fn().mockReturnValue({ _id: 'user-id-123', phone: '0912345678' })
       })
 
       const existingUser = TestDataFactory.createUser({
         _id: 'other-user-id',
-        phone: '0987654321'
+        phone: '0987654321',
+        brand: 'brand-123'
       })
 
       mockUser.findById.mockResolvedValue(mockUserData)
@@ -180,6 +218,39 @@ describe('UserProfile Service', () => {
 
       await expect(userProfileService.updateUserProfile('user-id-123', updateData))
         .rejects.toThrow('此電話號碼已被使用')
+
+      // 驗證查詢包含 brand
+      expect(mockUser.findOne).toHaveBeenCalledWith({
+        phone: '0987654321',
+        brand: 'brand-123'
+      })
+    })
+
+    it('should allow same phone in different brands', async () => {
+      const mockUserData = TestDataFactory.createUser({
+        _id: 'user-id-123',
+        phone: '0912345678',
+        brand: 'brand-123',
+        save: vi.fn().mockResolvedValue(),
+        toObject: vi.fn().mockReturnValue({
+          _id: 'user-id-123',
+          phone: '0987654321'
+        })
+      })
+
+      mockUser.findById.mockResolvedValue(mockUserData)
+      // 同品牌內沒有重複，但其他品牌有相同 phone
+      mockUser.findOne.mockResolvedValue(null)
+
+      const updateData = { phone: '0987654321' }
+
+      const result = await userProfileService.updateUserProfile('user-id-123', updateData)
+
+      expect(mockUser.findOne).toHaveBeenCalledWith({
+        phone: '0987654321',
+        brand: 'brand-123'
+      })
+      expect(result.phone).toBe('0987654321')
     })
 
     it('should not allow updating restricted fields', async () => {
@@ -525,7 +596,7 @@ describe('UserProfile Service', () => {
   })
 
   describe('getAllUsers', () => {
-    it('should get all users with default options', async () => {
+    it('should get all users with brandId', async () => {
       const mockUsers = [
         TestDataFactory.createUser({ _id: 'user-1', name: 'User 1' }),
         TestDataFactory.createUser({ _id: 'user-2', name: 'User 2' })
@@ -539,16 +610,16 @@ describe('UserProfile Service', () => {
         limit: vi.fn().mockResolvedValue(mockUsers)
       })
 
-      const result = await userProfileService.getAllUsers()
+      const result = await userProfileService.getAllUsers({ brandId: 'brand-123' })
 
-      expect(mockUser.countDocuments).toHaveBeenCalledWith({})
+      expect(mockUser.countDocuments).toHaveBeenCalledWith({ brand: 'brand-123' })
       expect(result.users).toEqual(mockUsers)
       expect(result.pagination.total).toBe(2)
       expect(result.pagination.currentPage).toBe(1)
       expect(result.pagination.limit).toBe(20)
     })
 
-    it('should filter users by search keyword', async () => {
+    it('should filter users by search keyword within brand', async () => {
       const mockUsers = [
         TestDataFactory.createUser({ name: 'John Doe' })
       ]
@@ -561,10 +632,11 @@ describe('UserProfile Service', () => {
         limit: vi.fn().mockResolvedValue(mockUsers)
       })
 
-      const options = { search: 'john' }
+      const options = { brandId: 'brand-123', search: 'john' }
       const result = await userProfileService.getAllUsers(options)
 
       expect(mockUser.countDocuments).toHaveBeenCalledWith({
+        brand: 'brand-123',
         $or: [
           { name: { $regex: 'john', $options: 'i' } },
           { email: { $regex: 'john', $options: 'i' } },
@@ -573,7 +645,7 @@ describe('UserProfile Service', () => {
       })
     })
 
-    it('should filter active users only', async () => {
+    it('should filter active users only within brand', async () => {
       const mockUsers = [
         TestDataFactory.createUser({ isActive: true })
       ]
@@ -586,15 +658,18 @@ describe('UserProfile Service', () => {
         limit: vi.fn().mockResolvedValue(mockUsers)
       })
 
-      const options = { activeOnly: true }
+      const options = { brandId: 'brand-123', activeOnly: true }
       const result = await userProfileService.getAllUsers(options)
 
-      expect(mockUser.countDocuments).toHaveBeenCalledWith({ isActive: true })
+      expect(mockUser.countDocuments).toHaveBeenCalledWith({
+        brand: 'brand-123',
+        isActive: true
+      })
     })
 
-    it('should handle pagination correctly', async () => {
+    it('should handle pagination correctly within brand', async () => {
       const mockUsers = []
-      
+
       mockUser.countDocuments.mockResolvedValue(50)
       mockUser.find.mockReturnValue({
         select: vi.fn().mockReturnThis(),
@@ -603,7 +678,7 @@ describe('UserProfile Service', () => {
         limit: vi.fn().mockResolvedValue(mockUsers)
       })
 
-      const options = { page: 3, limit: 10 }
+      const options = { brandId: 'brand-123', page: 3, limit: 10 }
       const result = await userProfileService.getAllUsers(options)
 
       expect(result.pagination.currentPage).toBe(3)
