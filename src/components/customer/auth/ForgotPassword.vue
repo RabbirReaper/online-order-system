@@ -248,12 +248,13 @@ const showConfirmPassword = ref(false)
 const countdown = ref(0)
 const codeRequested = ref(false)
 const codeVerified = ref(false)
+const passwordResetComplete = ref(false)
 let countdownTimer = null
 
 // 模態框回調函數
 const onSuccessModalClose = () => {
   // 如果是密碼重設成功，跳轉到登入頁面
-  if (codeVerified.value) {
+  if (passwordResetComplete.value) {
     router.push('/auth/login')
   }
 }
@@ -437,6 +438,8 @@ const resetPassword = async () => {
       newPassword: newPassword.value,
     })
 
+    // 重設成功，標記為完成
+    passwordResetComplete.value = true // 新增此行
     // 重設成功
     successMessage.value = '密碼已重設成功，請使用新密碼登入'
     if (successModal.value) {
