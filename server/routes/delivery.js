@@ -52,6 +52,25 @@ router.get(
 )
 
 /**
+ * 同步庫存狀態到 UberEats
+ * POST /delivery/brands/:brandId/:storeId/sync-inventory
+ */
+router.post(
+  '/brands/:brandId/:storeId/sync-inventory',
+  authenticate('admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+  ),
+  requireBrandAccess,
+  requireStoreAccess,
+  deliveryController.syncInventoryStatusToUberEats,
+)
+
+/**
  * Uber Eats Webhook 接收端點
  * POST /delivery/webhooks/ubereats
  */

@@ -28,5 +28,17 @@ export default function (apiClient) {
     getMenuSyncStatus({ brandId, storeId }) {
       return apiClient.get(`/delivery/brands/${brandId}/${storeId}/sync-status`)
     },
+
+    /**
+     * 同步庫存狀態到 UberEats
+     * @param {Object} params - 同步參數
+     * @param {string} params.brandId - 品牌ID（必填）
+     * @param {string} params.storeId - 店鋪ID（必填）
+     * @returns {Promise} - API 回應
+     * @description 將店鋪當前庫存狀態同步到 UberEats 平台（停售/恢復商品）
+     */
+    syncInventoryToUberEats({ brandId, storeId }) {
+      return apiClient.post(`/delivery/brands/${brandId}/${storeId}/sync-inventory`)
+    },
   }
 }
