@@ -375,6 +375,7 @@ const getStatusText = (item) => {
   if (item.isSoldOut) return '售完'
   if (!item.isInventoryTracked) return '不追蹤'
   if (item.totalStock === 0) return '缺貨'
+  if (item.enableAvailableStock && item.availableStock === 0) return '自動停售'
   if (item.totalStock <= item.minStockAlert) return '低庫存'
   return '正常'
 }
@@ -385,6 +386,8 @@ const getStatusBadgeClass = (item) => {
     case '售完':
       return 'bg-danger'
     case '缺貨':
+      return 'bg-danger'
+    case '自動停售':
       return 'bg-danger'
     case '低庫存':
       return 'bg-warning text-dark'
