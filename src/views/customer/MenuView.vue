@@ -139,7 +139,7 @@
       </Transition>
 
       <!-- 頁尾 -->
-      <footer>
+      <footer class="mt-5 border-top">
         <div class="text-center text-muted py-3">
           &copy; {{ new Date().getFullYear() }} Rabbir Company. All rights reserved.
         </div>
