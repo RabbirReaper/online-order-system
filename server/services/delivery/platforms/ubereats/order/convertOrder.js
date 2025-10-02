@@ -29,7 +29,7 @@ export const convertUberOrderToInternal = async (uberOrder, platformStore) => {
       const amountInCents = uberMoneyObject.amount || 0
       return Math.round((amountInCents / 100) * 100) / 100 // 轉為元並保留兩位小數
     }
-    console.log(uberOrder)
+
     // 🔧 提取各種金額
     const totalAmount = extractAmount(uberOrder.payment?.charges?.total)
     const subtotalAmount = extractAmount(uberOrder.payment?.charges?.sub_total)
@@ -67,7 +67,7 @@ export const convertUberOrderToInternal = async (uberOrder, platformStore) => {
           customerName: uberOrder.eater?.first_name || uberOrder.eaters?.[0]?.first_name,
           customerPhone: uberOrder.eater?.phone,
         },
-        rawOrderData: {}, // 按要求先留空
+        rawOrderData: {},
         lastSyncAt: new Date(),
       },
 
@@ -168,7 +168,7 @@ const processUberOrderItems = async (uberItems, brandId) => {
         name: itemName, // 優先使用平台名稱
         basePrice: matchedTemplate?.basePrice || itemPrice, // 有模板用模板價格，否則用平台價格
         options: processedOptions,
-        finalPrice: itemPrice, // 使用平台的實際價格
+        finalPrice: itemPrice, // 使用平台的單價
       }
 
       const dishInstance = new DishInstance(dishInstanceData)
@@ -316,16 +316,16 @@ const findMatchingOption = async (uberOptionId, brandId) => {
 }
 
 /**
- * 提取項目價格
+ * 提取項目價格（單價）
  * @param {Object} priceObject - Uber Eats 價格對象
  * @returns {Number} 價格（以元為單位）
  */
 const extractItemPrice = (priceObject) => {
-  if (!priceObject || !priceObject.total_price) {
+  if (!priceObject || !priceObject.unit_price) {
     return 0
   }
 
-  const amountInCents = priceObject.total_price.amount || 0
+  const amountInCents = priceObject.unit_price.amount || 0
   return Math.round((amountInCents / 100) * 100) / 100
 }
 
