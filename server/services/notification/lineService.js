@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { formatDateTime } from '../../utils/date.js'
 
 /**
  * 發送LINE訊息
@@ -49,25 +50,6 @@ export const sendLineMessage = async (accessToken, userId, message) => {
 }
 
 /**
- * 格式化日期時間
- * @param {Date} date - 日期物件
- * @returns {Object} 格式化後的日期和時間
- */
-const formatDateTime = (date) => {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
-
-  return {
-    date: `${year}/${month}/${day}`,
-    time: `${hours}:${minutes}`,
-  }
-}
-
-/**
  * 建立訂單確認訊息內容（Flex Message）
  * @param {Object} order - 訂單物件
  * @param {string} confirmUrl - 確認訂單的網址
@@ -80,17 +62,12 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
     dine_in: '🍽️ 內用',
   }
 
-  const orderTypeIcon = {
-    takeout: '🛍️',
-    delivery: '🚗',
-    dine_in: '🍽️',
-  }
-
   // 只顯示序號
   const orderNumber = order.sequence.toString().padStart(3, '0')
 
-  // 格式化日期時間
-  const { date, time } = formatDateTime(order.createdAt || new Date())
+  // 使用 date.js 工具函數格式化日期時間
+  const orderDate = formatDateTime(order.createdAt || new Date(), 'yyyy/MM/dd')
+  const orderTime = formatDateTime(order.createdAt || new Date(), 'HH:mm')
 
   return {
     type: 'flex',
@@ -172,7 +149,7 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
                   },
                   {
                     type: 'text',
-                    text: date,
+                    text: orderDate,
                     size: 'md',
                     color: '#111111',
                     align: 'end',
@@ -189,7 +166,7 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
                 contents: [
                   {
                     type: 'text',
-                    text: '🕐 時間',
+                    text: '🕐 下單時間',
                     size: 'md',
                     color: '#555555',
                     flex: 0,
@@ -197,7 +174,7 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
                   },
                   {
                     type: 'text',
-                    text: time,
+                    text: orderTime,
                     size: 'md',
                     color: '#111111',
                     align: 'end',
