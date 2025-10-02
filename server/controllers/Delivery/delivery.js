@@ -1,5 +1,6 @@
 import * as platformManagerService from '../../services/delivery/core/platformManager.js'
 import * as orderSyncService from '../../services/delivery/core/orderSyncService.js'
+import * as ubereatsInventorySync from '../../services/delivery/platforms/ubereats/ubereatsInventorySync.js'
 import { asyncHandler, AppError } from '../../middlewares/error.js'
 
 /**
@@ -95,4 +96,21 @@ export const handleFoodpandaWebhook = asyncHandler(async (req, res) => {
       error: error.message,
     })
   }
+})
+
+/**
+ * 同步庫存狀態到 UberEats
+ * @param {Object} req - Express 請求物件
+ * @param {Object} res - Express 回應物件
+ */
+export const syncInventoryStatusToUberEats = asyncHandler(async (req, res) => {
+  const { brandId, storeId } = req.params
+  console.log('controller UberEats:', { brandId, storeId })
+  const result = await ubereatsInventorySync.syncInventoryStatusToUberEats(brandId, storeId)
+
+  res.status(200).json({
+    success: true,
+    message: '庫存狀態同步完成',
+    data: result,
+  })
 })

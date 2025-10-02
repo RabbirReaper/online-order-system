@@ -4,11 +4,32 @@
     <div class="header-section p-3 border-bottom">
       <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0">庫存管理</h5>
-        <button class="btn btn-sm btn-outline-primary" @click="refreshInventory">
-          <i class="bi bi-arrow-clockwise me-1"></i>重新整理
-        </button>
+        <div class="d-flex gap-2">
+          <button
+            class="btn btn-sm btn-outline-success"
+            @click="syncToUberEats"
+            :disabled="isSyncing"
+          >
+            <span v-if="isSyncing" class="spinner-border spinner-border-sm me-1"></span>
+            <i v-else class="bi bi-cloud-upload me-1"></i>
+            同步至 UberEats
+          </button>
+          <button class="btn btn-sm btn-outline-primary" @click="refreshInventory">
+            <i class="bi bi-arrow-clockwise me-1"></i>重新整理
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- 同步成功訊息 -->
+    <BAlert
+      v-model="showSyncAlert"
+      variant="success"
+      dismissible
+      class="mx-3 mt-3 mb-0"
+    >
+      {{ syncMessage }}
+    </BAlert>
 
     <!-- 搜尋和篩選 -->
     <div class="filter-section p-3 border-bottom">
@@ -270,7 +291,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue'
-import { BModal } from 'bootstrap-vue-next'
+import { BModal, BAlert } from 'bootstrap-vue-next'
 import { useCounterStore } from '@/stores/counter'
 import api from '@/api'
 
@@ -296,6 +317,9 @@ const inventories = ref([])
 const searchQuery = ref('')
 const statusFilter = ref('')
 const showOnlyTracked = ref(false)
+const isSyncing = ref(false)
+const syncMessage = ref('')
+const showSyncAlert = ref(false)
 
 // Modal 狀態
 const showAdjustModal = ref(false)
@@ -435,6 +459,38 @@ const loadInventory = async () => {
 // 重新整理庫存
 const refreshInventory = async () => {
   await loadInventory()
+}
+
+// 同步庫存到 UberEats
+const syncToUberEats = async () => {
+  isSyncing.value = true
+  error.value = ''
+  syncMessage.value = ''
+
+  try {
+    console.log('同步庫存到 UberEats:', { brandId: props.brandId, storeId: props.storeId })
+    const response = await api.delivery.syncInventoryToUberEats({
+      brandId: props.brandId,
+      storeId: props.storeId,
+    })
+
+    if (response && response.success) {
+      const { disabledCount = 0, enabledCount = 0 } = response.data || {}
+      syncMessage.value = `同步成功！已停售 ${disabledCount} 項、正常販售 ${enabledCount} 項`
+
+      // 顯示成功訊息
+      showSyncAlert.value = true
+
+      // 重新載入庫存資料以反映最新狀態
+      await loadInventory()
+    }
+  } catch (err) {
+    console.error('同步庫存到 UberEats 失敗:', err)
+    const errorMsg = err.response?.data?.message || '同步庫存時發生錯誤'
+    error.value = errorMsg
+  } finally {
+    isSyncing.value = false
+  }
 }
 
 // 切換售完狀態
