@@ -49,6 +49,25 @@ export const sendLineMessage = async (accessToken, userId, message) => {
 }
 
 /**
+ * 格式化日期時間
+ * @param {Date} date - 日期物件
+ * @returns {Object} 格式化後的日期和時間
+ */
+const formatDateTime = (date) => {
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+
+  return {
+    date: `${year}/${month}/${day}`,
+    time: `${hours}:${minutes}`,
+  }
+}
+
+/**
  * 建立訂單確認訊息內容（Flex Message）
  * @param {Object} order - 訂單物件
  * @param {string} confirmUrl - 確認訂單的網址
@@ -56,41 +75,176 @@ export const sendLineMessage = async (accessToken, userId, message) => {
  */
 export const buildOrderConfirmationMessage = (order, confirmUrl) => {
   const orderTypeText = {
-    takeout: '自取',
-    delivery: '外送',
-    dine_in: '內用',
+    takeout: '🛍️ 自取',
+    delivery: '🚗 外送',
+    dine_in: '🍽️ 內用',
   }
 
-  const orderNumber = `${order.orderDateCode}-${order.sequence.toString().padStart(3, '0')}`
+  const orderTypeIcon = {
+    takeout: '🛍️',
+    delivery: '🚗',
+    dine_in: '🍽️',
+  }
+
+  // 只顯示序號
+  const orderNumber = order.sequence.toString().padStart(3, '0')
+
+  // 格式化日期時間
+  const { date, time } = formatDateTime(order.createdAt || new Date())
 
   return {
     type: 'flex',
-    altText: `訂單確認通知 - ${orderNumber}`,
+    altText: `訂單確認通知 - 編號 ${orderNumber}`,
     contents: {
       type: 'bubble',
-      hero: {
+      size: 'kilo',
+      header: {
         type: 'box',
         layout: 'vertical',
         contents: [
           {
             type: 'text',
-            text: '🛒 訂單確認通知',
+            text: '訂單確認通知',
             weight: 'bold',
             size: 'xl',
             color: '#ffffff',
+            align: 'center',
           },
         ],
-        backgroundColor: '#17c964',
+        backgroundColor: '#FF6B35',
         paddingAll: '20px',
       },
       body: {
         type: 'box',
         layout: 'vertical',
         contents: [
+          // 訂單編號區塊
+          {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: '訂單編號',
+                size: 'sm',
+                color: '#999999',
+                align: 'center',
+              },
+              {
+                type: 'text',
+                text: `#${orderNumber}`,
+                size: 'xxl',
+                weight: 'bold',
+                color: '#FF6B35',
+                align: 'center',
+                margin: 'xs',
+              },
+            ],
+            margin: 'none',
+            paddingBottom: 'lg',
+          },
+
+          // 分隔線
+          {
+            type: 'separator',
+            margin: 'lg',
+          },
+
+          // 訂單資訊區塊
           {
             type: 'box',
             layout: 'vertical',
             spacing: 'md',
+            margin: 'lg',
+            contents: [
+              // 日期
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '📅 日期',
+                    size: 'md',
+                    color: '#555555',
+                    flex: 0,
+                    gravity: 'center',
+                  },
+                  {
+                    type: 'text',
+                    text: date,
+                    size: 'md',
+                    color: '#111111',
+                    align: 'end',
+                    gravity: 'center',
+                    weight: 'bold',
+                  },
+                ],
+              },
+
+              // 時間
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '🕐 時間',
+                    size: 'md',
+                    color: '#555555',
+                    flex: 0,
+                    gravity: 'center',
+                  },
+                  {
+                    type: 'text',
+                    text: time,
+                    size: 'md',
+                    color: '#111111',
+                    align: 'end',
+                    gravity: 'center',
+                    weight: 'bold',
+                  },
+                ],
+              },
+
+              // 取餐方式
+              {
+                type: 'box',
+                layout: 'horizontal',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '📦 取餐方式',
+                    size: 'md',
+                    color: '#555555',
+                    flex: 0,
+                    gravity: 'center',
+                  },
+                  {
+                    type: 'text',
+                    text: orderTypeText[order.orderType] || order.orderType,
+                    size: 'md',
+                    color: '#FF6B35',
+                    align: 'end',
+                    gravity: 'center',
+                    weight: 'bold',
+                  },
+                ],
+              },
+            ],
+          },
+
+          // 分隔線
+          {
+            type: 'separator',
+            margin: 'xl',
+          },
+
+          // 金額區塊
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'xl',
             contents: [
               {
                 type: 'box',
@@ -98,65 +252,20 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
                 contents: [
                   {
                     type: 'text',
-                    text: '訂單編號',
-                    color: '#aaaaaa',
-                    size: 'sm',
-                    flex: 0,
-                  },
-                  {
-                    type: 'text',
-                    text: orderNumber,
-                    wrap: true,
-                    color: '#666666',
-                    size: 'sm',
-                    align: 'end',
-                  },
-                ],
-              },
-              {
-                type: 'box',
-                layout: 'horizontal',
-                contents: [
-                  {
-                    type: 'text',
-                    text: '訂單類型',
-                    color: '#aaaaaa',
-                    size: 'sm',
-                    flex: 0,
-                  },
-                  {
-                    type: 'text',
-                    text: orderTypeText[order.orderType] || order.orderType,
-                    wrap: true,
-                    color: '#666666',
-                    size: 'sm',
-                    align: 'end',
-                  },
-                ],
-              },
-              {
-                type: 'separator',
-                margin: 'md',
-              },
-              {
-                type: 'box',
-                layout: 'horizontal',
-                contents: [
-                  {
-                    type: 'text',
                     text: '訂單金額',
-                    color: '#aaaaaa',
-                    size: 'sm',
+                    size: 'lg',
+                    color: '#555555',
                     flex: 0,
+                    gravity: 'center',
                   },
                   {
                     type: 'text',
-                    text: `$${order.total}`,
-                    wrap: true,
-                    color: '#17c964',
-                    size: 'xl',
-                    weight: 'bold',
+                    text: `NT$ ${order.total}`,
+                    size: 'xxl',
+                    color: '#FF6B35',
                     align: 'end',
+                    gravity: 'center',
+                    weight: 'bold',
                   },
                 ],
               },
@@ -176,10 +285,10 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
             height: 'sm',
             action: {
               type: 'uri',
-              label: '查看訂單',
+              label: '📋 訂單明細',
               uri: confirmUrl,
             },
-            color: '#17c964',
+            color: '#FF6B35',
           },
           {
             type: 'box',
@@ -188,8 +297,8 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
               {
                 type: 'text',
                 text: '如有任何問題，請聯繫店家',
-                color: '#aaaaaa',
-                size: 'xxs',
+                color: '#999999',
+                size: 'xs',
                 align: 'center',
                 wrap: true,
               },
