@@ -21,6 +21,16 @@
       </div>
     </div>
 
+    <!-- 同步成功訊息 -->
+    <BAlert
+      v-model="showSyncAlert"
+      variant="success"
+      dismissible
+      class="mx-3 mt-3 mb-0"
+    >
+      {{ syncMessage }}
+    </BAlert>
+
     <!-- 搜尋和篩選 -->
     <div class="filter-section p-3 border-bottom">
       <div class="row g-2">
@@ -281,7 +291,7 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue'
-import { BModal } from 'bootstrap-vue-next'
+import { BModal, BAlert } from 'bootstrap-vue-next'
 import { useCounterStore } from '@/stores/counter'
 import api from '@/api'
 
@@ -309,6 +319,7 @@ const statusFilter = ref('')
 const showOnlyTracked = ref(false)
 const isSyncing = ref(false)
 const syncMessage = ref('')
+const showSyncAlert = ref(false)
 
 // Modal 狀態
 const showAdjustModal = ref(false)
@@ -467,8 +478,8 @@ const syncToUberEats = async () => {
       const { disabledCount = 0, enabledCount = 0 } = response.data || {}
       syncMessage.value = `同步成功！已停售 ${disabledCount} 項、正常販售 ${enabledCount} 項`
 
-      // 顯示成功訊息（可以使用 Toast 或 Alert）
-      alert(syncMessage.value)
+      // 顯示成功訊息
+      showSyncAlert.value = true
 
       // 重新載入庫存資料以反映最新狀態
       await loadInventory()
@@ -477,8 +488,6 @@ const syncToUberEats = async () => {
     console.error('同步庫存到 UberEats 失敗:', err)
     const errorMsg = err.response?.data?.message || '同步庫存時發生錯誤'
     error.value = errorMsg
-    syncMessage.value = errorMsg
-    alert(`同步失敗：${errorMsg}`)
   } finally {
     isSyncing.value = false
   }
