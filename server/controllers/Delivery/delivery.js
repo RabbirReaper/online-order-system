@@ -114,3 +114,42 @@ export const syncInventoryStatusToUberEats = asyncHandler(async (req, res) => {
     data: result,
   })
 })
+
+/**
+ * 處理 Foodpanda Catalog Callback Webhook
+ * @param {Object} req - Express 請求物件
+ * @param {Object} res - Express 回應物件
+ */
+export const handleFoodpandaCatalogCallback = asyncHandler(async (req, res) => {
+  const webhookData = req.body
+  const headers = req.headers
+
+  console.log('🐼 收到 Foodpanda Catalog Callback Webhook')
+  console.log('='.repeat(80))
+  console.log('📋 Headers:', JSON.stringify(headers, null, 2))
+  console.log('📦 Body:', JSON.stringify(webhookData, null, 2))
+  console.log('🕐 Time:', new Date().toISOString())
+  console.log('='.repeat(80))
+
+  try {
+    // 這裡可以加入處理邏輯
+    // await foodpandaService.processCatalogCallback(webhookData)
+
+    res.status(200).json({
+      success: true,
+      message: 'Catalog callback received successfully',
+    })
+  } catch (error) {
+    console.error('❌ 處理 Foodpanda Catalog Callback 失敗:', error)
+    console.error('錯誤詳情:', {
+      message: error.message,
+      stack: error.stack,
+    })
+
+    res.status(200).json({
+      success: false,
+      message: 'Catalog callback processed with errors',
+      error: error.message,
+    })
+  }
+})

@@ -82,4 +82,9 @@ router.post('/webhooks/ubereats', deliveryController.handleUberEatsWebhook)
  */
 router.post('/webhooks/foodpanda', deliveryController.handleFoodpandaWebhook)
 
+router.post(
+  '/webhooks/foodpanda/catalog-callback',
+  deliveryController.handleFoodpandaCatalogCallback,
+)
+
 export default router
