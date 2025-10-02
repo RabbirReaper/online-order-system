@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { formatDateTime } from '../../utils/date.js'
+import { fromUTCDate, formatDateTime } from '../../utils/date.js'
 
 /**
  * 發送LINE訊息
@@ -65,9 +65,10 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
   // 只顯示序號
   const orderNumber = order.sequence.toString().padStart(3, '0')
 
-  // 使用 date.js 工具函數格式化日期時間
-  const orderDate = formatDateTime(order.createdAt || new Date(), 'yyyy/MM/dd')
-  const orderTime = formatDateTime(order.createdAt || new Date(), 'HH:mm')
+  // 將 UTC 時間轉換為台灣時區後再格式化
+  const orderDateTime = fromUTCDate(order.createdAt || new Date())
+  const orderDate = formatDateTime(orderDateTime, 'yyyy/MM/dd')
+  const orderTime = formatDateTime(orderDateTime, 'HH:mm')
 
   return {
     type: 'flex',
@@ -166,7 +167,7 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
                 contents: [
                   {
                     type: 'text',
-                    text: '🕐 下單時間',
+                    text: '🕐 時間',
                     size: 'md',
                     color: '#555555',
                     flex: 0,
