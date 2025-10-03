@@ -60,6 +60,7 @@ const convertToFoodpandaCatalog = (menuData, businessHours) => {
 
   const processedOptionCategories = new Map()
   const toppingCounter = { count: 0 }
+  const imageCounter = { count: 0 }
 
   // ========================================
   // Step 1: 收集並創建所有 Topping、Topping Products 和選項類別的 Category
@@ -180,6 +181,30 @@ const convertToFoodpandaCatalog = (menuData, businessHours) => {
         isPrepackedItem: false,
         isExpressItem: false,
         excludeDishInformation: false,
+      }
+
+      // 處理圖片
+      if (dish.image && dish.image.url) {
+        imageCounter.count++
+        const imageId = `img${String(imageCounter.count).padStart(5, '0')}`
+
+        // 創建 Image 物件
+        catalogItems[imageId] = {
+          id: imageId,
+          type: 'Image',
+          url: dish.image.url,
+          alt: {
+            default: dish.name,
+          },
+        }
+
+        // 在 Product 中引用這個 Image
+        product.images = {
+          [imageId]: {
+            id: imageId,
+            type: 'Image',
+          },
+        }
       }
 
       if (dish.optionCategories && dish.optionCategories.length > 0) {
