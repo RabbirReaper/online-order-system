@@ -41,6 +41,17 @@
           />
         </div>
 
+        <!-- 平台品牌ID (僅 foodpanda) -->
+        <div class="col-md-6" v-if="configForm.platform === 'foodpanda'">
+          <label for="platformBrandId" class="form-label">平台品牌ID (Chain ID)</label>
+          <BFormInput
+            id="platformBrandId"
+            v-model="configForm.platformBrandId"
+            placeholder="請輸入 Foodpanda Chain ID"
+          />
+          <small class="form-text text-muted">選填：Foodpanda 的 chain_id</small>
+        </div>
+
         <!-- 平台店鋪ID -->
         <div class="col-md-6">
           <label for="platformStoreId" class="form-label required">平台店鋪ID</label>
@@ -53,7 +64,7 @@
         </div>
 
         <!-- 準備時間 -->
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
           <label for="prepTime" class="form-label">準備時間（分鐘）</label>
           <BFormInput
             type="number"
@@ -62,10 +73,10 @@
             min="0"
             placeholder="30"
           />
-        </div>
+        </div> -->
 
         <!-- 忙碌時準備時間 -->
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
           <label for="busyPrepTime" class="form-label">忙碌時準備時間（分鐘）</label>
           <BFormInput
             type="number"
@@ -74,13 +85,13 @@
             min="0"
             placeholder="45"
           />
-        </div>
+        </div> -->
 
         <!-- 營運狀態 -->
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
           <label for="status" class="form-label">初始營運狀態</label>
           <BFormSelect id="status" v-model="configForm.status" :options="statusOptions" />
-        </div>
+        </div> -->
 
         <!-- 自動接單 -->
         <div class="col-md-6 d-flex align-items-end">
@@ -180,6 +191,7 @@ const editingConfig = ref(null)
 // 表單數據
 const configForm = reactive({
   platform: '',
+  platformBrandId: '',
   platformStoreId: '',
   prepTime: 30,
   busyPrepTime: 45,
@@ -231,6 +243,7 @@ const loadPlatformConfig = async () => {
       editingConfig.value = existingConfig
       Object.assign(configForm, {
         platform: existingConfig.platform,
+        platformBrandId: existingConfig.platformBrandId || '',
         platformStoreId: existingConfig.platformStoreId,
         prepTime: existingConfig.prepTime,
         busyPrepTime: existingConfig.busyPrepTime,
@@ -275,6 +288,11 @@ const saveConfig = async () => {
       isActive: configForm.isActive,
     }
 
+    // 只有 foodpanda 才加入 platformBrandId
+    if (configForm.platform === 'foodpanda' && configForm.platformBrandId) {
+      configData.platformBrandId = configForm.platformBrandId
+    }
+
     if (editingConfig.value) {
       // 更新配置
       await api.platformStore.updatePlatformStore({
@@ -317,6 +335,7 @@ const saveConfig = async () => {
 const resetForm = () => {
   Object.assign(configForm, {
     platform: '',
+    platformBrandId: '',
     platformStoreId: '',
     prepTime: 30,
     busyPrepTime: 45,
