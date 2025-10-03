@@ -88,6 +88,7 @@ export const syncMenu = async (brandId, storeId) => {
         case 'foodpanda':
           result = await foodpandaMenu.syncMenuToFoodpanda(
             platformStore.platformStoreId,
+            platformStore.platformBrandId,
             menu.toObject(),
             store.businessHours,
           )

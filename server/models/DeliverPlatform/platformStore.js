@@ -27,6 +27,11 @@ const platformStoreSchema = new mongoose.Schema(
       required: true,
       // 功能：識別是哪個外送平台，決定使用哪套 API
     },
+    platformBrandId: {
+      type: String,
+      trim: true,
+      // Foodpanda 的 chain_id
+    },
     platformStoreId: {
       type: String,
       required: true,

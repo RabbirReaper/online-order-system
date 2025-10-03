@@ -14,7 +14,7 @@ const username = process.env.FOODPANDA_PRODUCTION_USERNAME
 const password = process.env.FOODPANDA_PRODUCTION_PASSWORD
 const secret = process.env.FOODPANDA_PRODUCTION_SECRET
 
-const chainCode = 't7c1'
+const chainCode = 'RabbirOrder_UAT_TW'
 const posVendorId = 'RabbirOrder001'
 
 const getAccessToken = async () => {
