@@ -9,7 +9,7 @@ const platformTokenSchema = new mongoose.Schema(
     // 平台類型
     platform: {
       type: String,
-      enum: ['foodpanda', 'ubereats'],
+      enum: ['foodpanda', 'ubereats', 'printer'],
       required: true,
     },
 
