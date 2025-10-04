@@ -270,7 +270,7 @@ const printOrder = async () => {
       orderId: counterStore.selectedOrder._id,
     })
 
-    if (response.data.success) {
+    if (response.success) {
       console.log('訂單列印成功')
     }
   } catch (error) {
