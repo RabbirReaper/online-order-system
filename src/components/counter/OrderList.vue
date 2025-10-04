@@ -2,54 +2,12 @@
   <div class="container-fluid p-0">
     <div class="component-header bg-secondary text-white p-3">
       <h4>訂單管理 {{ counterStore.currentDate }}</h4>
-      <div class="d-flex justify-content-between align-items-center mt-2">
-        <div class="d-flex align-items-center">
-          <div class="input-group input-group-sm me-2" style="max-width: 200px">
-            <input type="date" class="form-control" v-model="selectedDate" :max="maxDate" />
-          </div>
-          <button
-            class="btn btn-light btn-sm me-2"
-            @click="fetchOrdersByDate"
-            :disabled="isLoading"
-          >
-            <span
-              v-if="isLoading"
-              class="spinner-border spinner-border-sm me-2"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            {{ isLoading ? '載入中...' : '搜尋' }}
-          </button>
-        </div>
-        <div class="d-flex">
-          <select
-            class="form-select form-select-sm me-2"
-            style="max-width: 150px"
-            v-model="filterType"
-          >
-            <option value="all">所有類型</option>
-            <option value="dine_in">內用</option>
-            <option value="takeout">外帶</option>
-            <option value="delivery">外送</option>
-          </select>
-          <select
-            class="form-select form-select-sm"
-            style="max-width: 150px"
-            v-model="filterStatus"
-          >
-            <option value="all">所有狀態</option>
-            <option value="unpaid">未結帳</option>
-            <option value="paid">已完成</option>
-            <option value="cancelled">已取消</option>
-          </select>
-        </div>
-      </div>
     </div>
 
     <!-- 錯誤提示 -->
     <div v-if="errorMessage" class="alert alert-danger m-3" role="alert">
       {{ errorMessage }}
-      <button class="btn btn-outline-danger btn-sm ms-2" @click="fetchOrdersByDate">重試</button>
+      <button class="btn btn-outline-danger btn-sm ms-2" @click="fetchTodayOrders">重試</button>
     </div>
 
     <!-- 訂單表格 -->
@@ -65,7 +23,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="isLoading && filteredOrders.length === 0">
+          <tr v-if="isLoading && counterStore.todayOrders.length === 0">
             <td colspan="5" class="text-center py-4">
               <div class="spinner-border text-secondary" role="status">
                 <span class="visually-hidden">載入中...</span>
@@ -73,13 +31,13 @@
               <p class="mt-2">載入訂單資料中...</p>
             </td>
           </tr>
-          <tr v-else-if="filteredOrders.length === 0">
+          <tr v-else-if="counterStore.todayOrders.length === 0">
             <td colspan="5" class="text-center py-4">
-              <p class="text-muted">沒有符合條件的訂單</p>
+              <p class="text-muted">沒有訂單</p>
             </td>
           </tr>
           <tr
-            v-for="order in filteredOrders"
+            v-for="order in sortedOrders"
             :key="order._id"
             :class="{
               'table-active':
@@ -274,55 +232,28 @@ const props = defineProps({
 const counterStore = useCounterStore()
 
 // 本地狀態
-const selectedDate = ref('')
-const filterType = ref('all')
-const filterStatus = ref('all')
 const isLoading = ref(false)
 const isPrinting = ref(false)
 const errorMessage = ref('')
-const maxDate = ref('')
 
 // 🎯 新增：防重複點擊和視覺回饋狀態
 const isSelectingOrder = ref(false) // 是否有訂單正在載入
 const selectedOrderId = ref(null) // 哪個訂單正在載入
 
-// 計算屬性
-const filteredOrders = computed(() => {
-  let filtered = [...counterStore.todayOrders]
-
-  // 過濾取餐方式
-  if (filterType.value !== 'all') {
-    filtered = filtered.filter((order) => order.orderType === filterType.value)
-  }
-
-  // 過濾訂單狀態
-  if (filterStatus.value !== 'all') {
-    filtered = filtered.filter((order) => order.status === filterStatus.value)
-  }
-
-  // 按時間排序（最新的在前）
-  return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+// 計算屬性 - 按時間排序（最新的在前）
+const sortedOrders = computed(() => {
+  return [...counterStore.todayOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-// 簡化的日期處理 - 讓瀏覽器處理本地時區
-const getLocalDate = (date = null) => {
-  const targetDate = date ? new Date(date) : new Date()
-  return targetDate.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
-}
-
 // 方法
-const fetchOrdersByDate = async () => {
+const fetchTodayOrders = async () => {
   if (isLoading.value) return
 
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    if (selectedDate.value) {
-      await counterStore.fetchOrdersByDate(props.brandId, props.storeId, selectedDate.value)
-    } else {
-      await counterStore.fetchTodayOrders(props.brandId, props.storeId)
-    }
+    await counterStore.fetchTodayOrders(props.brandId, props.storeId)
   } catch (error) {
     console.error('獲取訂單失敗:', error)
     errorMessage.value = error.message || '獲取訂單失敗'
@@ -505,11 +436,7 @@ const printOrder = () => {
 
 // 初始化
 onMounted(() => {
-  const today = getLocalDate()
-  selectedDate.value = today
-  maxDate.value = today
-
-  fetchOrdersByDate()
+  fetchTodayOrders()
 
   // 初始化 Bootstrap Modal
   import('bootstrap/js/dist/modal').then((module) => {
