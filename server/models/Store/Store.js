@@ -69,6 +69,13 @@ const storeSchema = new mongoose.Schema(
         required: true,
       },
     ],
+
+    printer: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
   },
   { timestamps: true },
 )
