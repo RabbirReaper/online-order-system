@@ -94,12 +94,12 @@ const getPrinterAccessToken = async () => {
 const formatOrderType = (order) => {
   const platform = order.platformInfo?.platform || 'direct'
 
-  if (platform === 'foodpanda') return 'foodpanda外送'
-  if (platform === 'ubereats') return 'UberEats外送'
+  if (platform === 'foodpanda') return 'foodpand'
+  if (platform === 'ubereats') return 'UberEat'
 
   const typeMap = {
     dine_in: '內用',
-    takeout: '外帶',
+    takeout: '自取',
     delivery: '外送',
   }
 
@@ -115,16 +115,15 @@ const formatOrderNumber = (order) => {
   const platform = order.platformInfo?.platform || 'direct'
 
   if (platform === 'foodpanda') {
-    return `FP單號: ${order.platformInfo.platformOrderId || order.platformOrderId || 'N/A'}`
+    return `${order.platformInfo.platformOrderId || order.platformOrderId || 'N/A'}`
   }
 
   if (platform === 'ubereats') {
-    return `UE單號: ${order.platformInfo.platformOrderId || order.platformOrderId || 'N/A'}`
+    return `${order.platformInfo.platformOrderId || order.platformOrderId || 'N/A'}`
   }
 
   // 內部訂單編號
-  const orderNum = `${order.orderDateCode}${String(order.sequence).padStart(3, '0')}`
-  return `單號: ${orderNum}`
+  return `${String(order.sequence)}`
 }
 
 /**
@@ -141,11 +140,16 @@ const buildOrderPrintMessage = (order) => {
     type: 'title',
   })
 
+  printContent.push({
+    cont: '',
+  })
+
   // 2. 訂單編號
   printContent.push({
     cont: formatOrderNumber(order),
-    font: 24,
-    bold: true,
+    type: 'text',
+    align: 'center',
+    size: '22',
   })
 
   // 3. 列印時間
@@ -157,6 +161,7 @@ const buildOrderPrintMessage = (order) => {
   // 4. 分隔線
   printContent.push({
     cont: '================================',
+    align: 'center',
   })
 
   // 5. 顧客資訊（如果有）
@@ -182,12 +187,12 @@ const buildOrderPrintMessage = (order) => {
   // 7. 分隔線
   printContent.push({
     cont: '================================',
+    align: 'center',
   })
 
   // 8. 餐點清單
   printContent.push({
     cont: '【訂單明細】',
-    bold: true,
   })
 
   order.items.forEach((item, index) => {
@@ -198,7 +203,8 @@ const buildOrderPrintMessage = (order) => {
     printContent.push({
       cont: `${quantity} X ${itemName}`,
       bold: true,
-      font: 24,
+      type: 'text',
+      size: '11',
     })
 
     // 如果是餐點，顯示選項
@@ -208,7 +214,9 @@ const buildOrderPrintMessage = (order) => {
           const optionNames = optionCategory.selections.map((sel) => sel.name).join(', ')
 
           printContent.push({
-            cont: `  + ${optionCategory.optionCategoryName || '選項'}: ${optionNames}`,
+            cont: `: ${optionCategory.optionCategoryName || '選項'}: ${optionNames}`,
+            type: 'text',
+            size: '01',
           })
         }
       })
@@ -218,6 +226,7 @@ const buildOrderPrintMessage = (order) => {
     if (item.note) {
       printContent.push({
         cont: `  備註: ${item.note}`,
+        type: 'text',
       })
     }
 
@@ -236,7 +245,7 @@ const buildOrderPrintMessage = (order) => {
 
   // 10. 總金額
   printContent.push({
-    cont: `總金額: NT$ ${order.total}`,
+    cont: `$ ${order.total}`,
     type: 'title',
     bold: true,
   })
@@ -248,9 +257,43 @@ const buildOrderPrintMessage = (order) => {
     })
     printContent.push({
       cont: `備註: ${order.notes}`,
+      type: 'text',
       bold: true,
     })
   }
+  printContent.push({
+    cont: '',
+  })
+
+  if (order.status === 'paid') {
+    printContent.push({
+      cont: `已付款`,
+      type: 'text',
+      align: 'center',
+      size: '11',
+      bold: true,
+    })
+  } else if (order.status === 'unpaid') {
+    printContent.push({
+      cont: `未付款`,
+      type: 'text',
+      align: 'center',
+      size: '11',
+      bold: true,
+    })
+  } else {
+    printContent.push({
+      cont: `已取消`,
+      type: 'text',
+      align: 'center',
+      size: '11',
+      bold: true,
+    })
+  }
+
+  printContent.push({
+    cont: '',
+  })
 
   // 12. 切紙
   printContent.push({
