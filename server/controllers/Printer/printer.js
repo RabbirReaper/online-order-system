@@ -18,7 +18,6 @@ export const printOrder = asyncHandler(async (req, res) => {
     res.json({
       success: true,
       message: '訂單列印成功',
-      ...result,
     })
   } catch (error) {
     console.error('Error printing order:', error)
