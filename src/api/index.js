@@ -22,6 +22,7 @@ import cashFlowApi from './modules/cashFlow.js' // 新增 現金流記錄 API �
 import cashFlowCategoryApi from './modules/cashFlowCategory.js' // 新增 現金流分類 API 模組
 import platformStoreApi from './modules/platformStore.js' // 新增 平台店鋪配置 API 模組
 import deliveryApi from './modules/delivery.js' // 新增 外送平台管理 API 模組
+import printerApi from './modules/printer.js' // 新增 列印機管理 API 模組
 
 // 獲取 API 基礎 URL，從環境變數或預設值
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -78,6 +79,7 @@ export default {
   cashFlowCategory: cashFlowCategoryApi(apiClient), // 新增 現金流分類 API 實例
   platformStore: platformStoreApi(apiClient), // 新增 平台店鋪配置 API 實例
   delivery: deliveryApi(apiClient), // 新增 外送平台管理 API 實例
+  printer: printerApi(apiClient), // 新增 列印機管理 API 實例
   // 導出 axios 實例，方便直接使用
   client: apiClient,
 }
