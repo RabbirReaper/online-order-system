@@ -1,7 +1,13 @@
 <template>
   <div class="container-fluid p-0">
     <div class="component-header bg-secondary text-white p-3">
-      <h4>訂單管理 {{ counterStore.currentDate }}</h4>
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">訂單管理 {{ counterStore.currentDate }}</h4>
+        <BButton variant="info" size="sm" @click="showStatsModal = true">
+          <i class="bi bi-bar-chart-fill me-1"></i>
+          統計
+        </BButton>
+      </div>
     </div>
 
     <!-- 錯誤提示 -->
@@ -64,7 +70,6 @@
               <span v-if="order.orderType === 'delivery'" class="ms-1 badge bg-info">
                 {{ order.platformInfo.platform }}
               </span>
-              <!-- 載入 spinner -->
               <div
                 v-if="selectedOrderId === order._id && isSelectingOrder"
                 class="spinner-border spinner-border-sm ms-2 text-primary d-inline-block"
@@ -86,12 +91,144 @@
         </tbody>
       </table>
     </div>
+
+    <!-- 統計 Modal -->
+    <BModal v-model="showStatsModal" title="訂單統計" size="lg" centered no-footer>
+      <div class="stats-content">
+        <div class="row g-3">
+          <!-- 現金付款 -->
+          <div class="col-md-6">
+            <div class="card border-success">
+              <div class="card-body">
+                <h6 class="card-title text-success">
+                  <i class="bi bi-cash-stack me-2"></i>現金付款
+                </h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.cashCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-success">
+                    ${{ orderStats.cashTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 線上付款 -->
+          <div class="col-md-6">
+            <div class="card border-primary">
+              <div class="card-body">
+                <h6 class="card-title text-primary">
+                  <i class="bi bi-credit-card me-2"></i>線上付款
+                </h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.onlineCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-primary">
+                    ${{ orderStats.onlineTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- foodpanda -->
+          <div class="col-md-6">
+            <div class="card border-warning">
+              <div class="card-body">
+                <h6 class="card-title text-warning"><i class="bi bi-bicycle me-2"></i>foodpanda</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.foodpandaCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-warning">
+                    ${{ orderStats.foodpandaTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ubereats -->
+          <div class="col-md-6">
+            <div class="card border-dark">
+              <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-bicycle me-2"></i>UberEats</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.ubereatsCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold">
+                    ${{ orderStats.ubereatsTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 未付款 -->
+          <div class="col-md-6">
+            <div class="card border-danger">
+              <div class="card-body">
+                <h6 class="card-title text-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i>未付款
+                </h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.unpaidCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-danger">
+                    ${{ orderStats.unpaidTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 總營業額 -->
+          <div class="col-md-6">
+            <div class="card border-info bg-info bg-opacity-10">
+              <div class="card-body">
+                <h6 class="card-title text-info"><i class="bi bi-graph-up me-2"></i>總營業額</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">總訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.totalCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">總金額:</span>
+                  <span class="fs-3 fw-bold text-info">
+                    ${{ orderStats.totalRevenue.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-center">
+          <BButton variant="secondary" @click="showStatsModal = false">關閉</BButton>
+        </div>
+      </div>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useCounterStore } from '@/stores/counter'
+import { BButton, BModal } from 'bootstrap-vue-next'
 import api from '@/api'
 
 const props = defineProps({
@@ -105,24 +242,90 @@ const props = defineProps({
   },
 })
 
-// 使用 Pinia store
 const counterStore = useCounterStore()
 
-// 本地狀態
 const isLoading = ref(false)
 const isPrinting = ref(false)
 const errorMessage = ref('')
+const isSelectingOrder = ref(false)
+const selectedOrderId = ref(null)
+const showStatsModal = ref(false)
 
-// 🎯 新增：防重複點擊和視覺回饋狀態
-const isSelectingOrder = ref(false) // 是否有訂單正在載入
-const selectedOrderId = ref(null) // 哪個訂單正在載入
-
-// 計算屬性 - 按時間排序（最新的在前）
 const sortedOrders = computed(() => {
   return [...counterStore.todayOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-// 方法
+const orderStats = computed(() => {
+  // 獲取今天的日期（格式：YYYY-MM-DD）
+  const today = new Date().toLocaleDateString('en-CA')
+
+  // 過濾今天的訂單
+  const todayOrders = counterStore.todayOrders.filter((order) => {
+    const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA')
+    return orderDate === today
+  })
+  const stats = {
+    cashCount: 0,
+    cashTotal: 0,
+    onlineCount: 0,
+    onlineTotal: 0,
+    foodpandaCount: 0,
+    foodpandaTotal: 0,
+    ubereatsCount: 0,
+    ubereatsTotal: 0,
+    unpaidCount: 0,
+    unpaidTotal: 0,
+    totalCount: 0,
+    totalRevenue: 0,
+  }
+
+  todayOrders.forEach((order) => {
+    const total = order.total || 0
+
+    // 現金付款
+    if (order.status !== 'unpaid' && order.paymentMethod === 'cash') {
+      stats.cashCount++
+      stats.cashTotal += total
+    }
+
+    // 線上付款（排除 cash 和 other）
+    if (
+      order.status === 'paid' &&
+      order.paymentMethod !== 'cash' &&
+      order.paymentMethod !== 'other'
+    ) {
+      stats.onlineCount++
+      stats.onlineTotal += total
+    }
+
+    // foodpanda
+    if (order.deliveryPlatform === 'foodpanda') {
+      stats.foodpandaCount++
+      stats.foodpandaTotal += total
+    }
+
+    // ubereats
+    if (order.deliveryPlatform === 'ubereats') {
+      stats.ubereatsCount++
+      stats.ubereatsTotal += total
+    }
+
+    // 未付款
+    if (order.status === 'unpaid') {
+      stats.unpaidCount++
+      stats.unpaidTotal += total
+    }
+
+    // 總計（只計算已付款的訂單）
+    if (order.status === 'paid') {
+      stats.totalCount++
+      stats.totalRevenue += total
+    }
+  })
+
+  return stats
+})
+
 const fetchTodayOrders = async () => {
   if (isLoading.value) return
 
@@ -139,20 +342,16 @@ const fetchTodayOrders = async () => {
   }
 }
 
-// 🎯 改善的 selectOrder 函數
 const selectOrder = async (order) => {
-  // 防止重複點擊
   if (isSelectingOrder.value) {
     return
   }
 
-  // 立即提供視覺回饋
   selectedOrderId.value = order._id
   isSelectingOrder.value = true
   errorMessage.value = ''
 
   try {
-    // 獲取訂單詳情
     const response = await api.orderAdmin.getOrderById({
       brandId: props.brandId,
       storeId: props.storeId,
@@ -165,7 +364,7 @@ const selectOrder = async (order) => {
   } catch (error) {
     console.error('獲取訂單詳情失敗:', error)
     errorMessage.value = '獲取訂單詳情失敗'
-    selectedOrderId.value = null // 錯誤時清除選中狀態
+    selectedOrderId.value = null
   } finally {
     isSelectingOrder.value = false
   }
@@ -191,7 +390,6 @@ const formatOrderType = (orderType) => {
 
 const calculateOrderTotal = (order) => {
   if (!order.items) return 0
-  console.log(order)
   return order.total
 }
 
@@ -201,7 +399,6 @@ const printOrder = () => {
   isPrinting.value = true
 
   try {
-    // 創建列印窗口
     const printWindow = window.open('', '_blank')
     const order = counterStore.selectedOrder
 
@@ -240,7 +437,6 @@ const printOrder = () => {
             <tbody>
     `
 
-    // 添加餐點明細
     order.items.forEach((item) => {
       let optionsText = ''
       if (item.options && item.options.length > 0) {
@@ -270,7 +466,6 @@ const printOrder = () => {
       `
     })
 
-    // 添加總計
     printContent += `
             </tbody>
             <tfoot>
@@ -288,18 +483,15 @@ const printOrder = () => {
       </html>
     `
 
-    // 寫入並列印
     printWindow.document.open()
     printWindow.document.write(printContent)
     printWindow.document.close()
 
-    // 等待載入
     setTimeout(() => {
       printWindow.print()
       printWindow.onafterprint = () => {
         isPrinting.value = false
       }
-      // 安全超時
       setTimeout(() => {
         isPrinting.value = false
       }, 3000)
@@ -311,7 +503,6 @@ const printOrder = () => {
   }
 }
 
-// 初始化
 onMounted(() => {
   fetchTodayOrders()
 })
@@ -349,7 +540,6 @@ table {
   --bs-table-hover-color: var(--bs-table-active-color) !important;
 }
 
-/* 🎯 新增：正在載入的訂單樣式 - 簡化版 */
 .table-loading {
   --bs-table-bg: rgba(13, 202, 240, 0.1) !important;
   background: linear-gradient(
@@ -361,7 +551,6 @@ table {
   animation: gentle-pulse 2s ease-in-out infinite;
 }
 
-/* 🎯 新增：溫和的脈動動畫 */
 @keyframes gentle-pulse {
   0%,
   100% {
@@ -381,5 +570,14 @@ table {
       rgba(13, 202, 240, 0.1) 100%
     );
   }
+}
+
+.stats-content .card {
+  transition: all 0.3s ease;
+}
+
+.stats-content .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
