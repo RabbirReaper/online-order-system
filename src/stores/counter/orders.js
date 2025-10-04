@@ -34,28 +34,40 @@ export const useCounterOrdersStore = defineStore('counterOrders', () => {
     return Math.max(0, itemsSubtotal + adjustment - discounts)
   }
 
-  // 載入當日訂單
+  // 載入當日訂單（實際上是最近兩天）
   const fetchTodayOrders = async (brandId, storeId) => {
-    const today = new Date() // 直接使用當前時間
-    return await fetchOrdersByDate(brandId, storeId, today)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(today.getDate() - 1)
+
+    return await fetchOrdersByDate(brandId, storeId, yesterday, today)
   }
 
-  // 按日期載入訂單
-  const fetchOrdersByDate = async (brandId, storeId, date) => {
+  // 按日期載入訂單（支援日期範圍）
+  const fetchOrdersByDate = async (brandId, storeId, fromDate, toDate = null) => {
     try {
-      // 確保 date 是 Date 對象
-      const targetDate = date instanceof Date ? date : new Date(date)
+      // 確保 fromDate 是 Date 對象
+      const startDate = fromDate instanceof Date ? fromDate : new Date(fromDate)
+
+      // 如果沒有提供 toDate，使用 fromDate（向後兼容單日查詢）
+      const endDate = toDate ? (toDate instanceof Date ? toDate : new Date(toDate)) : startDate
 
       const response = await api.orderAdmin.getStoreOrders({
         brandId,
         storeId,
-        fromDate: targetDate,
-        toDate: targetDate,
+        fromDate: startDate,
+        toDate: endDate,
       })
 
       if (response.success) {
         todayOrders.value = response.orders
-        currentDate.value = targetDate.toLocaleDateString('zh-TW')
+
+        // 如果是日期範圍，顯示範圍；如果是單日，顯示單日
+        if (startDate.toDateString() === endDate.toDateString()) {
+          currentDate.value = startDate.toLocaleDateString('zh-TW')
+        } else {
+          currentDate.value = `${startDate.toLocaleDateString('zh-TW')} - ${endDate.toLocaleDateString('zh-TW')}`
+        }
 
         return response
       } else {
@@ -65,7 +77,7 @@ export const useCounterOrdersStore = defineStore('counterOrders', () => {
     } catch (error) {
       console.error('💥 載入訂單失敗:', {
         錯誤: error.message,
-        參數: { brandId, storeId, date },
+        參數: { brandId, storeId, fromDate, toDate },
       })
       throw error
     }
