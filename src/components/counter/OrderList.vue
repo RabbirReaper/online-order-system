@@ -1,55 +1,19 @@
 <template>
   <div class="container-fluid p-0">
     <div class="component-header bg-secondary text-white p-3">
-      <h4>訂單管理 {{ counterStore.currentDate }}</h4>
-      <div class="d-flex justify-content-between align-items-center mt-2">
-        <div class="d-flex align-items-center">
-          <div class="input-group input-group-sm me-2" style="max-width: 200px">
-            <input type="date" class="form-control" v-model="selectedDate" :max="maxDate" />
-          </div>
-          <button
-            class="btn btn-light btn-sm me-2"
-            @click="fetchOrdersByDate"
-            :disabled="isLoading"
-          >
-            <span
-              v-if="isLoading"
-              class="spinner-border spinner-border-sm me-2"
-              role="status"
-              aria-hidden="true"
-            ></span>
-            {{ isLoading ? '載入中...' : '搜尋' }}
-          </button>
-        </div>
-        <div class="d-flex">
-          <select
-            class="form-select form-select-sm me-2"
-            style="max-width: 150px"
-            v-model="filterType"
-          >
-            <option value="all">所有類型</option>
-            <option value="dine_in">內用</option>
-            <option value="takeout">外帶</option>
-            <option value="delivery">外送</option>
-          </select>
-          <select
-            class="form-select form-select-sm"
-            style="max-width: 150px"
-            v-model="filterStatus"
-          >
-            <option value="all">所有狀態</option>
-            <option value="unpaid">未結帳</option>
-            <option value="paid">已完成</option>
-            <option value="cancelled">已取消</option>
-          </select>
-        </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">訂單管理 {{ counterStore.currentDate }}</h4>
+        <BButton variant="info" size="sm" @click="showStatsModal = true">
+          <i class="bi bi-bar-chart-fill me-1"></i>
+          統計
+        </BButton>
       </div>
     </div>
 
     <!-- 錯誤提示 -->
     <div v-if="errorMessage" class="alert alert-danger m-3" role="alert">
       {{ errorMessage }}
-      <button class="btn btn-outline-danger btn-sm ms-2" @click="fetchOrdersByDate">重試</button>
+      <button class="btn btn-outline-danger btn-sm ms-2" @click="fetchTodayOrders">重試</button>
     </div>
 
     <!-- 訂單表格 -->
@@ -65,7 +29,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="isLoading && filteredOrders.length === 0">
+          <tr v-if="isLoading && counterStore.todayOrders.length === 0">
             <td colspan="5" class="text-center py-4">
               <div class="spinner-border text-secondary" role="status">
                 <span class="visually-hidden">載入中...</span>
@@ -73,13 +37,13 @@
               <p class="mt-2">載入訂單資料中...</p>
             </td>
           </tr>
-          <tr v-else-if="filteredOrders.length === 0">
+          <tr v-else-if="counterStore.todayOrders.length === 0">
             <td colspan="5" class="text-center py-4">
-              <p class="text-muted">沒有符合條件的訂單</p>
+              <p class="text-muted">沒有訂單</p>
             </td>
           </tr>
           <tr
-            v-for="order in filteredOrders"
+            v-for="order in sortedOrders"
             :key="order._id"
             :class="{
               'table-active':
@@ -106,7 +70,6 @@
               <span v-if="order.orderType === 'delivery'" class="ms-1 badge bg-info">
                 {{ order.platformInfo.platform }}
               </span>
-              <!-- 載入 spinner -->
               <div
                 v-if="selectedOrderId === order._id && isSelectingOrder"
                 class="spinner-border spinner-border-sm ms-2 text-primary d-inline-block"
@@ -129,134 +92,143 @@
       </table>
     </div>
 
-    <!-- 訂單詳情模態框 -->
-    <div
-      class="modal fade"
-      id="orderDetailsModal"
-      tabindex="-1"
-      aria-labelledby="orderDetailsModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="orderDetailsModalLabel">
-              訂單詳情 #{{
-                counterStore.selectedOrder?.orderNumber || counterStore.selectedOrder?._id.slice(-6)
-              }}
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body" v-if="counterStore.selectedOrder">
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <p>
-                  <strong>訂單時間：</strong>
-                  {{ counterStore.formatDateTime(counterStore.selectedOrder.createdAt) }}
-                </p>
-                <p>
-                  <strong>取餐方式：</strong>
-                  {{ formatOrderType(counterStore.selectedOrder.orderType) }}
-                </p>
-                <p v-if="counterStore.selectedOrder.dineInInfo?.tableNumber">
-                  <strong>桌號：</strong> {{ counterStore.selectedOrder.dineInInfo.tableNumber }}
-                </p>
-                <p v-if="counterStore.selectedOrder.deliveryInfo?.address">
-                  <strong>外送地址：</strong> {{ counterStore.selectedOrder.deliveryInfo.address }}
-                </p>
-              </div>
-              <div class="col-md-6">
-                <p><strong>付款方式：</strong> {{ counterStore.selectedOrder.paymentMethod }}</p>
-                <p>
-                  <strong>狀態：</strong>
-                  {{ counterStore.formatStatus(counterStore.selectedOrder.status) }}
-                </p>
-                <p v-if="counterStore.selectedOrder.notes">
-                  <strong>備註：</strong> {{ counterStore.selectedOrder.notes }}
-                </p>
+    <!-- 統計 Modal -->
+    <BModal v-model="showStatsModal" title="訂單統計" size="lg" centered no-footer>
+      <div class="stats-content">
+        <div class="row g-3">
+          <!-- 現金付款 -->
+          <div class="col-md-6">
+            <div class="card border-success">
+              <div class="card-body">
+                <h6 class="card-title text-success">
+                  <i class="bi bi-cash-stack me-2"></i>現金付款
+                </h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.cashCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-success">
+                    ${{ orderStats.cashTotal.toLocaleString() }}
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <h6 class="mb-3">餐點明細</h6>
-            <div class="table-responsive">
-              <table class="table table-sm">
-                <thead class="table-light">
-                  <tr>
-                    <th>餐點</th>
-                    <th>選項</th>
-                    <th>數量</th>
-                    <th>金額</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, index) in counterStore.selectedOrder.items" :key="index">
-                    <td>{{ item.name }}</td>
-                    <td>
-                      <div
-                        v-for="optionCategory in item.options"
-                        :key="optionCategory.optionCategoryId"
-                        class="mb-1"
-                      >
-                        <small>{{ optionCategory.optionCategoryName }}:</small>
-                        <small
-                          v-for="selection in optionCategory.selections"
-                          :key="selection.optionId"
-                          class="ms-1"
-                        >
-                          {{ selection.name
-                          }}<span v-if="selection.price > 0">(+${{ selection.price }})</span>
-                        </small>
-                      </div>
-                      <small v-if="item.note" class="text-muted d-block"
-                        >備註: {{ item.note }}</small
-                      >
-                    </td>
-                    <td>{{ item.quantity }}</td>
-                    <td>${{ item.subtotal }}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colspan="3" class="text-end"><strong>總計：</strong></td>
-                    <td>
-                      <strong>${{ calculateOrderTotal(counterStore.selectedOrder) }}</strong>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+          <!-- 線上付款 -->
+          <div class="col-md-6">
+            <div class="card border-primary">
+              <div class="card-body">
+                <h6 class="card-title text-primary">
+                  <i class="bi bi-credit-card me-2"></i>線上付款
+                </h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.onlineCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-primary">
+                    ${{ orderStats.onlineTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
-            <button
-              type="button"
-              class="btn btn-success"
-              @click="printOrder"
-              :disabled="!counterStore.selectedOrder || isPrinting"
-            >
-              <span
-                v-if="isPrinting"
-                class="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              {{ isPrinting ? '列印中...' : '列印訂單' }}
-            </button>
+
+          <!-- foodpanda -->
+          <div class="col-md-6">
+            <div class="card border-warning">
+              <div class="card-body">
+                <h6 class="card-title text-warning"><i class="bi bi-bicycle me-2"></i>foodpanda</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.foodpandaCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-warning">
+                    ${{ orderStats.foodpandaTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ubereats -->
+          <div class="col-md-6">
+            <div class="card border-dark">
+              <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-bicycle me-2"></i>UberEats</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.ubereatsCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold">
+                    ${{ orderStats.ubereatsTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 未付款 -->
+          <div class="col-md-6">
+            <div class="card border-danger">
+              <div class="card-body">
+                <h6 class="card-title text-danger">
+                  <i class="bi bi-exclamation-triangle me-2"></i>未付款
+                </h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.unpaidCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">金額:</span>
+                  <span class="fs-4 fw-bold text-danger">
+                    ${{ orderStats.unpaidTotal.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 總營業額 -->
+          <div class="col-md-6">
+            <div class="card border-info bg-info bg-opacity-10">
+              <div class="card-body">
+                <h6 class="card-title text-info"><i class="bi bi-graph-up me-2"></i>總營業額</h6>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-muted">總訂單數:</span>
+                  <span class="fs-5 fw-bold">{{ orderStats.totalCount }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-muted">總金額:</span>
+                  <span class="fs-3 fw-bold text-info">
+                    ${{ orderStats.totalRevenue.toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
+        <div class="mt-4 text-center">
+          <BButton variant="secondary" @click="showStatsModal = false">關閉</BButton>
+        </div>
       </div>
-    </div>
+    </BModal>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useCounterStore } from '@/stores/counter'
+import { BButton, BModal } from 'bootstrap-vue-next'
 import api from '@/api'
 
 const props = defineProps({
@@ -270,59 +242,98 @@ const props = defineProps({
   },
 })
 
-// 使用 Pinia store
 const counterStore = useCounterStore()
 
-// 本地狀態
-const selectedDate = ref('')
-const filterType = ref('all')
-const filterStatus = ref('all')
 const isLoading = ref(false)
 const isPrinting = ref(false)
 const errorMessage = ref('')
-const maxDate = ref('')
+const isSelectingOrder = ref(false)
+const selectedOrderId = ref(null)
+const showStatsModal = ref(false)
 
-// 🎯 新增：防重複點擊和視覺回饋狀態
-const isSelectingOrder = ref(false) // 是否有訂單正在載入
-const selectedOrderId = ref(null) // 哪個訂單正在載入
-
-// 計算屬性
-const filteredOrders = computed(() => {
-  let filtered = [...counterStore.todayOrders]
-
-  // 過濾取餐方式
-  if (filterType.value !== 'all') {
-    filtered = filtered.filter((order) => order.orderType === filterType.value)
-  }
-
-  // 過濾訂單狀態
-  if (filterStatus.value !== 'all') {
-    filtered = filtered.filter((order) => order.status === filterStatus.value)
-  }
-
-  // 按時間排序（最新的在前）
-  return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+const sortedOrders = computed(() => {
+  return [...counterStore.todayOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
 
-// 簡化的日期處理 - 讓瀏覽器處理本地時區
-const getLocalDate = (date = null) => {
-  const targetDate = date ? new Date(date) : new Date()
-  return targetDate.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
-}
+const orderStats = computed(() => {
+  // 獲取今天的日期（格式：YYYY-MM-DD）
+  const today = new Date().toLocaleDateString('en-CA')
 
-// 方法
-const fetchOrdersByDate = async () => {
+  // 過濾今天的訂單
+  const todayOrders = counterStore.todayOrders.filter((order) => {
+    const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA')
+    return orderDate === today
+  })
+  const stats = {
+    cashCount: 0,
+    cashTotal: 0,
+    onlineCount: 0,
+    onlineTotal: 0,
+    foodpandaCount: 0,
+    foodpandaTotal: 0,
+    ubereatsCount: 0,
+    ubereatsTotal: 0,
+    unpaidCount: 0,
+    unpaidTotal: 0,
+    totalCount: 0,
+    totalRevenue: 0,
+  }
+
+  todayOrders.forEach((order) => {
+    const total = order.total || 0
+
+    // 現金付款
+    if (order.status !== 'unpaid' && order.paymentMethod === 'cash') {
+      stats.cashCount++
+      stats.cashTotal += total
+    }
+
+    // 線上付款（排除 cash 和 other）
+    if (
+      order.status === 'paid' &&
+      order.paymentMethod !== 'cash' &&
+      order.paymentMethod !== 'other'
+    ) {
+      stats.onlineCount++
+      stats.onlineTotal += total
+    }
+
+    // foodpanda
+    if (order.deliveryPlatform === 'foodpanda') {
+      stats.foodpandaCount++
+      stats.foodpandaTotal += total
+    }
+
+    // ubereats
+    if (order.deliveryPlatform === 'ubereats') {
+      stats.ubereatsCount++
+      stats.ubereatsTotal += total
+    }
+
+    // 未付款
+    if (order.status === 'unpaid') {
+      stats.unpaidCount++
+      stats.unpaidTotal += total
+    }
+
+    // 總計（只計算已付款的訂單）
+    if (order.status === 'paid') {
+      stats.totalCount++
+      stats.totalRevenue += total
+    }
+  })
+
+  return stats
+})
+
+const fetchTodayOrders = async () => {
   if (isLoading.value) return
 
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    if (selectedDate.value) {
-      await counterStore.fetchOrdersByDate(props.brandId, props.storeId, selectedDate.value)
-    } else {
-      await counterStore.fetchTodayOrders(props.brandId, props.storeId)
-    }
+    await counterStore.fetchTodayOrders(props.brandId, props.storeId)
   } catch (error) {
     console.error('獲取訂單失敗:', error)
     errorMessage.value = error.message || '獲取訂單失敗'
@@ -331,20 +342,16 @@ const fetchOrdersByDate = async () => {
   }
 }
 
-// 🎯 改善的 selectOrder 函數
 const selectOrder = async (order) => {
-  // 防止重複點擊
   if (isSelectingOrder.value) {
     return
   }
 
-  // 立即提供視覺回饋
   selectedOrderId.value = order._id
   isSelectingOrder.value = true
   errorMessage.value = ''
 
   try {
-    // 獲取訂單詳情
     const response = await api.orderAdmin.getOrderById({
       brandId: props.brandId,
       storeId: props.storeId,
@@ -357,7 +364,7 @@ const selectOrder = async (order) => {
   } catch (error) {
     console.error('獲取訂單詳情失敗:', error)
     errorMessage.value = '獲取訂單詳情失敗'
-    selectedOrderId.value = null // 錯誤時清除選中狀態
+    selectedOrderId.value = null
   } finally {
     isSelectingOrder.value = false
   }
@@ -383,7 +390,6 @@ const formatOrderType = (orderType) => {
 
 const calculateOrderTotal = (order) => {
   if (!order.items) return 0
-  console.log(order)
   return order.total
 }
 
@@ -393,7 +399,6 @@ const printOrder = () => {
   isPrinting.value = true
 
   try {
-    // 創建列印窗口
     const printWindow = window.open('', '_blank')
     const order = counterStore.selectedOrder
 
@@ -432,7 +437,6 @@ const printOrder = () => {
             <tbody>
     `
 
-    // 添加餐點明細
     order.items.forEach((item) => {
       let optionsText = ''
       if (item.options && item.options.length > 0) {
@@ -462,7 +466,6 @@ const printOrder = () => {
       `
     })
 
-    // 添加總計
     printContent += `
             </tbody>
             <tfoot>
@@ -480,18 +483,15 @@ const printOrder = () => {
       </html>
     `
 
-    // 寫入並列印
     printWindow.document.open()
     printWindow.document.write(printContent)
     printWindow.document.close()
 
-    // 等待載入
     setTimeout(() => {
       printWindow.print()
       printWindow.onafterprint = () => {
         isPrinting.value = false
       }
-      // 安全超時
       setTimeout(() => {
         isPrinting.value = false
       }, 3000)
@@ -503,22 +503,8 @@ const printOrder = () => {
   }
 }
 
-// 初始化
 onMounted(() => {
-  const today = getLocalDate()
-  selectedDate.value = today
-  maxDate.value = today
-
-  fetchOrdersByDate()
-
-  // 初始化 Bootstrap Modal
-  import('bootstrap/js/dist/modal').then((module) => {
-    const Modal = module.default
-    const modalElement = document.getElementById('orderDetailsModal')
-    if (modalElement) {
-      new Modal(modalElement)
-    }
-  })
+  fetchTodayOrders()
 })
 </script>
 
@@ -554,7 +540,6 @@ table {
   --bs-table-hover-color: var(--bs-table-active-color) !important;
 }
 
-/* 🎯 新增：正在載入的訂單樣式 - 簡化版 */
 .table-loading {
   --bs-table-bg: rgba(13, 202, 240, 0.1) !important;
   background: linear-gradient(
@@ -566,7 +551,6 @@ table {
   animation: gentle-pulse 2s ease-in-out infinite;
 }
 
-/* 🎯 新增：溫和的脈動動畫 */
 @keyframes gentle-pulse {
   0%,
   100% {
@@ -586,5 +570,14 @@ table {
       rgba(13, 202, 240, 0.1) 100%
     );
   }
+}
+
+.stats-content .card {
+  transition: all 0.3s ease;
+}
+
+.stats-content .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
