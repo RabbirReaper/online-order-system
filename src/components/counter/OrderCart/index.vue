@@ -260,55 +260,23 @@ const handleCashPayment = async () => {
 }
 
 // 列印訂單
-const printOrder = () => {
+const printOrder = async () => {
   if (!counterStore.selectedOrder) return
 
-  // 創建列印窗口（簡化版本）
-  const printWindow = window.open('', '_blank')
-  const order = counterStore.selectedOrder
+  try {
+    const response = await api.printer.printOrder({
+      brandId: counterStore.currentBrand,
+      storeId: counterStore.currentStore,
+      orderId: counterStore.selectedOrder._id,
+    })
 
-  let printContent = `
-    <html>
-      <head>
-        <title>訂單 #${order.orderNumber || order._id.slice(-6)}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          h1 { margin-bottom: 20px; }
-          .order-info { margin-bottom: 20px; }
-          .items { margin-bottom: 20px; }
-          .total { font-weight: bold; text-align: right; margin-top: 10px; }
-        </style>
-      </head>
-      <body>
-        <h1>訂單 #${order.orderNumber || order._id.slice(-6)}</h1>
-        <div class="order-info">
-          <p>訂單時間: ${counterStore.formatDateTime(order.createdAt)}</p>
-          <p>取餐方式: ${formatOrderType(order.orderType)}</p>
-          ${order.dineInInfo?.tableNumber ? `<p>桌號: ${order.dineInInfo.tableNumber}</p>` : ''}
-        </div>
-        <div class="items">
-          <h3>餐點明細</h3>
-          ${order.items
-            .map(
-              (item) => `
-            <div>
-              <strong>${item.name}</strong> x${item.quantity} - $${item.subtotal}
-              ${item.note ? `<br><small>備註: ${item.note}</small>` : ''}
-            </div>
-          `,
-            )
-            .join('<br>')}
-        </div>
-        <div class="total">
-          總計: $${counterStore.calculateOrderTotal(order)}
-        </div>
-      </body>
-    </html>
-  `
-
-  printWindow.document.write(printContent)
-  printWindow.document.close()
-  printWindow.print()
+    if (response.data.success) {
+      console.log('訂單列印成功')
+    }
+  } catch (error) {
+    console.error('列印訂單失敗:', error)
+    alert(error.response?.data?.message || '列印訂單失敗')
+  }
 }
 
 // 提交訂單

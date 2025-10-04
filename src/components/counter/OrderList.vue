@@ -245,7 +245,6 @@ const props = defineProps({
 const counterStore = useCounterStore()
 
 const isLoading = ref(false)
-const isPrinting = ref(false)
 const errorMessage = ref('')
 const isSelectingOrder = ref(false)
 const selectedOrderId = ref(null)
@@ -391,116 +390,6 @@ const formatOrderType = (orderType) => {
 const calculateOrderTotal = (order) => {
   if (!order.items) return 0
   return order.total
-}
-
-const printOrder = () => {
-  if (!counterStore.selectedOrder || isPrinting.value) return
-
-  isPrinting.value = true
-
-  try {
-    const printWindow = window.open('', '_blank')
-    const order = counterStore.selectedOrder
-
-    let printContent = `
-      <html>
-        <head>
-          <title>訂單 #${order.orderNumber || order._id.slice(-6)}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1, h2 { margin-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-            th { background-color: #f2f2f2; }
-            .total { font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>訂單 #${order.orderNumber || order._id.slice(-6)}</h1>
-          <p><strong>訂單時間：</strong> ${counterStore.formatDateTime(order.createdAt)}</p>
-          <p><strong>取餐方式：</strong> ${formatOrderType(order.orderType)}</p>
-          ${order.dineInInfo?.tableNumber ? `<p><strong>桌號：</strong> ${order.dineInInfo.tableNumber}</p>` : ''}
-          ${order.deliveryInfo?.address ? `<p><strong>外送地址：</strong> ${order.deliveryInfo.address}</p>` : ''}
-          <p><strong>付款方式：</strong> ${order.paymentMethod}</p>
-          ${order.notes ? `<p><strong>備註：</strong> ${order.notes}</p>` : ''}
-
-          <h2>餐點明細</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>餐點</th>
-                <th>選項</th>
-                <th>數量</th>
-                <th>金額</th>
-              </tr>
-            </thead>
-            <tbody>
-    `
-
-    order.items.forEach((item) => {
-      let optionsText = ''
-      if (item.options && item.options.length > 0) {
-        optionsText = item.options
-          .map((category) => {
-            const selections = category.selections
-              .map(
-                (selection) =>
-                  `${selection.name}${selection.price > 0 ? `(+$${selection.price})` : ''}`,
-              )
-              .join(', ')
-            return `${category.optionCategoryName}: ${selections}`
-          })
-          .join('<br>')
-      }
-      if (item.note) {
-        optionsText += optionsText ? `<br>備註: ${item.note}` : `備註: ${item.note}`
-      }
-
-      printContent += `
-        <tr>
-          <td>${item.name}</td>
-          <td>${optionsText}</td>
-          <td>${item.quantity}</td>
-          <td>${item.subtotal}</td>
-        </tr>
-      `
-    })
-
-    printContent += `
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="3" style="text-align: right;"><strong>總計：</strong></td>
-                <td class="total">${calculateOrderTotal(order)}</td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <div style="text-align: center; margin-top: 40px;">
-            <p>感謝您的惠顧！</p>
-          </div>
-        </body>
-      </html>
-    `
-
-    printWindow.document.open()
-    printWindow.document.write(printContent)
-    printWindow.document.close()
-
-    setTimeout(() => {
-      printWindow.print()
-      printWindow.onafterprint = () => {
-        isPrinting.value = false
-      }
-      setTimeout(() => {
-        isPrinting.value = false
-      }, 3000)
-    }, 500)
-  } catch (error) {
-    console.error('列印訂單失敗:', error)
-    errorMessage.value = '列印訂單時發生錯誤'
-    isPrinting.value = false
-  }
 }
 
 onMounted(() => {
