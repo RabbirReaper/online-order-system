@@ -268,6 +268,19 @@
             </div>
             <BFormText>設定店鋪的其他功能選項</BFormText>
           </div>
+
+          <!-- 出單機設定 -->
+          <div class="mb-3">
+            <label for="printer" class="form-label">出單機編號</label>
+            <BFormInput
+              id="printer"
+              v-model="formData.printer"
+              placeholder="請輸入出單機編號"
+              :state="errors.printer ? false : null"
+            />
+            <BFormInvalidFeedback v-if="errors.printer">{{ errors.printer }}</BFormInvalidFeedback>
+            <BFormText>設定店鋪的出單機編號，留空表示不使用出單機</BFormText>
+          </div>
         </div>
 
         <!-- 營業時間區塊 -->
@@ -557,6 +570,7 @@ const formData = reactive({
   minDeliveryQuantity: 1,
   maxDeliveryDistance: 5,
   advanceOrderDays: 0,
+  printer: '', // 出單機編號
 })
 
 // 錯誤訊息
@@ -567,6 +581,7 @@ const errors = reactive({
   image: '',
   lineBotId: '',
   lineChannelAccessToken: '',
+  printer: '',
   businessHours: [],
   announcements: [],
 })
@@ -756,6 +771,7 @@ const resetForm = () => {
     formData.minDeliveryQuantity = 1
     formData.maxDeliveryDistance = 5
     formData.advanceOrderDays = 0
+    formData.printer = ''
   }
   clearImage()
 
@@ -766,6 +782,7 @@ const resetForm = () => {
   errors.image = ''
   errors.lineBotId = ''
   errors.lineChannelAccessToken = ''
+  errors.printer = ''
   errors.businessHours = []
   errors.announcements = []
   formErrors.value = []
@@ -976,6 +993,8 @@ const fetchStoreData = async () => {
       formData.maxDeliveryDistance =
         store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 5
       formData.advanceOrderDays = store.advanceOrderDays !== undefined ? store.advanceOrderDays : 0
+      // 處理 printer 欄位 (schema 是陣列，但只取第一個)
+      formData.printer = store.printer && store.printer.length > 0 ? store.printer[0] : ''
 
       formData._id = store._id
     } else {
@@ -1036,6 +1055,13 @@ const submitForm = async () => {
       minDeliveryQuantity: formData.minDeliveryQuantity,
       maxDeliveryDistance: formData.maxDeliveryDistance,
       advanceOrderDays: formData.advanceOrderDays,
+    }
+
+    // 處理 printer 欄位 (轉換為陣列格式，只儲存一個值)
+    if (formData.printer && formData.printer.trim()) {
+      submitData.printer = [formData.printer.trim()]
+    } else {
+      submitData.printer = []
     }
 
     // 直接使用已轉換的base64圖片，不需要再次轉換
