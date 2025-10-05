@@ -182,6 +182,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
     }, // 付款類型
     paymentMethod: {
+      // 注意需與 Store.js payments 一致
       type: String,
       enum: ['cash', 'credit_card', 'line_pay', 'other', ''],
     }, // 付款方式

@@ -412,6 +412,81 @@
                     </span>
                   </div>
                 </div>
+
+                <!-- 付款方式設定 -->
+                <div class="col-md-12">
+                  <h6 class="text-muted mb-2">付款方式設定</h6>
+                  <div class="row g-2">
+                    <!-- 現場支援付款方式 -->
+                    <div class="col-md-6">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted mb-2">現場支援付款方式</div>
+                        <div class="d-flex flex-wrap gap-2">
+                          <span
+                            v-if="store.counterPayments && store.counterPayments.includes('cash')"
+                            class="badge bg-success"
+                          >
+                            <i class="bi bi-cash me-1"></i>現金
+                          </span>
+                          <span
+                            v-if="
+                              store.counterPayments && store.counterPayments.includes('line_pay')
+                            "
+                            class="badge bg-success"
+                          >
+                            <i class="bi bi-line me-1"></i>LINE Pay
+                          </span>
+                          <span
+                            v-if="
+                              store.counterPayments && store.counterPayments.includes('credit_card')
+                            "
+                            class="badge bg-success"
+                          >
+                            <i class="bi bi-credit-card me-1"></i>信用卡
+                          </span>
+                          <span
+                            v-if="!store.counterPayments || store.counterPayments.length === 0"
+                            class="text-muted small"
+                          >
+                            未設定
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 客戶端支援付款方式 -->
+                    <div class="col-md-6">
+                      <div class="p-2 border rounded">
+                        <div class="small text-muted mb-2">客戶端支援付款方式</div>
+                        <div class="d-flex flex-wrap gap-2">
+                          <span
+                            v-if="
+                              store.customerPayments && store.customerPayments.includes('line_pay')
+                            "
+                            class="badge bg-success"
+                          >
+                            <i class="bi bi-line me-1"></i>LINE Pay
+                          </span>
+                          <span
+                            v-if="
+                              store.customerPayments &&
+                              store.customerPayments.includes('credit_card')
+                            "
+                            class="badge bg-success"
+                          >
+                            <i class="bi bi-credit-card me-1"></i>信用卡
+                          </span>
+                          <span
+                            v-if="!store.customerPayments || store.customerPayments.length === 0"
+                            class="text-muted small"
+                          >
+                            無
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -913,6 +988,53 @@
         </div>
       </div>
 
+      <div class="mb-4">
+        <h6 class="border-bottom pb-2 mb-3">付款方式設定</h6>
+
+        <!-- 現場支援付款方式 -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold">現場支援付款方式</label>
+          <div class="d-flex flex-wrap gap-3">
+            <BFormCheckbox v-model="paymentOptions.counter.cash" @change="updateCounterPayments">
+              現金
+            </BFormCheckbox>
+            <BFormCheckbox
+              v-model="paymentOptions.counter.line_pay"
+              @change="updateCounterPayments"
+            >
+              LINE Pay
+            </BFormCheckbox>
+            <BFormCheckbox
+              v-model="paymentOptions.counter.credit_card"
+              @change="updateCounterPayments"
+            >
+              信用卡
+            </BFormCheckbox>
+          </div>
+          <BFormText>選擇現場櫃檯可接受的付款方式</BFormText>
+        </div>
+
+        <!-- 客戶端支援付款方式 -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold">客戶端支援付款方式</label>
+          <div class="d-flex flex-wrap gap-3">
+            <BFormCheckbox
+              v-model="paymentOptions.customer.line_pay"
+              @change="updateCustomerPayments"
+            >
+              LINE Pay
+            </BFormCheckbox>
+            <BFormCheckbox
+              v-model="paymentOptions.customer.credit_card"
+              @change="updateCustomerPayments"
+            >
+              信用卡
+            </BFormCheckbox>
+          </div>
+          <BFormText>選擇線上客戶端可使用的付款方式</BFormText>
+        </div>
+      </div>
+
       <template #footer>
         <BButton variant="secondary" @click="showServiceSettingsModal = false">取消</BButton>
         <BButton
@@ -977,9 +1099,9 @@ const baseUrl = computed(() => window.location.origin)
 const menuUrl = computed(() => `${baseUrl.value}/stores/${brandId.value}/${storeId.value}`)
 const counterUrl = computed(() => `${baseUrl.value}/counter/${brandId.value}/${storeId.value}`)
 const liffUrl = computed(() => {
-  const liffId = '2007974797-rvmVYQB0'
+  const liffId = store.value?.liffId
   if (!liffId) return null
-  return `https://liff.line.me/${liffId}?brandId=${brandId.value}&storeId=${storeId.value}`
+  return `https://liff.line.me/${liffId}`
 })
 
 // 從路由中獲取品牌ID和店鋪ID
@@ -1025,7 +1147,36 @@ const editServiceSettings = reactive({
   minDeliveryQuantity: 1,
   maxDeliveryDistance: 5,
   advanceOrderDays: 0,
+  counterPayments: [],
+  customerPayments: [],
 })
+
+// 付款方式選項狀態 (用於 checkbox 控制)
+const paymentOptions = reactive({
+  counter: {
+    cash: false,
+    line_pay: false,
+    credit_card: false,
+  },
+  customer: {
+    line_pay: false,
+    credit_card: false,
+  },
+})
+
+// 更新現場支援付款方式
+const updateCounterPayments = () => {
+  editServiceSettings.counterPayments = Object.keys(paymentOptions.counter).filter(
+    (key) => paymentOptions.counter[key],
+  )
+}
+
+// 更新客戶端支援付款方式
+const updateCustomerPayments = () => {
+  editServiceSettings.customerPayments = Object.keys(paymentOptions.customer).filter(
+    (key) => paymentOptions.customer[key],
+  )
+}
 
 // 複製狀態管理
 const copyStates = ref({
@@ -1220,7 +1371,16 @@ const initEditData = () => {
     maxDeliveryDistance:
       store.value.maxDeliveryDistance !== undefined ? store.value.maxDeliveryDistance : 5,
     advanceOrderDays: store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0,
+    counterPayments: store.value.counterPayments || [],
+    customerPayments: store.value.customerPayments || [],
   })
+
+  // 根據付款方式陣列設定 checkbox 狀態
+  paymentOptions.counter.cash = editServiceSettings.counterPayments.includes('cash')
+  paymentOptions.counter.line_pay = editServiceSettings.counterPayments.includes('line_pay')
+  paymentOptions.counter.credit_card = editServiceSettings.counterPayments.includes('credit_card')
+  paymentOptions.customer.line_pay = editServiceSettings.customerPayments.includes('line_pay')
+  paymentOptions.customer.credit_card = editServiceSettings.customerPayments.includes('credit_card')
 }
 
 // 格式化日期
@@ -1531,7 +1691,18 @@ onMounted(() => {
           store.value.maxDeliveryDistance !== undefined ? store.value.maxDeliveryDistance : 5,
         advanceOrderDays:
           store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0,
+        counterPayments: store.value.counterPayments || [],
+        customerPayments: store.value.customerPayments || [],
       })
+
+      // 根據付款方式陣列設定 checkbox 狀態
+      paymentOptions.counter.cash = editServiceSettings.counterPayments.includes('cash')
+      paymentOptions.counter.line_pay = editServiceSettings.counterPayments.includes('line_pay')
+      paymentOptions.counter.credit_card =
+        editServiceSettings.counterPayments.includes('credit_card')
+      paymentOptions.customer.line_pay = editServiceSettings.customerPayments.includes('line_pay')
+      paymentOptions.customer.credit_card =
+        editServiceSettings.customerPayments.includes('credit_card')
     }
   })
 

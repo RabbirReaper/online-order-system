@@ -19,6 +19,7 @@ import cashFlowRoutes from './cashFlow.js'
 import cashFlowCategoryRoutes from './cashFlowCategory.js'
 import platformStoreRoutes from './platformStore.js'
 import deliveryRoutes from './delivery.js'
+import printerRoutes from './printer.js'
 
 // 載入環境變數
 dotenv.config()
@@ -43,6 +44,7 @@ apiRouter.use('/cash-flow', cashFlowRoutes) // 現金流記帳路由
 apiRouter.use('/cash-flow-category', cashFlowCategoryRoutes) // 記帳分類路由
 apiRouter.use('/platform-store', platformStoreRoutes) // 平台店鋪配置路由
 apiRouter.use('/delivery', deliveryRoutes) // 外送平台管理路由
+apiRouter.use('/printer', printerRoutes) // 列印機管理路由
 
 // 訂單路由 - 按權限分離
 apiRouter.use('/order-customer', orderCustomerRoutes) // 前台客戶訂單

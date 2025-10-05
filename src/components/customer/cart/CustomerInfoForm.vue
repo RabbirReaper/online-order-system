@@ -69,6 +69,7 @@
     <!-- 付款方式 -->
     <h6 class="mb-3 fw-bold">付款方式</h6>
     <div class="d-flex flex-wrap">
+      <!-- 現場付款（總是顯示） -->
       <div class="form-check me-4 mb-3">
         <input
           class="form-check-input"
@@ -80,7 +81,9 @@
         />
         <label class="form-check-label" for="cashPayment">現場付款</label>
       </div>
-      <div class="form-check me-4 mb-3">
+
+      <!-- 信用卡付款（根據門市設定顯示） -->
+      <div v-if="showCreditCard" class="form-check me-4 mb-3">
         <input
           class="form-check-input"
           type="radio"
@@ -91,7 +94,9 @@
         />
         <label class="form-check-label" for="creditCardPayment">信用卡付款</label>
       </div>
-      <div class="form-check mb-3">
+
+      <!-- LINE Pay（根據門市設定顯示） -->
+      <div v-if="showLinePay" class="form-check mb-3">
         <input
           class="form-check-input"
           type="radio"
@@ -176,12 +181,15 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/customerAuth'
+import { useCartStore } from '@/stores/cart'
+import api from '@/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 const props = defineProps({
   customerInfo: {
@@ -200,6 +208,11 @@ const props = defineProps({
     type: String,
     default: 'takeout', // 'dine_in', 'takeout', 'delivery'
   },
+  // 可選的 prop，如果父組件提供則使用
+  customerPayments: {
+    type: Array,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['update:customerInfo', 'update:paymentMethod'])
@@ -215,6 +228,9 @@ const localPaymentMethod = ref(props.paymentMethod)
 const userProfile = ref(null)
 const isLoadingProfile = ref(false)
 
+// 門市資訊
+const storeData = ref(null)
+
 // 信用卡資訊
 const creditCardInfo = ref({
   number: '',
@@ -222,6 +238,67 @@ const creditCardInfo = ref({
   cvv: '',
   name: '',
 })
+
+// 獲取可用的付款方式（優先使用 prop，否則從 API 獲取門市資訊）
+const availablePayments = computed(() => {
+  // 如果 prop 有提供，則使用 prop
+  if (props.customerPayments !== null) {
+    return props.customerPayments
+  }
+
+  // 從門市資料讀取
+  if (storeData.value && storeData.value.customerPayments) {
+    return storeData.value.customerPayments
+  }
+
+  // 如果都沒有設定，只顯示現場付款
+  return []
+})
+
+// 判斷是否顯示信用卡選項
+const showCreditCard = computed(() => {
+  return availablePayments.value.includes('credit_card')
+})
+
+// 判斷是否顯示 LINE Pay 選項
+const showLinePay = computed(() => {
+  return availablePayments.value.includes('line_pay')
+})
+
+// 判斷是否有任何線上付款方式
+const hasOnlinePayment = computed(() => {
+  return showCreditCard.value || showLinePay.value
+})
+
+// 載入門市資料
+const loadStoreData = async () => {
+  try {
+    const brandId = cartStore.currentBrandId
+    const storeId = cartStore.currentStoreId
+
+    if (!brandId || !storeId) {
+      console.warn('缺少品牌或門市 ID')
+      return
+    }
+
+    const response = await api.store.getStorePublicInfo({
+      brandId,
+      id: storeId,
+    })
+
+    if (response && response.success) {
+      storeData.value = response.store
+
+      // 如果沒有可用的線上付款方式，自動選擇現場付款
+      if (availablePayments.value.length === 0) {
+        localPaymentMethod.value = '現金'
+        emit('update:paymentMethod', '現金')
+      }
+    }
+  } catch (error) {
+    console.error('載入門市資料失敗:', error)
+  }
+}
 
 // 載入用戶資料
 const loadUserProfile = async () => {
@@ -373,6 +450,11 @@ const formatExpiryDate = (e) => {
 
 // 組件掛載後檢查認證狀態
 onMounted(async () => {
+  // 載入門市資料（獲取可用付款方式）
+  if (props.customerPayments === null) {
+    await loadStoreData()
+  }
+
   // 如果已經登入，載入用戶資料
   if (authStore.isLoggedIn) {
     await loadUserProfile()

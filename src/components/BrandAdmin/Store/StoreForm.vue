@@ -186,7 +186,7 @@
               </div>
               <div class="col-md-4">
                 <label for="maxDeliveryDistance" class="form-label small"
-                  >最長外送距離（公里）</label
+                  >最長外送距離（公尺）</label
                 >
                 <BFormInput
                   type="number"
@@ -197,6 +197,54 @@
               </div>
             </div>
             <BFormText>設定外送的相關限制</BFormText>
+          </div>
+
+          <!-- 外送費用階梯定價 (僅在啟用外送時顯示) -->
+          <div class="mb-3" v-if="formData.enableDelivery">
+            <label class="form-label">外送費用階梯定價</label>
+            <div class="delivery-price-ranges">
+              <div
+                v-for="(range, index) in formData.deliveryPriceRanges"
+                :key="index"
+                class="mb-2 d-flex align-items-center gap-2"
+              >
+                <span class="small text-muted" style="min-width: 60px">
+                  {{ index === 0 ? '0' : formData.deliveryPriceRanges[index - 1].maxDistance + 1 }}m
+                </span>
+                <span class="mx-1">-</span>
+                <BFormInput
+                  type="number"
+                  v-model.number="range.maxDistance"
+                  :min="index === 0 ? 1 : formData.deliveryPriceRanges[index - 1].maxDistance + 1"
+                  placeholder="距離上限"
+                  size="sm"
+                  style="max-width: 120px"
+                />
+                <span class="small text-muted">公尺</span>
+                <span class="mx-2">→</span>
+                <BFormInput
+                  type="number"
+                  v-model.number="range.fee"
+                  min="0"
+                  placeholder="費用"
+                  size="sm"
+                  style="max-width: 100px"
+                />
+                <span class="small text-muted">元</span>
+                <BButton
+                  size="sm"
+                  variant="outline-danger"
+                  @click="removeDeliveryPriceRange(index)"
+                  v-if="formData.deliveryPriceRanges.length > 1"
+                >
+                  <i class="bi bi-trash"></i>
+                </BButton>
+              </div>
+              <BButton size="sm" variant="outline-primary" @click="addDeliveryPriceRange">
+                <i class="bi bi-plus-circle me-1"></i>新增階梯
+              </BButton>
+            </div>
+            <BFormText>設定不同距離區間的外送費用，例如：0-1000公尺30元、1001-3000公尺50元</BFormText>
           </div>
 
           <!-- 預訂設定 -->
@@ -240,6 +288,22 @@
                 </div>
 
                 <div class="mb-3">
+                  <label for="liffId" class="form-label small">LINE LIFF ID</label>
+                  <BFormInput
+                    id="liffId"
+                    v-model="formData.liffId"
+                    placeholder="例如：2007974797-rvmVYQB0"
+                    :state="errors.liffId ? false : null"
+                  />
+                  <BFormInvalidFeedback v-if="errors.liffId">{{
+                    errors.liffId
+                  }}</BFormInvalidFeedback>
+                  <BFormText class="text-muted small">
+                    輸入 LINE LIFF 應用程式 ID，用於生成 LINE 點餐連結 (https://liff.line.me/{liffId})
+                  </BFormText>
+                </div>
+
+                <div class="mb-3">
                   <label for="lineChannelAccessToken" class="form-label small"
                     >LINE Channel Access Token</label
                   >
@@ -267,6 +331,70 @@
               </BFormCheckbox>
             </div>
             <BFormText>設定店鋪的其他功能選項</BFormText>
+          </div>
+
+          <!-- 出單機設定 -->
+          <div class="mb-3">
+            <label for="printer" class="form-label">出單機編號</label>
+            <BFormInput
+              id="printer"
+              v-model="formData.printer"
+              placeholder="請輸入出單機編號"
+              :state="errors.printer ? false : null"
+            />
+            <BFormInvalidFeedback v-if="errors.printer">{{ errors.printer }}</BFormInvalidFeedback>
+            <BFormText>設定店鋪的出單機編號，留空表示不使用出單機</BFormText>
+          </div>
+
+          <!-- 付款方式設定 -->
+          <div class="mb-3">
+            <label class="form-label">付款方式設定</label>
+
+            <!-- 現場支援付款方式 -->
+            <div class="mb-3">
+              <label class="form-label small">現場支援付款方式</label>
+              <div class="d-flex flex-wrap gap-2">
+                <BFormCheckbox
+                  v-model="paymentOptions.counter.cash"
+                  @change="updateCounterPayments"
+                >
+                  現金
+                </BFormCheckbox>
+                <BFormCheckbox
+                  v-model="paymentOptions.counter.line_pay"
+                  @change="updateCounterPayments"
+                >
+                  LINE Pay
+                </BFormCheckbox>
+                <BFormCheckbox
+                  v-model="paymentOptions.counter.credit_card"
+                  @change="updateCounterPayments"
+                >
+                  信用卡
+                </BFormCheckbox>
+              </div>
+              <BFormText>選擇現場櫃檯可接受的付款方式</BFormText>
+            </div>
+
+            <!-- 客戶端支援付款方式 -->
+            <div class="mb-3">
+              <label class="form-label small">客戶端支援付款方式</label>
+              <div class="d-flex flex-wrap gap-2">
+                <BFormCheckbox
+                  v-model="paymentOptions.customer.line_pay"
+                  @change="updateCustomerPayments"
+                >
+                  LINE Pay
+                </BFormCheckbox>
+                <BFormCheckbox
+                  v-model="paymentOptions.customer.credit_card"
+                  @change="updateCustomerPayments"
+                >
+                  信用卡
+                </BFormCheckbox>
+              </div>
+              <BFormText>選擇線上客戶端可使用的付款方式</BFormText>
+            </div>
           </div>
         </div>
 
@@ -544,6 +672,7 @@ const formData = reactive({
   // 新增的欄位
   enableLineOrdering: false,
   lineBotId: '',
+  liffId: '',
   lineChannelAccessToken: '',
   showTaxId: false,
   provideReceipt: true,
@@ -555,8 +684,12 @@ const formData = reactive({
   deliveryPrepTime: 30,
   minDeliveryAmount: 0,
   minDeliveryQuantity: 1,
-  maxDeliveryDistance: 5,
+  maxDeliveryDistance: 20000,
+  deliveryPriceRanges: [], // 外送費用階梯定價
   advanceOrderDays: 0,
+  printer: '', // 出單機編號
+  counterPayments: [], // 現場支援付款方式
+  customerPayments: [], // 客戶端支援付款方式
 })
 
 // 錯誤訊息
@@ -566,7 +699,9 @@ const errors = reactive({
   phone: '',
   image: '',
   lineBotId: '',
+  liffId: '',
   lineChannelAccessToken: '',
+  printer: '',
   businessHours: [],
   announcements: [],
 })
@@ -576,6 +711,44 @@ const isSubmitting = ref(false)
 const successMessage = ref('')
 const formErrors = ref([])
 const fileInputRef = ref(null)
+
+// 付款方式選項狀態 (用於 checkbox 控制)
+const paymentOptions = reactive({
+  counter: {
+    cash: false,
+    line_pay: false,
+    credit_card: false,
+  },
+  customer: {
+    line_pay: false,
+    credit_card: false,
+  },
+})
+
+// 更新現場支援付款方式
+const updateCounterPayments = () => {
+  formData.counterPayments = Object.keys(paymentOptions.counter)
+    .filter((key) => paymentOptions.counter[key])
+}
+
+// 更新客戶端支援付款方式
+const updateCustomerPayments = () => {
+  formData.customerPayments = Object.keys(paymentOptions.customer)
+    .filter((key) => paymentOptions.customer[key])
+}
+
+// 新增外送費用階梯
+const addDeliveryPriceRange = () => {
+  formData.deliveryPriceRanges.push({
+    maxDistance: 1000,
+    fee: 30,
+  })
+}
+
+// 移除外送費用階梯
+const removeDeliveryPriceRange = (index) => {
+  formData.deliveryPriceRanges.splice(index, 1)
+}
 
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
@@ -743,6 +916,7 @@ const resetForm = () => {
     // 重置新增欄位
     formData.enableLineOrdering = false
     formData.lineBotId = ''
+    formData.liffId = ''
     formData.lineChannelAccessToken = ''
     formData.showTaxId = false
     formData.provideReceipt = true
@@ -754,8 +928,18 @@ const resetForm = () => {
     formData.deliveryPrepTime = 30
     formData.minDeliveryAmount = 0
     formData.minDeliveryQuantity = 1
-    formData.maxDeliveryDistance = 5
+    formData.maxDeliveryDistance = 20000
+    formData.deliveryPriceRanges = []
     formData.advanceOrderDays = 0
+    formData.printer = ''
+    formData.counterPayments = []
+    formData.customerPayments = []
+    // 重置付款選項 checkbox
+    paymentOptions.counter.cash = false
+    paymentOptions.counter.line_pay = false
+    paymentOptions.counter.credit_card = false
+    paymentOptions.customer.line_pay = false
+    paymentOptions.customer.credit_card = false
   }
   clearImage()
 
@@ -765,7 +949,9 @@ const resetForm = () => {
   errors.phone = ''
   errors.image = ''
   errors.lineBotId = ''
+  errors.liffId = ''
   errors.lineChannelAccessToken = ''
+  errors.printer = ''
   errors.businessHours = []
   errors.announcements = []
   formErrors.value = []
@@ -960,6 +1146,7 @@ const fetchStoreData = async () => {
       formData.enableLineOrdering =
         store.enableLineOrdering !== undefined ? store.enableLineOrdering : false
       formData.lineBotId = store.lineBotId || ''
+      formData.liffId = store.liffId || ''
       formData.lineChannelAccessToken = store.lineChannelAccessToken || ''
       formData.showTaxId = store.showTaxId !== undefined ? store.showTaxId : false
       formData.provideReceipt = store.provideReceipt !== undefined ? store.provideReceipt : true
@@ -974,8 +1161,22 @@ const fetchStoreData = async () => {
       formData.minDeliveryQuantity =
         store.minDeliveryQuantity !== undefined ? store.minDeliveryQuantity : 1
       formData.maxDeliveryDistance =
-        store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 5
+        store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 20000
+      formData.deliveryPriceRanges = store.deliveryPriceRanges || []
       formData.advanceOrderDays = store.advanceOrderDays !== undefined ? store.advanceOrderDays : 0
+      // 處理 printer 欄位 (schema 是陣列，但只取第一個)
+      formData.printer = store.printer && store.printer.length > 0 ? store.printer[0] : ''
+
+      // 處理付款方式欄位
+      formData.counterPayments = store.counterPayments || []
+      formData.customerPayments = store.customerPayments || []
+
+      // 根據付款方式陣列設定 checkbox 狀態
+      paymentOptions.counter.cash = formData.counterPayments.includes('cash')
+      paymentOptions.counter.line_pay = formData.counterPayments.includes('line_pay')
+      paymentOptions.counter.credit_card = formData.counterPayments.includes('credit_card')
+      paymentOptions.customer.line_pay = formData.customerPayments.includes('line_pay')
+      paymentOptions.customer.credit_card = formData.customerPayments.includes('credit_card')
 
       formData._id = store._id
     } else {
@@ -1023,6 +1224,7 @@ const submitForm = async () => {
       // 新增的欄位
       enableLineOrdering: formData.enableLineOrdering,
       lineBotId: formData.lineBotId,
+      liffId: formData.liffId,
       lineChannelAccessToken: formData.lineChannelAccessToken,
       showTaxId: formData.showTaxId,
       provideReceipt: formData.provideReceipt,
@@ -1035,7 +1237,17 @@ const submitForm = async () => {
       minDeliveryAmount: formData.minDeliveryAmount,
       minDeliveryQuantity: formData.minDeliveryQuantity,
       maxDeliveryDistance: formData.maxDeliveryDistance,
+      deliveryPriceRanges: formData.deliveryPriceRanges,
       advanceOrderDays: formData.advanceOrderDays,
+      counterPayments: formData.counterPayments,
+      customerPayments: formData.customerPayments,
+    }
+
+    // 處理 printer 欄位 (轉換為陣列格式，只儲存一個值)
+    if (formData.printer && formData.printer.trim()) {
+      submitData.printer = [formData.printer.trim()]
+    } else {
+      submitData.printer = []
     }
 
     // 直接使用已轉換的base64圖片，不需要再次轉換
