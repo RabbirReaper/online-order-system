@@ -61,12 +61,28 @@ const storeSchema = new mongoose.Schema(
     // 2: 可預訂隔天
     // 以此類推...
 
-    // === 新增：外送平台整合 ===
+    // === 外送平台整合 ===
     deliveryPlatforms: [
       {
         type: String,
         enum: ['foodpanda', 'ubereats'],
         required: true,
+      },
+    ],
+
+    // === 現場支援付款方式 ===
+    counterPayments: [
+      {
+        type: String,
+        enum: ['cash', 'line_pay', 'credit_card'],
+      },
+    ],
+
+    // === 客戶端支援付款方式 ===
+    customerPayments: [
+      {
+        type: String,
+        enum: ['line_pay', 'credit_card'],
       },
     ],
 
