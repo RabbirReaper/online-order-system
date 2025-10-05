@@ -281,6 +281,57 @@
             <BFormInvalidFeedback v-if="errors.printer">{{ errors.printer }}</BFormInvalidFeedback>
             <BFormText>設定店鋪的出單機編號，留空表示不使用出單機</BFormText>
           </div>
+
+          <!-- 付款方式設定 -->
+          <div class="mb-3">
+            <label class="form-label">付款方式設定</label>
+
+            <!-- 現場支援付款方式 -->
+            <div class="mb-3">
+              <label class="form-label small">現場支援付款方式</label>
+              <div class="d-flex flex-wrap gap-2">
+                <BFormCheckbox
+                  v-model="paymentOptions.counter.cash"
+                  @change="updateCounterPayments"
+                >
+                  現金
+                </BFormCheckbox>
+                <BFormCheckbox
+                  v-model="paymentOptions.counter.line_pay"
+                  @change="updateCounterPayments"
+                >
+                  LINE Pay
+                </BFormCheckbox>
+                <BFormCheckbox
+                  v-model="paymentOptions.counter.credit_card"
+                  @change="updateCounterPayments"
+                >
+                  信用卡
+                </BFormCheckbox>
+              </div>
+              <BFormText>選擇現場櫃檯可接受的付款方式</BFormText>
+            </div>
+
+            <!-- 客戶端支援付款方式 -->
+            <div class="mb-3">
+              <label class="form-label small">客戶端支援付款方式</label>
+              <div class="d-flex flex-wrap gap-2">
+                <BFormCheckbox
+                  v-model="paymentOptions.customer.line_pay"
+                  @change="updateCustomerPayments"
+                >
+                  LINE Pay
+                </BFormCheckbox>
+                <BFormCheckbox
+                  v-model="paymentOptions.customer.credit_card"
+                  @change="updateCustomerPayments"
+                >
+                  信用卡
+                </BFormCheckbox>
+              </div>
+              <BFormText>選擇線上客戶端可使用的付款方式</BFormText>
+            </div>
+          </div>
         </div>
 
         <!-- 營業時間區塊 -->
@@ -571,6 +622,8 @@ const formData = reactive({
   maxDeliveryDistance: 5,
   advanceOrderDays: 0,
   printer: '', // 出單機編號
+  counterPayments: [], // 現場支援付款方式
+  customerPayments: [], // 客戶端支援付款方式
 })
 
 // 錯誤訊息
@@ -591,6 +644,31 @@ const isSubmitting = ref(false)
 const successMessage = ref('')
 const formErrors = ref([])
 const fileInputRef = ref(null)
+
+// 付款方式選項狀態 (用於 checkbox 控制)
+const paymentOptions = reactive({
+  counter: {
+    cash: false,
+    line_pay: false,
+    credit_card: false,
+  },
+  customer: {
+    line_pay: false,
+    credit_card: false,
+  },
+})
+
+// 更新現場支援付款方式
+const updateCounterPayments = () => {
+  formData.counterPayments = Object.keys(paymentOptions.counter)
+    .filter((key) => paymentOptions.counter[key])
+}
+
+// 更新客戶端支援付款方式
+const updateCustomerPayments = () => {
+  formData.customerPayments = Object.keys(paymentOptions.customer)
+    .filter((key) => paymentOptions.customer[key])
+}
 
 // 星期幾名稱
 const dayNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
@@ -772,6 +850,14 @@ const resetForm = () => {
     formData.maxDeliveryDistance = 5
     formData.advanceOrderDays = 0
     formData.printer = ''
+    formData.counterPayments = []
+    formData.customerPayments = []
+    // 重置付款選項 checkbox
+    paymentOptions.counter.cash = false
+    paymentOptions.counter.line_pay = false
+    paymentOptions.counter.credit_card = false
+    paymentOptions.customer.line_pay = false
+    paymentOptions.customer.credit_card = false
   }
   clearImage()
 
@@ -996,6 +1082,17 @@ const fetchStoreData = async () => {
       // 處理 printer 欄位 (schema 是陣列，但只取第一個)
       formData.printer = store.printer && store.printer.length > 0 ? store.printer[0] : ''
 
+      // 處理付款方式欄位
+      formData.counterPayments = store.counterPayments || []
+      formData.customerPayments = store.customerPayments || []
+
+      // 根據付款方式陣列設定 checkbox 狀態
+      paymentOptions.counter.cash = formData.counterPayments.includes('cash')
+      paymentOptions.counter.line_pay = formData.counterPayments.includes('line_pay')
+      paymentOptions.counter.credit_card = formData.counterPayments.includes('credit_card')
+      paymentOptions.customer.line_pay = formData.customerPayments.includes('line_pay')
+      paymentOptions.customer.credit_card = formData.customerPayments.includes('credit_card')
+
       formData._id = store._id
     } else {
       // 顯示錯誤訊息
@@ -1055,6 +1152,8 @@ const submitForm = async () => {
       minDeliveryQuantity: formData.minDeliveryQuantity,
       maxDeliveryDistance: formData.maxDeliveryDistance,
       advanceOrderDays: formData.advanceOrderDays,
+      counterPayments: formData.counterPayments,
+      customerPayments: formData.customerPayments,
     }
 
     // 處理 printer 欄位 (轉換為陣列格式，只儲存一個值)
