@@ -443,9 +443,9 @@ const generateQRCode = async (tableNumber) => {
 
   // 如果有 store 資料且啟用 LINE 點餐，使用 LIFF 連結
   if (props.store && props.store.enableLineOrdering) {
-    const liffId = '2007974797-rvmVYQB0' // 從環境變數獲取固定的 LIFF ID
+    const liffId = props.store.liffId
     if (liffId) {
-      url = `https://liff.line.me/${liffId}?brandId=${props.brandId}&storeId=${props.storeId}&tableNumber=${tableNumber}`
+      url = `https://liff.line.me/${liffId}?tableNumber=${tableNumber}`
     } else {
       // 沒有 LIFF ID 時回退到顧客菜單頁面
       url = `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
