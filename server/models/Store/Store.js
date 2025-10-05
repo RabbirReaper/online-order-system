@@ -84,7 +84,7 @@ const storeSchema = new mongoose.Schema(
         type: String,
         enum: ['line_pay', 'credit_card'],
       },
-    ],
+    ], // 注意需與 order.js paymentMethod 一致
 
     printer: [
       {
