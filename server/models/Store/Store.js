@@ -52,7 +52,23 @@ const storeSchema = new mongoose.Schema(
     // === 外送相關設定 ===
     minDeliveryAmount: { type: Number, min: 0, default: 0 }, // 最低外送金額（元）
     minDeliveryQuantity: { type: Number, min: 1, default: 1 }, // 最少外送數量（項）
-    maxDeliveryDistance: { type: Number, min: 0, default: 5 }, // 最長外送距離（公里）
+    maxDeliveryDistance: { type: Number, min: 0, default: 20000 }, // 最長外送距離（公尺）⚡改為公尺
+
+    // 外送費用階梯定價
+    deliveryPriceRanges: [
+      {
+        maxDistance: {
+          type: Number,
+          required: true,
+          min: 0,
+        }, // 距離上限（公尺）
+        fee: {
+          type: Number,
+          required: true,
+          min: 0,
+        }, // 該區間的外送費用（元）
+      },
+    ],
 
     // === 預訂設定 ===
     advanceOrderDays: { type: Number, min: 0, default: 0 }, // 可預訂天數（天）
