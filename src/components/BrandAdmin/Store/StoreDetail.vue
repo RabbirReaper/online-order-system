@@ -1099,9 +1099,9 @@ const baseUrl = computed(() => window.location.origin)
 const menuUrl = computed(() => `${baseUrl.value}/stores/${brandId.value}/${storeId.value}`)
 const counterUrl = computed(() => `${baseUrl.value}/counter/${brandId.value}/${storeId.value}`)
 const liffUrl = computed(() => {
-  const liffId = '2007974797-rvmVYQB0'
+  const liffId = store.value?.liffId
   if (!liffId) return null
-  return `https://liff.line.me/${liffId}?brandId=${brandId.value}&storeId=${storeId.value}`
+  return `https://liff.line.me/${liffId}`
 })
 
 // 從路由中獲取品牌ID和店鋪ID

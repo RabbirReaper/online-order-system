@@ -288,6 +288,22 @@
                 </div>
 
                 <div class="mb-3">
+                  <label for="liffId" class="form-label small">LINE LIFF ID</label>
+                  <BFormInput
+                    id="liffId"
+                    v-model="formData.liffId"
+                    placeholder="例如：2007974797-rvmVYQB0"
+                    :state="errors.liffId ? false : null"
+                  />
+                  <BFormInvalidFeedback v-if="errors.liffId">{{
+                    errors.liffId
+                  }}</BFormInvalidFeedback>
+                  <BFormText class="text-muted small">
+                    輸入 LINE LIFF 應用程式 ID，用於生成 LINE 點餐連結 (https://liff.line.me/{liffId})
+                  </BFormText>
+                </div>
+
+                <div class="mb-3">
                   <label for="lineChannelAccessToken" class="form-label small"
                     >LINE Channel Access Token</label
                   >
@@ -656,6 +672,7 @@ const formData = reactive({
   // 新增的欄位
   enableLineOrdering: false,
   lineBotId: '',
+  liffId: '',
   lineChannelAccessToken: '',
   showTaxId: false,
   provideReceipt: true,
@@ -682,6 +699,7 @@ const errors = reactive({
   phone: '',
   image: '',
   lineBotId: '',
+  liffId: '',
   lineChannelAccessToken: '',
   printer: '',
   businessHours: [],
@@ -898,6 +916,7 @@ const resetForm = () => {
     // 重置新增欄位
     formData.enableLineOrdering = false
     formData.lineBotId = ''
+    formData.liffId = ''
     formData.lineChannelAccessToken = ''
     formData.showTaxId = false
     formData.provideReceipt = true
@@ -930,6 +949,7 @@ const resetForm = () => {
   errors.phone = ''
   errors.image = ''
   errors.lineBotId = ''
+  errors.liffId = ''
   errors.lineChannelAccessToken = ''
   errors.printer = ''
   errors.businessHours = []
@@ -1126,6 +1146,7 @@ const fetchStoreData = async () => {
       formData.enableLineOrdering =
         store.enableLineOrdering !== undefined ? store.enableLineOrdering : false
       formData.lineBotId = store.lineBotId || ''
+      formData.liffId = store.liffId || ''
       formData.lineChannelAccessToken = store.lineChannelAccessToken || ''
       formData.showTaxId = store.showTaxId !== undefined ? store.showTaxId : false
       formData.provideReceipt = store.provideReceipt !== undefined ? store.provideReceipt : true
@@ -1203,6 +1224,7 @@ const submitForm = async () => {
       // 新增的欄位
       enableLineOrdering: formData.enableLineOrdering,
       lineBotId: formData.lineBotId,
+      liffId: formData.liffId,
       lineChannelAccessToken: formData.lineChannelAccessToken,
       showTaxId: formData.showTaxId,
       provideReceipt: formData.provideReceipt,
