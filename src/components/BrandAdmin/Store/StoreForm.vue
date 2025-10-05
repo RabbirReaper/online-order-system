@@ -186,7 +186,7 @@
               </div>
               <div class="col-md-4">
                 <label for="maxDeliveryDistance" class="form-label small"
-                  >最長外送距離（公里）</label
+                  >最長外送距離（公尺）</label
                 >
                 <BFormInput
                   type="number"
@@ -197,6 +197,54 @@
               </div>
             </div>
             <BFormText>設定外送的相關限制</BFormText>
+          </div>
+
+          <!-- 外送費用階梯定價 (僅在啟用外送時顯示) -->
+          <div class="mb-3" v-if="formData.enableDelivery">
+            <label class="form-label">外送費用階梯定價</label>
+            <div class="delivery-price-ranges">
+              <div
+                v-for="(range, index) in formData.deliveryPriceRanges"
+                :key="index"
+                class="mb-2 d-flex align-items-center gap-2"
+              >
+                <span class="small text-muted" style="min-width: 60px">
+                  {{ index === 0 ? '0' : formData.deliveryPriceRanges[index - 1].maxDistance + 1 }}m
+                </span>
+                <span class="mx-1">-</span>
+                <BFormInput
+                  type="number"
+                  v-model.number="range.maxDistance"
+                  :min="index === 0 ? 1 : formData.deliveryPriceRanges[index - 1].maxDistance + 1"
+                  placeholder="距離上限"
+                  size="sm"
+                  style="max-width: 120px"
+                />
+                <span class="small text-muted">公尺</span>
+                <span class="mx-2">→</span>
+                <BFormInput
+                  type="number"
+                  v-model.number="range.fee"
+                  min="0"
+                  placeholder="費用"
+                  size="sm"
+                  style="max-width: 100px"
+                />
+                <span class="small text-muted">元</span>
+                <BButton
+                  size="sm"
+                  variant="outline-danger"
+                  @click="removeDeliveryPriceRange(index)"
+                  v-if="formData.deliveryPriceRanges.length > 1"
+                >
+                  <i class="bi bi-trash"></i>
+                </BButton>
+              </div>
+              <BButton size="sm" variant="outline-primary" @click="addDeliveryPriceRange">
+                <i class="bi bi-plus-circle me-1"></i>新增階梯
+              </BButton>
+            </div>
+            <BFormText>設定不同距離區間的外送費用，例如：0-1000公尺30元、1001-3000公尺50元</BFormText>
           </div>
 
           <!-- 預訂設定 -->
@@ -619,7 +667,8 @@ const formData = reactive({
   deliveryPrepTime: 30,
   minDeliveryAmount: 0,
   minDeliveryQuantity: 1,
-  maxDeliveryDistance: 5,
+  maxDeliveryDistance: 20000,
+  deliveryPriceRanges: [], // 外送費用階梯定價
   advanceOrderDays: 0,
   printer: '', // 出單機編號
   counterPayments: [], // 現場支援付款方式
@@ -668,6 +717,19 @@ const updateCounterPayments = () => {
 const updateCustomerPayments = () => {
   formData.customerPayments = Object.keys(paymentOptions.customer)
     .filter((key) => paymentOptions.customer[key])
+}
+
+// 新增外送費用階梯
+const addDeliveryPriceRange = () => {
+  formData.deliveryPriceRanges.push({
+    maxDistance: 1000,
+    fee: 30,
+  })
+}
+
+// 移除外送費用階梯
+const removeDeliveryPriceRange = (index) => {
+  formData.deliveryPriceRanges.splice(index, 1)
 }
 
 // 星期幾名稱
@@ -847,7 +909,8 @@ const resetForm = () => {
     formData.deliveryPrepTime = 30
     formData.minDeliveryAmount = 0
     formData.minDeliveryQuantity = 1
-    formData.maxDeliveryDistance = 5
+    formData.maxDeliveryDistance = 20000
+    formData.deliveryPriceRanges = []
     formData.advanceOrderDays = 0
     formData.printer = ''
     formData.counterPayments = []
@@ -1077,7 +1140,8 @@ const fetchStoreData = async () => {
       formData.minDeliveryQuantity =
         store.minDeliveryQuantity !== undefined ? store.minDeliveryQuantity : 1
       formData.maxDeliveryDistance =
-        store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 5
+        store.maxDeliveryDistance !== undefined ? store.maxDeliveryDistance : 20000
+      formData.deliveryPriceRanges = store.deliveryPriceRanges || []
       formData.advanceOrderDays = store.advanceOrderDays !== undefined ? store.advanceOrderDays : 0
       // 處理 printer 欄位 (schema 是陣列，但只取第一個)
       formData.printer = store.printer && store.printer.length > 0 ? store.printer[0] : ''
@@ -1151,6 +1215,7 @@ const submitForm = async () => {
       minDeliveryAmount: formData.minDeliveryAmount,
       minDeliveryQuantity: formData.minDeliveryQuantity,
       maxDeliveryDistance: formData.maxDeliveryDistance,
+      deliveryPriceRanges: formData.deliveryPriceRanges,
       advanceOrderDays: formData.advanceOrderDays,
       counterPayments: formData.counterPayments,
       customerPayments: formData.customerPayments,
