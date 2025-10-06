@@ -293,15 +293,7 @@
           <!-- 服務設定卡片 -->
           <div class="card mb-4">
             <div class="card-body">
-              <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
-                <span>服務設定</span>
-                <button
-                  class="btn btn-sm btn-outline-primary"
-                  @click="showServiceSettingsModal = true"
-                >
-                  <i class="bi bi-pencil me-1"></i>快速編輯
-                </button>
-              </h5>
+              <h5 class="card-title mb-3">服務設定</h5>
 
               <div class="row g-3">
                 <!-- 服務類型 -->
@@ -898,198 +890,6 @@
       </template>
     </BModal>
 
-    <!-- 服務設定快速編輯對話框 -->
-    <BModal v-model="showServiceSettingsModal" title="編輯服務設定" size="lg" centered>
-      <div class="mb-4">
-        <h6 class="border-bottom pb-2 mb-3">服務類型</h6>
-        <div class="d-flex flex-wrap gap-3">
-          <BFormCheckbox v-model="editServiceSettings.enableDineIn" switch>
-            啟用內用 {{ editServiceSettings.enableDineIn ? '✓' : '✗' }}
-          </BFormCheckbox>
-          <BFormCheckbox v-model="editServiceSettings.enableTakeOut" switch>
-            啟用外帶 {{ editServiceSettings.enableTakeOut ? '✓' : '✗' }}
-          </BFormCheckbox>
-          <BFormCheckbox v-model="editServiceSettings.enableDelivery" switch>
-            啟用外送 {{ editServiceSettings.enableDelivery ? '✓' : '✗' }}
-          </BFormCheckbox>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <h6 class="border-bottom pb-2 mb-3">準備時間設定（分鐘）</h6>
-        <div class="row g-3">
-          <div class="col-md-4" v-if="editServiceSettings.enableDineIn">
-            <label for="edit-dineInPrepTime" class="form-label">內用準備時間</label>
-            <BFormInput
-              type="number"
-              id="edit-dineInPrepTime"
-              v-model.number="editServiceSettings.dineInPrepTime"
-              min="0"
-            />
-          </div>
-          <div class="col-md-4" v-if="editServiceSettings.enableTakeOut">
-            <label for="edit-takeOutPrepTime" class="form-label">外帶準備時間</label>
-            <BFormInput
-              type="number"
-              id="edit-takeOutPrepTime"
-              v-model.number="editServiceSettings.takeOutPrepTime"
-              min="0"
-            />
-          </div>
-          <div class="col-md-4" v-if="editServiceSettings.enableDelivery">
-            <label for="edit-deliveryPrepTime" class="form-label">外送準備時間</label>
-            <BFormInput
-              type="number"
-              id="edit-deliveryPrepTime"
-              v-model.number="editServiceSettings.deliveryPrepTime"
-              min="0"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="mb-4" v-if="editServiceSettings.enableDelivery">
-        <h6 class="border-bottom pb-2 mb-3">外送設定</h6>
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label for="edit-minDeliveryAmount" class="form-label">最低外送金額（元）</label>
-            <BFormInput
-              type="number"
-              id="edit-minDeliveryAmount"
-              v-model.number="editServiceSettings.minDeliveryAmount"
-              min="0"
-            />
-          </div>
-          <div class="col-md-4">
-            <label for="edit-minDeliveryQuantity" class="form-label">最少外送數量（項）</label>
-            <BFormInput
-              type="number"
-              id="edit-minDeliveryQuantity"
-              v-model.number="editServiceSettings.minDeliveryQuantity"
-              min="1"
-            />
-          </div>
-          <div class="col-md-4">
-            <label for="edit-maxDeliveryDistance" class="form-label">最長外送距離（公里）</label>
-            <BFormInput
-              type="number"
-              id="edit-maxDeliveryDistance"
-              v-model.number="editServiceSettings.maxDeliveryDistance"
-              min="0"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <h6 class="border-bottom pb-2 mb-3">預訂設定</h6>
-        <div class="mb-3">
-          <label for="edit-advanceOrderDays" class="form-label">可預訂天數</label>
-          <BFormInput
-            type="number"
-            id="edit-advanceOrderDays"
-            v-model.number="editServiceSettings.advanceOrderDays"
-            min="0"
-          />
-          <BFormText>
-            設定顧客可提前預訂的天數，0表示只能立即點餐，1表示可預訂當天，2表示可預訂隔天，以此類推
-          </BFormText>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <h6 class="border-bottom pb-2 mb-3">其他功能設定</h6>
-        <div class="d-flex flex-column gap-2">
-          <BFormCheckbox v-model="editServiceSettings.enableLineOrdering" switch>
-            啟用LINE點餐 {{ editServiceSettings.enableLineOrdering ? '✓' : '✗' }}
-          </BFormCheckbox>
-
-          <!-- LINE Bot ID 設定 (只有在啟用 LINE 點餐時顯示) -->
-          <div v-if="editServiceSettings.enableLineOrdering" class="ms-3 mt-2">
-            <label for="edit-lineBotId" class="form-label small">LINE 官方帳號 ID</label>
-            <BFormInput
-              id="edit-lineBotId"
-              v-model="editServiceSettings.lineBotId"
-              placeholder="例如：@example-bot (不需要包含@)"
-            />
-            <BFormText class="text-muted small">
-              輸入店家的 LINE 官方帳號 ID，用於客戶加好友功能。留空則使用系統預設的官方帳號
-            </BFormText>
-          </div>
-
-          <BFormCheckbox v-model="editServiceSettings.showTaxId" switch>
-            顯示統一編號欄位 {{ editServiceSettings.showTaxId ? '✓' : '✗' }}
-          </BFormCheckbox>
-          <BFormCheckbox v-model="editServiceSettings.provideReceipt" switch>
-            提供收據 {{ editServiceSettings.provideReceipt ? '✓' : '✗' }}
-          </BFormCheckbox>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <h6 class="border-bottom pb-2 mb-3">付款方式設定</h6>
-
-        <!-- 現場支援付款方式 -->
-        <div class="mb-3">
-          <label class="form-label small fw-bold">現場支援付款方式</label>
-          <div class="d-flex flex-wrap gap-3">
-            <BFormCheckbox v-model="paymentOptions.counter.cash" @change="updateCounterPayments">
-              現金
-            </BFormCheckbox>
-            <BFormCheckbox
-              v-model="paymentOptions.counter.line_pay"
-              @change="updateCounterPayments"
-            >
-              LINE Pay
-            </BFormCheckbox>
-            <BFormCheckbox
-              v-model="paymentOptions.counter.credit_card"
-              @change="updateCounterPayments"
-            >
-              信用卡
-            </BFormCheckbox>
-          </div>
-          <BFormText>選擇現場櫃檯可接受的付款方式</BFormText>
-        </div>
-
-        <!-- 客戶端支援付款方式 -->
-        <div class="mb-3">
-          <label class="form-label small fw-bold">客戶端支援付款方式</label>
-          <div class="d-flex flex-wrap gap-3">
-            <BFormCheckbox
-              v-model="paymentOptions.customer.line_pay"
-              @change="updateCustomerPayments"
-            >
-              LINE Pay
-            </BFormCheckbox>
-            <BFormCheckbox
-              v-model="paymentOptions.customer.credit_card"
-              @change="updateCustomerPayments"
-            >
-              信用卡
-            </BFormCheckbox>
-          </div>
-          <BFormText>選擇線上客戶端可使用的付款方式</BFormText>
-        </div>
-      </div>
-
-      <template #footer>
-        <BButton variant="secondary" @click="showServiceSettingsModal = false">取消</BButton>
-        <BButton
-          variant="primary"
-          @click="updateServiceSettings"
-          :disabled="isUpdatingServiceSettings"
-        >
-          <span
-            v-if="isUpdatingServiceSettings"
-            class="spinner-border spinner-border-sm me-1"
-            role="status"
-            aria-hidden="true"
-          ></span>
-          {{ isUpdatingServiceSettings ? '更新中...' : '保存變更' }}
-        </BButton>
-      </template>
-    </BModal>
 
     <!-- QR Code 桌牌生成器 -->
     <QRTableCardGenerator
@@ -1122,7 +922,6 @@ import {
   BFormCheckbox,
   BFormInput,
   BFormTextarea,
-  BFormText,
   BFormSelect,
 } from 'bootstrap-vue-next'
 import api from '@/api'
@@ -1159,14 +958,12 @@ const error = ref('')
 const isDeleting = ref(false)
 const isUpdatingHours = ref(false)
 const isUpdatingAnnouncements = ref(false)
-const isUpdatingServiceSettings = ref(false)
 const isUpdatingDeliveryPlatforms = ref(false)
 
 // Modal 顯示狀態
 const showDeleteModal = ref(false)
 const showBusinessHoursModal = ref(false)
 const showAnnouncementsModal = ref(false)
-const showServiceSettingsModal = ref(false)
 const showDeliveryPlatformsModal = ref(false)
 const showTableCardModal = ref(false)
 const showPlatformManagerModal = ref(false)
@@ -1176,51 +973,6 @@ const selectedPlatform = ref('')
 const editBusinessHours = ref([])
 const editAnnouncements = ref([])
 const editDeliveryPlatforms = ref([])
-const editServiceSettings = reactive({
-  enableLineOrdering: false,
-  lineBotId: '',
-  showTaxId: false,
-  provideReceipt: true,
-  enableDineIn: true,
-  enableTakeOut: true,
-  enableDelivery: false,
-  dineInPrepTime: 15,
-  takeOutPrepTime: 10,
-  deliveryPrepTime: 30,
-  minDeliveryAmount: 0,
-  minDeliveryQuantity: 1,
-  maxDeliveryDistance: 5,
-  advanceOrderDays: 0,
-  counterPayments: [],
-  customerPayments: [],
-})
-
-// 付款方式選項狀態 (用於 checkbox 控制)
-const paymentOptions = reactive({
-  counter: {
-    cash: false,
-    line_pay: false,
-    credit_card: false,
-  },
-  customer: {
-    line_pay: false,
-    credit_card: false,
-  },
-})
-
-// 更新現場支援付款方式
-const updateCounterPayments = () => {
-  editServiceSettings.counterPayments = Object.keys(paymentOptions.counter).filter(
-    (key) => paymentOptions.counter[key],
-  )
-}
-
-// 更新客戶端支援付款方式
-const updateCustomerPayments = () => {
-  editServiceSettings.customerPayments = Object.keys(paymentOptions.customer).filter(
-    (key) => paymentOptions.customer[key],
-  )
-}
 
 // 複製狀態管理
 const copyStates = ref({
@@ -1394,38 +1146,6 @@ const initEditData = () => {
 
   // 深複製外送平台數據
   editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || []))
-
-  // 初始化服務設定
-  Object.assign(editServiceSettings, {
-    enableLineOrdering:
-      store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
-    lineBotId: store.value.lineBotId || '',
-    showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
-    provideReceipt: store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,
-    enableDineIn: store.value.enableDineIn !== undefined ? store.value.enableDineIn : true,
-    enableTakeOut: store.value.enableTakeOut !== undefined ? store.value.enableTakeOut : true,
-    enableDelivery: store.value.enableDelivery !== undefined ? store.value.enableDelivery : false,
-    dineInPrepTime: store.value.dineInPrepTime !== undefined ? store.value.dineInPrepTime : 15,
-    takeOutPrepTime: store.value.takeOutPrepTime !== undefined ? store.value.takeOutPrepTime : 10,
-    deliveryPrepTime:
-      store.value.deliveryPrepTime !== undefined ? store.value.deliveryPrepTime : 30,
-    minDeliveryAmount:
-      store.value.minDeliveryAmount !== undefined ? store.value.minDeliveryAmount : 0,
-    minDeliveryQuantity:
-      store.value.minDeliveryQuantity !== undefined ? store.value.minDeliveryQuantity : 1,
-    maxDeliveryDistance:
-      store.value.maxDeliveryDistance !== undefined ? store.value.maxDeliveryDistance : 5,
-    advanceOrderDays: store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0,
-    counterPayments: store.value.counterPayments || [],
-    customerPayments: store.value.customerPayments || [],
-  })
-
-  // 根據付款方式陣列設定 checkbox 狀態
-  paymentOptions.counter.cash = editServiceSettings.counterPayments.includes('cash')
-  paymentOptions.counter.line_pay = editServiceSettings.counterPayments.includes('line_pay')
-  paymentOptions.counter.credit_card = editServiceSettings.counterPayments.includes('credit_card')
-  paymentOptions.customer.line_pay = editServiceSettings.customerPayments.includes('line_pay')
-  paymentOptions.customer.credit_card = editServiceSettings.customerPayments.includes('credit_card')
 }
 
 // 格式化日期
@@ -1597,79 +1317,6 @@ const updateAnnouncements = async () => {
   }
 }
 
-// 更新服務設定
-const updateServiceSettings = async () => {
-  if (!store.value) return
-
-  // 驗證表單
-  let isValid = true
-
-  // 驗證準備時間設定
-  if (editServiceSettings.dineInPrepTime < 0) {
-    alert('內用準備時間不能小於0')
-    isValid = false
-  }
-
-  if (editServiceSettings.takeOutPrepTime < 0) {
-    alert('外帶準備時間不能小於0')
-    isValid = false
-  }
-
-  if (editServiceSettings.deliveryPrepTime < 0) {
-    alert('外送準備時間不能小於0')
-    isValid = false
-  }
-
-  // 驗證外送相關設定
-  if (editServiceSettings.minDeliveryAmount < 0) {
-    alert('最低外送金額不能小於0')
-    isValid = false
-  }
-
-  if (editServiceSettings.minDeliveryQuantity < 1) {
-    alert('最少外送數量不能小於1')
-    isValid = false
-  }
-
-  if (editServiceSettings.maxDeliveryDistance < 0) {
-    alert('最長外送距離不能小於0')
-    isValid = false
-  }
-
-  // 驗證預訂設定
-  if (editServiceSettings.advanceOrderDays < 0) {
-    alert('可預訂天數不能小於0')
-    isValid = false
-  }
-
-  if (!isValid) {
-    return
-  }
-
-  isUpdatingServiceSettings.value = true
-
-  try {
-    const response = await api.store.updateServiceSettings({
-      brandId: brandId.value,
-      storeId: store.value._id,
-      serviceSettings: editServiceSettings,
-    })
-
-    if (response && response.store) {
-      // 更新數據
-      Object.assign(store.value, response.store)
-
-      // 關閉模態窗口
-      showServiceSettingsModal.value = false
-    }
-  } catch (err) {
-    console.error('更新服務設定失敗:', err)
-    alert('更新服務設定時發生錯誤')
-  } finally {
-    isUpdatingServiceSettings.value = false
-  }
-}
-
 // 生命週期鉤子
 onMounted(() => {
   // 獲取店鋪資料
@@ -1706,48 +1353,6 @@ onMounted(() => {
   watch(showDeliveryPlatformsModal, (newValue) => {
     if (newValue) {
       editDeliveryPlatforms.value = JSON.parse(JSON.stringify(store.value.deliveryPlatforms || []))
-    }
-  })
-
-  // 當服務設定編輯模態框開啟時重新初始化數據
-  watch(showServiceSettingsModal, (newValue) => {
-    if (newValue) {
-      Object.assign(editServiceSettings, {
-        enableLineOrdering:
-          store.value.enableLineOrdering !== undefined ? store.value.enableLineOrdering : false,
-        lineBotId: store.value.lineBotId || '',
-        showTaxId: store.value.showTaxId !== undefined ? store.value.showTaxId : false,
-        provideReceipt:
-          store.value.provideReceipt !== undefined ? store.value.provideReceipt : true,
-        enableDineIn: store.value.enableDineIn !== undefined ? store.value.enableDineIn : true,
-        enableTakeOut: store.value.enableTakeOut !== undefined ? store.value.enableTakeOut : true,
-        enableDelivery:
-          store.value.enableDelivery !== undefined ? store.value.enableDelivery : false,
-        dineInPrepTime: store.value.dineInPrepTime !== undefined ? store.value.dineInPrepTime : 15,
-        takeOutPrepTime:
-          store.value.takeOutPrepTime !== undefined ? store.value.takeOutPrepTime : 10,
-        deliveryPrepTime:
-          store.value.deliveryPrepTime !== undefined ? store.value.deliveryPrepTime : 30,
-        minDeliveryAmount:
-          store.value.minDeliveryAmount !== undefined ? store.value.minDeliveryAmount : 0,
-        minDeliveryQuantity:
-          store.value.minDeliveryQuantity !== undefined ? store.value.minDeliveryQuantity : 1,
-        maxDeliveryDistance:
-          store.value.maxDeliveryDistance !== undefined ? store.value.maxDeliveryDistance : 5,
-        advanceOrderDays:
-          store.value.advanceOrderDays !== undefined ? store.value.advanceOrderDays : 0,
-        counterPayments: store.value.counterPayments || [],
-        customerPayments: store.value.customerPayments || [],
-      })
-
-      // 根據付款方式陣列設定 checkbox 狀態
-      paymentOptions.counter.cash = editServiceSettings.counterPayments.includes('cash')
-      paymentOptions.counter.line_pay = editServiceSettings.counterPayments.includes('line_pay')
-      paymentOptions.counter.credit_card =
-        editServiceSettings.counterPayments.includes('credit_card')
-      paymentOptions.customer.line_pay = editServiceSettings.customerPayments.includes('line_pay')
-      paymentOptions.customer.credit_card =
-        editServiceSettings.customerPayments.includes('credit_card')
     }
   })
 
