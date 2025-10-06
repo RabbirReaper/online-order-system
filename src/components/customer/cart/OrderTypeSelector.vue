@@ -2,8 +2,14 @@
   <div class="order-type-container mb-4">
     <!-- 取餐方式 -->
     <h6 class="mb-3 fw-bold">取餐方式</h6>
-    <div class="d-flex flex-wrap">
-      <div class="form-check me-4 mb-3">
+
+    <!-- 沒有可用的訂單類型時顯示警告 -->
+    <div v-if="!hasAvailableOrderType" class="alert alert-warning" role="alert">
+      目前店鋪暫時無法接受訂單，請稍後再試。
+    </div>
+
+    <div v-else class="d-flex flex-wrap">
+      <div v-if="storeData.enableDineIn" class="form-check me-4 mb-3">
         <input
           class="form-check-input"
           type="radio"
@@ -14,7 +20,7 @@
         />
         <label class="form-check-label" for="dineIn">內用</label>
       </div>
-      <div class="form-check me-4 mb-3">
+      <div v-if="storeData.enableTakeOut" class="form-check me-4 mb-3">
         <input
           class="form-check-input"
           type="radio"
@@ -25,7 +31,7 @@
         />
         <label class="form-check-label" for="selfPickup">自取</label>
       </div>
-      <div class="form-check mb-3">
+      <div v-if="storeData.enableDelivery" class="form-check mb-3">
         <input
           class="form-check-input"
           type="radio"
@@ -185,6 +191,13 @@ const tableNumberError = ref('')
 // 店鋪資訊
 const storeData = ref(props.storeInfo || {})
 
+// 檢查是否有可用的訂單類型
+const hasAvailableOrderType = computed(() => {
+  return (
+    storeData.value.enableDineIn || storeData.value.enableTakeOut || storeData.value.enableDelivery
+  )
+})
+
 // 計算預估時間
 const estimatedMinTime = computed(() => {
   if (localOrderType.value === 'selfPickup') {
@@ -244,10 +257,32 @@ const loadStoreInfo = async () => {
 
       if (response && response.success) {
         storeData.value = response.store
+        // 檢查當前訂單類型是否可用,如果不可用則設定為第一個可用的類型
+        setDefaultOrderType()
       }
     }
   } catch (error) {
     console.error('載入店鋪資訊失敗:', error)
+  }
+}
+
+// 設定預設訂單類型
+const setDefaultOrderType = () => {
+  const orderTypeMap = {
+    dineIn: storeData.value.enableDineIn,
+    selfPickup: storeData.value.enableTakeOut,
+    delivery: storeData.value.enableDelivery,
+  }
+
+  // 如果當前選擇的類型未啟用,自動選擇第一個可用的類型
+  if (!orderTypeMap[localOrderType.value]) {
+    if (storeData.value.enableTakeOut) {
+      localOrderType.value = 'selfPickup'
+    } else if (storeData.value.enableDineIn) {
+      localOrderType.value = 'dineIn'
+    } else if (storeData.value.enableDelivery) {
+      localOrderType.value = 'delivery'
+    }
   }
 }
 
@@ -302,6 +337,9 @@ watch(
   () => props.storeInfo,
   (newVal) => {
     storeData.value = newVal || {}
+    if (newVal && Object.keys(newVal).length > 0) {
+      setDefaultOrderType()
+    }
   },
   { deep: true },
 )
