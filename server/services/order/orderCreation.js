@@ -14,6 +14,7 @@ import { processOrderPaymentComplete } from './orderPayment.js'
 import Store from '../../models/Store/Store.js'
 import { sendLineMessage, buildOrderConfirmationMessage } from '../notification/lineService.js'
 import { markUsedPromotions } from './orderPayment.js'
+import { printOrder } from '../printer/printer.js'
 
 /**
  * 創建訂單 - 支援 Bundle 購買 + 預先庫存檢查 + Voucher 折扣
@@ -73,6 +74,15 @@ export const createOrder = async (orderData) => {
     } catch (lineError) {
       // LINE訊息發送失敗不影響訂單創建
       console.error('LINE訊息發送失敗，但訂單創建成功:', lineError)
+    }
+
+    // Step 10: 自動列印訂單
+    try {
+      await printOrder(orderData.brand, orderData.store, order._id)
+      console.log('🖨️ 訂單列印成功:', order._id)
+    } catch (printError) {
+      // 列印失敗不影響訂單創建
+      console.error('訂單自動列印失敗，但訂單創建成功:', printError)
     }
 
     return result

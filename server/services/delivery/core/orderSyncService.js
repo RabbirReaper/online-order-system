@@ -11,6 +11,7 @@ import { convertUberOrderToInternal } from '../platforms/ubereats/order/convertO
 import { validateDeliveryOrderInventory } from '../platforms/ubereats/order/orderInventoryValidation.js'
 import { reduceDeliveryOrderInventory } from '../platforms/ubereats/order/orderInventoryReduction.js'
 import { AppError } from '../../../middlewares/error.js'
+import { printOrder } from '../../printer/printer.js'
 
 /**
  * 處理 Uber Eats webhook 事件
@@ -152,6 +153,19 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
 
       // 更新訂單狀態為已接受
       await updateOrderSyncStatus(savedOrder._id, 'accepted')
+
+      // 6. 自動列印訂單
+      try {
+        await printOrder(
+          platformStore.brand._id || platformStore.brand,
+          platformStore.store._id || platformStore.store,
+          savedOrder._id,
+        )
+        // console.log('🖨️ 外送訂單列印成功:', savedOrder._id)
+      } catch (printError) {
+        console.error('❌ 外送訂單自動列印失敗，但不影響訂單處理:', printError)
+        // 列印失敗不影響訂單流程
+      }
     } else {
       // console.log('⚠️ 由於庫存問題，未自動接受訂單，需手動處理:', orderDetails.id)
 
