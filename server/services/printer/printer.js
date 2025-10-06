@@ -10,6 +10,7 @@ import Store from '../../models/Store/Store.js'
 import PlatformToken from '../../models/DeliverPlatform/platformToken.js'
 import { AppError } from '../../middlewares/error.js'
 import { DateTime } from 'luxon'
+import { fromUTCDate } from '../../utils/date.js'
 
 const BASE_URL = 'https://open.sw-aiot.com/api'
 const PRINTER_USERNAME = process.env.PRINTER_USERNAME
@@ -96,14 +97,11 @@ const formatOrderType = (order) => {
 
   if (platform === 'foodpanda') return 'foodpand'
   if (platform === 'ubereats') return 'UberEat'
+  if (order.orderType === 'dine_in') return `內用 ${order.dineInInfo.tableNumber} 桌`
+  if (order.orderType === 'takeout') return '自取'
+  if (order.orderType === 'delivery') return '外送'
 
-  const typeMap = {
-    dine_in: '內用',
-    takeout: '自取',
-    delivery: '外送',
-  }
-
-  return typeMap[order.orderType] || '未知'
+  return '未知'
 }
 
 /**
@@ -152,16 +150,16 @@ const buildOrderPrintMessage = (order) => {
     size: '22',
   })
 
-  // 3. 列印時間
-  const printTime = DateTime.now().setZone('Asia/Taipei').toFormat('yyyy/MM/dd HH:mm:ss')
+  // 3. 訂單創建時間
+  const createTime = fromUTCDate(order.createdAt).toFormat('yyyy/MM/dd HH:mm:ss')
+
   printContent.push({
-    cont: `列印時間: ${printTime}`,
+    cont: `點餐時間: ${createTime}`,
   })
 
   // 4. 分隔線
   printContent.push({
-    cont: '================================',
-    align: 'center',
+    type: 'div_line',
   })
 
   // 5. 顧客資訊（如果有）
@@ -186,8 +184,7 @@ const buildOrderPrintMessage = (order) => {
 
   // 7. 分隔線
   printContent.push({
-    cont: '================================',
-    align: 'center',
+    type: 'div_line',
   })
 
   // 8. 餐點清單
@@ -214,7 +211,7 @@ const buildOrderPrintMessage = (order) => {
           const optionNames = optionCategory.selections.map((sel) => sel.name).join(', ')
 
           printContent.push({
-            cont: `: ${optionCategory.optionCategoryName || '選項'}: ${optionNames}`,
+            cont: `- ${optionCategory.optionCategoryName || '選項'}: ${optionNames}`,
             type: 'text',
             size: '01',
           })
@@ -240,8 +237,20 @@ const buildOrderPrintMessage = (order) => {
 
   // 9. 分隔線
   printContent.push({
-    cont: '================================',
+    type: 'div_line',
   })
+
+  // 11. 訂單備註（如果有）
+  if (order.notes) {
+    printContent.push({
+      cont: `備註: ${order.notes}`,
+      type: 'text',
+      bold: true,
+    })
+    printContent.push({
+      type: 'div_line',
+    })
+  }
 
   // 10. 總金額
   printContent.push({
@@ -250,17 +259,6 @@ const buildOrderPrintMessage = (order) => {
     bold: true,
   })
 
-  // 11. 訂單備註（如果有）
-  if (order.notes) {
-    printContent.push({
-      cont: '================================',
-    })
-    printContent.push({
-      cont: `備註: ${order.notes}`,
-      type: 'text',
-      bold: true,
-    })
-  }
   printContent.push({
     cont: '',
   })
