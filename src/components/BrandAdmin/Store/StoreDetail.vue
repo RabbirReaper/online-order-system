@@ -180,7 +180,45 @@
                     此連結需要在 LINE 應用程式中開啟才能正常運作
                   </div>
                 </div>
-
+                <!-- LINE LIFF END POINT 連結 -->
+                <div class="mb-0" v-if="store.enableLineOrdering && liffUrl">
+                  <label class="form-label small fw-bold">
+                    <i class="bi bi-line me-1" style="color: #00c300"></i>
+                    LINE LIFF END POINT 連結
+                  </label>
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      :value="liffEndPointUrl"
+                      readonly
+                    />
+                    <button
+                      class="btn btn-sm"
+                      :class="copyStates.liffEndPointUrl ? 'btn-success' : 'btn-outline-secondary'"
+                      type="button"
+                      @click="copyToClipboard(liffEndPointUrl, 'liffEndPointUrl')"
+                      :title="copyStates.liffEndPointUrl ? '已複製' : '複製連結'"
+                    >
+                      <i
+                        class="bi"
+                        :class="copyStates.liffEndPointUrl ? 'bi-check' : 'bi-copy'"
+                      ></i>
+                    </button>
+                    <a
+                      :href="liffEndPointUrl"
+                      target="_blank"
+                      class="btn btn-outline-success btn-sm"
+                      title="開啟連結"
+                    >
+                      <i class="bi bi-line"></i>
+                    </a>
+                  </div>
+                  <div class="form-text text-muted small mt-1">
+                    <i class="bi bi-info-circle me-1"></i>
+                    此連結需要設置在Liff End Point 的地方 - 用來跳轉至點餐系統
+                  </div>
+                </div>
                 <!-- LINE Bot ID 顯示 -->
                 <div class="mb-0" v-if="store.enableLineOrdering">
                   <label class="form-label small fw-bold">
@@ -1103,6 +1141,12 @@ const liffUrl = computed(() => {
   if (!liffId) return null
   return `https://liff.line.me/${liffId}`
 })
+const liffEndPointUrl = computed(() => {
+  const liffId = store.value?.liffId
+  if (!liffId) return null
+  // https://rabbirorder.com/line-entry?liffId=2008192565-m1q4KMrW&brandId=6829fddd1dcdb196fa13f479&storeId=682a00b3467760e4ad7469c7
+  return `${baseUrl.value}/line-entry?liffId=${liffId}&brandId=${brandId.value}&storeId=${storeId.value}}`
+})
 
 // 從路由中獲取品牌ID和店鋪ID
 const brandId = computed(() => route.params.brandId)
@@ -1184,6 +1228,7 @@ const copyStates = ref({
   counter: false,
   liff: false,
   botId: false,
+  liffEndPointUrl: false,
 })
 
 // 複製連結到剪貼簿
