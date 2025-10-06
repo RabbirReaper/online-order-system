@@ -53,7 +53,8 @@ export const generateUniqueItemId = () => {
 // 格式化時間
 export const formatTime = (dateTime) => {
   const date = new Date(dateTime)
-  return date.toLocaleTimeString('zh-TW', {
+  return date.toLocaleString('zh-TW', {
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     timeZone: 'Asia/Taipei',
