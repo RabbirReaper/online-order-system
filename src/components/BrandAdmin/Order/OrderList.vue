@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1>訂單管理 - {{ storeName }}</h1>
+      <h2>訂單管理 - {{ storeName }}</h2>
       <router-link :to="`/admin/${brandId}/orders`" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>返回選擇店鋪
       </router-link>
