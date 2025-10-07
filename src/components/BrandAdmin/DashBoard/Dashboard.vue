@@ -16,7 +16,7 @@
     <div v-if="!isLoading && !error">
       <!-- 頁面頂部 -->
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">{{ brandName }} 營業儀表板</h4>
+        <h4 class="mb-0">{{ dashboardTitle }} 營業儀表板</h4>
         <button class="btn btn-outline-secondary" @click="refreshData" :disabled="isRefreshing">
           <span
             v-if="isRefreshing"
@@ -414,9 +414,12 @@ import { useRoute } from 'vue-router'
 import { BModal, BButton } from 'bootstrap-vue-next'
 import api from '@/api'
 import PaymentMethodsPieChart from '@/components/BrandAdmin/Order/Charts/PaymentMethodsPieChart.vue'
+import { usePermissions } from '@/composables/usePermissions'
 
 const route = useRoute()
 const brandId = computed(() => route.params.brandId)
+
+const { currentUserRole, currentStore, currentBrand, hasRole, PERMISSIONS } = usePermissions()
 
 const isLoading = ref(true)
 const isRefreshing = ref(false)
@@ -444,6 +447,15 @@ const tempCommissionRates = reactive({
   onlinePayment: 3,
 })
 
+const dashboardTitle = computed(() => {
+  if (hasRole(PERMISSIONS.BRAND_ADMIN)) {
+    return brandName.value || '品牌'
+  } else if (currentStore.value) {
+    return currentStore.value.name || '店鋪'
+  }
+  return '店鋪'
+})
+
 // 載入儲存的設定
 const loadCommissionSettings = () => {
   const saved = localStorage.getItem(`commission_rates_${brandId.value}`)
@@ -453,7 +465,6 @@ const loadCommissionSettings = () => {
     commissionRates.ubereats = rates.ubereats
     commissionRates.onlinePayment = rates.onlinePayment
   }
-  // 同步到 temp 變數
   tempCommissionRates.foodpanda = commissionRates.foodpanda
   tempCommissionRates.ubereats = commissionRates.ubereats
   tempCommissionRates.onlinePayment = commissionRates.onlinePayment
@@ -461,7 +472,6 @@ const loadCommissionSettings = () => {
 
 // 打開設定彈窗
 const openCommissionSettings = () => {
-  // 打開前先同步當前數值到 temp
   tempCommissionRates.foodpanda = commissionRates.foodpanda
   tempCommissionRates.ubereats = commissionRates.ubereats
   tempCommissionRates.onlinePayment = commissionRates.onlinePayment
@@ -488,11 +498,9 @@ const cancelCommissionSettings = () => {
 
 // 判斷訂單所屬平台
 const getPlatform = (order) => {
-  // 優先檢查 platformInfo
   if (order.platformInfo?.platform) {
     return order.platformInfo.platform
   }
-  // 如果是 delivery 但沒有 platformInfo，視為 direct
   if (order.orderType === 'delivery') {
     return 'direct'
   }
@@ -516,7 +524,6 @@ const revenueStats = computed(() => {
 
     const platform = getPlatform(order)
 
-    // 根據 orderType 和 platform 分類
     if (order.orderType === 'dine_in') {
       stats.dineIn += amount
     } else if (order.orderType === 'takeout') {
@@ -527,7 +534,6 @@ const revenueStats = computed(() => {
       } else if (platform === 'ubereats') {
         stats.ubereats += amount
       } else {
-        // direct 或其他情況，算在外送
         stats.delivery += amount
       }
     }
@@ -581,7 +587,6 @@ const paymentMethodsData = computed(() => {
     } else {
       const baseMethod = formatPaymentMethod(order.paymentMethod)
 
-      // 如果是外送平台，標註平台名稱
       if (platform === 'foodpanda') {
         methodKey = `${baseMethod} (Foodpanda)`
       } else if (platform === 'ubereats') {
@@ -594,9 +599,6 @@ const paymentMethodsData = computed(() => {
     methods[methodKey] = (methods[methodKey] || 0) + 1
   })
 
-  // 調試：顯示付款方式統計
-  console.log('付款方式統計:', methods)
-
   return methods
 })
 
@@ -606,16 +608,13 @@ const actualIncomeStats = computed(() => {
   const uberEatsRevenue = revenueStats.value.ubereats
   const totalRevenue = revenueStats.value.total
 
-  // 計算平台抽成
   const foodpandaDeduction = (foodpandaRevenue * commissionRates.foodpanda) / 100
   const uberEatsDeduction = (uberEatsRevenue * commissionRates.ubereats) / 100
 
-  // 計算線上付款手續費（排除外送平台的訂單）
   let onlinePaymentRevenue = 0
   allOrders.value.forEach((order) => {
     const platform = getPlatform(order)
 
-    // 只計算非外送平台、已付款、且使用線上付款方式的訂單
     if (
       platform !== 'foodpanda' &&
       platform !== 'ubereats' &&
@@ -712,9 +711,9 @@ const setPeriod = (period) => {
   loadData(true)
 }
 
-// 格式化日期 - 使用本地時區
+// 格式化日期
 const formatDate = (date) => {
-  return date.toLocaleDateString('en-CA') // 返回 YYYY-MM-DD 格式
+  return date.toLocaleDateString('en-CA')
 }
 
 // 獲取品牌資訊
@@ -734,7 +733,15 @@ const fetchStores = async () => {
   try {
     const response = await api.store.getAllStores({ brandId: brandId.value })
     if (response && response.stores) {
-      stores.value = response.stores
+      if (hasRole(PERMISSIONS.STORE_ADMIN) && !hasRole(PERMISSIONS.BRAND_ADMIN)) {
+        if (currentStore.value && currentStore.value._id) {
+          stores.value = response.stores.filter((store) => store._id === currentStore.value._id)
+        } else {
+          stores.value = []
+        }
+      } else {
+        stores.value = response.stores
+      }
     }
   } catch (err) {
     console.error('獲取店鋪列表失敗:', err)
