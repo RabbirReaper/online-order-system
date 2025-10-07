@@ -284,6 +284,17 @@ export const updateCurrentAdminProfile = async (session, updateData) => {
 
   // 檢查用戶名是否已被其他管理員使用
   if (name.trim() !== admin.name) {
+    // 檢查 60 天修改限制
+    if (admin.lastNameChange) {
+      const daysSinceLastChange = Math.floor(
+        (Date.now() - admin.lastNameChange.getTime()) / (1000 * 60 * 60 * 24),
+      )
+      if (daysSinceLastChange < 60) {
+        const daysRemaining = 60 - daysSinceLastChange
+        throw new AppError(`用戶名 60 天內只能修改一次，還需等待 ${daysRemaining} 天`, 400)
+      }
+    }
+
     // 確定檢查範圍 - 根據管理員類型
     let checkBrandId
     if (['primary_system_admin', 'system_admin'].includes(admin.role)) {
@@ -302,6 +313,9 @@ export const updateCurrentAdminProfile = async (session, updateData) => {
       const scope = checkBrandId ? '此品牌內' : '系統內'
       throw new AppError(`此用戶名在${scope}已被使用`, 400)
     }
+
+    // 記錄本次名稱修改時間
+    admin.lastNameChange = new Date()
   }
 
   // 更新資料

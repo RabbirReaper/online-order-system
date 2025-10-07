@@ -20,7 +20,7 @@
                 required
               />
               <div class="invalid-feedback" v-if="profileErrors.name">{{ profileErrors.name }}</div>
-              <div class="form-text">請輸入您的用戶名</div>
+              <div class="form-text">請輸入您的用戶名，注意名稱60天只能修改1次</div>
             </div>
 
             <!-- 電話號碼 -->
