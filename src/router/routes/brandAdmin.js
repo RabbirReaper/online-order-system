@@ -317,7 +317,7 @@ export const brandAdminRoutes = [
         meta: {
           requiresAuth: true,
           title: '管理員管理',
-          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'],
+          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'],
         },
       },
       {
@@ -327,7 +327,7 @@ export const brandAdminRoutes = [
         meta: {
           requiresAuth: true,
           title: '新增管理員',
-          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'],
+          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'],
         },
       },
       {
@@ -338,7 +338,7 @@ export const brandAdminRoutes = [
         meta: {
           requiresAuth: true,
           title: '編輯管理員',
-          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'],
+          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'],
         },
       },
 
