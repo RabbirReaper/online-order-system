@@ -105,3 +105,22 @@ export const deletePointRule = asyncHandler(async (req, res) => {
     message: '點數規則刪除成功',
   })
 })
+
+// 獲取啟用的點數規則（客戶端）
+export const getActivePointRules = asyncHandler(async (req, res) => {
+  const brandId = req.params.brandId
+
+  if (!brandId) {
+    return res.status(400).json({
+      success: false,
+      message: 'brandId 為必須參數',
+    })
+  }
+
+  const rules = await pointService.pointRule.getActivePointRules(brandId)
+
+  res.json({
+    success: true,
+    rules,
+  })
+})

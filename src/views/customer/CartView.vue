@@ -176,6 +176,31 @@
             <span>總計</span>
             <span>${{ calculateTotal() }}</span>
           </div>
+
+          <!-- 點數預覽 -->
+          <div
+            v-if="estimatedPoints && !estimatedPoints.insufficientAmount"
+            class="points-preview mt-3 pt-3 border-top"
+          >
+            <!-- 顯示可獲得的點數 -->
+            <div class="d-flex align-items-center">
+              <i class="bi bi-star-fill text-warning me-2"></i>
+              <span class="text-muted">本次消費預計可獲得</span>
+              <span class="fw-bold text-warning ms-2 fs-5">{{ estimatedPoints.points }}</span>
+              <span class="text-muted ms-1">點</span>
+            </div>
+          </div>
+
+          <!-- 未登入用戶的點數提示 -->
+          <div
+            v-if="!authStore.isLoggedIn && activePointRules.length > 0 && calculateTotal() > 0"
+            class="points-login-hint border-top"
+          >
+            <div class="d-flex align-items-center">
+              <i class="bi bi-star text-warning"></i>
+              <small>登入會員享有點數回饋！</small>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -346,6 +371,10 @@ const appliedCoupons = ref([]) // 已應用的折價券
 const isLoadingCoupons = ref(false)
 const showConfirmModal = ref(false)
 
+// 點數相關狀態
+const activePointRules = ref([])
+const isLoadingPointRules = ref(false)
+
 // 計算屬性
 const isFormValid = computed(() => {
   if (orderType.value === 'dineIn') {
@@ -465,6 +494,43 @@ const couponDiscount = computed(() => {
   return appliedCoupons.value.reduce((total, coupon) => total + coupon.amount, 0)
 })
 
+// 計算預估獲得的點數
+const estimatedPoints = computed(() => {
+  // 只有登入用戶才顯示點數預覽
+  if (!authStore.isLoggedIn || activePointRules.value.length === 0) {
+    return null
+  }
+
+  // 找到消費金額類型的規則
+  const purchaseRule = activePointRules.value.find((rule) => rule.type === 'purchase_amount')
+
+  if (!purchaseRule) {
+    return null
+  }
+
+  // 計算實際付款金額（扣除優惠後）
+  const finalAmount = calculateTotal()
+
+  // 檢查是否達到最低消費金額
+  if (finalAmount < purchaseRule.minimumAmount) {
+    return {
+      points: 0,
+      rule: purchaseRule,
+      insufficientAmount: true,
+      shortfall: purchaseRule.minimumAmount - finalAmount,
+    }
+  }
+
+  // 計算點數（向下取整）
+  const points = Math.floor(finalAmount / purchaseRule.conversionRate)
+
+  return {
+    points,
+    rule: purchaseRule,
+    insufficientAmount: false,
+  }
+})
+
 // 方法
 const clearError = () => {
   errorMsg.value = ''
@@ -575,6 +641,27 @@ const fetchUserCoupons = async () => {
     console.error('獲取用戶券資料失敗:', error)
   } finally {
     isLoadingCoupons.value = false
+  }
+}
+
+// 獲取啟用的點數規則
+const fetchActivePointRules = async () => {
+  if (!authStore.currentBrandId) {
+    return
+  }
+
+  try {
+    isLoadingPointRules.value = true
+
+    const response = await api.promotion.getActivePointRules(authStore.currentBrandId)
+
+    if (response.success) {
+      activePointRules.value = response.rules || []
+    }
+  } catch (error) {
+    console.error('獲取點數規則失敗:', error)
+  } finally {
+    isLoadingPointRules.value = false
   }
 }
 
@@ -842,6 +929,16 @@ watch(
   },
 )
 
+// 監聽品牌變化，重新獲取點數規則
+watch(
+  () => authStore.currentBrandId,
+  (newValue) => {
+    if (newValue) {
+      fetchActivePointRules()
+    }
+  },
+)
+
 // 生命週期
 onMounted(() => {
   window.scrollTo(0, 0)
@@ -884,6 +981,11 @@ onMounted(() => {
   // 如果用戶已登入，獲取券資料
   if (authStore.isLoggedIn) {
     fetchUserCoupons()
+  }
+
+  // 獲取點數規則（不論是否登入都獲取，用於顯示提示）
+  if (authStore.currentBrandId) {
+    fetchActivePointRules()
   }
 })
 </script>
@@ -970,6 +1072,28 @@ input[type='datetime-local'] {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+}
+
+.points-preview {
+  background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.points-preview i.bi-star-fill {
+  font-size: 1.2rem;
+}
+
+.points-login-hint {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 12px;
+}
+
+.points-login-hint i.bi-star {
+  font-size: 1.1rem;
 }
 
 @media (max-width: 576px) {
