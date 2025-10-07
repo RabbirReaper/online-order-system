@@ -50,14 +50,13 @@ apiClient.interceptors.response.use(
       const { status } = error.response
       const errorMessage = error.response.data.message || '請求失敗'
 
-      // 處理 Session 過期 (401 或 403 錯誤)
-      if (status === 401 || status === 403) {
-        // 檢查是否為 session 過期相關錯誤
+      // 處理 Session 過期 (401 錯誤)
+      if (status === 401) {
+        // 檢查是否為 session 過期或未登入
         const isSessionExpired =
           errorMessage.includes('未登入') ||
           errorMessage.includes('未授權') ||
-          errorMessage.includes('登入') ||
-          errorMessage.includes('權限')
+          errorMessage.includes('登入')
 
         if (isSessionExpired) {
           // 顯示 Toast 通知
@@ -103,6 +102,12 @@ apiClient.interceptors.response.use(
             }
           }, 500)
         }
+      }
+
+      // 處理權限不足 (403 錯誤) - 不跳轉登入頁面
+      if (status === 403) {
+        console.warn('權限不足:', errorMessage)
+        // 403 錯誤由各組件自行處理，不在此統一跳轉
       }
 
       console.error('API 請求錯誤:', errorMessage)
