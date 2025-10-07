@@ -225,7 +225,7 @@
           </div>
 
           <!-- 用戶管理 - 需要店鋪管理員(2)以上權限才顯示整個區塊 -->
-          <div class="mb-1" v-if="hasRole(PERMISSIONS.STORE_ADMIN)">
+          <div class="mb-1" v-if="hasRole(PERMISSIONS.PRIMARY_STORE_ADMIN)">
             <CollapsibleSection
               title="用戶管理"
               :initialExpanded="isExpanded('userManagement')"
@@ -247,7 +247,7 @@
               <router-link
                 class="nav-link ps-4 py-2"
                 :to="`/admin/${brandId}/customers`"
-                v-if="hasRole(PERMISSIONS.STORE_ADMIN)"
+                v-if="hasRole(PERMISSIONS.PRIMARY_STORE_ADMIN)"
               >
                 <i class="bi bi-person-vcard me-2"></i>
                 顧客管理
