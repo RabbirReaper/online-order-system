@@ -1,6 +1,8 @@
 // API 主入口
 
 import axios from 'axios'
+import { toastSessionExpired } from '@/utils/toast.js'
+import router from '@/router'
 import adminAuthApi from './modules/adminAuth.js'
 import userAuthApi from './modules/userAuth.js'
 import authApi from './modules/auth.js'
@@ -45,8 +47,64 @@ apiClient.interceptors.response.use(
   (error) => {
     // 統一錯誤處理
     if (error.response && error.response.data) {
-      // 處理後端返回的錯誤信息
+      const { status } = error.response
       const errorMessage = error.response.data.message || '請求失敗'
+
+      // 處理 Session 過期 (401 或 403 錯誤)
+      if (status === 401 || status === 403) {
+        // 檢查是否為 session 過期相關錯誤
+        const isSessionExpired =
+          errorMessage.includes('未登入') ||
+          errorMessage.includes('未授權') ||
+          errorMessage.includes('登入') ||
+          errorMessage.includes('權限')
+
+        if (isSessionExpired) {
+          // 顯示 Toast 通知
+          toastSessionExpired()
+
+          // 判斷當前路徑是管理員還是用戶
+          const currentPath = router.currentRoute.value.path
+          const isAdminPath = currentPath.includes('/admin/') || currentPath.includes('/boss/')
+
+          // 延遲跳轉，確保 Toast 顯示
+          setTimeout(() => {
+            if (isAdminPath) {
+              // 管理員路徑 - 獲取 brandId 並跳轉到對應登入頁
+              const brandIdMatch = currentPath.match(/\/admin\/([^/]+)/)
+              const brandId = brandIdMatch ? brandIdMatch[1] : null
+
+              if (brandId && brandId !== 'login') {
+                router.push({
+                  path: `/admin/${brandId}/login`,
+                  query: { redirect: currentPath },
+                })
+              } else {
+                // Boss 或無法識別的管理員路徑
+                router.push({
+                  path: '/boss/login',
+                  query: { redirect: currentPath },
+                })
+              }
+            } else {
+              // 用戶路徑 - 跳轉到用戶登入頁
+              const brandIdMatch = currentPath.match(/\/brands\/([^/]+)/)
+              const brandId = brandIdMatch ? brandIdMatch[1] : null
+
+              if (brandId) {
+                router.push({
+                  path: `/brands/${brandId}/auth/login`,
+                  query: { redirect: currentPath },
+                })
+              } else {
+                // 無法識別 brandId，跳轉到首頁或預設登入頁
+                router.push('/auth/login')
+              }
+            }
+          }, 500)
+        }
+      }
+
       console.error('API 請求錯誤:', errorMessage)
     } else {
       console.error('連接服務器失敗:', error.message)
