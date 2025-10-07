@@ -116,7 +116,7 @@
       <div v-if="!isLoadingMenu && !menuError && !hasMenuCategories" class="text-center py-5">
         <i class="bi bi-journal-x display-1 text-muted"></i>
         <h5 class="mt-3 text-muted">目前沒有可用的{{ getMenuTypeText(currentMenuType) }}</h5>
-        <p class="text-muted">請稍後再試或聯繫店家</p>
+        <p class="text-muted">店家尚未啟用</p>
       </div>
 
       <!-- 購物車按鈕 -->
