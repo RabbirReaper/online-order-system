@@ -343,9 +343,6 @@ router.get(
 )
 
 // 🆕 獲取啟用的點數規則（客戶端）
-router.get(
-  '/brands/:brandId/points/active-rules',
-  pointRuleController.getActivePointRules,
-)
+router.get('/brands/:brandId/points/active-rules', pointRuleController.getActivePointRules)
 
 export default router

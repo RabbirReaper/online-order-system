@@ -244,7 +244,9 @@
                 <i class="bi bi-plus-circle me-1"></i>新增階梯
               </BButton>
             </div>
-            <BFormText>設定不同距離區間的外送費用，例如：0-1000公尺30元、1001-3000公尺50元</BFormText>
+            <BFormText
+              >設定不同距離區間的外送費用，例如：0-1000公尺30元、1001-3000公尺50元</BFormText
+            >
           </div>
 
           <!-- 預訂設定 -->
@@ -299,7 +301,8 @@
                     errors.liffId
                   }}</BFormInvalidFeedback>
                   <BFormText class="text-muted small">
-                    輸入 LINE LIFF 應用程式 ID，用於生成 LINE 點餐連結 (https://liff.line.me/{liffId})
+                    輸入 LINE LIFF 應用程式 ID，用於生成 LINE 點餐連結
+                    (https://liff.line.me/{liffId})
                   </BFormText>
                 </div>
 
@@ -727,14 +730,16 @@ const paymentOptions = reactive({
 
 // 更新現場支援付款方式
 const updateCounterPayments = () => {
-  formData.counterPayments = Object.keys(paymentOptions.counter)
-    .filter((key) => paymentOptions.counter[key])
+  formData.counterPayments = Object.keys(paymentOptions.counter).filter(
+    (key) => paymentOptions.counter[key],
+  )
 }
 
 // 更新客戶端支援付款方式
 const updateCustomerPayments = () => {
-  formData.customerPayments = Object.keys(paymentOptions.customer)
-    .filter((key) => paymentOptions.customer[key])
+  formData.customerPayments = Object.keys(paymentOptions.customer).filter(
+    (key) => paymentOptions.customer[key],
+  )
 }
 
 // 新增外送費用階梯

@@ -425,7 +425,7 @@ const formatDate = (dateString) => {
   const diffDays = diffTime / (1000 * 60 * 60 * 24)
 
   if (diffDays === 0) {
-    return ('今天')
+    return '今天'
   } else if (diffDays < 7) {
     return `${diffDays} 天前`
   } else {
@@ -478,7 +478,7 @@ const fetchAdmins = async () => {
       if (userStore && userStore._id) {
         params = {
           brandId: brandId.value,
-          storeId: userStore._id
+          storeId: userStore._id,
         }
       } else {
         errorMessage.value = '無法獲取店鋪資訊'

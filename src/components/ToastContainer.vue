@@ -1,10 +1,7 @@
 <template>
   <!-- Toast 容器組件，用於全局顯示 Toast 通知 -->
   <!-- 使用 BToastOrchestrator 來管理所有的 toast -->
-  <BToastOrchestrator
-    ref="orchestratorRef"
-    teleport-to="body"
-  />
+  <BToastOrchestrator ref="orchestratorRef" teleport-to="body" />
 </template>
 
 <script setup>
@@ -49,7 +46,9 @@ onUnmounted(() => {
 <style scoped>
 /* Bootstrap toast 淡出動畫 */
 :deep(.toast) {
-  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  transition:
+    opacity 0.3s ease-in-out,
+    transform 0.3s ease-in-out;
 }
 
 :deep(.toast.hide) {

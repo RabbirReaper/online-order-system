@@ -36,7 +36,13 @@ router.get(
 // 獲取店鋪下的管理員
 router.get(
   '/brands/:brandId/stores/:storeId',
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin', 'primary_store_admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+  ),
   requireBrandAccess,
   requireStoreAccess,
   getAllAdmins,

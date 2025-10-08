@@ -890,7 +890,6 @@
       </template>
     </BModal>
 
-
     <!-- QR Code 桌牌生成器 -->
     <QRTableCardGenerator
       v-if="store"
