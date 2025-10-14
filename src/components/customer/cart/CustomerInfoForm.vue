@@ -55,14 +55,6 @@
             placeholder="請輸入聯絡電話"
           />
         </div>
-        <!-- Email 欄位暫時註解，後續採用手機號碼簡訊或Line訊息通知 -->
-        <!--
-        <div class="col-12">
-          <label for="customerEmail" class="form-label">Email</label>
-          <input type="email" class="form-control" id="customerEmail" v-model="localCustomerInfo.email"
-            placeholder="選填，訂單確認將發送到您的信箱">
-        </div>
-        -->
       </div>
     </div>
 
@@ -117,56 +109,33 @@
       </p>
       <div class="row g-3">
         <div class="col-12">
-          <label for="cardNumber" class="form-label">卡號</label>
-          <input
-            type="text"
-            class="form-control"
-            id="cardNumber"
-            placeholder="請輸入 16 位卡號"
-            maxlength="19"
-            v-model="creditCardInfo.number"
-            @input="formatCardNumber"
-          />
+          <label for="card-number" class="form-label">卡號 <span class="text-danger">*</span></label>
+          <div class="tpfield" id="card-number"></div>
         </div>
         <div class="col-md-6">
-          <label for="expiryDate" class="form-label">有效期限</label>
-          <input
-            type="text"
-            class="form-control"
-            id="expiryDate"
-            placeholder="MM/YY"
-            maxlength="5"
-            v-model="creditCardInfo.expiry"
-            @input="formatExpiryDate"
-          />
+          <label for="card-expiration-date" class="form-label">有效期限 <span class="text-danger">*</span></label>
+          <div class="tpfield" id="card-expiration-date"></div>
         </div>
         <div class="col-md-6">
-          <label for="cvv" class="form-label">安全碼</label>
-          <input
-            type="password"
-            class="form-control"
-            id="cvv"
-            placeholder="CVV"
-            maxlength="3"
-            v-model="creditCardInfo.cvv"
-          />
+          <label for="card-ccv" class="form-label">安全碼 <span class="text-danger">*</span></label>
+          <div class="tpfield" id="card-ccv"></div>
         </div>
         <div class="col-12">
-          <label for="cardHolder" class="form-label">持卡人姓名</label>
+          <label for="cardHolder" class="form-label">持卡人姓名 <span class="text-danger">*</span></label>
           <input
             type="text"
             class="form-control"
             id="cardHolder"
             placeholder="請輸入卡片上的姓名"
-            v-model="creditCardInfo.name"
+            v-model="cardHolderName"
           />
         </div>
       </div>
 
-      <!-- 暫時隱藏電子支付選項，僅顯示提示 -->
-      <div class="alert alert-warning mt-3">
+      <!-- TapPay Fields 錯誤提示 -->
+      <div v-if="cardError" class="alert alert-danger mt-3">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        信用卡支付功能目前處於開發階段，暫時僅支援現場付款。
+        {{ cardError }}
       </div>
     </div>
 
@@ -197,7 +166,6 @@ const props = defineProps({
     default: () => ({
       name: '',
       phone: '',
-      // email: '' // 暫時註解
     }),
   },
   paymentMethod: {
@@ -206,9 +174,8 @@ const props = defineProps({
   },
   orderType: {
     type: String,
-    default: 'takeout', // 'dine_in', 'takeout', 'delivery'
+    default: 'takeout',
   },
-  // 可選的 prop，如果父組件提供則使用
   customerPayments: {
     type: Array,
     default: null,
@@ -217,60 +184,46 @@ const props = defineProps({
 
 const emit = defineEmits(['update:customerInfo', 'update:paymentMethod'])
 
-// 本地狀態 - 避免直接使用 reactive 物件的引用
 const localCustomerInfo = ref({
   name: props.customerInfo.name || '',
   phone: props.customerInfo.phone || '',
 })
 const localPaymentMethod = ref(props.paymentMethod)
 
-// 用戶認證相關狀態
 const userProfile = ref(null)
 const isLoadingProfile = ref(false)
 
-// 門市資訊
 const storeData = ref(null)
 
-// 信用卡資訊
-const creditCardInfo = ref({
-  number: '',
-  expiry: '',
-  cvv: '',
-  name: '',
-})
+const cardHolderName = ref('')
+const cardError = ref('')
+const canGetPrime = ref(false)
+const tappayInitialized = ref(false)
 
-// 獲取可用的付款方式（優先使用 prop，否則從 API 獲取門市資訊）
 const availablePayments = computed(() => {
-  // 如果 prop 有提供，則使用 prop
   if (props.customerPayments !== null) {
     return props.customerPayments
   }
 
-  // 從門市資料讀取
   if (storeData.value && storeData.value.customerPayments) {
     return storeData.value.customerPayments
   }
 
-  // 如果都沒有設定，只顯示現場付款
   return []
 })
 
-// 判斷是否顯示信用卡選項
 const showCreditCard = computed(() => {
   return availablePayments.value.includes('credit_card')
 })
 
-// 判斷是否顯示 LINE Pay 選項
 const showLinePay = computed(() => {
   return availablePayments.value.includes('line_pay')
 })
 
-// 判斷是否有任何線上付款方式
 const hasOnlinePayment = computed(() => {
   return showCreditCard.value || showLinePay.value
 })
 
-// 載入門市資料
 const loadStoreData = async () => {
   try {
     const brandId = cartStore.currentBrandId
@@ -289,7 +242,6 @@ const loadStoreData = async () => {
     if (response && response.success) {
       storeData.value = response.store
 
-      // 如果沒有可用的線上付款方式，自動選擇現場付款
       if (availablePayments.value.length === 0) {
         localPaymentMethod.value = '現金'
         emit('update:paymentMethod', '現金')
@@ -300,7 +252,6 @@ const loadStoreData = async () => {
   }
 }
 
-// 載入用戶資料
 const loadUserProfile = async () => {
   if (!authStore.isLoggedIn || !authStore.currentBrandId) {
     return
@@ -308,11 +259,9 @@ const loadUserProfile = async () => {
 
   try {
     isLoadingProfile.value = true
-    // 使用統一的 getUserProfile 方法
     const profile = await authStore.getUserProfile()
     userProfile.value = profile
 
-    // 如果表單還沒有資料，自動填入用戶資料
     if (!localCustomerInfo.value.name && !localCustomerInfo.value.phone) {
       autoFillUserInfo()
     }
@@ -323,7 +272,6 @@ const loadUserProfile = async () => {
   }
 }
 
-// 自動填入用戶資料
 const autoFillUserInfo = () => {
   if (!userProfile.value) return
 
@@ -332,11 +280,9 @@ const autoFillUserInfo = () => {
     phone: userProfile.value.phone || '',
   }
 
-  // 通知父組件更新
   emit('update:customerInfo', { ...localCustomerInfo.value })
 }
 
-// 跳轉到登入頁面
 const goToLogin = () => {
   const currentPath = router.currentRoute.value.fullPath
   router.push({
@@ -345,7 +291,6 @@ const goToLogin = () => {
   })
 }
 
-// 手動處理輸入事件，避免遞歸更新
 const updateName = (event) => {
   localCustomerInfo.value.name = event.target.value
   emit('update:customerInfo', { ...localCustomerInfo.value })
@@ -356,21 +301,142 @@ const updatePhone = (event) => {
   emit('update:customerInfo', { ...localCustomerInfo.value })
 }
 
-// 當訂單類型變為內用時，清空顧客資訊
+const initTapPay = () => {
+  if (typeof window.TPDirect === 'undefined') {
+    console.error('TapPay SDK 未載入')
+    cardError.value = '支付系統初始化失敗，請重新整理頁面'
+    return
+  }
+
+  try {
+    const appId = import.meta.env.VITE_TAPPAY_APP_ID
+    const appKey = import.meta.env.VITE_TAPPAY_APP_KEY
+    const env = import.meta.env.VITE_TAPPAY_ENV || 'sandbox'
+
+    window.TPDirect.setupSDK(appId, appKey, env)
+
+    window.TPDirect.card.setup({
+      fields: {
+        number: {
+          element: '#card-number',
+          placeholder: '**** **** **** ****'
+        },
+        expirationDate: {
+          element: '#card-expiration-date',
+          placeholder: 'MM / YY'
+        },
+        ccv: {
+          element: '#card-ccv',
+          placeholder: 'CVV'
+        }
+      },
+      styles: {
+        'input': {
+          'color': '#495057',
+          'font-size': '16px',
+          'line-height': '1.5',
+          'padding': '0.375rem 0.75rem'
+        },
+        'input.ccv': {
+          'font-size': '16px'
+        },
+        'input.expiration-date': {
+          'font-size': '16px'
+        },
+        'input.card-number': {
+          'font-size': '16px'
+        },
+        ':focus': {
+          'color': '#495057'
+        },
+        '.valid': {
+          'color': '#198754'
+        },
+        '.invalid': {
+          'color': '#dc3545'
+        }
+      },
+      isMaskCreditCardNumber: true,
+      maskCreditCardNumberRange: {
+        beginIndex: 6,
+        endIndex: 11
+      }
+    })
+
+    window.TPDirect.card.onUpdate((update) => {
+      canGetPrime.value = update.canGetPrime
+
+      if (update.hasError) {
+        if (update.status.number === 2) {
+          cardError.value = '請輸入正確的卡號'
+        } else if (update.status.expiry === 2) {
+          cardError.value = '請輸入正確的有效期限'
+        } else if (update.status.ccv === 2) {
+          cardError.value = '請輸入正確的安全碼'
+        }
+      } else if (update.canGetPrime) {
+        cardError.value = ''
+      }
+    })
+
+    tappayInitialized.value = true
+    console.log('TapPay SDK 初始化成功')
+  } catch (error) {
+    console.error('TapPay 初始化失敗:', error)
+    cardError.value = '支付系統初始化失敗'
+  }
+}
+
+const getPrime = () => {
+  return new Promise((resolve, reject) => {
+    if (!tappayInitialized.value) {
+      reject(new Error('TapPay 尚未初始化'))
+      return
+    }
+
+    if (!canGetPrime.value) {
+      reject(new Error('請完整填寫信用卡資料'))
+      return
+    }
+
+    if (!cardHolderName.value || cardHolderName.value.trim() === '') {
+      reject(new Error('請輸入持卡人姓名'))
+      return
+    }
+
+    const tappayStatus = window.TPDirect.card.getTappayFieldsStatus()
+
+    if (!tappayStatus.canGetPrime) {
+      reject(new Error('信用卡資料填寫不完整或有誤'))
+      return
+    }
+
+    window.TPDirect.card.getPrime((result) => {
+      if (result.status !== 0) {
+        reject(new Error(result.msg || '取得付款資訊失敗'))
+        return
+      }
+
+      resolve({
+        prime: result.card.prime,
+        cardHolder: cardHolderName.value,
+        cardInfo: result.card
+      })
+    })
+  })
+}
+
 watch(
   () => props.orderType,
   (newType) => {
     if (newType === 'dineIn') {
-      // 如果用戶已登入，保留登入用戶的資訊
       if (authStore.isLoggedIn && userProfile.value) {
         autoFillUserInfo()
       } else {
-        // 只有在未登入時才清空顧客資訊
         localCustomerInfo.value = { name: '', phone: '' }
         emit('update:customerInfo', { ...localCustomerInfo.value })
       }
     } else {
-      // 切換到外帶或外送時，如果用戶已登入且表單為空，自動填入用戶資訊
       if (
         authStore.isLoggedIn &&
         userProfile.value &&
@@ -383,7 +449,6 @@ watch(
   },
 )
 
-// 只在 props 變化時更新本地狀態，避免雙向綁定造成的遞歸
 watch(
   () => props.customerInfo,
   (newVal) => {
@@ -409,12 +474,16 @@ watch(
   },
 )
 
-// 監聽付款方式變化
 watch(localPaymentMethod, (newVal) => {
   emit('update:paymentMethod', newVal)
+
+  if (newVal === '信用卡' && showCreditCard.value && !tappayInitialized.value) {
+    setTimeout(() => {
+      initTapPay()
+    }, 100)
+  }
 })
 
-// 監聽認證狀態變化
 watch(
   () => authStore.isLoggedIn,
   async (newVal) => {
@@ -426,39 +495,24 @@ watch(
   },
 )
 
-// 格式化信用卡號碼（每 4 位加一個空格）
-const formatCardNumber = (e) => {
-  let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-
-  if (value.length > 0) {
-    value = value.match(new RegExp('.{1,4}', 'g')).join(' ')
-  }
-
-  creditCardInfo.value.number = value
-}
-
-// 格式化有效期限（自動加入 / 分隔符）
-const formatExpiryDate = (e) => {
-  let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-
-  if (value.length > 2) {
-    value = value.substr(0, 2) + '/' + value.substr(2, 2)
-  }
-
-  creditCardInfo.value.expiry = value
-}
-
-// 組件掛載後檢查認證狀態
 onMounted(async () => {
-  // 載入門市資料（獲取可用付款方式）
   if (props.customerPayments === null) {
     await loadStoreData()
   }
 
-  // 如果已經登入，載入用戶資料
   if (authStore.isLoggedIn) {
     await loadUserProfile()
   }
+
+  if (localPaymentMethod.value === '信用卡' && showCreditCard.value) {
+    setTimeout(() => {
+      initTapPay()
+    }, 100)
+  }
+})
+
+defineExpose({
+  getPrime
 })
 </script>
 
@@ -481,6 +535,22 @@ onMounted(async () => {
   border-radius: 8px;
   padding: 15px;
   border: 1px solid #dee2e6;
+}
+
+.tpfield {
+  height: 40px;
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background-color: #fff;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.tpfield:focus-within {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
 .alert {

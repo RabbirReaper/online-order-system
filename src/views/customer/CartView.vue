@@ -127,6 +127,7 @@
 
         <!-- Customer Information -->
         <CustomerInfoForm
+          ref="customerInfoFormRef"
           v-model:customer-info="customerInfo"
           v-model:payment-method="paymentMethod"
           :order-type="orderType"
@@ -336,6 +337,7 @@ const successMsg = ref('')
 
 // 表單資料
 const orderRemarks = ref('')
+const customerInfoFormRef = ref(null)
 // 從 cartStore 初始化訂單類型和相關資訊
 const getInitialOrderType = () => {
   // 將後端格式轉換為前端格式
@@ -845,10 +847,9 @@ const submitOrder = async () => {
       })
     }
 
-    // 構建新的discounts結構 - 合併voucher和coupon折扣
+    // 構建折扣結構
     const discounts = []
 
-    // 添加兌換券折扣
     if (usedVouchers.value.length > 0) {
       usedVouchers.value.forEach((voucher) => {
         discounts.push({
@@ -859,7 +860,6 @@ const submitOrder = async () => {
       })
     }
 
-    // 添加折價券折扣
     if (appliedCoupons.value.length > 0) {
       appliedCoupons.value.forEach((coupon) => {
         discounts.push({
@@ -870,17 +870,28 @@ const submitOrder = async () => {
       })
     }
 
-    // 設置統一的折扣結構到cartStore
     cartStore.appliedCoupons = discounts
 
-    // 提交訂單
-    const result = await cartStore.submitOrder()
+    // 🆕 如果是信用卡付款，先取得 prime token
+    let primeToken = null
+    if (paymentMethod.value === '信用卡') {
+      try {
+        const primeResult = await customerInfoFormRef.value.getPrime()
+        primeToken = primeResult.prime
+        console.log('取得 TapPay Prime 成功')
+      } catch (primeError) {
+        console.error('取得 Prime 失敗:', primeError)
+        showError(primeError.message || '信用卡資訊驗證失敗，請檢查輸入')
+        showConfirmModal.value = false
+        return
+      }
+    }
+
+    // 提交訂單（帶上 primeToken）
+    const result = await cartStore.submitOrder(primeToken)
 
     if (result.success) {
       showConfirmModal.value = false
-
-      // 優惠券標記已由後端統一處理，前端不需要額外調用
-      // 後端在訂單創建時會自動標記所有使用的 Voucher 和 Coupon
 
       router.push({
         name: 'order-confirm',
