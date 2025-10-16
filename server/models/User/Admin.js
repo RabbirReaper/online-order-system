@@ -70,6 +70,10 @@ const AdminSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    lastNameChange: {
+      type: Date,
+      default: null,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Admin',

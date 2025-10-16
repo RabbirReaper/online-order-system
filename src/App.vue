@@ -1,4 +1,5 @@
 <template>
+  <ToastContainer />
   <router-view v-slot="{ Component, route }">
     <keep-alive :include="keepAliveList" :max="maxCacheCount">
       <component :is="Component" :key="isAdminRoute(route) ? undefined : route.fullPath" />
@@ -8,6 +9,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import ToastContainer from '@/components/ToastContainer.vue'
 
 // 需要緩存的組件名稱列表
 const keepAliveList = ref(['MenuView'])

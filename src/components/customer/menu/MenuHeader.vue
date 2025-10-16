@@ -6,7 +6,7 @@
         <nav class="navbar navbar-expand-lg navbar-light">
           <div class="container-fluid">
             <a class="navbar-brand" href="#" style="font-weight: bold">
-              <i class="bi bi-fire brand-icon me-2"></i>{{ storeName }}
+              {{ storeName }}
             </a>
             <div class="nav-icons">
               <template v-if="isLoggedIn">

@@ -398,7 +398,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   // 提交訂單
-  async function submitOrder() {
+async function submitOrder(primeToken = null) {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' }
     }
@@ -445,10 +445,9 @@ export const useCartStore = defineStore('cart', () => {
               note: item.note || '',
             }
           } else if (item.bundleInstance) {
-            // ✅ 這部分需要修改為符合後端 BundleInstance schema 的格式
             return {
               itemType: 'bundle',
-              templateId: item.bundleInstance.templateId, // 使用 templateId 而非 bundleId
+              templateId: item.bundleInstance.templateId,
               name: item.bundleInstance.name,
               description: item.bundleInstance.description,
               finalPrice: item.bundleInstance.finalPrice,
@@ -508,6 +507,8 @@ export const useCartStore = defineStore('cart', () => {
       console.log('品牌ID:', currentBrand.value)
       console.log('店鋪ID:', currentStore.value)
       console.log('用戶登入狀態:', authStore.isLoggedIn)
+      console.log('付款方式:', paymentMethod.value)
+      console.log('Prime Token:', primeToken ? '已提供' : '未提供')
       console.log('訂單資料:', JSON.stringify(orderData, null, 2))
       console.log('========================')
 
@@ -516,10 +517,9 @@ export const useCartStore = defineStore('cart', () => {
         brandId: currentBrand.value,
         storeId: currentStore.value,
         orderData,
-        paymentType: paymentType.value, // 使用store中的付款類型
-        paymentMethod: paymentMethod.value, // 使用store中的付款方式
-        // TODO: 如果是Online付款，需要在這裡添加primeToken
-        // primeToken: primeToken // 線上付款時需要的TapPay Prime Token
+        paymentType: paymentType.value,
+        paymentMethod: paymentMethod.value,
+        primeToken: primeToken,
       })
 
       console.log('=== API 回應 ===')

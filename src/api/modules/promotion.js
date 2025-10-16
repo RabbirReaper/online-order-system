@@ -387,5 +387,14 @@ export default function (apiClient) {
     getUserPointHistory(brandId, params = {}) {
       return apiClient.get(`/promotion/brands/${brandId}/points/history`, { params })
     },
+
+    /**
+     * 獲取啟用的點數規則（客戶端）
+     * @param {string} brandId - 品牌ID
+     * @returns {Promise} - API 回應
+     */
+    getActivePointRules(brandId) {
+      return apiClient.get(`/promotion/brands/${brandId}/points/active-rules`)
+    },
   }
 }

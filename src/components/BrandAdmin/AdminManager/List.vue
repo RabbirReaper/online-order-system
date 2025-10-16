@@ -37,7 +37,11 @@
       </div>
 
       <div>
-        <router-link :to="`/admin/${brandId}/store-admins/create`" class="btn btn-primary">
+        <router-link
+          v-if="canCreateAdmin"
+          :to="`/admin/${brandId}/store-admins/create`"
+          class="btn btn-primary"
+        >
           <i class="bi bi-plus-lg me-1"></i>新增管理員
         </router-link>
       </div>
@@ -155,7 +159,7 @@
             : '尚未創建任何管理員'
         }}
       </p>
-      <div class="mt-3" v-if="!searchQuery && !filterRole && !filterStatus">
+      <div class="mt-3" v-if="!searchQuery && !filterRole && !filterStatus && canCreateAdmin">
         <router-link :to="`/admin/${brandId}/store-admins/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增第一個管理員
         </router-link>
@@ -326,18 +330,56 @@ const getRoleBadgeClass = (role) => {
   return classes[role] || 'bg-secondary'
 }
 
+// 角色管理權限矩陣 - 定義誰可以管理誰
+const ROLE_MANAGEMENT_MATRIX = {
+  primary_system_admin: [
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+    'employee',
+  ],
+  system_admin: [
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+    'employee',
+  ],
+  primary_brand_admin: ['brand_admin', 'primary_store_admin', 'store_admin', 'employee'],
+  brand_admin: ['primary_store_admin', 'store_admin', 'employee'],
+  primary_store_admin: ['store_admin', 'employee'],
+  store_admin: [],
+  employee: [],
+}
+
+// 檢查當前用戶是否可以管理目標角色
+const canManageRole = (targetRole) => {
+  if (!currentUserRole.value) return false
+  const allowedRoles = ROLE_MANAGEMENT_MATRIX[currentUserRole.value] || []
+  return allowedRoles.includes(targetRole)
+}
+
+// 檢查當前用戶是否可以創建管理員（至少可以管理一個角色）
+const canCreateAdmin = computed(() => {
+  if (!currentUserRole.value) return false
+  const allowedRoles = ROLE_MANAGEMENT_MATRIX[currentUserRole.value] || []
+  return allowedRoles.length > 0
+})
+
 // 權限檢查函數
 const canEditAdmin = (admin) => {
-  // 簡化版權限檢查，實際應該根據後端返回的權限資訊
-  return true // 暫時允許所有操作，後端會進行實際權限檢查
+  return canManageRole(admin.role)
 }
 
 const canToggleAdmin = (admin) => {
-  return true // 暫時允許所有操作，後端會進行實際權限檢查
+  return canManageRole(admin.role)
 }
 
 const canDeleteAdmin = (admin) => {
-  return true // 暫時允許所有操作，後端會進行實際權限檢查
+  return canManageRole(admin.role)
 }
 
 // 計算過濾後的管理員列表
@@ -375,16 +417,15 @@ const formatDate = (dateString) => {
 
   const date = new Date(dateString)
   const now = new Date()
-  const diffTime = Math.abs(now - date)
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 1) {
-    return (
-      date.toLocaleTimeString('zh-TW', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }) + ' 今天'
-    )
+  // 比較日期部分（忽略時間）
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diffTime = nowOnly - dateOnly
+  const diffDays = diffTime / (1000 * 60 * 60 * 24)
+
+  if (diffDays === 0) {
+    return '今天'
   } else if (diffDays < 7) {
     return `${diffDays} 天前`
   } else {
@@ -412,7 +453,42 @@ const fetchAdmins = async () => {
   errorMessage.value = ''
 
   try {
-    const params = { brandId: brandId.value }
+    // 根據當前用戶角色構建 API 參數
+    let params = {}
+
+    // 先獲取當前用戶角色和信息
+    const authResponse = await api.adminAuth.checkStatus()
+    if (!authResponse.loggedIn) {
+      errorMessage.value = '用戶未登入'
+      return
+    }
+
+    const userRole = authResponse.role
+    const userStore = authResponse.store
+
+    // 根據角色決定調用哪個 API
+    if (userRole === 'primary_system_admin' || userRole === 'system_admin') {
+      // 系統管理員：查看品牌下的所有管理員
+      params = { brandId: brandId.value }
+    } else if (userRole === 'primary_brand_admin' || userRole === 'brand_admin') {
+      // 品牌管理員：查看品牌下的所有管理員
+      params = { brandId: brandId.value }
+    } else if (userRole === 'primary_store_admin') {
+      // 店鋪主管理員：只查看自己店鋪的管理員
+      if (userStore && userStore._id) {
+        params = {
+          brandId: brandId.value,
+          storeId: userStore._id,
+        }
+      } else {
+        errorMessage.value = '無法獲取店鋪資訊'
+        return
+      }
+    } else {
+      // store_admin 和 employee 不應該能訪問此頁面
+      errorMessage.value = '您沒有權限查看管理員列表'
+      return
+    }
 
     const response = await api.admin.getAllAdmins(params)
     if (response && response.admins) {

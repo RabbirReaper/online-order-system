@@ -67,15 +67,6 @@
                 今日公休
               </div>
             </div>
-
-            <div class="d-flex flex-wrap">
-              <span class="badge bg-info me-1 mb-1" v-if="hasMenu(store)">
-                <i class="bi bi-menu-button me-1"></i>菜單已設定
-              </span>
-              <span class="badge bg-warning me-1 mb-1" v-else>
-                <i class="bi bi-exclamation-triangle me-1"></i>尚未設定菜單
-              </span>
-            </div>
           </div>
 
           <div class="card-footer bg-transparent border-top-0">
@@ -152,11 +143,6 @@ const pagination = reactive({
 // 獲取當天星期幾 (0-6，0代表星期日)
 const getTodayDayOfWeek = () => {
   return new Date().getDay()
-}
-
-// 檢查店鋪是否有菜單
-const hasMenu = (store) => {
-  return !!store.menuId
 }
 
 // 獲取當天的營業時間

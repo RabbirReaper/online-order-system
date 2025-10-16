@@ -20,9 +20,7 @@ export default function (apiClient) {
      * })
      */
     printOrder({ brandId, storeId, orderId }) {
-      return apiClient.post(
-        `/printer/brands/${brandId}/stores/${storeId}/orders/${orderId}/print`,
-      )
+      return apiClient.post(`/printer/brands/${brandId}/stores/${storeId}/orders/${orderId}/print`)
     },
   }
 }

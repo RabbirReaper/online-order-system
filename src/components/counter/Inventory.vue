@@ -22,12 +22,7 @@
     </div>
 
     <!-- 同步成功訊息 -->
-    <BAlert
-      v-model="showSyncAlert"
-      variant="success"
-      dismissible
-      class="mx-3 mt-3 mb-0"
-    >
+    <BAlert v-model="showSyncAlert" variant="success" dismissible class="mx-3 mt-3 mb-0">
       {{ syncMessage }}
     </BAlert>
 

@@ -95,20 +95,33 @@
               套餐
             </button>
 
-            <div class="quantity-control d-flex align-items-center">
+            <div class="d-flex align-items-center">
+              <!-- 快速調整數量按鈕 -->
               <button
-                class="btn btn-sm btn-outline-secondary"
-                @click="counterStore.updateQuantity(index, -1)"
+                class="btn btn-sm btn-outline-primary me-2"
+                @click="openQuantityModal(index, item.quantity)"
+                style="min-width: 50px"
+                title="快速調整數量"
               >
-                -
+                <i class="bi bi-123"></i>
               </button>
-              <span class="mx-2">{{ item.quantity }}</span>
-              <button
-                class="btn btn-sm btn-outline-secondary"
-                @click="counterStore.updateQuantity(index, 1)"
-              >
-                +
-              </button>
+
+              <!-- 數量控制 -->
+              <div class="quantity-control d-flex align-items-center">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="counterStore.updateQuantity(index, -1)"
+                >
+                  -
+                </button>
+                <span class="mx-2">{{ item.quantity }}</span>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="counterStore.updateQuantity(index, 1)"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -155,17 +168,33 @@
         </div>
       </div>
     </div>
+
+    <!-- 數量調整 Modal -->
+    <QuantityModal
+      v-if="showQuantityModal"
+      :temp-quantity="tempQuantity"
+      @close="closeQuantityModal"
+      @append-quantity="appendQuantity"
+      @clear-quantity="clearQuantity"
+      @confirm="confirmQuantity"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref } from 'vue'
 import { useCounterStore } from '@/stores/counter'
+import QuantityModal from '../modals/QuantityModal.vue'
 
 const emit = defineEmits(['selectCurrentItem'])
 
 // 使用 counter store 獲取所有資料
 const counterStore = useCounterStore()
+
+// 數量調整 Modal 相關狀態
+const showQuantityModal = ref(false)
+const tempQuantity = ref(0)
+const editingItemIndex = ref(null)
 
 // 項目類型判斷方法
 const isDish = (item) => {
@@ -222,6 +251,40 @@ const handleEditClick = (item, index) => {
     // 否則進入編輯模式
     emit('selectCurrentItem', item, index)
   }
+}
+
+// 數量調整 Modal 方法
+const openQuantityModal = (index, currentQuantity) => {
+  editingItemIndex.value = index
+  tempQuantity.value = currentQuantity
+  showQuantityModal.value = true
+}
+
+const closeQuantityModal = () => {
+  showQuantityModal.value = false
+  tempQuantity.value = 0
+  editingItemIndex.value = null
+}
+
+const appendQuantity = (num) => {
+  if (tempQuantity.value === 0) {
+    tempQuantity.value = parseInt(num)
+  } else {
+    tempQuantity.value = parseInt(`${tempQuantity.value}${num}`)
+  }
+}
+
+const clearQuantity = () => {
+  tempQuantity.value = 0
+}
+
+const confirmQuantity = () => {
+  if (editingItemIndex.value !== null && tempQuantity.value > 0) {
+    const currentItem = counterStore.cart[editingItemIndex.value]
+    const change = tempQuantity.value - currentItem.quantity
+    counterStore.updateQuantity(editingItemIndex.value, change)
+  }
+  closeQuantityModal()
 }
 </script>
 

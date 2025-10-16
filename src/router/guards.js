@@ -109,12 +109,17 @@ export const globalBeforeEach = async (to, from, next) => {
 
       if (!allowedRoles.includes(role)) {
         // 根據角色選擇重定向路徑
-        let redirectPath = getAdminLoginPath(brand?._id, role)
+        let redirectPath
 
         if (role === 'primary_system_admin' || role === 'system_admin') {
           redirectPath = '/boss'
+        } else if (role === 'primary_brand_admin' || role === 'brand_admin') {
+          redirectPath = brand?._id ? `/admin/${brand._id}` : '/admin/login'
         } else if (brand?._id) {
+          // store_admin, primary_store_admin, employee 沒有訪問品牌管理頁面的權限
           redirectPath = `/admin/${brand._id}`
+        } else {
+          redirectPath = '/admin/login'
         }
 
         alert('您沒有權限訪問此頁面')

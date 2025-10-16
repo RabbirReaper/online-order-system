@@ -5,7 +5,18 @@ export const brandAdminRoutes = [
   {
     path: '/admin/:brandId',
     component: () => import('@/views/brandAdmin/index.vue'),
-    meta: { requiresAdminAuth: true },
+    meta: {
+      requiresAdminAuth: true,
+      role: [
+        'primary_system_admin',
+        'system_admin',
+        'primary_brand_admin',
+        'brand_admin',
+        'primary_store_admin',
+        'store_admin',
+        'employee',
+      ],
+    },
     props: true,
     children: [
       {
@@ -24,12 +35,18 @@ export const brandAdminRoutes = [
         path: 'stores/create',
         name: 'brand-admin-store-create',
         component: () => import('@/components/BrandAdmin/Store/StoreForm.vue'),
+        meta: {
+          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'],
+        },
       },
       {
         path: 'stores/edit/:id',
         name: 'brand-admin-store-edit',
         component: () => import('@/components/BrandAdmin/Store/StoreForm.vue'),
         props: true,
+        meta: {
+          role: ['primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'],
+        },
       },
       {
         path: 'stores/detail/:id',
@@ -297,20 +314,50 @@ export const brandAdminRoutes = [
         path: 'store-admins',
         name: 'brand-admin-admins',
         component: () => import('@/components/BrandAdmin/AdminManager/List.vue'),
-        meta: { requiresAuth: true, title: '管理員管理' },
+        meta: {
+          requiresAuth: true,
+          title: '管理員管理',
+          role: [
+            'primary_system_admin',
+            'system_admin',
+            'primary_brand_admin',
+            'brand_admin',
+            'primary_store_admin',
+          ],
+        },
       },
       {
         path: 'store-admins/create',
         name: 'brand-admin-admin-create',
         component: () => import('@/components/BrandAdmin/AdminManager/Form.vue'),
-        meta: { requiresAuth: true, title: '新增管理員' },
+        meta: {
+          requiresAuth: true,
+          title: '新增管理員',
+          role: [
+            'primary_system_admin',
+            'system_admin',
+            'primary_brand_admin',
+            'brand_admin',
+            'primary_store_admin',
+          ],
+        },
       },
       {
         path: 'store-admins/edit/:id',
         name: 'brand-admin-admin-edit',
         component: () => import('@/components/BrandAdmin/AdminManager/Form.vue'),
         props: true,
-        meta: { requiresAuth: true, title: '編輯管理員' },
+        meta: {
+          requiresAuth: true,
+          title: '編輯管理員',
+          role: [
+            'primary_system_admin',
+            'system_admin',
+            'primary_brand_admin',
+            'brand_admin',
+            'primary_store_admin',
+          ],
+        },
       },
 
       // 顧客管理

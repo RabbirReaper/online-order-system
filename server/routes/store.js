@@ -55,26 +55,35 @@ router.post(
   storeController.createStore,
 )
 
-// 更新店鋪（系統級和品牌級管理員）
+// 更新店鋪（系統級、品牌級和店鋪級管理員）
 router.put(
-  '/brands/:brandId/:id',
+  '/brands/:brandId/:storeId',
   authenticate('admin'),
-  requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin', 'brand_admin'),
+  requireRole(
+    'primary_system_admin',
+    'system_admin',
+    'primary_brand_admin',
+    'brand_admin',
+    'primary_store_admin',
+    'store_admin',
+  ),
   requireBrandAccess,
+  requireStoreAccess,
   storeController.updateStore,
 )
 
 // 刪除店鋪（僅限系統級和primary_brand_admin）
 router.delete(
-  '/brands/:brandId/:id',
+  '/brands/:brandId/:storeId',
   authenticate('admin'),
   requireRole('primary_system_admin', 'system_admin', 'primary_brand_admin'),
+  requireBrandAccess,
   storeController.deleteStore,
 )
 
 // 店鋪狀態與詳情路由
 // 獲取店鋪營業時間
-router.get('/brands/:brandId/:id/business-hours', storeController.getStoreBusinessHours)
+router.get('/brands/:brandId/:storeId/business-hours', storeController.getStoreBusinessHours)
 
 // 更新店鋪營業時間
 router.put(
@@ -111,10 +120,10 @@ router.put(
 )
 
 // 獲取店鋪當前狀態
-router.get('/brands/:brandId/:id/status', storeController.getStoreCurrentStatus)
+router.get('/brands/:brandId/:storeId/status', storeController.getStoreCurrentStatus)
 
 // 獲取店鋪LINE Bot資訊（無需認證，供客戶端使用）
-router.get('/brands/:brandId/:id/line-bot-info', storeController.getStoreLineBotInfo)
+router.get('/brands/:brandId/:storeId/line-bot-info', storeController.getStoreLineBotInfo)
 
 // 更新店鋪服務設定
 router.put(

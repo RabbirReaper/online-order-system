@@ -24,7 +24,7 @@
         </div>
       </div>
 
-      <div>
+      <div v-if="canCreateStore">
         <RouterLink :to="`/admin/${brandId}/stores/create`" class="btn btn-primary">
           <i class="bi bi-plus-lg me-1"></i>新增店鋪
         </RouterLink>
@@ -115,7 +115,7 @@
         <BAlert :show="true" variant="info" class="text-center py-4">
           <i class="bi bi-info-circle me-2 fs-4"></i>
           <p class="mb-0">{{ searchQuery ? '沒有符合搜尋條件的店鋪' : '尚未創建任何店鋪' }}</p>
-          <div class="mt-3" v-if="!searchQuery">
+          <div class="mt-3" v-if="!searchQuery && canCreateStore">
             <RouterLink :to="`/admin/${brandId}/stores/create`" class="btn btn-primary">
               <i class="bi bi-plus-lg me-1"></i>新增第一間店鋪
             </RouterLink>
@@ -160,10 +160,15 @@ import {
   BPagination,
 } from 'bootstrap-vue-next'
 import api from '@/api'
+import { usePermissions } from '@/composables/usePermissions'
 
 // 從路由中獲取品牌ID
 const route = useRoute()
 const brandId = computed(() => route.params.brandId)
+
+// 權限檢查
+const { hasRole, PERMISSIONS } = usePermissions()
+const canCreateStore = computed(() => hasRole(PERMISSIONS.BRAND_ADMIN))
 
 // 狀態變數
 const stores = ref([])

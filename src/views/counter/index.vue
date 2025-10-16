@@ -48,7 +48,7 @@
 
           <!-- 增強版更新資料按鈕 -->
           <button
-            class="btn mt-auto refresh-btn"
+            class="btn mb-3 refresh-btn"
             :class="{
               'btn-warning': !isRefreshing && !isOnCooldown && !refreshSuccess,
               'btn-secondary': isRefreshing,
@@ -84,6 +84,15 @@
             <span v-else-if="refreshSuccess && showSuccessMessage" class="fs-6">完成!</span>
             <span v-else class="fs-6">更新</span>
           </button>
+
+          <!-- 設定按鈕 -->
+          <button
+            class="btn mt-auto btn-outline-light"
+            @click="showSettingsModal = true"
+          >
+            <i class="bi bi-gear d-block mb-1"></i>
+            <span class="fs-6">設定</span>
+          </button>
         </div>
       </div>
 
@@ -101,6 +110,12 @@
         </div>
       </div>
     </div>
+
+    <!-- 設定 Modal -->
+    <SettingsModal
+      v-if="showSettingsModal"
+      @close="showSettingsModal = false"
+    />
   </div>
 </template>
 
@@ -111,8 +126,9 @@ import { useCounterStore } from '@/stores/counter'
 import DineIn from '@/components/counter/DineIn.vue'
 import TakeOut from '@/components/counter/TakeOut.vue'
 import OrderList from '@/components/counter/OrderList.vue'
-import Inventory from '@/components/counter/Inventory.vue' // 新增
+import Inventory from '@/components/counter/Inventory.vue'
 import OrderCart from '@/components/counter/OrderCart/index.vue'
+import SettingsModal from '@/components/counter/modals/SettingsModal.vue'
 
 // 路由和參數
 const route = useRoute()
@@ -123,6 +139,9 @@ const storeId = route.params.storeId
 const currentTime = ref('')
 const currentDate = ref('')
 const currentWeekday = ref('')
+
+// 設定 Modal 狀態
+const showSettingsModal = ref(false)
 
 // 每秒更新一次時間（你也可以改成每 10 秒、60 秒）
 const updateTime = () => {
@@ -160,7 +179,7 @@ const componentMap = {
   DineIn: markRaw(DineIn),
   TakeOut: markRaw(TakeOut),
   Orders: markRaw(OrderList),
-  Inventory: markRaw(Inventory), // 新增
+  Inventory: markRaw(Inventory),
 }
 
 // 計算屬性獲取當前活動組件
@@ -200,8 +219,6 @@ const handleRefreshData = async () => {
     }, 2000)
   } catch (error) {
     console.error('更新資料失敗:', error)
-    // 可以添加錯誤提示，但保持簡潔
-    // alert('更新失敗，請稍後再試');
   } finally {
     isRefreshing.value = false
     startCooldown()

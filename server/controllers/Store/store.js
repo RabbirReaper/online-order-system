@@ -91,9 +91,9 @@ export const createStore = asyncHandler(async (req, res) => {
 // 更新店家
 export const updateStore = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
+    const { storeId } = req.params
 
-    const updatedStore = await storeService.updateStore(id, req.body)
+    const updatedStore = await storeService.updateStore(storeId, req.body)
 
     res.json({
       success: true,
@@ -112,8 +112,8 @@ export const updateStore = asyncHandler(async (req, res) => {
 // 刪除店家
 export const deleteStore = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
-    const result = await storeService.deleteStore(id)
+    const { storeId } = req.params
+    const result = await storeService.deleteStore(storeId)
 
     res.json({
       success: true,
@@ -131,7 +131,7 @@ export const deleteStore = asyncHandler(async (req, res) => {
 // 切換店家啟用狀態
 export const toggleStoreActive = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
+    const { storeId } = req.params
     const { isActive } = req.body
 
     if (isActive === undefined) {
@@ -141,7 +141,7 @@ export const toggleStoreActive = asyncHandler(async (req, res) => {
       })
     }
 
-    const store = await storeService.toggleStoreActive(id, isActive)
+    const store = await storeService.toggleStoreActive(storeId, isActive)
 
     res.json({
       success: true,
@@ -160,8 +160,8 @@ export const toggleStoreActive = asyncHandler(async (req, res) => {
 // 獲取店家營業時間
 export const getStoreBusinessHours = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
-    const businessHours = await storeService.getStoreBusinessHours(id)
+    const { storeId } = req.params
+    const businessHours = await storeService.getStoreBusinessHours(storeId)
 
     res.json({
       success: true,
@@ -237,8 +237,8 @@ export const updateStoreAnnouncements = asyncHandler(async (req, res) => {
 // 獲取店家當前營業狀態
 export const getStoreCurrentStatus = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
-    const status = await storeService.getStoreCurrentStatus(id)
+    const { storeId } = req.params
+    const status = await storeService.getStoreCurrentStatus(storeId)
 
     res.json({
       success: true,
@@ -285,8 +285,8 @@ export const updateServiceSettings = asyncHandler(async (req, res) => {
 // 獲取店家LINE Bot資訊
 export const getStoreLineBotInfo = asyncHandler(async (req, res) => {
   try {
-    const { id } = req.params
-    const lineBotInfo = await storeService.getStoreLineBotInfo(id)
+    const { storeId } = req.params
+    const lineBotInfo = await storeService.getStoreLineBotInfo(storeId)
 
     res.json({
       success: true,
