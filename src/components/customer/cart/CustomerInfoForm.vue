@@ -109,11 +109,15 @@
       </p>
       <div class="row g-3">
         <div class="col-12">
-          <label for="card-number" class="form-label">卡號 <span class="text-danger">*</span></label>
+          <label for="card-number" class="form-label"
+            >卡號 <span class="text-danger">*</span></label
+          >
           <div class="tpfield" id="card-number"></div>
         </div>
         <div class="col-md-6">
-          <label for="card-expiration-date" class="form-label">有效期限 <span class="text-danger">*</span></label>
+          <label for="card-expiration-date" class="form-label"
+            >有效期限 <span class="text-danger">*</span></label
+          >
           <div class="tpfield" id="card-expiration-date"></div>
         </div>
         <div class="col-md-6">
@@ -121,7 +125,9 @@
           <div class="tpfield" id="card-ccv"></div>
         </div>
         <div class="col-12">
-          <label for="cardHolder" class="form-label">持卡人姓名 <span class="text-danger">*</span></label>
+          <label for="cardHolder" class="form-label"
+            >持卡人姓名 <span class="text-danger">*</span></label
+          >
           <input
             type="text"
             class="form-control"
@@ -150,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/customerAuth'
 import { useCartStore } from '@/stores/cart'
@@ -319,48 +325,48 @@ const initTapPay = () => {
       fields: {
         number: {
           element: '#card-number',
-          placeholder: '**** **** **** ****'
+          placeholder: '**** **** **** ****',
         },
         expirationDate: {
           element: '#card-expiration-date',
-          placeholder: 'MM / YY'
+          placeholder: 'MM / YY',
         },
         ccv: {
           element: '#card-ccv',
-          placeholder: 'CVV'
-        }
+          placeholder: 'CVV',
+        },
       },
       styles: {
-        'input': {
-          'color': '#495057',
+        input: {
+          color: '#495057',
           'font-size': '16px',
           'line-height': '1.5',
-          'padding': '0.375rem 0.75rem'
+          padding: '0.375rem 0.75rem',
         },
         'input.ccv': {
-          'font-size': '16px'
+          'font-size': '16px',
         },
         'input.expiration-date': {
-          'font-size': '16px'
+          'font-size': '16px',
         },
         'input.card-number': {
-          'font-size': '16px'
+          'font-size': '16px',
         },
         ':focus': {
-          'color': '#495057'
+          color: '#495057',
         },
         '.valid': {
-          'color': '#198754'
+          color: '#198754',
         },
         '.invalid': {
-          'color': '#dc3545'
-        }
+          color: '#dc3545',
+        },
       },
       isMaskCreditCardNumber: true,
       maskCreditCardNumberRange: {
         beginIndex: 6,
-        endIndex: 11
-      }
+        endIndex: 11,
+      },
     })
 
     window.TPDirect.card.onUpdate((update) => {
@@ -420,7 +426,7 @@ const getPrime = () => {
       resolve({
         prime: result.card.prime,
         cardHolder: cardHolderName.value,
-        cardInfo: result.card
+        cardInfo: result.card,
       })
     })
   })
@@ -473,14 +479,16 @@ watch(
     }
   },
 )
-
 watch(localPaymentMethod, (newVal) => {
   emit('update:paymentMethod', newVal)
 
   if (newVal === '信用卡' && showCreditCard.value && !tappayInitialized.value) {
-    setTimeout(() => {
-      initTapPay()
-    }, 100)
+    // 🔧 修正：使用 nextTick 確保 DOM 更新完成
+    nextTick(() => {
+      setTimeout(() => {
+        initTapPay()
+      }, 200) // 增加延遲時間到 200ms
+    })
   }
 })
 
@@ -505,14 +513,16 @@ onMounted(async () => {
   }
 
   if (localPaymentMethod.value === '信用卡' && showCreditCard.value) {
-    setTimeout(() => {
-      initTapPay()
-    }, 100)
+    nextTick(() => {
+      setTimeout(() => {
+        initTapPay()
+      }, 200)
+    })
   }
 })
 
 defineExpose({
-  getPrime
+  getPrime,
 })
 </script>
 
@@ -544,7 +554,9 @@ defineExpose({
   border-radius: 0.375rem;
   padding: 0.375rem 0.75rem;
   background-color: #fff;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
 }
 
 .tpfield:focus-within {
