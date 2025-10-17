@@ -4,19 +4,43 @@
  */
 
 import axios from 'axios'
+import dotenv from 'dotenv'
 import { AppError } from '../../middlewares/error.js'
+
+dotenv.config()
 
 class TapPayService {
   constructor() {
-    // TapPay 設定 - 直接寫在代碼中
+    // TapPay 設定 - 從環境變數讀取
     this.config = {
-      APP_ID: '160922',
-      APP_KEY: 'app_PTXFmsaMgILnDLwCfpQhDmYeVXfKw5sNSi2khZU6ASeL4oyJjVaF0uSDEsgx',
-      PARTNER_KEY: 'app_PTXFmsaMgILnDLwCfpQhDmYeVXfKw5sNSi2khZU6ASeL4oyJjVaF0uSDEsgx',
-      MERCHANT_ID: 'tppf_RabbirReaper_GP_POS_3',
-      API_BASE_URL: 'https://sandbox.tappaysdk.com',
-      SANDBOX_MODE: true,
+      APP_ID: process.env.TAPPAY_APP_ID,
+      APP_KEY: process.env.TAPPAY_APP_KEY,
+      PARTNER_KEY: process.env.TAPPAY_PARTNER_KEY,
+      MERCHANT_ID: process.env.TAPPAY_MERCHANT_ID,
+      API_BASE_URL: process.env.TAPPAY_API_BASE_URL || 'https://sandbox.tappaysdk.com',
+      SANDBOX_MODE: process.env.TAPPAY_SANDBOX_MODE !== 'false',
     }
+
+    // 驗證必要的環境變數
+    this.validateConfig()
+  }
+
+  /**
+   * 驗證 TapPay 設定
+   */
+  validateConfig() {
+    const requiredFields = ['APP_ID', 'APP_KEY', 'PARTNER_KEY', 'MERCHANT_ID']
+    const missingFields = requiredFields.filter((field) => !this.config[field])
+
+    if (missingFields.length > 0) {
+      throw new Error(`Missing TapPay configuration: ${missingFields.join(', ')}`)
+    }
+
+    console.log('TapPay Configuration:')
+    console.log(`- APP_ID: ${this.config.APP_ID}`)
+    console.log(`- MERCHANT_ID: ${this.config.MERCHANT_ID}`)
+    console.log(`- API_BASE_URL: ${this.config.API_BASE_URL}`)
+    console.log(`- SANDBOX_MODE: ${this.config.SANDBOX_MODE}`)
   }
 
   /**
