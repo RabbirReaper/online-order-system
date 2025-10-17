@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/customerAuth'
 
@@ -31,6 +31,15 @@ export const useCartStore = defineStore('cart', () => {
   const serviceChargeRate = ref(0) // 服務費率，0.1 表示 10%
   const isSubmitting = ref(false) // 是否正在提交訂單
   const validationErrors = ref({}) // 驗證錯誤信息對象
+
+  // 監聽支付方式變化，自動設置支付類型
+  watch(paymentMethod, (newMethod) => {
+    if (newMethod === 'cash') {
+      paymentType.value = 'On-site'
+    } else {
+      paymentType.value = 'Online'
+    }
+  })
 
   // 計算屬性
   const subtotal = computed(() => {
@@ -343,9 +352,16 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupons.value = appliedCoupons.value.filter((discount) => discount.refId !== refId)
   }
 
-  function setPaymentMethod(method, type = 'On-site') {
+  function setPaymentMethod(method, type = null) {
     paymentMethod.value = method
-    paymentType.value = type
+
+    // 如果沒有明確指定 type，則根據 method 自動判斷
+    if (type !== null) {
+      paymentType.value = type
+    } else {
+      // 自動判斷邏輯：cash 為 On-site，其他為 Online
+      paymentType.value = method === 'cash' ? 'On-site' : 'Online'
+    }
   }
 
   function toggleStaffMode() {
@@ -398,7 +414,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   // 提交訂單
-async function submitOrder(primeToken = null) {
+  async function submitOrder(primeToken = null) {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' }
     }
@@ -508,6 +524,7 @@ async function submitOrder(primeToken = null) {
       console.log('店鋪ID:', currentStore.value)
       console.log('用戶登入狀態:', authStore.isLoggedIn)
       console.log('付款方式:', paymentMethod.value)
+      console.log('付款類型:', paymentType.value)
       console.log('Prime Token:', primeToken ? '已提供' : '未提供')
       console.log('訂單資料:', JSON.stringify(orderData, null, 2))
       console.log('========================')
