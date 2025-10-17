@@ -4,7 +4,7 @@
  */
 
 import * as orderService from '../../services/order/orderCustomer.js'
-import paymentOrderService from '../../services/payment/paymentOrderService.js'
+import * as paymentOrderService from '../../services/payment/paymentOrderService.js'
 import { asyncHandler, AppError } from '../../middlewares/error.js'
 
 /**
