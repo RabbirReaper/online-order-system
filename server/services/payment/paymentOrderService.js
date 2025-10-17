@@ -3,8 +3,8 @@
  * server/services/payment/paymentOrderService.js
  */
 
-import tapPayService from './tapPayService.js'
-import transactionService from './transactionService.js'
+import * as tapPayService from './tapPayService.js'
+import * as transactionService from './transactionService.js'
 import { orderCustomer } from '../order/index.js'
 import { AppError } from '../../middlewares/error.js'
 
