@@ -1,6 +1,7 @@
 <div align="center">
 
 # 🍽️ Multi-Brand Restaurant Ordering System
+
 # 多品牌餐廳訂餐管理系統
 
 [![License](https://img.shields.io/badge/license-Modified%20MIT-blue.svg)](./LICENSE)
@@ -27,24 +28,28 @@ This is a comprehensive multi-brand restaurant ordering and management system bu
 ### ✨ Key Features
 
 #### 🏢 **Multi-Brand Architecture**
+
 - System administrators can manage multiple restaurant brands
 - Each brand can have multiple store locations
 - Centralized menu templates shared across brand locations
 - Flexible store-specific customization
 
 #### 📦 **Order Management**
+
 - Support for dine-in, takeout, and delivery orders
 - **Mixed cart system**: Combine food items and promotional bundles in a single transaction
 - Real-time order tracking and status updates
 - Multiple payment methods: cash, credit card, LINE Pay
 
 #### 📊 **Inventory Control**
+
 - Real-time stock tracking for all menu items
 - Automatic inventory reduction on order completion
 - Low stock alerts and sold-out management
 - Detailed stock change logs with reasons
 
 #### 🎁 **Promotion System**
+
 - **Points accumulation**: Earn points based on order total
 - **Discount coupons**: Percentage or fixed amount discounts
 - **Exchange vouchers**: Redeem free items with points
@@ -52,6 +57,7 @@ This is a comprehensive multi-brand restaurant ordering and management system bu
 - Points expiration management (FIFO)
 
 #### 👥 **User & Permission Management**
+
 - **Customer accounts**: Registration, profile management, order history
 - **Boss (System Admin)**: Full system access, manage all brands
 - **Brand Admin**: Manage specific brand's stores and settings
@@ -62,6 +68,7 @@ This is a comprehensive multi-brand restaurant ordering and management system bu
   - P4: Employee permission management
 
 #### 🛒 **Point-of-Sale (POS) System**
+
 - Staff-focused ordering interface
 - Quick order creation and modification
 - Payment processing and confirmation
@@ -70,6 +77,7 @@ This is a comprehensive multi-brand restaurant ordering and management system bu
 ### 🛠️ Tech Stack
 
 **Frontend**
+
 - Vue 3 + Composition API
 - Vite (build tool)
 - Pinia (state management)
@@ -78,16 +86,19 @@ This is a comprehensive multi-brand restaurant ordering and management system bu
 - Vue i18n (internationalization)
 
 **Backend**
+
 - Express.js (Node.js framework)
 - MongoDB + Mongoose ODM
 - Express Session
 - RESTful API architecture
 
 **Testing**
+
 - Vitest (unit testing)
 - Cypress (E2E testing)
 
 **External Integrations**
+
 - UberEats API (delivery integration)
 - KotSMS (SMS verification)
 - LINE LIFF (LINE integration)
@@ -234,6 +245,7 @@ yarn test:e2e
 ### 🌐 Internationalization
 
 The system supports:
+
 - Traditional Chinese (繁體中文)
 - English
 
@@ -256,24 +268,28 @@ Contributions, issues, and feature requests are welcome!
 ### ✨ 核心功能
 
 #### 🏢 **多品牌架構**
+
 - 系統管理員可管理多個餐飲品牌
 - 每個品牌下可有多家分店
 - 集中化的菜單模板可跨店共用
 - 支援店鋪個別化設定
 
 #### 📦 **訂單管理**
+
 - 支援內用、外帶、外送訂單
 - **混合購物車系統**：可同時訂購餐點與促銷套餐
 - 即時訂單追蹤與狀態更新
 - 多元支付方式：現金、信用卡、LINE Pay
 
 #### 📊 **庫存控制**
+
 - 所有菜單項目的即時庫存追蹤
 - 訂單完成時自動扣減庫存
 - 低庫存警示與售完管理
 - 詳細的庫存變動記錄
 
 #### 🎁 **促銷系統**
+
 - **點數累積**：根據訂單金額獲得點數
 - **折價券**：百分比或固定金額折扣
 - **兌換券**：使用點數兌換免費商品
@@ -281,6 +297,7 @@ Contributions, issues, and feature requests are welcome!
 - 點數到期管理（先進先出）
 
 #### 👥 **用戶與權限管理**
+
 - **顧客帳戶**：註冊、個人資料管理、訂單歷史
 - **系統管理員（Boss）**：完整系統權限，管理所有品牌
 - **品牌管理員**：管理特定品牌的店鋪與設定
@@ -291,6 +308,7 @@ Contributions, issues, and feature requests are welcome!
   - P4：員工權限管理
 
 #### 🛒 **櫃檯系統（POS）**
+
 - 店員專用點餐介面
 - 快速建立與修改訂單
 - 付款處理與確認
@@ -299,6 +317,7 @@ Contributions, issues, and feature requests are welcome!
 ### 🛠️ 技術棧
 
 **前端**
+
 - Vue 3 + Composition API
 - Vite（建置工具）
 - Pinia（狀態管理）
@@ -307,16 +326,19 @@ Contributions, issues, and feature requests are welcome!
 - Vue i18n（國際化）
 
 **後端**
+
 - Express.js（Node.js 框架）
 - MongoDB + Mongoose ODM
 - Express Session
 - RESTful API 架構
 
 **測試**
+
 - Vitest（單元測試）
 - Cypress（端對端測試）
 
 **外部整合**
+
 - UberEats API（外送整合）
 - KotSMS（簡訊驗證）
 - LINE LIFF（LINE 整合）
@@ -463,6 +485,7 @@ yarn test:e2e
 ### 🌐 國際化支援
 
 系統支援：
+
 - 繁體中文
 - English
 
@@ -471,12 +494,14 @@ yarn test:e2e
 #### 命名規範
 
 **資料夾命名**
+
 - 頂層目錄：camelCase
 - 業務邏輯子目錄：PascalCase
 - 組件目錄：PascalCase
 - 視圖目錄：camelCase
 
 **檔案命名**
+
 - 模型檔案（Models）：PascalCase + 單數（例：`Order.js`, `DishTemplate.js`）
 - Vue 組件檔案：PascalCase（例：`MenuList.vue`, `CartItem.vue`）
 - 視圖檔案（Views）：PascalCase（例：`Dashboard.vue`）
@@ -485,12 +510,12 @@ yarn test:e2e
 
 #### 架構分層
 
-| 層級 | 職責 | 應包含 | 不應包含 |
-|------|------|--------|----------|
-| **Model** | 定義資料結構、與資料庫互動 | Schema 定義、欄位驗證、hooks、實例方法 | ❌ 處理請求與回應 |
-| **Controller** | 接收請求與回應 | 取得 req/params、呼叫 service、回傳 response | ❌ 商業邏輯 |
-| **Service** | 處理業務邏輯與流程決策 | 建立/更新資料、套用規則、發送通知 | ❌ 接觸 req/res |
-| **Utils** | 可重用的純函數工具 | 格式化、驗證、計算等通用函數 | ❌ 依賴資料庫或商業資料 |
+| 層級           | 職責                       | 應包含                                       | 不應包含                |
+| -------------- | -------------------------- | -------------------------------------------- | ----------------------- |
+| **Model**      | 定義資料結構、與資料庫互動 | Schema 定義、欄位驗證、hooks、實例方法       | ❌ 處理請求與回應       |
+| **Controller** | 接收請求與回應             | 取得 req/params、呼叫 service、回傳 response | ❌ 商業邏輯             |
+| **Service**    | 處理業務邏輯與流程決策     | 建立/更新資料、套用規則、發送通知            | ❌ 接觸 req/res         |
+| **Utils**      | 可重用的純函數工具         | 格式化、驗證、計算等通用函數                 | ❌ 依賴資料庫或商業資料 |
 
 ### 📄 授權條款
 
@@ -1017,6 +1042,50 @@ flowchart TD
     WaitPayment --> StaffConfirm{店員確認收款}
     StaffConfirm -->|確認| OrderPaid
     StaffConfirm -->|取消| CancelOrder[取消訂單]
+```
+
+#### 訂單提交流程
+
+```mermaid
+flowchart TD
+    Start[顧客下單頁面] --> Submit[顧客提交訂單]
+    Submit --> PaymentChoice{選擇付款方式}
+
+    %% 現場付款流程
+    PaymentChoice -->|現場付款<br/>On-site| CreateOnsite[創建訂單<br/>isFinalized: true<br/>status: unpaid]
+    CreateOnsite --> SuccessDetail[訂單詳情頁面<br/>付款成功]
+
+    %% 線上付款流程
+    PaymentChoice -->|線上付款<br/>Online| CreateTemp[創建臨時訂單<br/>isFinalized: false<br/>status: pending_payment]
+    CreateTemp --> CreateTxn[創建 Transaction<br/>tempOrderData: Order._id]
+    CreateTxn --> RedirectPlatform[跳轉到金流平台]
+    RedirectPlatform --> SelectMethod[選擇線上支付方式<br/>信用卡/LINE Pay/Apple Pay]
+    SelectMethod --> Processing[支付處理中...]
+
+    Processing --> PaymentResult{支付結果}
+
+    %% 支付成功
+    PaymentResult -->|成功| FinalizeOrder[完成訂單<br/>isFinalized: true<br/>status: paid<br/>補充 orderDateCode, sequence]
+    FinalizeOrder --> UpdateTxn[更新 Transaction<br/>orderId: Order._id<br/>status: completed]
+    UpdateTxn --> RedirectSuccess[重定向到訂單詳情]
+    RedirectSuccess --> SuccessDetail[訂單成功<br/>訂單詳情頁面]
+
+    %% 支付失敗
+    PaymentResult -->|失敗| CancelOrder[標記訂單<br/>status: cancelled]
+    CancelOrder --> UpdateTxnFail[更新 Transaction<br/>status: failed]
+    UpdateTxnFail --> RedirectFail[重定向回下單頁面<br/>顯示錯誤訊息]
+    RedirectFail --> Start
+
+    %% 樣式
+    classDef successStyle fill:#d4edda,stroke:#28a745,stroke-width:2px
+    classDef errorStyle fill:#f8d7da,stroke:#dc3545,stroke-width:2px
+    classDef processStyle fill:#d1ecf1,stroke:#17a2b8,stroke-width:2px
+    classDef decisionStyle fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+
+    class FinalizeOrder,UpdateTxn,SuccessDetail successStyle
+    class CancelOrder,UpdateTxnFail,RedirectFail errorStyle
+    class CreateTemp,CreateTxn,RedirectPlatform,SelectMethod,Processing processStyle
+    class PaymentChoice,PaymentResult decisionStyle
 ```
 
 #### 促銷系統流程
