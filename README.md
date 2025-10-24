@@ -1075,17 +1075,6 @@ flowchart TD
     CancelOrder --> UpdateTxnFail[更新 Transaction<br/>status: failed]
     UpdateTxnFail --> RedirectFail[重定向回下單頁面<br/>顯示錯誤訊息]
     RedirectFail --> Start
-
-    %% 樣式
-    classDef successStyle fill:#d4edda,stroke:#28a745,stroke-width:2px
-    classDef errorStyle fill:#f8d7da,stroke:#dc3545,stroke-width:2px
-    classDef processStyle fill:#d1ecf1,stroke:#17a2b8,stroke-width:2px
-    classDef decisionStyle fill:#fff3cd,stroke:#ffc107,stroke-width:2px
-
-    class FinalizeOrder,UpdateTxn,SuccessDetail successStyle
-    class CancelOrder,UpdateTxnFail,RedirectFail errorStyle
-    class CreateTemp,CreateTxn,RedirectPlatform,SelectMethod,Processing processStyle
-    class PaymentChoice,PaymentResult decisionStyle
 ```
 
 #### 促銷系統流程
