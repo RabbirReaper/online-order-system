@@ -66,7 +66,8 @@ const orderSchema = new mongoose.Schema(
     }, // 訂單類型
     status: {
       type: String,
-      enum: ['unpaid', 'paid', 'cancelled'],
+      enum: ['unpaid', 'paid', 'cancelled', 'pending_payment'],
+      // pending_payment 只有在線上付款後台時確認，不會讓使用者看到
       default: 'unpaid',
     }, // 訂單狀態
 
@@ -231,6 +232,11 @@ const orderSchema = new mongoose.Schema(
     cancelledAt: {
       type: Date,
     }, // 取消時間
+    isFinalized: {
+      type: Boolean,
+      default: true,
+      // 用在線上付款等待時改為 false，確認付款後再改回 true
+    },
   },
   { timestamps: true },
 )
