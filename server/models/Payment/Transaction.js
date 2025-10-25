@@ -17,15 +17,15 @@ const transactionSchema = new mongoose.Schema(
       ref: 'Store',
       required: true,
     }, // 關聯店鋪
-    // 關聯訂單 (付款成功後才會有)
+    // 關聯訂單 (NewebPay 流程：先創建訂單，orderId 改為必填)
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Order',
-      required: false,
+      required: true, // 改為必填，因為現在先創建訂單
       index: true,
     },
 
-    // 臨時訂單資訊 (付款前儲存，成功後移至正式訂單)
+    // 臨時訂單資訊 (選填，保留作為備份資料)
     tempOrderData: {
       customerId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -67,9 +67,18 @@ const transactionSchema = new mongoose.Schema(
     // 支付方式
     paymentMethod: {
       type: String,
-      enum: ['credit_card', 'line_pay', 'apple_pay', 'google_pay', 'cash'],
+      enum: ['credit_card', 'line_pay', 'apple_pay', 'google_pay', 'cash', 'other'],
       required: true,
     },
+
+    // === 新增：金流平台相關 ===
+    platform: {
+      type: String,
+      enum: ['newebpay', 'tappay'],
+      required: true,
+    }, // 金流平台
+    platformTransactionId: { type: String }, // 金流平台的交易ID
+    platformOrderNo: { type: String, index: true }, // 金流平台的訂單編號
 
     // 交易狀態
     status: {
