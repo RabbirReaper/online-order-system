@@ -68,7 +68,7 @@
           type="radio"
           name="paymentMethod"
           id="cashPayment"
-          value="現金"
+          value="On-site"
           v-model="localPaymentMethod"
         />
         <label class="form-check-label" for="cashPayment">現場付款</label>
@@ -81,7 +81,7 @@
           type="radio"
           name="paymentMethod"
           id="onlinePayment"
-          value="線上付款"
+          value="Online"
           v-model="localPaymentMethod"
         />
         <label class="form-check-label" for="onlinePayment">線上付款</label>
@@ -94,9 +94,11 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/customerAuth'
+import { useCartStore } from '@/stores/cart'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 
 const props = defineProps({
   customerInfo: {
@@ -108,7 +110,7 @@ const props = defineProps({
   },
   paymentMethod: {
     type: String,
-    default: '現金',
+    default: 'On-site',
   },
   orderType: {
     type: String,
@@ -225,6 +227,10 @@ watch(
 )
 watch(localPaymentMethod, (newVal) => {
   emit('update:paymentMethod', newVal)
+
+  // 使用 cartStore.setPaymentType 設定付款類型
+  // 'On-site' 或 'Online'
+  cartStore.setPaymentType(newVal)
 })
 
 watch(

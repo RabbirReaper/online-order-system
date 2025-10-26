@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import api from '@/api'
 import { useAuthStore } from '@/stores/customerAuth'
 
@@ -32,14 +32,11 @@ export const useCartStore = defineStore('cart', () => {
   const isSubmitting = ref(false) // 是否正在提交訂單
   const validationErrors = ref({}) // 驗證錯誤信息對象
 
-  // 監聽支付方式變化，自動設置支付類型
-  watch(paymentMethod, (newMethod) => {
-    if (newMethod === 'cash') {
-      paymentType.value = 'On-site'
-    } else {
-      paymentType.value = 'Online'
-    }
-  })
+  // 移除自動設置支付類型的 watch
+  // paymentType 會由以下方式設定：
+  // 1. 前端用戶選擇時：透過 setPaymentType 直接設定 'On-site' 或 'Online'
+  // 2. Counter 端：手動設定
+  // 3. 線上付款：在後端藍新金流回傳後設定
 
   // 計算屬性
   const subtotal = computed(() => {
@@ -352,16 +349,16 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupons.value = appliedCoupons.value.filter((discount) => discount.refId !== refId)
   }
 
-  function setPaymentMethod(method, type = null) {
+  function setPaymentMethod(method) {
     paymentMethod.value = method
+    // paymentType 不在這裡設定
+    // 會透過 setPaymentType 明確設定
+  }
 
-    // 如果沒有明確指定 type，則根據 method 自動判斷
-    if (type !== null) {
-      paymentType.value = type
-    } else {
-      // 自動判斷邏輯：cash 為 On-site，其他為 Online
-      paymentType.value = method === 'cash' ? 'On-site' : 'Online'
-    }
+  function setPaymentType(type) {
+    // 明確設定 paymentType
+    // 'On-site' 或 'Online'
+    paymentType.value = type
   }
 
   function toggleStaffMode() {
@@ -634,6 +631,7 @@ export const useCartStore = defineStore('cart', () => {
     applyCoupon,
     removeCoupon,
     setPaymentMethod,
+    setPaymentType, // 新增：明確設定 paymentType
     toggleStaffMode,
     validateOrder,
     submitOrder,
