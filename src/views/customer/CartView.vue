@@ -872,27 +872,39 @@ const submitOrder = async () => {
 
     cartStore.appliedCoupons = discounts
 
-    // 🆕 如果是信用卡付款，先取得 prime token
-    let primeToken = null
-    if (paymentMethod.value === '信用卡') {
-      try {
-        const primeResult = await customerInfoFormRef.value.getPrime()
-        primeToken = primeResult.prime
-        console.log('取得 TapPay Prime 成功')
-      } catch (primeError) {
-        console.error('取得 Prime 失敗:', primeError)
-        showError(primeError.message || '信用卡資訊驗證失敗，請檢查輸入')
-        showConfirmModal.value = false
-        return
-      }
-    }
-
-    // 提交訂單（帶上 primeToken）
-    const result = await cartStore.submitOrder(primeToken)
+    // 提交訂單（不需要 primeToken，改用 NewebPay）
+    const result = await cartStore.submitOrder(null)
 
     if (result.success) {
       showConfirmModal.value = false
 
+      // 如果有付款表單，表示是線上付款，需要跳轉到 NewebPay
+      if (result.payment && result.payment.formData) {
+        console.log('💳 線上付款：自動提交表單到 NewebPay')
+
+        // 創建並提交表單到 NewebPay
+        const form = document.createElement('form')
+        form.method = 'POST'
+        form.action = result.payment.apiUrl
+
+        // 添加表單欄位
+        Object.keys(result.payment.formData).forEach((key) => {
+          const input = document.createElement('input')
+          input.type = 'hidden'
+          input.name = key
+          input.value = result.payment.formData[key]
+          form.appendChild(input)
+        })
+
+        document.body.appendChild(form)
+        console.log('🔄 提交表單到:', result.payment.apiUrl)
+        form.submit()
+
+        // 表單提交後不需要跳轉，因為會自動跳到 NewebPay
+        return
+      }
+
+      // 現場付款才跳轉到訂單詳情頁
       router.push({
         name: 'order-confirm',
         params: {

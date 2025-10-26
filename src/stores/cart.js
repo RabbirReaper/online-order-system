@@ -32,6 +32,12 @@ export const useCartStore = defineStore('cart', () => {
   const isSubmitting = ref(false) // 是否正在提交訂單
   const validationErrors = ref({}) // 驗證錯誤信息對象
 
+  // 移除自動設置支付類型的 watch
+  // paymentType 會由以下方式設定：
+  // 1. 前端用戶選擇時：透過 setPaymentType 直接設定 'On-site' 或 'Online'
+  // 2. Counter 端：手動設定
+  // 3. 線上付款：在後端藍新金流回傳後設定
+
   // 計算屬性
   const subtotal = computed(() => {
     return items.value.reduce((total, item) => total + item.subtotal, 0)
@@ -343,8 +349,15 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupons.value = appliedCoupons.value.filter((discount) => discount.refId !== refId)
   }
 
-  function setPaymentMethod(method, type = 'On-site') {
+  function setPaymentMethod(method) {
     paymentMethod.value = method
+    // paymentType 不在這裡設定
+    // 會透過 setPaymentType 明確設定
+  }
+
+  function setPaymentType(type) {
+    // 明確設定 paymentType
+    // 'On-site' 或 'Online'
     paymentType.value = type
   }
 
@@ -398,7 +411,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   // 提交訂單
-async function submitOrder(primeToken = null) {
+  async function submitOrder(primeToken = null) {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' }
     }
@@ -508,6 +521,7 @@ async function submitOrder(primeToken = null) {
       console.log('店鋪ID:', currentStore.value)
       console.log('用戶登入狀態:', authStore.isLoggedIn)
       console.log('付款方式:', paymentMethod.value)
+      console.log('付款類型:', paymentType.value)
       console.log('Prime Token:', primeToken ? '已提供' : '未提供')
       console.log('訂單資料:', JSON.stringify(orderData, null, 2))
       console.log('========================')
@@ -539,6 +553,7 @@ async function submitOrder(primeToken = null) {
           order: response.order,
           orderId: response.order._id,
           pointsAwarded: response.pointsAwarded || null,
+          payment: response.payment || null, // ✅ 保留 payment 資訊（線上付款需要）
         }
       } else {
         console.error('API 回應失敗:', response)
@@ -617,6 +632,7 @@ async function submitOrder(primeToken = null) {
     applyCoupon,
     removeCoupon,
     setPaymentMethod,
+    setPaymentType, // 新增：明確設定 paymentType
     toggleStaffMode,
     validateOrder,
     submitOrder,

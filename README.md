@@ -1,122 +1,535 @@
-# online-order-system
+<div align="center">
 
-**專案整體介紹**
+# 🍽️ Multi-Brand Restaurant Ordering System
 
-這是一個多品牌餐廳訂餐管理系統，採用現代化的全端開發架構。系統支援多個餐飲品牌，每個品牌下可有多家分店，提供完整的餐廳營運管理解決方案。
+# 多品牌餐廳訂餐管理系統
 
-**核心功能模組：**
+[![License](https://img.shields.io/badge/license-Modified%20MIT-blue.svg)](./LICENSE)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.x-brightgreen.svg)](https://vuejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.x-green.svg)](https://www.mongodb.com/)
 
-- 多品牌管理：`系統管理員`可管理多個餐飲品牌
-- 店鋪管理：每個品牌下的多店鋪營運
-- 菜單系統：靈活的餐點模板與選項配置
-- 訂單管理：支援內用、外帶、外送的混合訂購模式
-- 庫存控制：即時庫存追蹤與警示
-- 促銷系統：點數累積、優惠券發放與兌換
-- 用戶管理：顧客會員系統與管理員權限控制
-- 櫃檯系統：店員專用的點餐與訂單管理介面
+A modern, full-stack restaurant management system supporting multiple brands, real-time inventory tracking, and comprehensive order management.
 
-## Recommended IDE Setup
+現代化全端餐廳管理系統，支援多品牌管理、即時庫存追蹤與完整訂單管理功能。
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+[English](#english) | [繁體中文](#繁體中文)
 
-## Customize configuration
+</div>
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+---
 
-## Project Setup
+## English
 
-```sh
-yarn
+### 📋 Overview
+
+This is a comprehensive multi-brand restaurant ordering and management system built with modern web technologies. The platform enables restaurant groups to manage multiple brands, each with multiple store locations, providing a complete solution for restaurant operations.
+
+### ✨ Key Features
+
+#### 🏢 **Multi-Brand Architecture**
+
+- System administrators can manage multiple restaurant brands
+- Each brand can have multiple store locations
+- Centralized menu templates shared across brand locations
+- Flexible store-specific customization
+
+#### 📦 **Order Management**
+
+- Support for dine-in, takeout, and delivery orders
+- **Mixed cart system**: Combine food items and promotional bundles in a single transaction
+- Real-time order tracking and status updates
+- Multiple payment methods: cash, credit card, LINE Pay
+
+#### 📊 **Inventory Control**
+
+- Real-time stock tracking for all menu items
+- Automatic inventory reduction on order completion
+- Low stock alerts and sold-out management
+- Detailed stock change logs with reasons
+
+#### 🎁 **Promotion System**
+
+- **Points accumulation**: Earn points based on order total
+- **Discount coupons**: Percentage or fixed amount discounts
+- **Exchange vouchers**: Redeem free items with points
+- **Bundle deals**: Special promotional packages
+- Points expiration management (FIFO)
+
+#### 👥 **User & Permission Management**
+
+- **Customer accounts**: Registration, profile management, order history
+- **Boss (System Admin)**: Full system access, manage all brands
+- **Brand Admin**: Manage specific brand's stores and settings
+- **Store Admin**: Granular permissions (P1-P4) for store operations
+  - P1: POS access, inventory management
+  - P2: View backend data, accounting
+  - P3: Edit backend data
+  - P4: Employee permission management
+
+#### 🛒 **Point-of-Sale (POS) System**
+
+- Staff-focused ordering interface
+- Quick order creation and modification
+- Payment processing and confirmation
+- Order queue management
+
+### 🛠️ Tech Stack
+
+**Frontend**
+
+- Vue 3 + Composition API
+- Vite (build tool)
+- Pinia (state management)
+- Vue Router 4
+- Bootstrap Vue Next
+- Vue i18n (internationalization)
+
+**Backend**
+
+- Express.js (Node.js framework)
+- MongoDB + Mongoose ODM
+- Express Session
+- RESTful API architecture
+
+**Testing**
+
+- Vitest (unit testing)
+- Cypress (E2E testing)
+
+**External Integrations**
+
+- UberEats API (delivery integration)
+- KotSMS (SMS verification)
+- LINE LIFF (LINE integration)
+- TapPay (payment gateway)
+- Cloudflare R2 (file storage)
+
+### 🚀 Getting Started
+
+#### Prerequisites
+
+- Node.js 18+ and Yarn
+- MongoDB 6.x
+- Git
+
+#### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd online-order-system
+
+# Install dependencies
+yarn install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env and configure:
+# - MongoDB_url
+# - SESSION_SECRET
+# - Payment gateway credentials
+# - SMS service credentials
 ```
 
-### Compile and Hot-Reload for Development
+#### Development
 
-```sh
+```bash
+# Start frontend development server (port 5173)
 yarn dev
-```
 
-### Compile and Minify for Production
+# Start backend server (port 8700) in another terminal
+node server.js
 
-```sh
-yarn build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
+# Run unit tests
 yarn test:unit
-```
 
-### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
-
-```sh
+# Run E2E tests
 yarn test:e2e:dev
 ```
 
-This runs the end-to-end tests against the Vite development server.
-It is much faster than the production build.
+#### Production Build
 
-But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
-
-```sh
+```bash
+# Build for production
 yarn build
+
+# Preview production build
+yarn preview
+
+# Run production server
+NODE_ENV=production node server.js
+```
+
+### 📁 Project Structure
+
+```
+online-order-system/
+├── src/                      # Frontend source code
+│   ├── views/               # Page components
+│   │   ├── auth/           # Authentication pages
+│   │   ├── boss/           # System admin dashboard
+│   │   ├── brandAdmin/     # Brand manager dashboard
+│   │   ├── counter/        # POS interface
+│   │   ├── customer/       # Customer-facing pages
+│   │   └── landing/        # Marketing pages
+│   ├── components/          # Reusable Vue components
+│   ├── stores/             # Pinia state management
+│   ├── router/             # Route definitions
+│   ├── api/                # API client modules
+│   └── i18n/               # Internationalization
+├── server/                  # Backend source code
+│   ├── models/             # Mongoose schemas
+│   ├── controllers/        # Request handlers
+│   ├── services/           # Business logic layer
+│   ├── routes/             # Express routes
+│   ├── middlewares/        # Auth, validation, error handling
+│   └── utils/              # Utility functions
+├── tests/                   # Test files
+│   ├── unit/               # Unit tests
+│   └── e2e/                # E2E tests
+└── public/                  # Static assets
+```
+
+### 🎯 Core Domain Models
+
+- **Brand**: Top-level restaurant brand
+- **Store**: Individual store locations
+- **DishTemplate**: Centralized menu item templates
+- **DishInstance**: Specific dish instances in orders
+- **Menu**: Store-specific menu configurations
+- **Order**: Customer orders (supports mixed items)
+- **Inventory**: Real-time stock management
+- **User**: Customer accounts
+- **Admin**: System/brand/store administrators
+- **PointRule**: Points accumulation rules
+- **PointInstance**: Individual point records
+- **CouponTemplate**: Reusable coupon templates
+- **CouponInstance**: User-specific coupon instances
+- **PromotionMenu**: Bundle promotion packages
+
+### 🔐 API Structure
+
+```
+/api
+├── /auth                    # Authentication
+├── /user-profile           # Customer profile management
+├── /order-customer         # Customer order operations
+├── /order-admin            # Admin order management
+├── /store                  # Store management
+├── /menu                   # Menu management
+├── /inventory              # Inventory operations
+├── /promotion              # Promotion system
+└── /admin                  # Admin user management
+```
+
+### 📊 System Architecture
+
+![System Architecture](./public/system-flow-chart3.svg)
+
+See the [full documentation](#程式流程圖) for detailed flow diagrams and ER diagrams.
+
+### 🧪 Testing
+
+```bash
+# Run all unit tests
+NODE_ENV=test yarn test:unit
+
+# Run specific test file
+NODE_ENV=test yarn test:unit tests/unit/path/to/test.js --reporter=verbose --no-watch
+
+# Run E2E tests
 yarn test:e2e
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### 🌐 Internationalization
 
-```sh
-yarn lint
-```
+The system supports:
 
-# License
+- Traditional Chinese (繁體中文)
+- English
+
+### 📄 License
 
 This project is licensed under a [Modified MIT License](./LICENSE) — for non-commercial use only.
 
-# 命名風格
+### 🤝 Contributing
 
-## **資料夾命名規則**
+Contributions, issues, and feature requests are welcome!
 
-- 頂層目錄命名 (使用 camelCase)
-- 業務邏輯子目錄 (使用 PascalCase)
-- 組件目錄 (使用 PascalCase)
-- 視圖目錄 (使用 camelCase)
+---
 
-## **檔案命名規則詳解**
+## 繁體中文
 
-1. 模型檔案 (Models)
+### 📋 專案簡介
 
-命名風格：PascalCase + 單數
-原因：代表類或構造函數，符合OOP原則
-範例：MainDish.js, Order.js
+這是一個採用現代化技術棧開發的全端多品牌餐廳訂餐管理系統。本平台讓餐飲集團能夠管理多個品牌，每個品牌可擁有多家分店，提供完整的餐廳營運解決方案。
 
-2. Vue組件檔案 (Components)
+### ✨ 核心功能
 
-命名風格：PascalCase
-原因：Vue官方建議，與元件註冊名稱一致
-範例：CartItem.vue, MenuList.vue
+#### 🏢 **多品牌架構**
 
-3. 視圖檔案 (Views)
+- 系統管理員可管理多個餐飲品牌
+- 每個品牌下可有多家分店
+- 集中化的菜單模板可跨店共用
+- 支援店鋪個別化設定
 
-命名風格：PascalCase
-原因：實際上也是Vue組件，遵循相同規則
-範例：Dashboard.vue, MenuPage.vue
+#### 📦 **訂單管理**
 
-4. 工具函數檔案
+- 支援內用、外帶、外送訂單
+- **混合購物車系統**：可同時訂購餐點與促銷套餐
+- 即時訂單追蹤與狀態更新
+- 多元支付方式：現金、信用卡、LINE Pay
 
-命名風格：camelCase
-原因：包含普通函數，符合JavaScript慣例
-範例：priceCalculator.js, dateFormatter.js
+#### 📊 **庫存控制**
 
-5. Store檔案
+- 所有菜單項目的即時庫存追蹤
+- 訂單完成時自動扣減庫存
+- 低庫存警示與售完管理
+- 詳細的庫存變動記錄
 
-命名風格：camelCase
-原因：主要導出物件或函數，符合模組命名慣例
-範例：cartStore.js, userStore.js
+#### 🎁 **促銷系統**
 
-# 程式流程圖
+- **點數累積**：根據訂單金額獲得點數
+- **折價券**：百分比或固定金額折扣
+- **兌換券**：使用點數兌換免費商品
+- **套餐優惠**：特殊促銷組合
+- 點數到期管理（先進先出）
+
+#### 👥 **用戶與權限管理**
+
+- **顧客帳戶**：註冊、個人資料管理、訂單歷史
+- **系統管理員（Boss）**：完整系統權限，管理所有品牌
+- **品牌管理員**：管理特定品牌的店鋪與設定
+- **店鋪管理員**：細分權限（P1-P4）管理店鋪營運
+  - P1：登入前台點餐系統、庫存管理
+  - P2：查看後台資料、記帳
+  - P3：編輯後台資料
+  - P4：員工權限管理
+
+#### 🛒 **櫃檯系統（POS）**
+
+- 店員專用點餐介面
+- 快速建立與修改訂單
+- 付款處理與確認
+- 訂單佇列管理
+
+### 🛠️ 技術棧
+
+**前端**
+
+- Vue 3 + Composition API
+- Vite（建置工具）
+- Pinia（狀態管理）
+- Vue Router 4
+- Bootstrap Vue Next
+- Vue i18n（國際化）
+
+**後端**
+
+- Express.js（Node.js 框架）
+- MongoDB + Mongoose ODM
+- Express Session
+- RESTful API 架構
+
+**測試**
+
+- Vitest（單元測試）
+- Cypress（端對端測試）
+
+**外部整合**
+
+- UberEats API（外送整合）
+- KotSMS（簡訊驗證）
+- LINE LIFF（LINE 整合）
+- TapPay（金流閘道）
+- Cloudflare R2（檔案儲存）
+
+### 🚀 快速開始
+
+#### 環境需求
+
+- Node.js 18+ 與 Yarn
+- MongoDB 6.x
+- Git
+
+#### 安裝步驟
+
+```bash
+# 複製專案
+git clone <repository-url>
+cd online-order-system
+
+# 安裝相依套件
+yarn install
+
+# 設定環境變數
+cp .env.example .env
+# 編輯 .env 並設定：
+# - MongoDB_url
+# - SESSION_SECRET
+# - 金流閘道憑證
+# - 簡訊服務憑證
+```
+
+#### 開發環境
+
+```bash
+# 啟動前端開發伺服器（port 5173）
+yarn dev
+
+# 在另一個終端啟動後端伺服器（port 8700）
+node server.js
+
+# 執行單元測試
+yarn test:unit
+
+# 執行端對端測試
+yarn test:e2e:dev
+```
+
+#### 正式環境建置
+
+```bash
+# 建置正式版本
+yarn build
+
+# 預覽正式版本
+yarn preview
+
+# 執行正式環境伺服器
+NODE_ENV=production node server.js
+```
+
+### 📁 專案結構
+
+```
+online-order-system/
+├── src/                      # 前端原始碼
+│   ├── views/               # 頁面元件
+│   │   ├── auth/           # 認證頁面
+│   │   ├── boss/           # 系統管理員儀表板
+│   │   ├── brandAdmin/     # 品牌管理員儀表板
+│   │   ├── counter/        # 櫃檯系統介面
+│   │   ├── customer/       # 顧客前台頁面
+│   │   └── landing/        # 行銷頁面
+│   ├── components/          # 可重用 Vue 元件
+│   ├── stores/             # Pinia 狀態管理
+│   ├── router/             # 路由定義
+│   ├── api/                # API 客戶端模組
+│   └── i18n/               # 國際化
+├── server/                  # 後端原始碼
+│   ├── models/             # Mongoose 資料模型
+│   ├── controllers/        # 請求處理器
+│   ├── services/           # 商業邏輯層
+│   ├── routes/             # Express 路由
+│   ├── middlewares/        # 中介層（認證、驗證、錯誤處理）
+│   └── utils/              # 工具函數
+├── tests/                   # 測試檔案
+│   ├── unit/               # 單元測試
+│   └── e2e/                # 端對端測試
+└── public/                  # 靜態資源
+```
+
+### 🎯 核心資料模型
+
+- **Brand**：頂層餐飲品牌
+- **Store**：個別店鋪據點
+- **DishTemplate**：集中式菜單項目模板
+- **DishInstance**：訂單中的特定餐點實例
+- **Menu**：店鋪專屬菜單配置
+- **Order**：顧客訂單（支援混合商品）
+- **Inventory**：即時庫存管理
+- **User**：顧客帳戶
+- **Admin**：系統/品牌/店鋪管理員
+- **PointRule**：點數累積規則
+- **PointInstance**：個別點數記錄
+- **CouponTemplate**：可重用優惠券模板
+- **CouponInstance**：使用者專屬優惠券實例
+- **PromotionMenu**：套餐促銷組合
+
+### 🔐 API 架構
+
+```
+/api
+├── /auth                    # 認證
+├── /user-profile           # 顧客個人資料管理
+├── /order-customer         # 顧客訂單操作
+├── /order-admin            # 管理員訂單管理
+├── /store                  # 店鋪管理
+├── /menu                   # 菜單管理
+├── /inventory              # 庫存操作
+├── /promotion              # 促銷系統
+└── /admin                  # 管理員用戶管理
+```
+
+### 📊 系統架構
 
 ![系統架構圖](./public/system-flow-chart3.svg)
+
+詳細的流程圖與 ER 圖請參閱[完整文件](#程式流程圖)。
+
+### 🧪 測試
+
+```bash
+# 執行所有單元測試
+NODE_ENV=test yarn test:unit
+
+# 執行特定測試檔案
+NODE_ENV=test yarn test:unit tests/unit/path/to/test.js --reporter=verbose --no-watch
+
+# 執行端對端測試
+yarn test:e2e
+```
+
+### 🌐 國際化支援
+
+系統支援：
+
+- 繁體中文
+- English
+
+### 📝 開發指南
+
+#### 命名規範
+
+**資料夾命名**
+
+- 頂層目錄：camelCase
+- 業務邏輯子目錄：PascalCase
+- 組件目錄：PascalCase
+- 視圖目錄：camelCase
+
+**檔案命名**
+
+- 模型檔案（Models）：PascalCase + 單數（例：`Order.js`, `DishTemplate.js`）
+- Vue 組件檔案：PascalCase（例：`MenuList.vue`, `CartItem.vue`）
+- 視圖檔案（Views）：PascalCase（例：`Dashboard.vue`）
+- 工具函數檔案：camelCase（例：`priceCalculator.js`, `dateFormatter.js`）
+- Store 檔案：camelCase（例：`cartStore.js`, `userStore.js`）
+
+#### 架構分層
+
+| 層級           | 職責                       | 應包含                                       | 不應包含                |
+| -------------- | -------------------------- | -------------------------------------------- | ----------------------- |
+| **Model**      | 定義資料結構、與資料庫互動 | Schema 定義、欄位驗證、hooks、實例方法       | ❌ 處理請求與回應       |
+| **Controller** | 接收請求與回應             | 取得 req/params、呼叫 service、回傳 response | ❌ 商業邏輯             |
+| **Service**    | 處理業務邏輯與流程決策     | 建立/更新資料、套用規則、發送通知            | ❌ 接觸 req/res         |
+| **Utils**      | 可重用的純函數工具         | 格式化、驗證、計算等通用函數                 | ❌ 依賴資料庫或商業資料 |
+
+### 📄 授權條款
+
+本專案採用 [Modified MIT License](./LICENSE) 授權 — 僅限非商業用途使用。
+
+### 🤝 貢獻
+
+歡迎提交 issue、功能請求與貢獻！
+
+---
+
+## 📊 程式流程圖
+
+### 系統架構圖
 
 ```mermaid
 ---
@@ -225,6 +638,8 @@ flowchart TD
     L_n4_n1_0@{ animation: fast }
 ```
 
+### 權限管理邏輯
+
 ```mermaid
 ---
 config:
@@ -254,7 +669,7 @@ flowchart TB
   PermissionCheck -- "確認 P1-P4 權限" --> ExecuteActions
 ```
 
-# 資料庫ER圖
+### 資料庫 ER 圖
 
 ```mermaid
 ---
@@ -562,9 +977,9 @@ erDiagram
     Menu }o--o{ DishTemplate : "displays"
 ```
 
-# 系統核心流程圖
+### 核心業務流程
 
-## 用戶認證與註冊流程
+#### 用戶認證與註冊流程
 
 ```mermaid
 flowchart TD
@@ -591,7 +1006,7 @@ flowchart TD
     ResetPassword --> LoginPage
 ```
 
-## 混合購買訂單流程 (新功能)
+#### 混合購買訂單流程
 
 ```mermaid
 flowchart TD
@@ -629,7 +1044,40 @@ flowchart TD
     StaffConfirm -->|取消| CancelOrder[取消訂單]
 ```
 
-## 促銷系統流程
+#### 訂單提交流程
+
+```mermaid
+flowchart TD
+    Start[顧客下單頁面] --> Submit[顧客提交訂單]
+    Submit --> PaymentChoice{選擇付款方式}
+
+    %% 現場付款流程
+    PaymentChoice -->|現場付款<br/>On-site| CreateOnsite[創建訂單<br/>isFinalized: true<br/>status: unpaid]
+    CreateOnsite --> SuccessDetail[訂單詳情頁面<br/>付款成功]
+
+    %% 線上付款流程
+    PaymentChoice -->|線上付款<br/>Online| CreateTemp[創建臨時訂單<br/>isFinalized: false<br/>status: pending_payment]
+    CreateTemp --> CreateTxn[創建 Transaction<br/>tempOrderData: Order._id]
+    CreateTxn --> RedirectPlatform[跳轉到金流平台]
+    RedirectPlatform --> SelectMethod[選擇線上支付方式<br/>信用卡/LINE Pay/Apple Pay]
+    SelectMethod --> Processing[支付處理中...]
+
+    Processing --> PaymentResult{支付結果}
+
+    %% 支付成功
+    PaymentResult -->|成功| FinalizeOrder[完成訂單<br/>isFinalized: true<br/>status: paid<br/>補充 orderDateCode, sequence]
+    FinalizeOrder --> UpdateTxn[更新 Transaction<br/>orderId: Order._id<br/>status: completed]
+    UpdateTxn --> RedirectSuccess[重定向到訂單詳情]
+    RedirectSuccess --> SuccessDetail[訂單成功<br/>訂單詳情頁面]
+
+    %% 支付失敗
+    PaymentResult -->|失敗| CancelOrder[標記訂單<br/>status: cancelled]
+    CancelOrder --> UpdateTxnFail[更新 Transaction<br/>status: failed]
+    UpdateTxnFail --> RedirectFail[重定向回下單頁面<br/>顯示錯誤訊息]
+    RedirectFail --> Start
+```
+
+#### 促銷系統流程
 
 ```mermaid
 flowchart TD
@@ -662,7 +1110,7 @@ flowchart TD
     UseCoupon --> OrderDiscount[訂單折扣/免費兌換]
 ```
 
-## 庫存管理流程
+#### 庫存管理流程
 
 ```mermaid
 flowchart TD
@@ -691,7 +1139,7 @@ flowchart TD
     StockAdjust --> UpdateStock
 ```
 
-## 點數系統流程
+#### 點數系統流程
 
 ```mermaid
 flowchart TD
@@ -723,7 +1171,7 @@ flowchart TD
     UpdateBalance --> ProcessComplete[點數使用完成]
 ```
 
-## 管理員權限控制流程
+#### 管理員權限控制流程
 
 ```mermaid
 flowchart TD
@@ -752,167 +1200,10 @@ flowchart TD
     LogActivity --> Result[返回操作結果]
 ```
 
-# 內部各元件流程圖
-
-### 客戶登入按鈕
-
-```mermaid
-flowchart TD
-    Start[登入按鈕] --> Login[登入介面]
-    Login -->|登入成功| Profile[個人資料]
-
-    Login --> Register[註冊按鈕]
-    Register --> RegPage[註冊頁面<br>輸入電話號碼和密碼]
-    RegPage --> VerifyPhone[驗證電話號碼<br>輸入驗證碼]
-    VerifyPhone -->|沒有獲得驗證碼| ResendCode[重新獲取驗證碼<br>60s延遲]
-    ResendCode --> VerifyPhone
-    VerifyPhone -->|驗證成功| Login
-
-    Login --> ForgotPwd[忘記密碼]
-    ForgotPwd --> ResetPwd[重設密碼<br>發送簡訊驗證碼]
-    ResetPwd --> VerifyCode[驗證成功]
-    VerifyCode --> NewPwd[重設密碼]
-    NewPwd --> Login
-```
-
-### 訂單流程
-
-```mermaid
-flowchart TD
-    Start([客人填寫訂單資訊]) --> PaymentChoice{選擇付款方式}
-
-    PaymentChoice -->|現場付款| CashSubmit[送出訂單<br/>創建訂單 status: unpaid]
-    PaymentChoice -->|Credit Card| CreditCard[跳轉 Credit Card<br/>驗證畫面]
-    PaymentChoice -->|LINE Pay| LinePay[跳轉 LINE Pay<br/>驗證畫面]
-
-    CreditCard --> CreditVerify{Credit Card 驗證}
-    LinePay --> LinePayVerify{LINE Pay 驗證}
-
-    CreditVerify -->|付款成功| CreditSubmit[送出訂單<br/>創建訂單 status: paid]
-    CreditVerify -->|付款失敗| PaymentFailed[付款失敗<br/>返回付款選擇]
-
-    LinePayVerify -->|付款成功| LineSubmit[送出訂單<br/>創建訂單 status: paid]
-    LinePayVerify -->|付款失敗| PaymentFailed
-
-    PaymentFailed --> PaymentChoice
-
-    CashSubmit --> OrderConfirmCash[OrderConfirmView<br/>顯示訂單送出成功<br/>尚未付款]
-    CreditSubmit --> OrderConfirmPaid[OrderConfirmView<br/>顯示訂單送出成功<br/>付款完成]
-    LineSubmit --> OrderConfirmPaid
-
-    OrderConfirmCash --> ProgressBarUnpaid[進度條顯示:<br/>✅ 送出訂單<br/>🔄 未付款<br/>⏳ 付款完成]
-    OrderConfirmPaid --> ProgressBarPaid[進度條顯示:<br/>✅ 送出訂單<br/>✅ 已付款<br/>✅ 付款完成]
-
-    ProgressBarUnpaid --> WaitStaff[等待前台人員<br/>點選付款完成]
-    ProgressBarPaid --> OrderComplete[訂單完成<br/>開始製作]
-
-    WaitStaff --> StaffAction[前台人員操作]
-    StaffAction --> StaffConfirm{確認收到款項}
-    StaffConfirm -->|是| UpdatePaidCash[更新訂單狀態<br/>status: paid]
-    StaffConfirm -->|否| WaitStaff
-
-    UpdatePaidCash --> FinalConfirm[OrderConfirmView<br/>更新為付款完成]
-
-    FinalConfirm --> FinalProgress[進度條顯示:<br/>✅ 送出訂單<br/>✅ 已付款<br/>✅ 付款完成]
-
-    FinalProgress --> OrderComplete
-
-    %% 樣式設定
-
-    class Start startNode
-    class CashSubmit,CreditSubmit,LineSubmit,CreditCard,LinePay,UpdatePaidCash processNode
-    class PaymentChoice,CreditVerify,LinePayVerify,StaffConfirm decisionNode
-    class OrderComplete,FinalProgress successNode
-    class ProgressBarUnpaid,WaitStaff,StaffAction waitNode
-    class PaymentFailed failNode
-    class OrderConfirmCash,OrderConfirmPaid,FinalConfirm,ProgressBarPaid confirmNode
-```
-
-### 訂單時序圖
-
-```mermaid
-sequenceDiagram
-    participant Client as 客人前端
-    participant API as 後端API
-    participant PaymentGW as 付款閘道
-    participant Admin as 前台管理
-
-    Note over Client, Admin: 🏪 現場付款流程
-
-    Client->>Client: 選擇付款方式: 現場付款
-    Client->>API: POST /order-customer/brands/{brandId}/stores/{storeId}/create<br/>{orderData, paymentMethod: "cash"}
-    API->>API: 創建訂單 status: "unpaid"
-    API->>Client: 200 OK {success: true, order: {status: "unpaid"}}
-
-    Client->>Client: 跳轉 OrderConfirmView<br/>顯示: 尚未付款
-
-    Note over Admin: 等待前台確認收款
-    Admin->>API: PUT /order-admin/brands/{brandId}/stores/{storeId}/orders/{orderId}<br/>{status: "paid"}
-    API->>Admin: 200 OK {success: true, order: {status: "paid"}}
-
-    API-->>Client: 訂單狀態更新通知
-    Client->>Client: 更新頁面: 付款完成
-
-    Note over Client, PaymentGW: 💳 Credit Card 流程
-
-    Client->>Client: 選擇付款方式: Credit Card
-    Client->>PaymentGW: 跳轉信用卡付款頁面
-    PaymentGW->>PaymentGW: 處理付款
-
-    alt 付款成功
-        PaymentGW->>Client: 付款成功回調
-        Client->>API: POST /order-customer/brands/{brandId}/stores/{storeId}/create<br/>{orderData, paymentMethod: "credit_card"}
-        API->>API: 創建訂單 status: "paid"
-        API->>Client: 200 OK {success: true, order: {status: "paid"}}
-        Client->>Client: 跳轉 OrderConfirmView<br/>顯示: 付款完成
-
-    else 付款失敗
-        PaymentGW->>Client: 付款失敗
-        Client->>Client: 返回付款選擇頁面
-    end
-
-    Note over Client, PaymentGW: 📱 LINE Pay 流程
-
-    Client->>Client: 選擇付款方式: LINE Pay
-    Client->>PaymentGW: 跳轉 LINE Pay 頁面
-    PaymentGW->>PaymentGW: 處理付款
-
-    alt 付款成功
-        PaymentGW->>API: POST /order-customer/brands/{brandId}/orders/{orderId}/payment/callback<br/>{success: true}
-        API->>API: 更新訂單 status: "paid"
-        API->>PaymentGW: 200 OK
-
-        PaymentGW->>Client: 重導向到成功頁面
-        Client->>Client: 跳轉 OrderConfirmView<br/>顯示: 付款完成
-
-    else 付款失敗
-        PaymentGW->>Client: 付款失敗
-        Client->>Client: 返回付款選擇頁面
-    end
-```
-
-# 各個資料夾裡面應該放什麼邏輯
-
-## 📦 分層責任對照表（MVC 架構＋服務層）
-
-| 層級           | 職責重點                                    | 應該包含的邏輯範例                                                                                                     | 不應該包含什麼                        |
-| -------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| **Model**      | 定義資料結構、與資料庫互動的邏輯            | - Schema 定義<br>- 欄位驗證（required, enum）<br>- pre/post hooks（如自動編號）<br>- 實例方法（如 `calculateTotal()`） | ❌ 不要處理使用者請求、回應格式       |
-| **Controller** | 負責接收請求與回應：像是 API 的「門口人員」 | - 取得 `req.body`、`req.params`<br>- 呼叫 service 處理邏輯<br>- 根據結果回傳 `res.json()`                              | ❌ 不要處理商業邏輯（例如：金額計算） |
-| **Service**    | 處理實際的「業務邏輯」與流程決策            | - 建立/更新訂單邏輯<br>- 套用優惠券<br>- 根據用戶狀態篩選餐點<br>- 發送 email、計算小計與折扣                          | ❌ 不要接觸 `req`、`res`              |
-| **Utils**      | 可重用、無狀態的通用工具函數（純函數）      | - 格式化日期、驗證 email<br>- 產生亂數、字串處理<br>- 格式化地址、計算距離                                             | ❌ 不應依賴資料庫、也不該存取商業資料 |
-
 ---
 
-## 🧩 範例拆解：以「訂單系統」為例
+<div align="center">
 
-| 功能                                         | 應該放哪裡？    | 為什麼                                                                                                         |
-| -------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------- |
-| 訂單 `schema`、欄位驗證                      | Model           | 屬於資料結構定義                                                                                               |
-| 計算訂單總額（包含小計、服務費、折扣）       | Model / Service | 若是「單一訂單實例」方法 ➝ Model（如 `calculateTotal()`）<br>若有更多邏輯（查優惠券、用戶資訊） ➝ Service 處理 |
-| 使用者送出訂單                               | Controller      | 負責接收請求、解析 `req.body`、丟給 Service 處理                                                               |
-| 處理送出訂單邏輯（包含驗證、金額計算、儲存） | Service         | 包含整個「商業邏輯流程」                                                                                       |
-| 格式化顯示日期、手機號碼                     | Utils           | 可在 controller 或 service 呼叫的「純邏輯工具」                                                                |
-| 驗證 ObjectId 是否有效                       | Utils           | 與資料庫結構無關的工具函數，可在 middleware、service 或 controller 中使用                                      |
+Made with ❤️ for the restaurant industry
 
----
+</div>

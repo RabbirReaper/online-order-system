@@ -13,9 +13,9 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
 
 // Mock paymentOrderService
 vi.mock('@server/services/payment/paymentOrderService.js', () => ({
-  default: {
-    processPaymentAndCreateOrder: vi.fn()
-  }
+  processPaymentAndCreateOrder: vi.fn(),
+  getOrderPaymentStatus: vi.fn(),
+  processRefund: vi.fn()
 }))
 
 // Mock error middleware
@@ -187,13 +187,13 @@ describe('OrderCustomer Controller', () => {
         transaction: { transactionId: 'txn_123', status: 'completed' }
       }
 
-      paymentOrderService.default.processPaymentAndCreateOrder.mockResolvedValue(mockResult)
+      paymentOrderService.processPaymentAndCreateOrder.mockResolvedValue(mockResult)
 
       // Act
       await orderController.createOrder(req, res)
 
       // Assert
-      expect(paymentOrderService.default.processPaymentAndCreateOrder).toHaveBeenCalledWith(
+      expect(paymentOrderService.processPaymentAndCreateOrder).toHaveBeenCalledWith(
         {
           ...orderData,
           customerInfo: { name: 'Test User', phone: '0912345678', email: 'test@example.com' },

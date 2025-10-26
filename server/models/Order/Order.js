@@ -66,7 +66,12 @@ const orderSchema = new mongoose.Schema(
     }, // 訂單類型
     status: {
       type: String,
-      enum: ['unpaid', 'paid', 'cancelled'],
+      enum: ['unpaid', 'paid', 'cancelled', 'pending_payment'],
+      // 狀態說明：
+      // - unpaid: 現場付款未付（isFinalized: true）
+      // - pending_payment: 線上付款等待中（isFinalized: false）
+      // - paid: 已付款完成（isFinalized: true）
+      // - cancelled: 已取消
       default: 'unpaid',
     }, // 訂單狀態
 
@@ -187,6 +192,22 @@ const orderSchema = new mongoose.Schema(
       enum: ['cash', 'credit_card', 'line_pay', 'other', ''],
     }, // 付款方式
     onlinePaymentCode: { type: String }, // 線上付款代碼 (例如：LINE Pay)
+
+    // === 新增：線上付款相關資訊 ===
+    onlinePayment: {
+      platform: {
+        type: String,
+        enum: ['newebpay', 'tappay', ''],
+        default: '',
+      }, // 金流平台
+      merchantOrderNo: { type: String }, // 商店訂單編號（給金流平台用）
+      tradeNo: { type: String }, // 金流平台交易編號
+      paymentType: { type: String }, // 付款方式（CREDIT, WEBATM, VACC...）
+      respondCode: { type: String }, // 回應碼
+      respondMessage: { type: String }, // 回應訊息
+      payTime: { type: Date }, // 付款時間
+    },
+
     customerInfo: {
       name: { type: String }, // 顧客名稱
       lineUniqueId: { type: String }, // 顧客 LINE Unique ID
@@ -231,6 +252,11 @@ const orderSchema = new mongoose.Schema(
     cancelledAt: {
       type: Date,
     }, // 取消時間
+    isFinalized: {
+      type: Boolean,
+      default: true,
+      // 用在線上付款等待時改為 false，確認付款後再改回 true
+    },
   },
   { timestamps: true },
 )
