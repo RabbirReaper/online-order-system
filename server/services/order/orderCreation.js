@@ -228,6 +228,7 @@ export const sendOrderConfirmationLineMessage = async (order) => {
     }
 
     // 建立確認訂單的網址
+    // TODO: 根據實際前端網址調整
     const confirmUrl = `${'https://rabbirorder.com' || 'http://localhost:5173'}/stores/${order.brand}/${order.store}/order-confirm/${order._id}`
 
     // 建立訊息內容

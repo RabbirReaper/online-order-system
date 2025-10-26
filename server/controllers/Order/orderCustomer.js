@@ -101,8 +101,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     console.log('✅ Transaction 記錄創建成功:', transaction._id)
 
     // Step 3: 生成 NewebPay 付款表單
-    const backendURL = process.env.BACKEND_URL || 'http://localhost:8700'
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const backendURL = process.env.NEWEBPAY_ReturnUrl
+    const frontendURL = process.env.NEWEBPAY_NotifyUrl
 
     const itemDesc = `訂單付款 - ${order.items.length} 項商品`
 

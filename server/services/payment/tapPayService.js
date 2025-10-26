@@ -140,17 +140,13 @@ export const getTransactionStatus = async (transactionId) => {
       rec_trade_id: transactionId,
     }
 
-    const response = await axios.post(
-      `${config.API_BASE_URL}/tpc/transaction/query`,
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': config.PARTNER_KEY,
-        },
-        timeout: 15000,
+    const response = await axios.post(`${config.API_BASE_URL}/tpc/transaction/query`, requestData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': config.PARTNER_KEY,
       },
-    )
+      timeout: 15000,
+    })
 
     if (response.data.status === 0) {
       return {
@@ -254,6 +250,7 @@ export const refund = async (transactionId, amount, reason = '訂單取消') => 
  * @param {Object} orderInfo - 訂單資訊
  * @returns {Promise<Object>} LINE Pay 支付結果
  */
+// TODO: 預計要移除
 export const processLinePayment = async (amount, orderInfo) => {
   try {
     const requestData = {
@@ -267,17 +264,13 @@ export const processLinePayment = async (amount, orderInfo) => {
       notify_url: `${process.env.BACKEND_URL || 'http://localhost:8700'}/api/orders/payment/line-pay/notify`,
     }
 
-    const response = await axios.post(
-      `${config.API_BASE_URL}/tpc/line-pay/payment`,
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': config.PARTNER_KEY,
-        },
-        timeout: 30000,
+    const response = await axios.post(`${config.API_BASE_URL}/tpc/line-pay/payment`, requestData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': config.PARTNER_KEY,
       },
-    )
+      timeout: 30000,
+    })
 
     if (response.data.status === 0) {
       return {
