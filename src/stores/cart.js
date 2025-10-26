@@ -553,6 +553,7 @@ export const useCartStore = defineStore('cart', () => {
           order: response.order,
           orderId: response.order._id,
           pointsAwarded: response.pointsAwarded || null,
+          payment: response.payment || null, // ✅ 保留 payment 資訊（線上付款需要）
         }
       } else {
         console.error('API 回應失敗:', response)
