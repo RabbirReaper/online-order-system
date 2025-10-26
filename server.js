@@ -4,58 +4,56 @@ import dotenv from 'dotenv'
 import path from 'path'
 import mongoose from 'mongoose'
 import session from 'express-session'
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'url'
 import apiRoutes from './server/routes/index.js'
 
 dotenv.config()
 const app = express()
-const port = process.env.PORT || 8700
+const port = process.env.PORT || 80
 
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ limit: '2mb', extended: true }));
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+app.use(express.json({ limit: '2mb' }))
+app.use(express.urlencoded({ limit: '2mb', extended: true }))
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  }),
+)
 
 app.use(express.static('dist'))
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  rolling: true,
-  cookie: {
-    maxAge: 30 * 60 * 1000, // 30 分鐘後過期
-    sameSite: 'strict',
-    httpOnly: true
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      maxAge: 30 * 60 * 1000, // 30 分鐘後過期
+      sameSite: 'strict',
+      httpOnly: true,
+    },
+  }),
+)
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-
-
-mongoose.connect(`${process.env.MongoDB_url}`)
+mongoose
+  .connect(`${process.env.MongoDB_url}`)
   .then(() => {
-    console.log("MongoDB connected")
+    console.log('MongoDB connected')
   })
   .catch((err) => {
-    console.log("MongoDB connection failed")
+    console.log('MongoDB connection failed')
     console.log(err)
   })
 
-
 app.use('/api', apiRoutes)
-
 
 app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
 })
-
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
