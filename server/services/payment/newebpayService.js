@@ -12,11 +12,11 @@ dotenv.config()
 
 // NewebPay 設定 - 從環境變數讀取
 const config = {
-  MERCHANT_ID: process.env.NEWEBPAY_MERCHANT_ID,
-  HASH_KEY: process.env.NEWEBPAY_HASH_KEY,
-  HASH_IV: process.env.NEWEBPAY_HASH_IV,
-  API_BASE_URL: process.env.NEWEBPAY_API_BASE_URL || 'https://ccore.newebpay.com',
-  VERSION: '2.0',
+  MERCHANT_ID: process.env.NEWEBPAY_MerchantID,
+  HASH_KEY: process.env.NEWEBPAY_HASHKEY,
+  HASH_IV: process.env.NEWEBPAY_HASHIV,
+  API_BASE_URL: process.env.NEWEBPAY_PayGateWay || 'https://ccore.newebpay.com',
+  VERSION: process.env.NEWEBPAY_Version || '2.0',
 }
 
 /**
@@ -307,22 +307,16 @@ export const queryTransaction = async (merchantOrderNo, amount) => {
     const queryStr = new URLSearchParams(queryData).toString()
 
     // 計算 CheckValue
-    const checkValue = sha256Hash(
-      `HashIV=${config.HASH_IV}&${queryStr}&HashKey=${config.HASH_KEY}`,
-    )
+    const checkValue = sha256Hash(`HashIV=${config.HASH_IV}&${queryStr}&HashKey=${config.HASH_KEY}`)
 
     queryData.CheckValue = checkValue
 
-    const response = await axios.post(
-      `${config.API_BASE_URL}/API/QueryTradeInfo`,
-      queryData,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        timeout: 15000,
+    const response = await axios.post(`${config.API_BASE_URL}/API/QueryTradeInfo`, queryData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-    )
+      timeout: 15000,
+    })
 
     console.log('NewebPay 查詢回應:', response.data)
 
@@ -332,11 +326,7 @@ export const queryTransaction = async (merchantOrderNo, amount) => {
         data: response.data,
       }
     } else {
-      throw new AppError(
-        response.data.Message || '查詢交易失敗',
-        400,
-        'QUERY_TRANSACTION_FAILED',
-      )
+      throw new AppError(response.data.Message || '查詢交易失敗', 400, 'QUERY_TRANSACTION_FAILED')
     }
   } catch (error) {
     console.error('NewebPay queryTransaction 錯誤:', error)
