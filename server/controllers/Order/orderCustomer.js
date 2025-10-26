@@ -5,14 +5,26 @@
 
 import * as orderService from '../../services/order/orderCustomer.js'
 import * as paymentOrderService from '../../services/payment/paymentOrderService.js'
+import * as newebpayService from '../../services/payment/newebpayService.js'
+import * as orderCreationService from '../../services/order/orderCreation.js'
+import Transaction from '../../models/Payment/Transaction.js'
 import { asyncHandler, AppError } from '../../middlewares/error.js'
 
 /**
  * 統一創建訂單接口 - 根據 paymentType 自動路由
+ * 支援現場付款 + NewebPay 線上付款
  */
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params
   const { orderData, paymentType, paymentMethod, primeToken } = req.body
+
+  console.log('📝 收到創建訂單請求:', {
+    brandId,
+    storeId,
+    paymentType,
+    paymentMethod,
+    hasUser: !!req.auth?.userId,
+  })
 
   // 基本驗證
   if (!orderData || !paymentType) {
@@ -21,13 +33,14 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   // 🔀 根據付款類型路由到不同處理流程
   if (paymentType === 'On-site') {
-    // 現場付款流程 - 直接創建 unpaid 訂單
+    // === 現場付款流程 ===
+    console.log('💵 現場付款流程')
 
     // 設置訂單的基本資訊
     const completeOrderData = {
       ...orderData,
       paymentType,
-      paymentMethod: 'cash',
+      paymentMethod: paymentMethod || 'cash',
       brand: brandId,
       store: storeId,
       user: req.auth?.userId,
@@ -40,40 +53,103 @@ export const createOrder = asyncHandler(async (req, res) => {
 
     const result = await orderService.createOrder(completeOrderData)
 
+    console.log('✅ 現場付款訂單創建成功:', result._id)
+
     res.json({
       success: true,
       order: result,
       status: 'cash_submitted',
       message: '訂單已送出，請至櫃台付款',
     })
-  } else if (paymentType === 'Online' && primeToken) {
-    // 線上付款流程 - 先付款後創建訂單
-    const result = await paymentOrderService.processPaymentAndCreateOrder(
-      {
-        ...orderData,
-        brand: brandId,
-        store: storeId,
-        customerId: req.auth?.userId,
-        customerName: orderData.customerInfo?.name,
-        customerPhone: orderData.customerInfo?.phone,
-        customerEmail: orderData.customerInfo?.email,
-        totalAmount: orderData.total || orderData.totalAmount,
-      },
-      primeToken,
-      paymentMethod || 'credit_card',
-    )
+  } else if (paymentType === 'Online') {
+    // === 線上付款流程 (NewebPay) ===
+    console.log('💳 線上付款流程 (NewebPay)')
 
-    if (result.success) {
-      res.json({
-        success: true,
-        order: result.order,
-        status: 'online_success',
-        transaction: result.transaction,
-        message: '付款成功，訂單已確認',
-      })
-    } else {
-      throw new AppError('線上付款處理失敗', 400)
+    // 設置訂單基本資訊
+    const completeOrderData = {
+      ...orderData,
+      paymentType: 'Online',
+      paymentMethod: paymentMethod || 'credit_card',
+      brand: brandId,
+      store: storeId,
+      user: req.auth?.userId,
     }
+
+    // Step 1: 創建臨時訂單 (status: pending_payment, isFinalized: false)
+    console.log('🔄 創建臨時訂單...')
+    const order = await orderCreationService.createOrder(completeOrderData)
+
+    if (!order.isOnlinePayment) {
+      throw new AppError('訂單類型錯誤', 500)
+    }
+
+    console.log('✅ 臨時訂單創建成功:', order._id)
+
+    // Step 2: 創建 Transaction 記錄
+    const transaction = new Transaction({
+      brand: brandId,
+      store: storeId,
+      orderId: order._id,
+      transactionId: `TXN_${Date.now()}_${order._id}`,
+      amount: order.total,
+      paymentMethod: paymentMethod || 'credit_card',
+      platform: 'newebpay',
+      status: 'pending',
+    })
+    await transaction.save()
+
+    console.log('✅ Transaction 記錄創建成功:', transaction._id)
+
+    // Step 3: 生成 NewebPay 付款表單
+    const backendURL = process.env.BACKEND_URL || 'http://localhost:8700'
+    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
+
+    const itemDesc = `訂單付款 - ${order.items.length} 項商品`
+
+    const paymentForm = await newebpayService.createMPGPayment({
+      orderId: order._id,
+      amount: order.total,
+      itemDesc,
+      customerName: order.customerInfo?.name || '',
+      customerPhone: order.customerInfo?.phone || '',
+      email: order.customerInfo?.email || '',
+      notifyURL: `${backendURL}/api/payment/newebpay/notify`,
+      returnURL: `${backendURL}/api/payment/newebpay/return`,
+      clientBackURL: `${backendURL}/api/payment/newebpay/client-back`,
+    })
+
+    console.log('✅ NewebPay 付款表單生成成功:', paymentForm.merchantOrderNo)
+
+    // Step 4: 更新訂單和 Transaction 的 merchantOrderNo
+    order.onlinePayment = {
+      platform: 'newebpay',
+      merchantOrderNo: paymentForm.merchantOrderNo,
+    }
+    await order.save()
+
+    transaction.platformOrderNo = paymentForm.merchantOrderNo
+    await transaction.save()
+
+    console.log('✅ 訂單和 Transaction 已更新 merchantOrderNo')
+
+    // Step 5: 返回付款表單資料給前端
+    res.json({
+      success: true,
+      order: {
+        _id: order._id,
+        status: order.status,
+        total: order.total,
+        isOnlinePayment: true,
+      },
+      payment: {
+        formData: paymentForm.formData,
+        apiUrl: paymentForm.apiUrl,
+        merchantOrderNo: paymentForm.merchantOrderNo,
+      },
+      message: '訂單已創建，請完成付款',
+    })
+
+    console.log('✅ 付款表單已返回給前端')
   } else {
     throw new AppError('無效的付款參數', 400)
   }
