@@ -16,7 +16,7 @@ import { asyncHandler, AppError } from '../../middlewares/error.js'
  */
 export const createOrder = asyncHandler(async (req, res) => {
   const { brandId, storeId } = req.params
-  const { orderData, paymentType, paymentMethod, primeToken } = req.body
+  const { orderData, paymentType, paymentMethod } = req.body
 
   console.log('📝 收到創建訂單請求:', {
     brandId,
@@ -125,7 +125,6 @@ export const createOrder = asyncHandler(async (req, res) => {
       platform: 'newebpay',
       merchantOrderNo: paymentForm.merchantOrderNo,
     }
-    await order.save()
 
     transaction.platformOrderNo = paymentForm.merchantOrderNo
     await transaction.save()
