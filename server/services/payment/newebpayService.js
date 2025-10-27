@@ -68,9 +68,11 @@ const aesEncrypt = (data, key, iv) => {
 const aesDecrypt = (encryptedData, key, iv) => {
   try {
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
+    decipher.setAutoPadding(false)
     let decrypted = decipher.update(encryptedData, 'hex', 'utf8')
     decrypted += decipher.final('utf8')
-    return decrypted
+    const result = decrypted.replace(/[\x00-\x20]+/g, '')
+    return result
   } catch (error) {
     console.error('AES 解密錯誤:', error)
     throw new AppError('資料解密失敗', 400, 'DECRYPTION_FAILED')
@@ -114,7 +116,6 @@ const generateMerchantOrderNo = (orderId) => {
  * @param {string} orderData.orderId - 訂單 ID
  * @param {number} orderData.amount - 付款金額
  * @param {string} orderData.itemDesc - 商品描述
- * @param {string} orderData.email - 顧客 Email (選填)
  * @param {string} orderData.notifyURL - 幕後通知 URL
  * @param {string} orderData.returnURL - 前景返回 URL
  * @returns {Promise<Object>} 表單資料
@@ -130,7 +131,6 @@ export const createMPGPayment = async (orderData) => {
       orderId,
       amount,
       itemDesc,
-      email = '',
       notifyURL,
       returnURL,
     } = orderData
@@ -147,24 +147,20 @@ export const createMPGPayment = async (orderData) => {
 
     // 生成商店訂單編號
     const merchantOrderNo = generateMerchantOrderNo(orderId)
+    const timeStamp = Math.floor(Date.now() / 1000).toString()
 
-    // 準備交易資料 - 只傳送必要欄位
-    const tradeInfo = {
-      MerchantID: config.MERCHANT_ID,
-      RespondType: 'JSON',
-      TimeStamp: Math.floor(Date.now() / 1000).toString(),
-      Version: config.VERSION,
-      MerchantOrderNo: merchantOrderNo,
-      Amt: amount.toString(),
-      ItemDesc: itemDesc.substring(0, 50), // 限制長度
-      Email: email || '', // 選填，設空字串讓藍新金流跳過
-      // 回調 URL
-      NotifyURL: notifyURL,
-      ReturnURL: returnURL,
-    }
-
-    // 轉換為 URL encoded 字串
-    const tradeInfoStr = new URLSearchParams(tradeInfo).toString()
+    // 手動組合參數字串，確保順序和編碼正確
+    const tradeInfoStr = [
+      `MerchantID=${config.MERCHANT_ID}`,
+      `RespondType=JSON`,
+      `TimeStamp=${timeStamp}`,
+      `Version=${config.VERSION}`,
+      `MerchantOrderNo=${merchantOrderNo}`,
+      `Amt=${amount}`,
+      `NotifyURL=${encodeURIComponent(notifyURL)}`,
+      `ReturnURL=${encodeURIComponent(returnURL)}`,
+      `ItemDesc=${encodeURIComponent(itemDesc.substring(0, 50))}`,
+    ].join('&')
 
     console.log('NewebPay TradeInfo (加密前):', tradeInfoStr)
 
@@ -180,6 +176,7 @@ export const createMPGPayment = async (orderData) => {
       merchantOrderNo,
       amount,
       tradeInfoLength: tradeInfoEncrypted.length,
+      tradeShaLength: tradeSha.length,
     })
 
     return {
