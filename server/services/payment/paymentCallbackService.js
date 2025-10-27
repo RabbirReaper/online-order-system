@@ -164,6 +164,8 @@ export const handleNewebpayReturn = async (returnData) => {
     return {
       success: true,
       orderId: order._id,
+      brandId: order.brand,
+      storeId: order.store,
       orderStatus: order.status,
       isFinalized: order.isFinalized,
       paymentSuccess: paymentResult.success,

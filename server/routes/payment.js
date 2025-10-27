@@ -63,7 +63,7 @@ router.post('/newebpay/return', async (req, res) => {
 
     // 重定向到訂單詳情頁
     const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
-    const redirectURL = `${frontendURL}/order-confirm/${result.orderId}`
+    const redirectURL = `${frontendURL}/stores/${result.brandId}/${result.storeId}/order-confirm/${result.orderId}`
 
     console.log('↪️ [ReturnURL] 重定向到:', redirectURL)
 
