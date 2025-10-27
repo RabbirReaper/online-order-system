@@ -106,16 +106,14 @@ export const createOrder = asyncHandler(async (req, res) => {
 
     const itemDesc = `訂單付款 - ${order.items.length} 項商品`
 
+    // 🔥 只傳送必要的欄位給藍新金流
     const paymentForm = await newebpayService.createMPGPayment({
       orderId: order._id,
       amount: order.total,
       itemDesc,
-      customerName: order.customerInfo?.name || '',
-      customerPhone: order.customerInfo?.phone || '',
-      email: order.customerInfo?.email || '',
+      email: order.customerInfo?.email || '', // 選填，設空字串讓藍新金流跳過
       notifyURL: `${backendURL}/api/payment/newebpay/notify`,
       returnURL: `${backendURL}/api/payment/newebpay/return`,
-      clientBackURL: `${backendURL}/api/payment/newebpay/client-back`,
     })
 
     console.log('✅ NewebPay 付款表單生成成功:', paymentForm.merchantOrderNo)
