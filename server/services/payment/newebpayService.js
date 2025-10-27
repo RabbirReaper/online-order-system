@@ -114,12 +114,9 @@ const generateMerchantOrderNo = (orderId) => {
  * @param {string} orderData.orderId - 訂單 ID
  * @param {number} orderData.amount - 付款金額
  * @param {string} orderData.itemDesc - 商品描述
- * @param {string} orderData.email - 顧客 Email
- * @param {string} orderData.customerName - 顧客姓名
- * @param {string} orderData.customerPhone - 顧客電話
+ * @param {string} orderData.email - 顧客 Email (選填)
  * @param {string} orderData.notifyURL - 幕後通知 URL
  * @param {string} orderData.returnURL - 前景返回 URL
- * @param {string} orderData.clientBackURL - 客戶返回 URL
  * @returns {Promise<Object>} 表單資料
  */
 export const createMPGPayment = async (orderData) => {
@@ -134,11 +131,8 @@ export const createMPGPayment = async (orderData) => {
       amount,
       itemDesc,
       email = '',
-      customerName,
-      customerPhone,
       notifyURL,
       returnURL,
-      clientBackURL,
     } = orderData
 
     // 驗證必填欄位
@@ -154,7 +148,7 @@ export const createMPGPayment = async (orderData) => {
     // 生成商店訂單編號
     const merchantOrderNo = generateMerchantOrderNo(orderId)
 
-    // 準備交易資料
+    // 準備交易資料 - 只傳送必要欄位
     const tradeInfo = {
       MerchantID: config.MERCHANT_ID,
       RespondType: 'JSON',
@@ -163,18 +157,10 @@ export const createMPGPayment = async (orderData) => {
       MerchantOrderNo: merchantOrderNo,
       Amt: amount.toString(),
       ItemDesc: itemDesc.substring(0, 50), // 限制長度
-      Email: email,
-      LoginType: '0',
-      // 付款方式 - 啟用信用卡、ATM、超商代碼
-      CREDIT: '1',
-      WEBATM: '1',
-      VACC: '1',
+      Email: email || '', // 選填，設空字串讓藍新金流跳過
       // 回調 URL
       NotifyURL: notifyURL,
       ReturnURL: returnURL,
-      ClientBackURL: clientBackURL || returnURL,
-      // 顧客資訊
-      EmailModify: email ? '0' : '1',
     }
 
     // 轉換為 URL encoded 字串
