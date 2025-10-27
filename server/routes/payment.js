@@ -62,8 +62,8 @@ router.post('/newebpay/return', async (req, res) => {
     })
 
     // 重定向到訂單詳情頁
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
-    const redirectURL = `${frontendURL}/stores/${result.brandId}/${result.storeId}/order-confirm/${result.orderId}`
+    const frontendURL = process.env.NEWEBPAY_NotifyUrl
+    const redirectURL = `${frontendURL}/order-confirm/${result.orderId}`
 
     console.log('↪️ [ReturnURL] 重定向到:', redirectURL)
 
@@ -72,7 +72,7 @@ router.post('/newebpay/return', async (req, res) => {
     console.error('❌ [ReturnURL] 處理前景返回失敗:', error)
 
     // 發生錯誤時重定向回購物車，並帶上錯誤訊息
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendURL = process.env.NEWEBPAY_NotifyUrl
     const errorURL = `${frontendURL}/cart?error=payment_failed`
 
     console.log('↪️ [ReturnURL] 錯誤重定向到:', errorURL)
@@ -92,7 +92,7 @@ router.get('/newebpay/client-back', (req, res) => {
     console.log('⬅️ [ClientBackURL] 使用者點擊返回按鈕')
 
     // 導回購物車頁面
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendURL = process.env.NEWEBPAY_NotifyUrl
     const redirectURL = `${frontendURL}/cart`
 
     console.log('↪️ [ClientBackURL] 重定向到:', redirectURL)
@@ -102,7 +102,7 @@ router.get('/newebpay/client-back', (req, res) => {
     console.error('❌ [ClientBackURL] 處理客戶返回失敗:', error)
 
     // 發生錯誤也導回首頁
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendURL = process.env.NEWEBPAY_NotifyUrl
     res.redirect(frontendURL)
   }
 })
