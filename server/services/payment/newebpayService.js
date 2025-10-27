@@ -241,6 +241,33 @@ export const parseAndVerifyCallback = (callbackData) => {
       amount: result.Result?.Amt,
     })
 
+    // 解析 payTime - NewebPay 格式: "2025-10-2717:49:46" (日期和時間之間沒有空格)
+    let payTime = null
+    if (result.Result?.PayTime) {
+      try {
+        const payTimeStr = result.Result.PayTime
+        // 檢查是否為 YYYY-MM-DDHH:mm:ss 格式 (沒有空格)
+        const match = payTimeStr.match(/^(\d{4}-\d{2}-\d{2})(\d{2}:\d{2}:\d{2})$/)
+        if (match) {
+          // 插入空格: YYYY-MM-DD HH:mm:ss
+          const formattedPayTime = `${match[1]} ${match[2]}`
+          payTime = new Date(formattedPayTime)
+        } else {
+          // 嘗試直接解析
+          payTime = new Date(payTimeStr)
+        }
+
+        // 驗證日期是否有效
+        if (isNaN(payTime.getTime())) {
+          console.warn('無效的 payTime 格式:', payTimeStr)
+          payTime = null
+        }
+      } catch (error) {
+        console.warn('解析 payTime 失敗:', result.Result.PayTime, error)
+        payTime = null
+      }
+    }
+
     return {
       success: result.Status === 'SUCCESS',
       merchantOrderNo: result.Result?.MerchantOrderNo,
@@ -249,7 +276,7 @@ export const parseAndVerifyCallback = (callbackData) => {
       paymentType: result.Result?.PaymentType,
       respondCode: result.Status,
       message: result.Message,
-      payTime: result.Result?.PayTime,
+      payTime,
       rawData: result,
     }
   } catch (error) {
