@@ -64,24 +64,47 @@ apiClient.interceptors.response.use(
 
           // 判斷當前路徑是管理員還是用戶
           const currentPath = router.currentRoute.value.path
-          const isAdminPath = currentPath.includes('/admin/') || currentPath.includes('/boss/')
+          const isAdminPath =
+            currentPath.includes('/admin/') ||
+            currentPath.includes('/boss/') ||
+            currentPath.includes('/counter/')
 
           // 延遲跳轉，確保 Toast 顯示
           setTimeout(() => {
             if (isAdminPath) {
               // 管理員路徑 - 獲取 brandId 並跳轉到對應登入頁
-              const brandIdMatch = currentPath.match(/\/admin\/([^/]+)/)
-              const brandId = brandIdMatch ? brandIdMatch[1] : null
+              let brandId = null
 
+              // 嘗試從不同的路徑格式中提取 brandId
+              // 格式 1: /admin/:brandId/...
+              const adminMatch = currentPath.match(/\/admin\/([^/]+)/)
+              // 格式 2: /counter/:brandId/:storeId/...
+              const counterMatch = currentPath.match(/\/counter\/([^/]+)/)
+              // 格式 3: /boss/ 路徑 (系統管理員)
+              const isBossPath = currentPath.includes('/boss/')
+
+              if (counterMatch) {
+                brandId = counterMatch[1]
+              } else if (adminMatch) {
+                brandId = adminMatch[1]
+              }
+
+              // 根據提取的 brandId 決定跳轉目標
               if (brandId && brandId !== 'login') {
                 router.push({
                   path: `/admin/${brandId}/login`,
                   query: { redirect: currentPath },
                 })
-              } else {
-                // Boss 或無法識別的管理員路徑
+              } else if (isBossPath) {
+                // Boss 路徑 - 系統管理員登入
                 router.push({
                   path: '/boss/login',
+                  query: { redirect: currentPath },
+                })
+              } else {
+                // 無法識別的管理員路徑,使用預設管理員登入
+                router.push({
+                  path: '/admin/login',
                   query: { redirect: currentPath },
                 })
               }
