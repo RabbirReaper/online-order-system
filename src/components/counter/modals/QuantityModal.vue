@@ -21,10 +21,7 @@
                 </button>
               </div>
               <div class="col-4">
-                <button
-                  class="btn btn-outline-secondary w-100"
-                  @click="$emit('appendQuantity', 0)"
-                >
+                <button class="btn btn-outline-secondary w-100" @click="$emit('appendQuantity', 0)">
                   0
                 </button>
               </div>

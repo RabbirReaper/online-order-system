@@ -22,7 +22,7 @@ export const getUserOrders = async (userId, options = {}) => {
 
   const query = {
     user: userId,
-    isFinalized: true // 預設只查詢已完成（非等待付款）的訂單
+    isFinalized: true, // 預設只查詢已完成（非等待付款）的訂單
   }
   if (brandId) query.brand = brandId
 
@@ -66,7 +66,7 @@ export const getUserOrders = async (userId, options = {}) => {
 export const getUserOrderById = async (orderId, brandId) => {
   const query = {
     _id: orderId,
-    isFinalized: true // 預設只查詢已完成（非等待付款）的訂單
+    isFinalized: true, // 預設只查詢已完成（非等待付款）的訂單
   }
   if (brandId) {
     query.brand = brandId
@@ -104,7 +104,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
 
   const query = {
     store: storeId,
-    isFinalized: true // 預設只查詢已完成（非等待付款）的訂單
+    isFinalized: true, // 預設只查詢已完成（非等待付款）的訂單
   }
 
   if (status) {
@@ -178,7 +178,7 @@ export const getStoreOrders = async (storeId, options = {}) => {
 export const getOrderById = async (orderId, storeId) => {
   const query = {
     _id: orderId,
-    isFinalized: true // 預設只查詢已完成（非等待付款）的訂單
+    isFinalized: true, // 預設只查詢已完成（非等待付款）的訂單
   }
   if (storeId) query.store = storeId
 
@@ -228,7 +228,7 @@ export const queryOrders = async (filters = {}, options = {}) => {
 
   const query = {
     ...filters,
-    isFinalized: filters.isFinalized !== undefined ? filters.isFinalized : true // 預設只查詢已完成的訂單，除非明確指定
+    isFinalized: filters.isFinalized !== undefined ? filters.isFinalized : true, // 預設只查詢已完成的訂單，除非明確指定
   }
   const skip = (page - 1) * limit
   const sort = {}

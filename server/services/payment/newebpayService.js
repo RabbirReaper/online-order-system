@@ -127,13 +127,7 @@ export const createMPGPayment = async (orderData) => {
       amount: orderData.amount,
     })
 
-    const {
-      orderId,
-      amount,
-      itemDesc,
-      notifyURL,
-      returnURL,
-    } = orderData
+    const { orderId, amount, itemDesc, notifyURL, returnURL } = orderData
 
     // 驗證必填欄位
     if (!orderId || !amount || !itemDesc || !notifyURL || !returnURL) {

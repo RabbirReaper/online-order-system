@@ -86,10 +86,7 @@
           </button>
 
           <!-- 設定按鈕 -->
-          <button
-            class="btn mt-auto btn-outline-light"
-            @click="showSettingsModal = true"
-          >
+          <button class="btn mt-auto btn-outline-light" @click="showSettingsModal = true">
             <i class="bi bi-gear d-block mb-1"></i>
             <span class="fs-6">設定</span>
           </button>
@@ -112,10 +109,7 @@
     </div>
 
     <!-- 設定 Modal -->
-    <SettingsModal
-      v-if="showSettingsModal"
-      @close="showSettingsModal = false"
-    />
+    <SettingsModal v-if="showSettingsModal" @close="showSettingsModal = false" />
   </div>
 </template>
 
