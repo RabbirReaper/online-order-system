@@ -84,7 +84,7 @@
                 {{ counterStore.formatStatus(order.status) }}
               </span>
               <span v-if="order.status === 'paid'" class="ms-1 badge bg-secondary">
-                {{ order.paymentMethod }}
+                {{ formatPaymentType(order.paymentType) }}
               </span>
             </td>
           </tr>
@@ -101,7 +101,7 @@
             <div class="card border-success">
               <div class="card-body">
                 <h6 class="card-title text-success">
-                  <i class="bi bi-cash-stack me-2"></i>現金付款
+                  <i class="bi bi-cash-stack me-2"></i>現今付款
                 </h6>
                 <div class="d-flex justify-content-between align-items-center">
                   <span class="text-muted">訂單數:</span>
@@ -249,6 +249,7 @@ const errorMessage = ref('')
 const isSelectingOrder = ref(false)
 const selectedOrderId = ref(null)
 const showStatsModal = ref(false)
+// const hashPaymentType
 
 const sortedOrders = computed(() => {
   return [...counterStore.todayOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -385,6 +386,15 @@ const formatOrderType = (orderType) => {
     delivery: '外送',
   }
   return typeMap[orderType] || orderType
+}
+
+const formatPaymentType = (paymentType) => {
+  const typeMap = {
+    'On-site': '現場付款',
+    Online: '線上付款',
+    other: '其他',
+  }
+  return typeMap[paymentType] || paymentType
 }
 
 const calculateOrderTotal = (order) => {
