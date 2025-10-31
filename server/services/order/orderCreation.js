@@ -295,6 +295,16 @@ export const finalizeOnlinePaymentOrder = async (orderId, paymentResult) => {
       payTime: paymentResult.payTime,
     }
 
+    // 更新付款方式(根據 NewebPay 回傳的實際付款方式)
+    if (paymentResult.paymentType) {
+      const { mapNewebpayPaymentType } = await import('../payment/paymentCallbackService.js')
+      const mappedPaymentMethod = mapNewebpayPaymentType(paymentResult.paymentType)
+      order.paymentMethod = mappedPaymentMethod
+      console.log(
+        `付款方式已更新: ${paymentResult.paymentType} -> ${mappedPaymentMethod}`,
+      )
+    }
+
     await order.save()
 
     console.log('訂單編號已生成:', { orderDateCode, sequence })
