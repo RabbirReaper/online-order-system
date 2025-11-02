@@ -6,7 +6,7 @@ import mongoose from 'mongoose'
 import session from 'express-session'
 import { fileURLToPath } from 'url'
 import apiRoutes from './server/routes/index.js'
-import deliveryRoutes from './server/routes/delivery.js'
+import webhookRoutes from './server/routes/webhooks.js'
 
 dotenv.config()
 const app = express()
@@ -23,7 +23,7 @@ app.use(
 // ⚠️ 重要: Webhook 路由必須在 express.json() 之前註冊
 // 因為簽名驗證需要原始的 request body (Buffer)
 // 如果先經過 express.json() 解析,會變成物件,導致簽名驗證失敗
-app.use('/api/delivery/webhooks', deliveryRoutes)
+app.use('/api/delivery/webhooks', webhookRoutes)
 
 // 全局 JSON 和 URL 編碼解析中間件
 app.use(express.json({ limit: '2mb' }))
