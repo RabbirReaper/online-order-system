@@ -32,19 +32,8 @@ export function verifyUberEatsWebhookMiddleware(req, res, next) {
     const secondarySecret = process.env.UBEREATS_WEBHOOK_SECRET_SECONDARY
 
     if (!primarySecret) {
-      console.error('❌ 未設定 UBEREATS_WEBHOOK_SECRET 環境變數')
       throw new AppError('Webhook 簽名驗證配置錯誤', 500)
     }
-
-    // 調試日誌
-    console.log('🔍 驗證資訊:', {
-      bodyType: Buffer.isBuffer(rawBody) ? 'Buffer' : typeof rawBody,
-      bodyLength: Buffer.isBuffer(rawBody) ? rawBody.length : JSON.stringify(rawBody).length,
-      signatureLength: signature?.length,
-      hasSecondarySecret: !!secondarySecret,
-      eventId,
-      timestamp,
-    })
 
     // 驗證 webhook
     const result = verifyUberEatsWebhook({
@@ -57,11 +46,6 @@ export function verifyUberEatsWebhookMiddleware(req, res, next) {
     })
 
     if (!result.valid) {
-      console.error('❌ Webhook 驗證失敗:', {
-        errors: result.errors,
-        eventId,
-        signature: signature ? `${signature.substring(0, 10)}...` : 'missing',
-      })
       throw new AppError(`Webhook 驗證失敗: ${result.errors.join(', ')}`, 401)
     }
 
@@ -71,15 +55,12 @@ export function verifyUberEatsWebhookMiddleware(req, res, next) {
 
     req.body = parsedBody
     req.webhookVerified = true
-
-    console.log('✅ Webhook 驗證成功:', { eventId, eventType: parsedBody.event_type })
     next()
   } catch (error) {
     if (error instanceof AppError) {
       next(error)
       return
     }
-    console.error('❌ Webhook 驗證過程發生錯誤:', error)
     next(new AppError('Webhook 驗證失敗', 500))
   }
 }

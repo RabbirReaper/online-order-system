@@ -20,8 +20,19 @@ export function verifyUberEatsSignature(payload, signature, secret) {
   }
 
   try {
-    // 確保 payload 是字串
-    const payloadString = typeof payload === 'string' ? payload : payload.toString('utf8')
+    // 確保 payload 是字串或 Buffer
+    let payloadString
+    if (typeof payload === 'string') {
+      payloadString = payload
+    } else if (Buffer.isBuffer(payload)) {
+      payloadString = payload.toString('utf8')
+    } else if (typeof payload === 'object') {
+      // 如果是物件,序列化為 JSON 字串
+      // ⚠️ 注意: 這是備用方案,理想情況下應該收到原始 Buffer
+      payloadString = JSON.stringify(payload)
+    } else {
+      throw new Error(`不支援的 payload 類型: ${typeof payload}`)
+    }
 
     // 使用 SHA256 生成 HMAC 簽名
     const hmac = crypto.createHmac('sha256', secret)
@@ -30,13 +41,6 @@ export function verifyUberEatsSignature(payload, signature, secret) {
 
     // UberEats 使用 lowercase hex，不需要移除前綴
     const providedSignature = signature.toLowerCase()
-
-    console.log('🔍 簽名比對:', {
-      payloadLength: payloadString.length,
-      payloadPreview: payloadString.substring(0, 100),
-      computed: computedSignature.substring(0, 20) + '...',
-      provided: providedSignature.substring(0, 20) + '...',
-    })
 
     // 使用時間安全的比較方法
     return crypto.timingSafeEqual(
