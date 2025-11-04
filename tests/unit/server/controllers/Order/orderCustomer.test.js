@@ -1,6 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TestDataFactory, TestHelpers } from '../../../../setup.js'
 
+// Mock Transaction model with proper save method
+vi.mock('@server/models/Payment/Transaction.js', () => {
+  return {
+    default: vi.fn(function(data) {
+      this._id = 'transaction123'
+      this.platformOrderNo = null
+      Object.assign(this, data)
+      this.save = vi.fn().mockResolvedValue(this)
+    })
+  }
+})
+
 // Mock orderCustomer service
 vi.mock('@server/services/order/orderCustomer.js', () => ({
   createOrder: vi.fn(),
@@ -11,11 +23,21 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
   paymentCallback: vi.fn()
 }))
 
+// Mock orderCreation service
+vi.mock('@server/services/order/orderCreation.js', () => ({
+  createOrder: vi.fn()
+}))
+
 // Mock paymentOrderService
 vi.mock('@server/services/payment/paymentOrderService.js', () => ({
   processPaymentAndCreateOrder: vi.fn(),
   getOrderPaymentStatus: vi.fn(),
   processRefund: vi.fn()
+}))
+
+// Mock newebpayService
+vi.mock('@server/services/payment/newebpayService.js', () => ({
+  createMPGPayment: vi.fn()
 }))
 
 // Mock error middleware
@@ -31,7 +53,8 @@ vi.mock('@server/middlewares/error.js', () => ({
 // 動態導入控制器和服務
 const orderController = await import('@server/controllers/Order/orderCustomer.js')
 const orderService = await import('@server/services/order/orderCustomer.js')
-const paymentOrderService = await import('@server/services/payment/paymentOrderService.js')
+const orderCreationService = await import('@server/services/order/orderCreation.js')
+const newebpayService = await import('@server/services/payment/newebpayService.js')
 
 describe('OrderCustomer Controller', () => {
   let req, res, next
@@ -60,6 +83,10 @@ describe('OrderCustomer Controller', () => {
     }
 
     next = vi.fn()
+
+    // 重置環境變數
+    process.env.NEWEBPAY_ReturnUrl = 'http://localhost:8700'
+    process.env.NEWEBPAY_NotifyUrl = 'http://localhost:5173'
   })
 
   describe('createOrder', () => {
@@ -177,45 +204,81 @@ describe('OrderCustomer Controller', () => {
           total: 1000
         },
         paymentType: 'Online',
-        paymentMethod: 'credit_card',
-        primeToken: 'test_prime_token'
+        paymentMethod: 'credit_card'
       }
 
-      const mockResult = {
-        success: true,
-        order: { _id: 'order791', ...orderData, status: 'paid' },
-        transaction: { transactionId: 'txn_123', status: 'completed' }
+      // Mock orderCreationService.createOrder 返回的臨時訂單
+      // 使用 TestDataFactory 創建的真實 ID
+      const mockOrderId = orderData._id || '507f1f77bcf86cd799439017'
+      const mockOrder = {
+        _id: mockOrderId,
+        ...orderData,
+        status: 'pending_payment',
+        total: 1000,
+        isOnlinePayment: true,
+        onlinePayment: {},
+        items: orderData.items || [],
+        customerInfo: { name: 'Test User', phone: '0912345678', email: 'test@example.com' }
       }
 
-      paymentOrderService.processPaymentAndCreateOrder.mockResolvedValue(mockResult)
+      orderCreationService.createOrder.mockResolvedValue(mockOrder)
+
+      // Mock newebpayService.createMPGPayment 返回的付款表單
+      const mockPaymentForm = {
+        merchantOrderNo: 'MPG_20240101_123456',
+        formData: {
+          MerchantID: 'test_merchant',
+          TradeInfo: 'encrypted_data',
+          TradeSha: 'sha_hash',
+          Version: '2.0'
+        },
+        apiUrl: 'https://ccore.newebpay.com/MPG/mpg_gateway'
+      }
+
+      newebpayService.createMPGPayment.mockResolvedValue(mockPaymentForm)
 
       // Act
       await orderController.createOrder(req, res)
 
       // Assert
-      expect(paymentOrderService.processPaymentAndCreateOrder).toHaveBeenCalledWith(
-        {
+      // 驗證 orderCreationService.createOrder 被正確調用
+      expect(orderCreationService.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
           ...orderData,
           customerInfo: { name: 'Test User', phone: '0912345678', email: 'test@example.com' },
           total: 1000,
+          paymentType: 'Online',
+          paymentMethod: 'credit_card',
           brand: 'brand123',
           store: 'store456',
-          customerId: 'user123',
-          customerName: 'Test User',
-          customerPhone: '0912345678',
-          customerEmail: 'test@example.com',
-          totalAmount: 1000
-        },
-        'test_prime_token',
-        'credit_card'
+          user: 'user123'
+        })
       )
 
+      // 驗證 newebpayService.createMPGPayment 被正確調用
+      expect(newebpayService.createMPGPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderId: mockOrderId,
+          amount: 1000,
+          email: 'test@example.com'
+        })
+      )
+
+      // 驗證返回的響應
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        order: mockResult.order,
-        status: 'online_success',
-        transaction: mockResult.transaction,
-        message: '付款成功，訂單已確認'
+        order: {
+          _id: mockOrderId,
+          status: 'pending_payment',
+          total: 1000,
+          isOnlinePayment: true
+        },
+        payment: {
+          formData: mockPaymentForm.formData,
+          apiUrl: mockPaymentForm.apiUrl,
+          merchantOrderNo: mockPaymentForm.merchantOrderNo
+        },
+        message: '訂單已創建，請完成付款'
       })
     })
 
