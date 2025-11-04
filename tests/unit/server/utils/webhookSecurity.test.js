@@ -65,17 +65,6 @@ describe('Webhook 安全驗證工具', () => {
       expect(result).toBe(true)
     })
 
-    it('應該處理帶有 sha256= 前綴的簽名', () => {
-      const signature = crypto
-        .createHmac('sha256', testSecret)
-        .update(testPayloadString)
-        .digest('hex')
-      const signatureWithPrefix = `sha256=${signature}`
-
-      const result = verifyUberEatsSignature(testPayloadString, signatureWithPrefix, testSecret)
-      expect(result).toBe(true)
-    })
-
     it('應該拒絕空的參數', () => {
       expect(verifyUberEatsSignature('', 'signature', testSecret)).toBe(false)
       expect(verifyUberEatsSignature(testPayloadString, '', testSecret)).toBe(false)

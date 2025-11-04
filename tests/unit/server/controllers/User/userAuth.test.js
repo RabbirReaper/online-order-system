@@ -71,21 +71,19 @@ describe('UserAuth Controller', () => {
         brand: 'brand123'
       }
 
-      userAuthService.verifyPhoneCode.mockResolvedValue({ verified: true })
       userAuthService.register.mockResolvedValue(mockUser)
 
       // Act
       await userAuthController.register(req, res)
 
       // Assert
-      expect(userAuthService.verifyPhoneCode).toHaveBeenCalledWith('0912345678', '123456', 'register')
-      
+      // Controller 將驗證碼傳遞給 service，驗證在 service 層進行
       const expectedUserData = {
         ...userData,
         phone: '0912345678',
         brand: 'brand123'
       }
-      expect(userAuthService.register).toHaveBeenCalledWith(expectedUserData)
+      expect(userAuthService.register).toHaveBeenCalledWith(expectedUserData, '123456')
 
       expect(res.status).toHaveBeenCalledWith(201)
       expect(res.json).toHaveBeenCalledWith({
@@ -101,12 +99,12 @@ describe('UserAuth Controller', () => {
       req.body = { ...userData, phone: '0912345678', code: '000000' }
 
       const error = new Error('驗證碼錯誤')
-      userAuthService.verifyPhoneCode.mockRejectedValue(error)
+      // 驗證在 service 層進行，所以 register service 會拋出錯誤
+      userAuthService.register.mockRejectedValue(error)
 
       // Act & Assert
       await expect(userAuthController.register(req, res)).rejects.toThrow('驗證碼錯誤')
-      expect(userAuthService.verifyPhoneCode).toHaveBeenCalledWith('0912345678', '000000', 'register')
-      expect(userAuthService.register).not.toHaveBeenCalled()
+      expect(userAuthService.register).toHaveBeenCalled()
     })
   })
 
@@ -411,23 +409,24 @@ describe('UserAuth Controller', () => {
     it('register - 應該正確提取 brandId 從路由參數', async () => {
       // Arrange
       req.params.brandId = 'custom-brand'
-      req.body = { 
+      req.body = {
         ...TestDataFactory.createUser(),
         phone: '0912345678',
         code: '123456'
       }
 
-      userAuthService.verifyPhoneCode.mockResolvedValue({ verified: true })
       userAuthService.register.mockResolvedValue({})
 
       // Act
       await userAuthController.register(req, res)
 
       // Assert
+      // register 接收兩個參數：userWithBrand 和 code
       expect(userAuthService.register).toHaveBeenCalledWith(
         expect.objectContaining({
           brand: 'custom-brand'
-        })
+        }),
+        '123456'
       )
     })
 

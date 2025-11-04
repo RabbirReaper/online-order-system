@@ -115,6 +115,17 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
       sequence: 1,
     }
   }),
+  calculateOrderAmounts: vi.fn().mockImplementation((items) => {
+    const subtotal = items.reduce((sum, item) => sum + (item.subtotal || 0), 0)
+    return {
+      subtotal,
+      total: subtotal,
+      serviceCharge: 0,
+    }
+  }),
+  updateOrderAmounts: vi.fn().mockResolvedValue(true),
+  processOrderPaymentComplete: vi.fn().mockResolvedValue(true),
+  processOrderPointsReward: vi.fn().mockResolvedValue({ pointsAwarded: 0 }),
   getUserOrders: vi.fn().mockResolvedValue({
     orders: [],
     pagination: {
@@ -134,6 +145,7 @@ vi.mock('@server/services/order/orderCustomer.js', () => ({
     success: true,
     order: TestDataFactory.createOrder({ status: 'paid' }),
   }),
+  issueVoucherToUser: vi.fn().mockResolvedValue({ success: true }),
 }))
 
 vi.mock('@server/services/promotion/pointService.js', () => ({
