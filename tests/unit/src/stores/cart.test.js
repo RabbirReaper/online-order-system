@@ -420,14 +420,6 @@ describe('Cart Store', () => {
   })
 
   describe('Payment Management', () => {
-    it('should set payment method and payment type separately', () => {
-      cartStore.setPaymentMethod('credit_card')
-      cartStore.setPaymentType('Online')
-
-      expect(cartStore.paymentMethod).toBe('credit_card')
-      expect(cartStore.paymentType).toBe('Online')
-    })
-
     it('should toggle staff mode', () => {
       expect(cartStore.isStaffMode).toBe(false)
 

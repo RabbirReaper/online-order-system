@@ -129,7 +129,7 @@
         <CustomerInfoForm
           ref="customerInfoFormRef"
           v-model:customer-info="customerInfo"
-          v-model:payment-method="paymentMethod"
+          v-model:payment-method="paymentType"
           :order-type="orderType"
         />
 
@@ -359,11 +359,11 @@ const deliveryAddress = ref(cartStore.deliveryInfo?.address || '')
 const pickupTime = ref('asap')
 const scheduledTime = ref('')
 const deliveryFee = ref(cartStore.deliveryInfo?.deliveryFee || 0)
-const paymentMethod = ref('現金')
 const customerInfo = ref({
   name: cartStore.customerInfo?.name || '',
   phone: cartStore.customerInfo?.phone || '',
 })
+const paymentType = ref(cartStore.paymentType || 'On-site')
 
 // 券相關狀態
 const userVouchers = ref([])
@@ -397,6 +397,8 @@ const isFormValid = computed(() => {
   if (pickupTime.value === 'scheduled' && (!scheduledTime.value || !scheduledTime.value.trim())) {
     return false
   }
+
+  if (paymentType.value === '') return false
 
   return true
 })
@@ -810,21 +812,6 @@ const submitOrder = async () => {
     })()
 
     cartStore.setOrderType(mappedOrderType)
-
-    const mappedPaymentMethod = (() => {
-      switch (paymentMethod.value) {
-        case '現金':
-          return 'cash'
-        case '信用卡':
-          return 'credit_card'
-        case 'Line Pay':
-          return 'line_pay'
-        default:
-          return 'cash'
-      }
-    })()
-
-    cartStore.setPaymentMethod(mappedPaymentMethod)
     cartStore.setNotes(orderRemarks.value)
 
     // 根據訂單類型設置相應數據
