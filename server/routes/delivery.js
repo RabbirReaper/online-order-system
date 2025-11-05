@@ -70,21 +70,4 @@ router.post(
   deliveryController.syncInventoryStatusToUberEats,
 )
 
-/**
- * Uber Eats Webhook 接收端點
- * POST /delivery/webhooks/ubereats
- */
-router.post('/webhooks/ubereats', deliveryController.handleUberEatsWebhook)
-
-/**
- * Foodpanda Webhook 接收端點
- * POST /delivery/webhooks/foodpanda
- */
-router.post('/webhooks/foodpanda', deliveryController.handleFoodpandaWebhook)
-
-router.post(
-  '/webhooks/foodpanda/catalog-callback',
-  deliveryController.handleFoodpandaCatalogCallback,
-)
-
 export default router

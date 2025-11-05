@@ -300,9 +300,7 @@ export const finalizeOnlinePaymentOrder = async (orderId, paymentResult) => {
       const { mapNewebpayPaymentType } = await import('../payment/paymentCallbackService.js')
       const mappedPaymentMethod = mapNewebpayPaymentType(paymentResult.paymentType)
       order.paymentMethod = mappedPaymentMethod
-      console.log(
-        `付款方式已更新: ${paymentResult.paymentType} -> ${mappedPaymentMethod}`,
-      )
+      console.log(`付款方式已更新: ${paymentResult.paymentType} -> ${mappedPaymentMethod}`)
     }
 
     await order.save()

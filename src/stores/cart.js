@@ -349,12 +349,6 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupons.value = appliedCoupons.value.filter((discount) => discount.refId !== refId)
   }
 
-  function setPaymentMethod(method) {
-    paymentMethod.value = method
-    // paymentType 不在這裡設定
-    // 會透過 setPaymentType 明確設定
-  }
-
   function setPaymentType(type) {
     // 明確設定 paymentType
     // 'On-site' 或 'Online'
@@ -631,7 +625,6 @@ export const useCartStore = defineStore('cart', () => {
     setNotes,
     applyCoupon,
     removeCoupon,
-    setPaymentMethod,
     setPaymentType, // 新增：明確設定 paymentType
     toggleStaffMode,
     validateOrder,

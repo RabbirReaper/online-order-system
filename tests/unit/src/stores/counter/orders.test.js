@@ -211,7 +211,8 @@ describe('Counter Orders Store', () => {
 
         expect(result.success).toBe(true)
         expect(store.todayOrders).toEqual(mockOrders)
-        expect(store.currentDate).toMatch(/^\d{4}\/\d{1,2}\/\d{1,2}$/)
+        // fetchTodayOrders 實際上載入兩天的資料（昨天和今天），所以是日期範圍格式
+        expect(store.currentDate).toMatch(/^\d{4}\/\d{1,2}\/\d{1,2} - \d{4}\/\d{1,2}\/\d{1,2}$/)
       })
     })
 

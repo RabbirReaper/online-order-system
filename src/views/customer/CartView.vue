@@ -129,7 +129,7 @@
         <CustomerInfoForm
           ref="customerInfoFormRef"
           v-model:customer-info="customerInfo"
-          v-model:payment-method="paymentMethod"
+          v-model:payment-method="paymentType"
           :order-type="orderType"
         />
 
@@ -301,10 +301,16 @@
         </div>
 
         <template #footer>
-          <button type="button" class="btn btn-secondary" @click="showConfirmModal = false">
+          <button type="button" class="btn btn-secondary" @click="showConfirmModal = false" :disabled="isSubmitting">
             返回修改
           </button>
-          <button type="button" class="btn btn-primary" @click="submitOrder">確認送出</button>
+          <button type="button" class="btn btn-primary" @click="submitOrder" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="spinner-container">
+              <i class="bi bi-arrow-repeat spinning-icon"></i>
+              送出中...
+            </span>
+            <span v-else>確認送出</span>
+          </button>
         </template>
       </BModal>
     </div>
@@ -359,11 +365,11 @@ const deliveryAddress = ref(cartStore.deliveryInfo?.address || '')
 const pickupTime = ref('asap')
 const scheduledTime = ref('')
 const deliveryFee = ref(cartStore.deliveryInfo?.deliveryFee || 0)
-const paymentMethod = ref('現金')
 const customerInfo = ref({
   name: cartStore.customerInfo?.name || '',
   phone: cartStore.customerInfo?.phone || '',
 })
+const paymentType = ref(cartStore.paymentType || 'On-site')
 
 // 券相關狀態
 const userVouchers = ref([])
@@ -376,6 +382,9 @@ const showConfirmModal = ref(false)
 // 點數相關狀態
 const activePointRules = ref([])
 const isLoadingPointRules = ref(false)
+
+// 提交狀態
+const isSubmitting = ref(false)
 
 // 計算屬性
 const isFormValid = computed(() => {
@@ -397,6 +406,8 @@ const isFormValid = computed(() => {
   if (pickupTime.value === 'scheduled' && (!scheduledTime.value || !scheduledTime.value.trim())) {
     return false
   }
+
+  if (paymentType.value === '') return false
 
   return true
 })
@@ -793,7 +804,13 @@ const checkout = () => {
 
 // 提交訂單
 const submitOrder = async () => {
+  // 防抖機制：如果正在提交中，直接返回
+  if (isSubmitting.value) {
+    return
+  }
+
   try {
+    isSubmitting.value = true
     clearError()
 
     const mappedOrderType = (() => {
@@ -810,21 +827,6 @@ const submitOrder = async () => {
     })()
 
     cartStore.setOrderType(mappedOrderType)
-
-    const mappedPaymentMethod = (() => {
-      switch (paymentMethod.value) {
-        case '現金':
-          return 'cash'
-        case '信用卡':
-          return 'credit_card'
-        case 'Line Pay':
-          return 'line_pay'
-        default:
-          return 'cash'
-      }
-    })()
-
-    cartStore.setPaymentMethod(mappedPaymentMethod)
     cartStore.setNotes(orderRemarks.value)
 
     // 根據訂單類型設置相應數據
@@ -934,6 +936,9 @@ const submitOrder = async () => {
     }
 
     showError(errorMessage)
+  } finally {
+    // 重置提交狀態
+    isSubmitting.value = false
   }
 }
 
@@ -1117,6 +1122,32 @@ input[type='datetime-local'] {
 
 .points-login-hint i.bi-star {
   font-size: 1.1rem;
+}
+
+/* 旋轉動畫 */
+.spinning-icon {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-container {
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 @media (max-width: 576px) {

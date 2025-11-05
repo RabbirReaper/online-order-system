@@ -3,9 +3,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title">
-            <i class="bi bi-gear me-2"></i>系統設定
-          </h5>
+          <h5 class="modal-title"><i class="bi bi-gear me-2"></i>系統設定</h5>
           <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
         </div>
 
@@ -117,9 +115,7 @@
 
           <!-- 一般按鈕組 -->
           <template v-else>
-            <button type="button" class="btn btn-secondary" @click="$emit('close')">
-              關閉
-            </button>
+            <button type="button" class="btn btn-secondary" @click="$emit('close')">關閉</button>
             <button type="button" class="btn btn-danger" @click="handleLogout">
               <i class="bi bi-box-arrow-right me-1"></i>
               登出
