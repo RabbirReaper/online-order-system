@@ -4,15 +4,12 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { verifyUberEatsWebhookMiddleware } from '../../../../server/middlewares/webhookVerification.js'
-import { generateTestSignature, uberEatsDeduplicator } from '../../../../server/utils/webhookSecurity.js'
+import { generateTestSignature } from '../../../../server/utils/webhookSecurity.js'
 
 describe('Webhook 驗證中間件', () => {
   const testSecret = 'test-webhook-secret-key'
 
   beforeEach(() => {
-    // 清理去重器
-    uberEatsDeduplicator.clear()
-
     // 設定環境變數
     process.env.UBEREATS_WEBHOOK_SECRET = testSecret
   })
@@ -97,45 +94,6 @@ describe('Webhook 驗證中間件', () => {
       expect(error.message).toContain('簽名驗證失敗')
     })
 
-    it('應該拒絕重複的事件', () => {
-      const testPayload = {
-        event_type: 'orders.notification',
-        event_id: 'evt_duplicate',
-        meta: { resource_id: 'order_789' },
-      }
-
-      const payloadString = JSON.stringify(testPayload)
-      const signature = generateTestSignature(payloadString, testSecret)
-
-      const req1 = {
-        headers: { 'x-uber-signature': signature },
-        body: Buffer.from(payloadString, 'utf8'),
-      }
-
-      const res1 = {}
-      const next1 = vi.fn()
-
-      // 第一次請求應該成功
-      verifyUberEatsWebhookMiddleware(req1, res1, next1)
-      expect(next1).toHaveBeenCalledWith()
-
-      // 第二次相同的請求應該失敗
-      const req2 = {
-        headers: { 'x-uber-signature': signature },
-        body: Buffer.from(payloadString, 'utf8'),
-      }
-
-      const res2 = {}
-      const next2 = vi.fn()
-
-      verifyUberEatsWebhookMiddleware(req2, res2, next2)
-
-      const error = next2.mock.calls[0][0]
-      expect(error).toBeDefined()
-      expect(error.statusCode).toBe(401)
-      expect(error.message).toContain('已處理過')
-    })
-
     it('應該處理非 Buffer 類型的 body', () => {
       const testPayload = {
         event_type: 'orders.notification',
@@ -210,37 +168,6 @@ describe('Webhook 驗證中間件', () => {
       process.env.UBEREATS_WEBHOOK_SECRET = originalSecret
     })
 
-    it('應該處理使用備用密鑰的請求', () => {
-      const secondarySecret = 'secondary-webhook-secret'
-      process.env.UBEREATS_WEBHOOK_SECRET_SECONDARY = secondarySecret
-
-      const testPayload = {
-        event_type: 'orders.notification',
-        event_id: 'evt_secondary',
-      }
-
-      const payloadString = JSON.stringify(testPayload)
-      // 使用備用密鑰生成簽名
-      const signature = generateTestSignature(payloadString, secondarySecret)
-
-      const req = {
-        headers: { 'x-uber-signature': signature },
-        body: Buffer.from(payloadString, 'utf8'),
-      }
-
-      const res = {}
-      const next = vi.fn()
-
-      verifyUberEatsWebhookMiddleware(req, res, next)
-
-      // 應該成功通過驗證
-      expect(next).toHaveBeenCalledWith()
-      expect(req.webhookVerified).toBe(true)
-
-      // 清理
-      delete process.env.UBEREATS_WEBHOOK_SECRET_SECONDARY
-    })
-
     it('應該處理缺少 body 的請求', () => {
       const req = {
         headers: { 'x-uber-signature': 'some-signature' },
@@ -258,17 +185,14 @@ describe('Webhook 驗證中間件', () => {
       expect(error.message).toContain('無法獲取請求 body')
     })
 
-    it('應該在 event_id 位於 meta 中時正確處理', () => {
+    it('應該處理大小寫不同的簽名', () => {
       const testPayload = {
         event_type: 'orders.notification',
-        meta: {
-          event_id: 'evt_in_meta',
-          resource_id: 'order_123',
-        },
+        event_id: 'evt_uppercase_sig',
       }
 
       const payloadString = JSON.stringify(testPayload)
-      const signature = generateTestSignature(payloadString, testSecret)
+      const signature = generateTestSignature(payloadString, testSecret).toUpperCase()
 
       const req = {
         headers: { 'x-uber-signature': signature },
@@ -282,20 +206,6 @@ describe('Webhook 驗證中間件', () => {
 
       expect(next).toHaveBeenCalledWith()
       expect(req.webhookVerified).toBe(true)
-
-      // 同一個 event_id 再次請求應該失敗
-      const req2 = {
-        headers: { 'x-uber-signature': signature },
-        body: Buffer.from(payloadString, 'utf8'),
-      }
-
-      const next2 = vi.fn()
-
-      verifyUberEatsWebhookMiddleware(req2, {}, next2)
-
-      const error = next2.mock.calls[0][0]
-      expect(error).toBeDefined()
-      expect(error.message).toContain('已處理過')
     })
   })
 })

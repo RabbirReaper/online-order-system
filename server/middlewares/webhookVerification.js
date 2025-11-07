@@ -26,31 +26,21 @@ export function verifyUberEatsWebhookMiddleware(req, res, next) {
       throw new AppError('請求 body 格式無效', 400)
     }
 
-    const eventId = parsedBody.event_id || parsedBody.meta?.event_id
-    const timestamp = parsedBody.timestamp || parsedBody.meta?.timestamp
     const primarySecret = process.env.UBEREATS_WEBHOOK_SECRET
-    const secondarySecret = process.env.UBEREATS_WEBHOOK_SECRET_SECONDARY
 
     if (!primarySecret) {
       throw new AppError('Webhook 簽名驗證配置錯誤', 500)
     }
 
-    // 驗證 webhook
+    // 驗證 webhook 簽名
     const result = verifyUberEatsWebhook({
       payload: rawBody,
       signature,
-      eventId,
-      timestamp,
       primarySecret,
-      secondarySecret,
     })
 
     if (!result.valid) {
       throw new AppError(`Webhook 驗證失敗: ${result.errors.join(', ')}`, 401)
-    }
-
-    if (result.warnings.length > 0) {
-      console.warn('⚠️ Webhook 驗證警告:', result.warnings)
     }
 
     req.body = parsedBody
