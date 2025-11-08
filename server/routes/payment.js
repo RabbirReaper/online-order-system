@@ -61,21 +61,28 @@ router.post('/newebpay/return', async (req, res) => {
       paymentSuccess: result.paymentSuccess,
     })
 
-    // 重定向到訂單詳情頁
     const frontendURL = process.env.NEWEBPAY_NotifyUrl
-    const redirectURL = `${frontendURL}/stores/${result.brandId}/${result.storeId}/order-confirm/${result.orderId}`
 
-    console.log('↪️ [ReturnURL] 重定向到:', redirectURL)
-
-    res.redirect(redirectURL)
+    // 根據付款結果決定跳轉頁面
+    if (result.paymentSuccess) {
+      // ✅ 付款成功：跳轉到訂單詳情頁
+      const redirectURL = `${frontendURL}/stores/${result.brandId}/${result.storeId}/order-confirm/${result.orderId}?payment_success=true`
+      console.log('↪️ [ReturnURL] 付款成功，重定向到訂單頁:', redirectURL)
+      res.redirect(redirectURL)
+    } else {
+      // ❌ 付款失敗：跳轉回購物車，並提示可以恢復購物車
+      const redirectURL = `${frontendURL}/stores/${result.brandId}/${result.storeId}/cart?payment_failed=true&restore=true`
+      console.log('↪️ [ReturnURL] 付款失敗，重定向到購物車:', redirectURL)
+      res.redirect(redirectURL)
+    }
   } catch (error) {
     console.error('❌ [ReturnURL] 處理前景返回失敗:', error)
 
     // 發生錯誤時重定向回購物車，並帶上錯誤訊息
     const frontendURL = process.env.NEWEBPAY_NotifyUrl
-    const errorURL = `${frontendURL}/cart?error=payment_failed`
+    const errorURL = `${frontendURL}/cart?payment_error=true&restore=true`
 
-    console.log('↪️ [ReturnURL] 錯誤重定向到:', errorURL)
+    console.log('↪️ [ReturnURL] 錯誤重定向到購物車:', errorURL)
 
     res.redirect(errorURL)
   }

@@ -324,10 +324,20 @@
 
           <!-- 一般確認按鈕 -->
           <template v-else>
-            <button type="button" class="btn btn-secondary" @click="showConfirmModal = false" :disabled="isSubmitting">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              @click="showConfirmModal = false"
+              :disabled="isSubmitting"
+            >
               返回修改
             </button>
-            <button type="button" class="btn btn-primary" @click="submitOrder" :disabled="isSubmitting">
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="submitOrder"
+              :disabled="isSubmitting"
+            >
               <span v-if="isSubmitting" class="spinner-container">
                 <i class="bi bi-arrow-repeat spinning-icon"></i>
                 送出中...
@@ -1002,6 +1012,31 @@ watch(
 // 生命週期
 onMounted(() => {
   window.scrollTo(0, 0)
+
+  // ✅ 檢查是否從付款失敗返回，並恢復購物車
+  const urlParams = new URLSearchParams(window.location.search)
+  const paymentFailed = urlParams.get('payment_failed') === 'true'
+  const paymentError = urlParams.get('payment_error') === 'true'
+  const shouldRestore = urlParams.get('restore') === 'true'
+
+  if ((paymentFailed || paymentError) && shouldRestore) {
+    // 靜默恢復購物車（用戶不需要知道恢復這件事）
+    const restored = cartStore.restorePendingCart()
+
+    if (restored) {
+      // ✅ 恢復成功：只提示付款失敗，不提及恢復
+      if (paymentFailed) {
+        showError('付款未完成。您可以修改訂單內容或重新提交。')
+      } else if (paymentError) {
+        showError('付款處理發生錯誤，請稍後再試或選擇其他付款方式。')
+      }
+    } else {
+      // ❌ 恢復失敗（資料已過期或不存在）：才告知用戶需要重新選購
+      if (paymentFailed || paymentError) {
+        showError('付款未完成。您的購物車已清空，請重新選購商品。')
+      }
+    }
+  }
 
   // 從 cartStore 同步訂單類型和相關資訊
   const storeOrderType = cartStore.orderType
