@@ -564,7 +564,23 @@ const fetchOrderDetails = async () => {
 }
 
 onMounted(async () => {
+  // ✅ 檢查是否從線上付款成功返回
+  const urlParams = new URLSearchParams(window.location.search)
+  const paymentSuccess = urlParams.get('payment_success') === 'true'
+
+  // 獲取訂單詳情
   await fetchOrderDetails()
+
+  // 如果是線上付款成功，清空暫存的購物車和正式購物車
+  if (paymentSuccess && orderDetails.value.status === 'paid') {
+    console.log('💳 線上付款成功，清空購物車和暫存資料')
+
+    // 清空暫存的購物車資料
+    cartStore.clearPendingCart()
+
+    // 清空正式購物車
+    cartStore.clearCart()
+  }
 })
 </script>
 

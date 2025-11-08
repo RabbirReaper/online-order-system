@@ -539,8 +539,36 @@ export const useCartStore = defineStore('cart', () => {
         sessionStorage.setItem('lastOrderId', response.order._id)
         sessionStorage.setItem('lastOrderData', JSON.stringify(response.order))
 
-        // 成功後清空購物車
-        clearCart()
+        // 判斷是否為線上付款
+        const isOnlinePayment = response.payment && response.payment.formData
+
+        if (isOnlinePayment) {
+          // ✅ 線上付款：暫存購物車資料到 sessionStorage，不立即清空
+          console.log('💾 線上付款：暫存購物車資料')
+          sessionStorage.setItem(
+            'pendingCartData',
+            JSON.stringify({
+              items: items.value,
+              orderType: orderType.value,
+              customerInfo: customerInfo.value,
+              deliveryInfo: deliveryInfo.value,
+              dineInInfo: dineInInfo.value,
+              estimatedPickupTime: estimatedPickupTime.value,
+              notes: notes.value,
+              appliedCoupons: appliedCoupons.value,
+              paymentType: paymentType.value,
+              paymentMethod: paymentMethod.value,
+              currentBrand: currentBrand.value,
+              currentStore: currentStore.value,
+              timestamp: Date.now(),
+              orderId: response.order._id, // 記錄對應的訂單ID
+            }),
+          )
+        } else {
+          // ✅ 現場付款：立即清空購物車
+          console.log('💵 現場付款：立即清空購物車')
+          clearCart()
+        }
 
         return {
           success: true,
@@ -575,6 +603,88 @@ export const useCartStore = defineStore('cart', () => {
       }
     } finally {
       isSubmitting.value = false
+    }
+  }
+
+  /**
+   * 恢復暫存的購物車資料（用於線上付款失敗後）
+   * @returns {boolean} 是否成功恢復
+   */
+  function restorePendingCart() {
+    const pendingData = sessionStorage.getItem('pendingCartData')
+    if (!pendingData) {
+      console.log('沒有暫存的購物車資料')
+      return false
+    }
+
+    try {
+      const data = JSON.parse(pendingData)
+
+      // 檢查資料是否過期（24 小時）
+      const MAX_AGE = 24 * 60 * 60 * 1000
+      if (Date.now() - data.timestamp > MAX_AGE) {
+        console.log('暫存的購物車資料已過期')
+        sessionStorage.removeItem('pendingCartData')
+        return false
+      }
+
+      console.log('🔄 恢復暫存的購物車資料:', data.orderId)
+
+      // 恢復購物車資料
+      items.value = data.items || []
+      orderType.value = data.orderType || ''
+      customerInfo.value = data.customerInfo || { name: '', phone: '', lineUniqueId: '' }
+      deliveryInfo.value = data.deliveryInfo || { address: '', estimatedTime: null, deliveryFee: 0 }
+      dineInInfo.value = data.dineInInfo || { tableNumber: '' }
+      estimatedPickupTime.value = data.estimatedPickupTime || null
+      notes.value = data.notes || ''
+      appliedCoupons.value = data.appliedCoupons || []
+      paymentType.value = data.paymentType || 'On-site'
+      paymentMethod.value = data.paymentMethod || 'cash'
+      currentBrand.value = data.currentBrand || null
+      currentStore.value = data.currentStore || null
+
+      console.log('✅ 購物車資料恢復成功')
+      return true
+    } catch (error) {
+      console.error('恢復購物車資料失敗:', error)
+      sessionStorage.removeItem('pendingCartData')
+      return false
+    }
+  }
+
+  /**
+   * 清除暫存的購物車資料（付款成功後調用）
+   */
+  function clearPendingCart() {
+    sessionStorage.removeItem('pendingCartData')
+    console.log('🗑️ 已清除暫存的購物車資料')
+  }
+
+  /**
+   * 檢查是否有暫存的購物車資料
+   * @returns {Object|null} 暫存的購物車資料（包含 orderId）
+   */
+  function getPendingCartInfo() {
+    const pendingData = sessionStorage.getItem('pendingCartData')
+    if (!pendingData) return null
+
+    try {
+      const data = JSON.parse(pendingData)
+      // 檢查是否過期
+      const MAX_AGE = 24 * 60 * 60 * 1000
+      if (Date.now() - data.timestamp > MAX_AGE) {
+        sessionStorage.removeItem('pendingCartData')
+        return null
+      }
+
+      return {
+        orderId: data.orderId,
+        timestamp: data.timestamp,
+        itemCount: data.items?.length || 0,
+      }
+    } catch (error) {
+      return null
     }
   }
 
@@ -629,5 +739,8 @@ export const useCartStore = defineStore('cart', () => {
     toggleStaffMode,
     validateOrder,
     submitOrder,
+    restorePendingCart, // ✅ 新增：恢復暫存的購物車
+    clearPendingCart, // ✅ 新增：清除暫存的購物車
+    getPendingCartInfo, // ✅ 新增：獲取暫存購物車資訊
   }
 })
