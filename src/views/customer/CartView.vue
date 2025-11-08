@@ -260,57 +260,81 @@
       <!-- 結帳確認框 -->
       <BModal
         v-model:show="showConfirmModal"
-        title="確認訂單"
+        :title="isRedirectingToPayment ? '正在跳轉付款頁面' : '確認訂單'"
         centered
         @ok="submitOrder"
         @cancel="showConfirmModal = false"
+        :no-close-on-backdrop="isSubmitting || isRedirectingToPayment"
+        :no-close-on-esc="isSubmitting || isRedirectingToPayment"
+        :hide-header-close="isSubmitting || isRedirectingToPayment"
       >
-        <p>請確認您的訂單資訊</p>
-        <!-- 訂單摘要 -->
-        <div class="order-summary">
-          <h6>訂單項目：</h6>
-          <ul class="list-unstyled">
-            <li v-for="item in cartItems" :key="item.key" class="mb-1">
-              {{ item.dishInstance?.name || item.bundleInstance?.name }} x{{ item.quantity }}
-            </li>
-          </ul>
+        <!-- 跳轉到付款頁面的提示 -->
+        <div v-if="isRedirectingToPayment" class="text-center py-4">
+          <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <h5 class="mb-3">訂單已建立成功！</h5>
+          <p class="text-muted mb-2">正在為您跳轉到付款頁面...</p>
+          <p class="text-muted small">請稍候，不要關閉此頁面</p>
+        </div>
 
-          <div v-if="usedVouchers.length > 0">
-            <h6 class="text-success">使用的兌換券：</h6>
-            <ul class="list-unstyled text-success">
-              <li v-for="voucher in usedVouchers" :key="voucher.voucherId">
-                {{ voucher.dishName }} (省下 ${{ voucher.savedAmount }})
+        <!-- 一般訂單確認內容 -->
+        <div v-else>
+          <p>請確認您的訂單資訊</p>
+          <!-- 訂單摘要 -->
+          <div class="order-summary">
+            <h6>訂單項目：</h6>
+            <ul class="list-unstyled">
+              <li v-for="item in cartItems" :key="item.key" class="mb-1">
+                {{ item.dishInstance?.name || item.bundleInstance?.name }} x{{ item.quantity }}
               </li>
             </ul>
-          </div>
 
-          <div v-if="appliedCoupons.length > 0">
-            <h6 class="text-primary">使用的折價券：</h6>
-            <ul class="list-unstyled text-primary">
-              <li v-for="coupon in appliedCoupons" :key="coupon.couponId">
-                {{ coupon.name }} (折抵 ${{ coupon.amount }})
-              </li>
-            </ul>
-          </div>
+            <div v-if="usedVouchers.length > 0">
+              <h6 class="text-success">使用的兌換券：</h6>
+              <ul class="list-unstyled text-success">
+                <li v-for="voucher in usedVouchers" :key="voucher.voucherId">
+                  {{ voucher.dishName }} (省下 ${{ voucher.savedAmount }})
+                </li>
+              </ul>
+            </div>
 
-          <hr />
-          <div class="d-flex justify-content-between fw-bold">
-            <span>總計：</span>
-            <span>${{ calculateTotal() }}</span>
+            <div v-if="appliedCoupons.length > 0">
+              <h6 class="text-primary">使用的折價券：</h6>
+              <ul class="list-unstyled text-primary">
+                <li v-for="coupon in appliedCoupons" :key="coupon.couponId">
+                  {{ coupon.name }} (折抵 ${{ coupon.amount }})
+                </li>
+              </ul>
+            </div>
+
+            <hr />
+            <div class="d-flex justify-content-between fw-bold">
+              <span>總計：</span>
+              <span>${{ calculateTotal() }}</span>
+            </div>
           </div>
         </div>
 
         <template #footer>
-          <button type="button" class="btn btn-secondary" @click="showConfirmModal = false" :disabled="isSubmitting">
-            返回修改
-          </button>
-          <button type="button" class="btn btn-primary" @click="submitOrder" :disabled="isSubmitting">
-            <span v-if="isSubmitting" class="spinner-container">
-              <i class="bi bi-arrow-repeat spinning-icon"></i>
-              送出中...
-            </span>
-            <span v-else>確認送出</span>
-          </button>
+          <!-- 跳轉中不顯示按鈕 -->
+          <div v-if="isRedirectingToPayment" class="w-100 text-center">
+            <small class="text-muted">系統將自動跳轉...</small>
+          </div>
+
+          <!-- 一般確認按鈕 -->
+          <template v-else>
+            <button type="button" class="btn btn-secondary" @click="showConfirmModal = false" :disabled="isSubmitting">
+              返回修改
+            </button>
+            <button type="button" class="btn btn-primary" @click="submitOrder" :disabled="isSubmitting">
+              <span v-if="isSubmitting" class="spinner-container">
+                <i class="bi bi-arrow-repeat spinning-icon"></i>
+                送出中...
+              </span>
+              <span v-else>確認送出</span>
+            </button>
+          </template>
         </template>
       </BModal>
     </div>
@@ -385,6 +409,7 @@ const isLoadingPointRules = ref(false)
 
 // 提交狀態
 const isSubmitting = ref(false)
+const isRedirectingToPayment = ref(false) // 是否正在跳轉到付款頁面
 
 // 計算屬性
 const isFormValid = computed(() => {
@@ -878,35 +903,40 @@ const submitOrder = async () => {
     const result = await cartStore.submitOrder(null)
 
     if (result.success) {
-      showConfirmModal.value = false
-
       // 如果有付款表單，表示是線上付款，需要跳轉到 NewebPay
       if (result.payment && result.payment.formData) {
-        console.log('💳 線上付款：自動提交表單到 NewebPay')
+        console.log('💳 線上付款：準備跳轉到 NewebPay')
 
-        // 創建並提交表單到 NewebPay
-        const form = document.createElement('form')
-        form.method = 'POST'
-        form.action = result.payment.apiUrl
+        // 設定跳轉狀態，Modal 會自動顯示跳轉提示
+        isRedirectingToPayment.value = true
 
-        // 添加表單欄位
-        Object.keys(result.payment.formData).forEach((key) => {
-          const input = document.createElement('input')
-          input.type = 'hidden'
-          input.name = key
-          input.value = result.payment.formData[key]
-          form.appendChild(input)
-        })
+        // 延遲提交表單，讓用戶看到跳轉提示
+        setTimeout(() => {
+          // 創建並提交表單到 NewebPay
+          const form = document.createElement('form')
+          form.method = 'POST'
+          form.action = result.payment.apiUrl
 
-        document.body.appendChild(form)
-        console.log('🔄 提交表單到:', result.payment.apiUrl)
-        form.submit()
+          // 添加表單欄位
+          Object.keys(result.payment.formData).forEach((key) => {
+            const input = document.createElement('input')
+            input.type = 'hidden'
+            input.name = key
+            input.value = result.payment.formData[key]
+            form.appendChild(input)
+          })
+
+          document.body.appendChild(form)
+          console.log('🔄 提交表單到:', result.payment.apiUrl)
+          form.submit()
+        }, 1000) // 延遲 1 秒，讓用戶看到跳轉提示
 
         // 表單提交後不需要跳轉，因為會自動跳到 NewebPay
         return
       }
 
-      // 現場付款才跳轉到訂單詳情頁
+      // 現場付款：關閉 Modal 並跳轉到訂單詳情頁
+      showConfirmModal.value = false
       router.push({
         name: 'order-confirm',
         params: {
@@ -922,7 +952,9 @@ const submitOrder = async () => {
   } catch (error) {
     console.error('提交訂單失敗:', error)
 
+    // 重置狀態並關閉 Modal
     showConfirmModal.value = false
+    isRedirectingToPayment.value = false
 
     let errorMessage = '訂單提交失敗，請稍後再試'
 
@@ -937,7 +969,7 @@ const submitOrder = async () => {
 
     showError(errorMessage)
   } finally {
-    // 重置提交狀態
+    // 重置提交狀態（注意：跳轉狀態在表單提交後仍保持，直到頁面跳轉）
     isSubmitting.value = false
   }
 }
