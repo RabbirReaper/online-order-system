@@ -71,7 +71,8 @@ router.post('/newebpay/return', async (req, res) => {
       res.redirect(redirectURL)
     } else {
       // ❌ 付款失敗：跳轉回購物車，並提示可以恢復購物車
-      const redirectURL = `${frontendURL}/stores/${result.brandId}/${result.storeId}/cart?payment_failed=true&restore=true`
+      // brandId 和 storeId 已存放在 sessionStorage 中，不需要在 URL 中傳遞
+      const redirectURL = `${frontendURL}/cart?payment_failed=true&restore=true`
       console.log('↪️ [ReturnURL] 付款失敗，重定向到購物車:', redirectURL)
       res.redirect(redirectURL)
     }
@@ -79,6 +80,7 @@ router.post('/newebpay/return', async (req, res) => {
     console.error('❌ [ReturnURL] 處理前景返回失敗:', error)
 
     // 發生錯誤時重定向回購物車，並帶上錯誤訊息
+    // brandId 和 storeId 已存放在 sessionStorage 中，不需要在 URL 中傳遞
     const frontendURL = process.env.NEWEBPAY_NotifyUrl
     const errorURL = `${frontendURL}/cart?payment_error=true&restore=true`
 
