@@ -139,7 +139,9 @@ const loadUserProfile = async () => {
     const profile = await authStore.getUserProfile()
     userProfile.value = profile
 
-    if (!localCustomerInfo.value.name && !localCustomerInfo.value.phone) {
+    // 登入後總是使用 API 返回的用戶資料覆蓋（包括 name 和 phone）
+    // 這確保即使用戶通過 LINE 進入（已有 displayName），登入後也會更新為系統註冊的真實資料
+    if (userProfile.value) {
       autoFillUserInfo()
     }
   } catch (error) {
