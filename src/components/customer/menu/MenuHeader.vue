@@ -12,7 +12,7 @@
               <template v-if="isLoggedIn">
                 <div class="dropdown">
                   <button
-                    class="btn nav-icon dropdown-toggle"
+                    class="btn nav-icon dropdown-toggle user-dropdown-btn"
                     type="button"
                     id="userMenuDropdown"
                     data-bs-toggle="dropdown"
@@ -270,17 +270,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-
-/* 自定義變數，直接在選擇器內部定義 */
-:root {
-  /* 顏色變數定義 */
-  --primary-color: #d35400;
-  --accent-color: #e67e22;
-  --text-color: #2c3e50;
-  --bg-light: #f8f9fa;
-  --price-color: #dceeda;
-}
 
 /* 導航欄樣式 */
 .nav-container {
@@ -338,6 +327,12 @@ onMounted(() => {
 .nav-icon:hover {
   background-color: var(--primary-color);
   color: white;
+}
+
+/* 移除用戶下拉選單按鈕的 hover 效果 */
+.user-dropdown-btn:hover {
+  background-color: #f8f9fa;
+  color: var(--text-color);
 }
 
 .login-text {
