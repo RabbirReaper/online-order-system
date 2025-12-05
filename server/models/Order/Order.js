@@ -197,7 +197,7 @@ const orderSchema = new mongoose.Schema(
     onlinePayment: {
       platform: {
         type: String,
-        enum: ['newebpay', 'tappay', ''],
+        enum: ['newebpay', ''],
         default: '',
       }, // 金流平台
       merchantOrderNo: { type: String }, // 商店訂單編號（給金流平台用）

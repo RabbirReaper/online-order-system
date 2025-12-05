@@ -28,13 +28,6 @@ vi.mock('@server/services/order/orderCreation.js', () => ({
   createOrder: vi.fn()
 }))
 
-// Mock paymentOrderService
-vi.mock('@server/services/payment/paymentOrderService.js', () => ({
-  processPaymentAndCreateOrder: vi.fn(),
-  getOrderPaymentStatus: vi.fn(),
-  processRefund: vi.fn()
-}))
-
 // Mock newebpayService
 vi.mock('@server/services/payment/newebpayService.js', () => ({
   createMPGPayment: vi.fn()
