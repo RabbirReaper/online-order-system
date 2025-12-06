@@ -653,17 +653,15 @@ export const updateStoreServiceSettings = async (storeId, serviceSettings) => {
  */
 export const getStoreLineBotInfo = async (storeId) => {
   // 檢查店鋪是否存在
-  const store = await Store.findById(storeId).select('lineBotId enableLineOrdering name')
+  const store = await Store.findById(storeId).select('lineBotId liffId enableLineOrdering name')
 
   if (!store) {
     throw new AppError('店鋪不存在', 404)
   }
 
-  // 使用店鋪專屬的 LINE Bot ID，沒有則為空
+  // 使用店鋪專屬的 LINE Bot ID 和 LIFF ID，沒有則為空
   const lineBotId = store.lineBotId || ''
-
-  // LIFF ID 從環境變數獲取，所有店家共用
-  const liffId = process.env.VITE_LIFF_ID
+  const liffId = store.liffId || ''
 
   return {
     lineBotId,
