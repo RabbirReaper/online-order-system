@@ -435,7 +435,7 @@ export const brandAdminRoutes = [
       {
         path: 'account-settings',
         name: 'brand-admin-account-settings',
-        component: () => import('@/components/BrandAdmin/Account/Settings.vue'),
+        component: () => import('@/components/common/Account/Settings.vue'),
         meta: { requiresAuth: true, title: '帳號設置' },
       },
     ],
