@@ -103,7 +103,8 @@ const processLineEntry = async () => {
       id: storeId,
     })
 
-    const { liffId, lineBotId, enableLineOrdering, storeName } = lineBotInfoResponse.data.lineBotInfo
+    // 注意：axios 攔截器已經將 response.data 解包，所以這裡直接使用 lineBotInfoResponse
+    const { liffId, lineBotId, enableLineOrdering, storeName } = lineBotInfoResponse.lineBotInfo
 
     console.log('📋 店家 LINE Bot 資訊:', {
       storeName,
