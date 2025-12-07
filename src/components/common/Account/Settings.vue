@@ -143,9 +143,9 @@
             </div>
 
             <!-- 成功訊息 -->
-            <div class="alert alert-success" v-if="profileSuccessMessage">
+            <BAlert :show="!!profileSuccessMessage" variant="success">
               <i class="bi bi-check-circle-fill me-2"></i>{{ profileSuccessMessage }}
-            </div>
+            </BAlert>
 
             <!-- 基本資料按鈕組 -->
             <div class="d-flex justify-content-between">
@@ -234,7 +234,7 @@
               <div class="invalid-feedback" v-if="passwordErrors.newPassword">
                 {{ passwordErrors.newPassword }}
               </div>
-              <div class="form-text">密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)</div>
+              <div class="form-text">密碼必須8-64個字元,只能包含英文、數字和符號(!@#$%^&*)</div>
             </div>
 
             <!-- 確認新密碼 -->
@@ -296,9 +296,9 @@
             </div>
 
             <!-- 成功訊息 -->
-            <div class="alert alert-success" v-if="passwordSuccessMessage">
+            <BAlert :show="!!passwordSuccessMessage" variant="success">
               <i class="bi bi-check-circle-fill me-2"></i>{{ passwordSuccessMessage }}
-            </div>
+            </BAlert>
 
             <!-- 按鈕組 -->
             <div class="d-flex justify-content-between">
@@ -390,12 +390,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { BAlert } from 'bootstrap-vue-next'
 import api from '@/api'
-
-// 路由
-const route = useRoute()
-const brandId = computed(() => route.params.brandId)
 
 // 狀態管理
 const profileData = reactive({
@@ -820,12 +816,11 @@ const changePassword = async () => {
     })
 
     passwordSuccessMessage.value = '密碼修改成功！'
-    resetPasswordForm()
 
-    // 滾動到成功訊息
+    // 延遲 1 秒後重置表單
     setTimeout(() => {
-      document.querySelector('.alert-success')?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+      resetPasswordForm()
+    }, 1000)
   } catch (error) {
     console.error('修改密碼失敗:', error)
 

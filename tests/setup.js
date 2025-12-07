@@ -4,10 +4,6 @@ import { createPinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
 
 // 設置測試環境變數 - 支付服務配置
-process.env.TAPPAY_APP_ID = 'test_app_id';
-process.env.TAPPAY_APP_KEY = 'test_app_key';
-process.env.TAPPAY_PARTNER_KEY = 'test_partner_key';
-process.env.TAPPAY_MERCHANT_ID = 'test_merchant_id';
 process.env.NEWEBPAY_MerchantID = 'test_merchant_id';
 process.env.NEWEBPAY_HASHKEY = 'test_hash_key_32_characters_long';
 process.env.NEWEBPAY_HASHIV = 'test_hash_iv_16_char';

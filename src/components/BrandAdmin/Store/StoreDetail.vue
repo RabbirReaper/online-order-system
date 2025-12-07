@@ -940,10 +940,9 @@ const liffUrl = computed(() => {
   return `https://liff.line.me/${liffId}`
 })
 const liffEndPointUrl = computed(() => {
-  const liffId = store.value?.liffId
-  if (!liffId) return null
-  // https://rabbirorder.com/line-entry?liffId=2008192565-m1q4KMrW&brandId=6829fddd1dcdb196fa13f479&storeId=682a00b3467760e4ad7469c7
-  return `${baseUrl.value}/line-entry?liffId=${liffId}&brandId=${brandId.value}&storeId=${storeId.value}}`
+  // 檢查店家是否啟用 LINE 點餐功能
+  if (!store.value?.enableLineOrdering) return null
+  return `${baseUrl.value}/line-entry?brandId=${brandId.value}&storeId=${storeId.value}`
 })
 
 // 從路由中獲取品牌ID和店鋪ID

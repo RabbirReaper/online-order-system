@@ -22,19 +22,13 @@ export default function (apiClient) {
      * @param {number} [params.orderData.total] - 訂單總金額
      * @param {string} params.paymentType - 付款類型 ('On-site', 'Online')（必填）
      * @param {string} params.paymentMethod - 付款方式 ('cash', 'credit_card', 'line_pay', 'other')（必填）
-     * @param {string} [params.primeToken] - TapPay Prime Token（線上付款時必填）
      * @returns {Promise} - API 回應
      */
-    createOrder({ brandId, storeId, orderData, paymentType, paymentMethod, primeToken }) {
+    createOrder({ brandId, storeId, orderData, paymentType, paymentMethod }) {
       const requestData = {
         orderData,
         paymentType,
         paymentMethod,
-      }
-
-      // 線上付款時需要 primeToken
-      if (paymentType === 'Online' && primeToken) {
-        requestData.primeToken = primeToken
       }
 
       return apiClient.post(

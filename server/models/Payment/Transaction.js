@@ -74,7 +74,7 @@ const transactionSchema = new mongoose.Schema(
     // === 新增：金流平台相關 ===
     platform: {
       type: String,
-      enum: ['newebpay', 'tappay'],
+      enum: ['newebpay'],
       required: true,
     }, // 金流平台
     platformTransactionId: { type: String }, // 金流平台的交易ID

@@ -102,7 +102,6 @@ This is a comprehensive multi-brand restaurant ordering and management system bu
 - UberEats API (delivery integration)
 - KotSMS (SMS verification)
 - LINE LIFF (LINE integration)
-- TapPay (payment gateway)
 - Cloudflare R2 (file storage)
 
 ### 🚀 Getting Started
@@ -342,7 +341,6 @@ Contributions, issues, and feature requests are welcome!
 - UberEats API（外送整合）
 - KotSMS（簡訊驗證）
 - LINE LIFF（LINE 整合）
-- TapPay（金流閘道）
 - Cloudflare R2（檔案儲存）
 
 ### 🚀 快速開始

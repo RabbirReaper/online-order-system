@@ -405,7 +405,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   // 提交訂單
-  async function submitOrder(primeToken = null) {
+  async function submitOrder() {
     if (isSubmitting.value) {
       return { success: false, message: '訂單正在處理中...' }
     }
@@ -516,7 +516,6 @@ export const useCartStore = defineStore('cart', () => {
       console.log('用戶登入狀態:', authStore.isLoggedIn)
       console.log('付款方式:', paymentMethod.value)
       console.log('付款類型:', paymentType.value)
-      console.log('Prime Token:', primeToken ? '已提供' : '未提供')
       console.log('訂單資料:', JSON.stringify(orderData, null, 2))
       console.log('========================')
 
@@ -527,7 +526,6 @@ export const useCartStore = defineStore('cart', () => {
         orderData,
         paymentType: paymentType.value,
         paymentMethod: paymentMethod.value,
-        primeToken: primeToken,
       })
 
       console.log('=== API 回應 ===')

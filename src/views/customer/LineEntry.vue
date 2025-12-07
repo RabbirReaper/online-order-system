@@ -44,9 +44,9 @@ const currentStep = ref('init')
 const loadingMessage = computed(() => {
   const messages = {
     init: '正在初始化...',
+    params: '正在獲取店家資訊...',
     liff: '正在連接 LINE...',
     auth: '正在驗證登入狀態...',
-    params: '正在解析參數...',
     context: '正在設定上下文...',
     redirect: '處理成功，準備跳轉...',
   }
@@ -57,7 +57,6 @@ const getQueryParams = () => {
   const query = route.query
 
   const params = {
-    liffId: query.liffId || '2007974797-rvmVYQB0',
     brandId: query.brandId,
     storeId: query.storeId,
     tableNumber: query.tableNumber,
@@ -73,24 +72,58 @@ const getQueryParams = () => {
 
 const processLineEntry = async () => {
   try {
+    const params = getQueryParams()
+
+    // 從 URL 或 sessionStorage 獲取參數
+    let brandId = params.brandId || sessionStorage.getItem('temp-brandId')
+    let storeId = params.storeId || sessionStorage.getItem('temp-storeId')
+
+    // 檢查必要參數
+    if (!brandId || !storeId) {
+      throw new Error('缺少必要參數 brandId 或 storeId，請確認連結正確')
+    }
+
+    // 如果從 URL 獲取到參數，保存到 sessionStorage（供登入後恢復使用）
+    if (params.brandId && params.storeId) {
+      sessionStorage.setItem('temp-brandId', brandId)
+      sessionStorage.setItem('temp-storeId', storeId)
+      console.log('💾 已保存參數到 sessionStorage')
+    } else {
+      console.log('🔄 從 sessionStorage 恢復參數')
+    }
+
+    console.log('📋 使用的參數:', { brandId, storeId })
+
+    currentStep.value = 'params'
+    console.log('🔍 正在獲取店家 LINE Bot 資訊...')
+
+    // 呼叫 API 獲取店家專屬的 LIFF ID
+    const lineBotInfoResponse = await api.store.getLineBotInfo({
+      brandId,
+      id: storeId,
+    })
+
+    const { liffId, lineBotId, enableLineOrdering, storeName } = lineBotInfoResponse.data
+
+    console.log('📋 店家 LINE Bot 資訊:', {
+      storeName,
+      liffId,
+      lineBotId,
+      enableLineOrdering,
+    })
+
+    if (!liffId) {
+      throw new Error('此店家尚未設定 LIFF ID，無法使用 LINE 點餐功能')
+    }
+
+    if (!enableLineOrdering) {
+      throw new Error('此店家尚未啟用 LINE 點餐功能')
+    }
+
     currentStep.value = 'liff'
     console.log('🔗 開始初始化 LIFF...')
 
-    const params = getQueryParams()
-
-    if (!params.liffId) {
-      throw new Error('LIFF ID 未設定')
-    }
-
-    if (params.brandId && params.storeId) {
-      sessionStorage.setItem('temp-brandId', params.brandId)
-      sessionStorage.setItem('temp-storeId', params.storeId)
-      console.log('💾 已預先保存參數到 sessionStorage')
-    } else {
-      console.warn('⚠️ 缺少必要參數 brandId 或 storeId')
-    }
-
-    await liff.init({ liffId: params.liffId })
+    await liff.init({ liffId })
     console.log('✅ LIFF 初始化成功')
 
     await new Promise((resolve) => setTimeout(resolve, 300))
@@ -140,34 +173,12 @@ const processLineEntry = async () => {
     }
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    currentStep.value = 'params'
-
-    let finalBrandId = params.brandId
-    let finalStoreId = params.storeId
-
-    if (!finalBrandId || !finalStoreId) {
-      const tempBrandId = sessionStorage.getItem('temp-brandId')
-      const tempStoreId = sessionStorage.getItem('temp-storeId')
-
-      if (tempBrandId && tempStoreId) {
-        finalBrandId = tempBrandId
-        finalStoreId = tempStoreId
-        console.log('🔄 從 sessionStorage 恢復參數')
-      } else {
-        throw new Error('無法獲取必要的店鋪參數，請確認連結正確')
-      }
-    }
-
-    console.log('📋 最終使用的參數:', { brandId: finalBrandId, storeId: finalStoreId })
-    console.log('🔧 使用的 LIFF ID:', params.liffId)
-
-    await new Promise((resolve) => setTimeout(resolve, 300))
-
     currentStep.value = 'context'
-    cartStore.setBrandAndStore(finalBrandId, finalStoreId)
+
+    cartStore.setBrandAndStore(brandId, storeId)
     console.log('🛒 設定購物車上下文:', {
-      brandId: finalBrandId,
-      storeId: finalStoreId,
+      brandId,
+      storeId,
     })
 
     sessionStorage.removeItem('temp-brandId')
@@ -180,8 +191,8 @@ const processLineEntry = async () => {
     const targetRoute = {
       name: 'menu',
       params: {
-        brandId: finalBrandId,
-        storeId: finalStoreId,
+        brandId,
+        storeId,
       },
       query: {
         fromLine: 'true',

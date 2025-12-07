@@ -8,6 +8,7 @@ import PlatformStore from '../../../models/DeliverPlatform/platformStore.js'
 import * as ubereatsOrders from '../platforms/ubereats/order/index.js'
 import * as foodpandaOrders from '../platforms/foodpanda/foodpandaOrders.js'
 import { convertUberOrderToInternal } from '../platforms/ubereats/order/convertOrder.js'
+import { convertFoodpandaOrderToInternal } from '../platforms/foodpanda/order/convertOrder.js'
 import { validateDeliveryOrderInventory } from '../platforms/ubereats/order/orderInventoryValidation.js'
 import { reduceDeliveryOrderInventory } from '../platforms/ubereats/order/orderInventoryReduction.js'
 import { AppError } from '../../../middlewares/error.js'
@@ -45,23 +46,15 @@ export const processUberEatsWebhook = async (webhookData) => {
  * @param {Object} webhookData - webhook 資料
  */
 export const processFoodpandaWebhook = async (webhookData) => {
-  const { event_type, order_id, vendor_code } = webhookData
-
   try {
-    switch (event_type) {
-      case 'order.created':
-        // console.log('🐼 處理新訂單創建')
-        await handleFoodpandaOrderCreated(order_id, vendor_code)
-        break
+    console.log('🐼 收到 Foodpanda webhook:', {
+      orderId: webhookData.order_id,
+      orderCode: webhookData.order_code,
+      vendorCode: webhookData.vendor_code,
+    })
 
-      case 'order.updated':
-        // console.log('🐼 處理訂單更新')
-        await handleFoodpandaOrderUpdated(order_id, vendor_code)
-        break
-
-      default:
-      // console.log(`⚠️ 未處理的 Foodpanda 事件類型: ${event_type}`)
-    }
+    // Foodpanda webhook 直接包含完整訂單資料
+    await handleFoodpandaOrderDispatch(webhookData)
   } catch (error) {
     console.error('❌ 處理 Foodpanda webhook 失敗:', error)
     throw error
@@ -189,16 +182,124 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
 }
 
 /**
- * 處理 Foodpanda 訂單創建
- * @param {String} orderId - 訂單ID
- * @param {String} vendorCode - 店鋪代碼
+ * 處理 Foodpanda 訂單派發 - 整合庫存檢查
+ * @param {Object} orderData - Foodpanda webhook 訂單資料
  */
-const handleFoodpandaOrderCreated = async (orderId, vendorCode) => {
+const handleFoodpandaOrderDispatch = async (orderData) => {
   try {
-    // TODO: 實作 Foodpanda 訂單處理，包括庫存檢查
-    // console.log('🐼 Foodpanda 訂單處理待實作:', { orderId, vendorCode })
+    console.log('📋 處理 Foodpanda 訂單:', {
+      orderId: orderData.order_id,
+      orderCode: orderData.order_code,
+      vendorCode: orderData.vendor_code,
+    })
+
+    // 1. 查找對應的平台店鋪配置
+    const platformStore = await findPlatformStoreByFoodpandaVendorCode(orderData.vendor_code)
+    if (!platformStore) {
+      console.error('❌ 找不到對應的平台店鋪配置:', orderData.vendor_code)
+      // 嘗試拒絕訂單
+      await foodpandaOrders.rejectOrder(
+        orderData.order_id,
+        orderData.vendor_code,
+        'vendor_unavailable',
+      )
+      return
+    }
+
+    // 2. 檢查訂單是否已存在
+    const existingOrder = await Order.findOne({
+      'platformInfo.platformOrderId': orderData.order_id,
+      'platformInfo.platform': 'foodpanda',
+    })
+
+    if (existingOrder) {
+      console.log('⚠️ 訂單已存在，跳過處理:', orderData.order_id)
+      return
+    }
+
+    // 3. 轉換訂單格式
+    const internalOrder = await convertFoodpandaOrderToInternal(orderData, platformStore)
+
+    // 4. 檢查庫存狀況
+    console.log('🔍 開始檢查外送訂單庫存狀況...')
+    const inventoryValidation = await validateDeliveryOrderInventory(internalOrder)
+
+    if (!inventoryValidation.success) {
+      console.warn('⚠️ 庫存檢查未通過，將拒絕訂單:', {
+        orderId: orderData.order_id,
+        orderCode: orderData.order_code,
+        issues: inventoryValidation.issues,
+      })
+
+      // Foodpanda 直接整合模式下，如果庫存不足應該拒絕訂單
+      const rejectReason = inventoryValidation.issues.some((issue) => issue.issue === 'sold_out')
+        ? 'out_of_stock'
+        : 'out_of_stock'
+
+      await foodpandaOrders.rejectOrder(orderData.order_id, orderData.vendor_code, rejectReason)
+
+      // 仍然保存訂單記錄，但標記為已拒絕
+      internalOrder.status = 'cancelled'
+      internalOrder.notes = `[庫存不足，已拒絕] ${inventoryValidation.issues.map((i) => `${i.itemName}: ${i.issue}`).join('; ')}`
+      await saveOrderToDatabase(internalOrder)
+
+      return
+    }
+
+    // 5. 保存訂單到資料庫
+    const savedOrder = await saveOrderToDatabase(internalOrder)
+
+    // 6. 扣除庫存
+    if (inventoryValidation.inventoryMap.size > 0) {
+      console.log('🔽 開始扣除外送訂單庫存...')
+      const inventoryReduction = await reduceDeliveryOrderInventory(
+        savedOrder,
+        inventoryValidation.inventoryMap,
+      )
+
+      if (!inventoryReduction.success) {
+        console.warn('⚠️ 庫存扣除時發生問題:', {
+          processed: inventoryReduction.processed,
+          errors: inventoryReduction.errors.length,
+        })
+      }
+    }
+
+    // 7. 自動接受訂單
+    const estimatedReadyTime = calculateEstimatedReadyTime(20) // 預設 20 分鐘
+    await foodpandaOrders.acceptOrder(orderData.order_id, orderData.vendor_code, estimatedReadyTime)
+    console.log('✅ 已自動接受 Foodpanda 訂單:', orderData.order_id)
+
+    // 8. 更新訂單狀態
+    await updateOrderSyncStatus(savedOrder._id, 'accepted')
+
+    // 9. 自動列印訂單
+    try {
+      await printOrder(
+        platformStore.brand._id || platformStore.brand,
+        platformStore.store._id || platformStore.store,
+        savedOrder._id,
+      )
+      console.log('🖨️ 外送訂單列印成功:', savedOrder._id)
+    } catch (printError) {
+      console.error('❌ 外送訂單自動列印失敗，但不影響訂單處理:', printError)
+    }
+
+    console.log('✅ Foodpanda 訂單處理完成:', {
+      internalOrderId: savedOrder._id,
+      platformOrderId: orderData.order_id,
+      orderCode: orderData.order_code,
+    })
   } catch (error) {
-    console.error('❌ 處理 Foodpanda 訂單失敗:', error)
+    console.error('❌ 處理 Foodpanda 訂單派發失敗:', error)
+
+    // 如果處理失敗，嘗試拒絕訂單
+    try {
+      await foodpandaOrders.rejectOrder(orderData.order_id, orderData.vendor_code, 'system_error')
+    } catch (rejectError) {
+      console.error('❌ 拒絕訂單也失敗了:', rejectError)
+    }
+
     throw error
   }
 }
@@ -223,6 +324,30 @@ const findPlatformStoreByUberStoreId = async (uberStoreId) => {
     return platformStore
   } catch (error) {
     console.error('❌ 查找平台店鋪配置失敗:', error)
+    return null
+  }
+}
+
+/**
+ * 根據 Foodpanda 店鋪代碼查找平台店鋪配置
+ * @param {String} vendorCode - Foodpanda vendor code
+ * @returns {Promise<Object|null>} 平台店鋪配置
+ */
+const findPlatformStoreByFoodpandaVendorCode = async (vendorCode) => {
+  if (!vendorCode) return null
+
+  try {
+    const platformStore = await PlatformStore.findOne({
+      platform: 'foodpanda',
+      platformStoreId: vendorCode,
+      isActive: true,
+    })
+      .populate('brand')
+      .populate('store')
+
+    return platformStore
+  } catch (error) {
+    console.error('❌ 查找 Foodpanda 平台店鋪配置失敗:', error)
     return null
   }
 }
@@ -262,4 +387,15 @@ const updateOrderSyncStatus = async (orderId, status) => {
     console.error('❌ 更新訂單同步狀態失敗:', error)
     // 不拋出錯誤，避免影響主流程
   }
+}
+
+/**
+ * 計算預計完成時間
+ * @param {Number} minutesFromNow - 從現在開始的分鐘數
+ * @returns {String} ISO 8601 格式的時間字串
+ */
+const calculateEstimatedReadyTime = (minutesFromNow) => {
+  const now = new Date()
+  const estimatedTime = new Date(now.getTime() + minutesFromNow * 60000)
+  return estimatedTime.toISOString()
 }

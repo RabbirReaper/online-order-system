@@ -48,8 +48,16 @@ app.use(
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const options = {
+  // 連接選項
+  maxPoolSize: 10, // 最大連接池大小
+  minPoolSize: 2, // 最小連接池大小
+  serverSelectionTimeoutMS: 5000, // 伺服器選擇超時
+  socketTimeoutMS: 45000, // Socket 超時
+}
+
 mongoose
-  .connect(`${process.env.MongoDB_url}`)
+  .connect(`${process.env.MongoDB_url}`, options)
   .then(() => {
     console.log('MongoDB connected')
   })

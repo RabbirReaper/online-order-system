@@ -65,7 +65,7 @@ export const bossRoutes = [
       {
         path: 'account',
         name: 'account-settings',
-        component: () => import('@/components/Boss/Account/Settings.vue'),
+        component: () => import('@/components/common/Account/Settings.vue'),
         meta: { requiresAuth: true, title: '帳號設置' },
       },
     ],

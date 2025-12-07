@@ -909,8 +909,8 @@ const submitOrder = async () => {
 
     cartStore.appliedCoupons = discounts
 
-    // 提交訂單（不需要 primeToken，改用 NewebPay）
-    const result = await cartStore.submitOrder(null)
+    // 提交訂單（使用 NewebPay）
+    const result = await cartStore.submitOrder()
 
     if (result.success) {
       // 如果有付款表單，表示是線上付款，需要跳轉到 NewebPay
