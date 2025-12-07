@@ -49,11 +49,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const options = {
-  // 連接選項
-  maxPoolSize: 10, // 最大連接池大小
-  minPoolSize: 2, // 最小連接池大小
-  serverSelectionTimeoutMS: 5000, // 伺服器選擇超時
-  socketTimeoutMS: 45000, // Socket 超時
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  retryWrites: true, // ✅ 這個很重要
+  retryReads: true, // ✅ 這個很重要
 }
 
 mongoose

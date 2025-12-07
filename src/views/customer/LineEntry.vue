@@ -103,7 +103,7 @@ const processLineEntry = async () => {
       id: storeId,
     })
 
-    const { liffId, lineBotId, enableLineOrdering, storeName } = lineBotInfoResponse.data
+    const { liffId, lineBotId, enableLineOrdering, storeName } = lineBotInfoResponse.data.lineBotInfo
 
     console.log('📋 店家 LINE Bot 資訊:', {
       storeName,
