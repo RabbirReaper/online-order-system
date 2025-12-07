@@ -21,7 +21,8 @@ vi.mock('@line/liff', () => ({
 const mockApi = {
   store: {
     getLineBotInfo: vi.fn().mockResolvedValue({
-      data: {
+      success: true,
+      lineBotInfo: {
         liffId: '2007974797-rvmVYQB0',
         lineBotId: 'test-line-bot-id',
         enableLineOrdering: true,
@@ -88,6 +89,17 @@ describe('LineEntry.vue', () => {
     // 重置 route.query
     mockRoute.query = {}
 
+    // 重新設定預設的 API mock 回應（因為 clearAllMocks 會清除它）
+    mockApi.store.getLineBotInfo.mockResolvedValue({
+      success: true,
+      lineBotInfo: {
+        liffId: '2007974797-rvmVYQB0',
+        lineBotId: 'test-line-bot-id',
+        enableLineOrdering: true,
+        storeName: 'Test Store'
+      }
+    })
+
     // 設置 Pinia
     pinia = createPinia()
     setActivePinia(pinia)
@@ -140,8 +152,8 @@ describe('LineEntry.vue', () => {
       expect(wrapper.vm.isLoading).toBe(true)
       expect(wrapper.vm.error).toBe(null)
       expect(wrapper.vm.success).toBe(false)
-      // currentStep 可能已經從 init 變為 liff，因為 onMounted 會立即執行
-      expect(['init', 'liff']).toContain(wrapper.vm.currentStep)
+      // currentStep 可能已經從 init 變為 params 或 liff，因為 onMounted 會立即執行
+      expect(['init', 'params', 'liff']).toContain(wrapper.vm.currentStep)
     })
   })
 
@@ -218,8 +230,8 @@ describe('LineEntry.vue', () => {
 
       wrapper = createWrapper()
 
-      // 等待異步操作完成
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // 等待異步操作完成（需要等待 API 呼叫 + LIFF init + 300ms 延遲）
+      await new Promise(resolve => setTimeout(resolve, 500))
 
       expect(mockLiff.login).toHaveBeenCalled()
       expect(sessionStorageMock.setItem).toHaveBeenCalledWith('temp-brandId', 'test-brand-123')
@@ -370,7 +382,8 @@ describe('LineEntry.vue', () => {
 
     it('應該在店家未設定 LIFF ID 時顯示錯誤', async () => {
       mockApi.store.getLineBotInfo.mockResolvedValueOnce({
-        data: {
+        success: true,
+        lineBotInfo: {
           liffId: '',
           lineBotId: 'test-line-bot-id',
           enableLineOrdering: true,
@@ -390,7 +403,8 @@ describe('LineEntry.vue', () => {
 
     it('應該在店家未啟用 LINE 點餐時顯示錯誤', async () => {
       mockApi.store.getLineBotInfo.mockResolvedValueOnce({
-        data: {
+        success: true,
+        lineBotInfo: {
           liffId: '2007974797-rvmVYQB0',
           lineBotId: 'test-line-bot-id',
           enableLineOrdering: false,
@@ -640,9 +654,9 @@ describe('LineEntry.vue', () => {
       
       const testCases = [
         { step: 'init', expected: '正在初始化...' },
+        { step: 'params', expected: '正在獲取店家資訊...' },
         { step: 'liff', expected: '正在連接 LINE...' },
         { step: 'auth', expected: '正在驗證登入狀態...' },
-        { step: 'params', expected: '正在解析參數...' },
         { step: 'context', expected: '正在設定上下文...' },
         { step: 'redirect', expected: '處理成功，準備跳轉...' }
       ]
