@@ -12,7 +12,7 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 80
 
-// CORS 設定 (需要在所有路由之前)
+// CORS 設定
 app.use(
   cors({
     origin: 'http://localhost:5173',
@@ -20,15 +20,9 @@ app.use(
   }),
 )
 
-// ⚠️ 重要: Webhook 路由必須在 express.json() 之前註冊
-// 因為簽名驗證需要原始的 request body (Buffer)
-// 如果先經過 express.json() 解析,會變成物件,導致簽名驗證失敗
 app.use('/api/delivery/webhooks', webhookRoutes)
-
-// 全局 JSON 和 URL 編碼解析中間件
 app.use(express.json({ limit: '2mb' }))
 app.use(express.urlencoded({ limit: '2mb', extended: true }))
-
 app.use(express.static('dist'))
 
 app.use(
@@ -38,7 +32,7 @@ app.use(
     saveUninitialized: false,
     rolling: true,
     cookie: {
-      maxAge: 30 * 60 * 1000, // 30 分鐘後過期
+      maxAge: 30 * 60 * 1000,
       sameSite: 'strict',
       httpOnly: true,
     },
@@ -49,30 +43,45 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const options = {
-  maxPoolSize: 10,
+  maxPoolSize: 20,
   minPoolSize: 2,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  retryWrites: true, // ✅ 這個很重要
-  retryReads: true, // ✅ 這個很重要
+  bufferTimeoutMS: 30000,
+  retryWrites: true,
+  retryReads: true,
 }
 
-mongoose
-  .connect(`${process.env.MongoDB_url}`, options)
-  .then(() => {
-    console.log('MongoDB connected')
-  })
-  .catch((err) => {
-    console.log('MongoDB connection failed')
-    console.log(err)
-  })
-
-app.use('/api', apiRoutes)
-
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
+// 🔧 監聽連接錯誤
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err)
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB disconnected! Will attempt to reconnect...')
 })
+
+// 等 MongoDB 連好再啟動伺服器
+async function startServer() {
+  try {
+    await mongoose.connect(`${process.env.MongoDB_url}`, options)
+    console.log('✅ MongoDB connected successfully')
+
+    // MongoDB 連接成功後，才註冊路由和啟動伺服器
+    app.use('/api', apiRoutes)
+
+    app.get(/^\/(?!api).*/, (req, res) => {
+      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
+    })
+
+    app.listen(port, () => {
+      console.log(`✅ Server listening at http://localhost:${port}`)
+    })
+  } catch (err) {
+    console.error('❌ Failed to connect to MongoDB:', err)
+    console.error('❌ Server not started. Exiting...')
+    process.exit(1) // 🔧 連接失敗就退出，讓 Cloud Run 重啟
+  }
+}
+
+startServer()
