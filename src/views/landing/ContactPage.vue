@@ -274,7 +274,7 @@ const { initializeLanguage } = useLanguage()
 
 onMounted(async () => {
   initializeLanguage()
-  document.title = '聯絡我們 - 智慧餐飲管理系統'
+  document.title = '聯絡我們 - 光兔點餐'
 
   // 確保 Bootstrap JavaScript 已載入並初始化
   await nextTick()
@@ -316,34 +316,37 @@ const initializeAccordion = () => {
 <style scoped>
 /* 在組件根元素上定義 CSS 變數 */
 .contact-page {
-  --primary-blue: #0f4c81;
-  --accent-yellow: #f4d35e;
-  --accent-orange: #ee964b;
-  --cta-red: #f95738;
-  --text-blue: #0d3b66;
-  --light-bg: #f8f9fa;
-  --white: #ffffff;
+  --primary-white: #ffffff;
+  --text-dark: #2d3436;
+  --text-medium: #636e72;
+  --text-light: #b2bec3;
+  --accent-orange: #ff6b35;
+  --accent-orange-hover: #e85a28;
+  --accent-orange-light: #ffe8e0;
+  --bg-light: #f8f9fa;
+  --border-light: #e9ecef;
+  --shadow: rgba(45, 52, 54, 0.08);
 
-  color: var(--text-blue);
+  color: var(--text-medium);
 }
 
 .section-title {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 700;
   font-size: 2.5rem;
   margin-bottom: 1rem;
 }
 
 .section-subtitle {
-  color: var(--text-blue);
+  color: var(--text-medium);
   font-size: 1.25rem;
   opacity: 0.8;
   margin-bottom: 3rem;
 }
 
 .btn-cta {
-  background-color: var(--cta-red);
-  border-color: var(--cta-red);
+  background-color: var(--accent-orange);
+  border-color: var(--accent-orange);
   color: var(--white);
   font-weight: 600;
   transition: all 0.3s ease;
@@ -357,7 +360,7 @@ const initializeAccordion = () => {
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, #1a5b8c 100%);
+  background: var(--bg-light);
   color: var(--white);
   padding: 5rem 0;
 }
@@ -410,7 +413,7 @@ const initializeAccordion = () => {
 }
 
 .contact-card h4 {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 700;
   margin-bottom: 1rem;
 }
@@ -418,12 +421,12 @@ const initializeAccordion = () => {
 .contact-detail {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-blue);
+  color: var(--text-medium);
   margin-bottom: 0.5rem;
 }
 
 .contact-note {
-  color: var(--text-blue);
+  color: var(--text-medium);
   opacity: 0.7;
   font-size: 0.9rem;
 }
@@ -452,13 +455,13 @@ const initializeAccordion = () => {
 
 .form-header i {
   font-size: 3rem;
-  color: var(--primary-blue);
+  color: var(--text-dark);
   margin-bottom: 1rem;
   display: block;
 }
 
 .form-header h4 {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
@@ -472,7 +475,7 @@ const initializeAccordion = () => {
 }
 
 .embed-instruction {
-  color: var(--text-blue);
+  color: var(--text-medium);
   opacity: 0.8;
   margin-bottom: 1rem;
 }
@@ -490,7 +493,7 @@ const initializeAccordion = () => {
 }
 
 .alternative-contact h6 {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 600;
   margin-bottom: 1rem;
 }
@@ -543,7 +546,7 @@ const initializeAccordion = () => {
   background: var(--white) !important;
   border: none !important;
   font-weight: 600;
-  color: var(--primary-blue) !important;
+  color: var(--text-dark) !important;
   padding: 1.5rem !important;
   border-radius: 8px !important;
   /* 重要：不要覆蓋 Bootstrap 的基本功能 */
@@ -609,7 +612,7 @@ const initializeAccordion = () => {
 }
 
 .support-card h5 {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 700;
   margin-bottom: 1rem;
 }
@@ -617,7 +620,7 @@ const initializeAccordion = () => {
 /* CTA Section */
 .cta-section {
   padding: 5rem 0;
-  background: linear-gradient(135deg, var(--primary-blue) 0%, #1a5b8c 100%);
+  background: var(--bg-light);
   color: var(--white);
   text-align: center;
 }

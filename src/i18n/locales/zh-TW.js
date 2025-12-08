@@ -19,15 +19,15 @@ export default {
     consultation: '免費諮詢',
     schedule: '預約諮詢',
     startTrial: '開始免費試用',
-    copyright: '© 2025 智慧餐飲管理系統. All rights reserved.',
+    copyright: '© 2025 光兔點餐. All rights reserved.',
   },
 
   // 首頁
   home: {
-    title: '智慧餐飲管理',
-    titleHighlight: '新時代',
+    title: '光兔點餐',
+    titleHighlight: '',
     subtitle:
-      '從小型餐廳到連鎖品牌，我們提供完整的數位化解決方案。會員積點、預購券、多店管理，一站式餐飲科技服務。',
+      '讓餐飲管理更簡單、更智慧。從小型餐廳到連鎖品牌，提供完整的數位化解決方案。',
     stats: {
       fee: '0.3%',
       feeLabel: '營業額收費',
@@ -46,8 +46,15 @@ export default {
       },
       voucher: {
         title: '預購券系統',
-        description: '創新的預購券機制，增加現金流，提高顧客忠誠度，創造額外收益。',
-        features: ['彈性預購券設計', '兌換券批量管理', '優惠組合包裝', '到期提醒通知'],
+        description: '讓顧客提前購買餐點券，享受優惠價格。幫助店家有效控制金流與庫存，同時節省顧客每次付款時間，購買更方便。',
+        features: [
+          '顧客提前購買，享受優惠折扣',
+          '店家提前掌握金流，改善資金週轉',
+          '智慧庫存管控，避免超賣或缺貨',
+          '一鍵核銷，節省顧客排隊付款時間',
+          '彈性設定有效期限與使用條件',
+          '批量發行管理，輕鬆推出促銷活動',
+        ],
       },
       management: {
         title: '多層級管理',

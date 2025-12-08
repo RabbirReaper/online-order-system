@@ -306,20 +306,20 @@ const { initializeLanguage } = useLanguage()
 
 // SEO Meta
 const setMetaTags = () => {
-  document.title = '智慧餐飲管理系統 - 專業餐飲科技解決方案'
+  document.title = '光兔點餐 - 專業餐飲管理系統'
 
   const metaTags = [
     {
       name: 'description',
       content:
-        '提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
+        '光兔點餐提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
     },
-    { name: 'keywords', content: '餐飲管理系統,POS系統,會員管理,預購券,點餐系統,餐廳管理' },
-    { property: 'og:title', content: '智慧餐飲管理系統 - 專業餐飲科技解決方案' },
+    { name: 'keywords', content: '光兔點餐,餐飲管理系統,POS系統,會員管理,預購券,點餐系統,餐廳管理' },
+    { property: 'og:title', content: '光兔點餐 - 專業餐飲管理系統' },
     {
       property: 'og:description',
       content:
-        '提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
+        '光兔點餐提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
     },
     { property: 'og:type', content: 'website' },
   ]
@@ -352,53 +352,60 @@ onMounted(() => {
 <style scoped>
 /* Color Variables */
 .landing-page {
-  --primary-blue: #0f4c81;
-  --accent-yellow: #f4d35e;
-  --accent-orange: #ee964b;
-  --cta-red: #f95738;
-  --text-blue: #0d3b66;
-  --light-bg: #f8f9fa;
-  --white: #ffffff;
+  --primary-white: #ffffff;
+  --text-dark: #2d3436;
+  --text-medium: #636e72;
+  --text-light: #b2bec3;
+  --accent-orange: #ff6b35;
+  --accent-orange-hover: #e85a28;
+  --accent-orange-light: #ffe8e0;
+  --bg-light: #f8f9fa;
+  --border-light: #e9ecef;
+  --shadow: rgba(45, 52, 54, 0.08);
 
-  color: var(--text-blue);
+  color: var(--text-medium);
   line-height: 1.6;
 }
 
 .section-title {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 700;
   font-size: 2.5rem;
   margin-bottom: 1rem;
 }
 
 .section-subtitle {
-  color: var(--text-blue);
+  color: var(--text-medium);
   font-size: 1.25rem;
-  opacity: 0.8;
+  opacity: 0.9;
   margin-bottom: 3rem;
 }
 
 .btn-cta {
-  background-color: var(--cta-red);
-  border-color: var(--cta-red);
-  color: var(--white);
+  background-color: var(--accent-orange);
+  border-color: var(--accent-orange);
+  color: #ffffff;
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .btn-cta:hover {
-  background-color: #e04527;
-  border-color: #e04527;
+  background-color: var(--accent-orange-hover);
+  border-color: var(--accent-orange-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 87, 56, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
 }
 
 /* Hero Section */
 .hero-section {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, #1a5b8c 100%);
-  color: var(--white);
+  background: var(--primary-white);
+  color: var(--text-dark);
   position: relative;
   overflow: hidden;
+  background-image: url('https://pub-e2700a21e03b4e26a8bafd4546249408.r2.dev/brands/685112874db5fec187398d19/7d9e4175-5768-4677-8d32-0e13e08278a8.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .hero-section::before {
@@ -408,7 +415,8 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon fill="rgba(255,255,255,0.05)" points="0,0 1000,300 1000,1000 0,700"/></svg>');
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
 }
 
 .hero-content {
@@ -422,16 +430,20 @@ onMounted(() => {
   font-weight: 800;
   margin-bottom: 1.5rem;
   line-height: 1.2;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .highlight {
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
 }
 
 .hero-subtitle {
   font-size: 1.3rem;
   margin-bottom: 2rem;
-  opacity: 0.9;
+  color: #ffffff;
+  opacity: 0.95;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .hero-stats {
@@ -449,12 +461,15 @@ onMounted(() => {
   display: block;
   font-size: 2rem;
   font-weight: 700;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .stat-label {
   font-size: 0.9rem;
-  color: var(--white);
+  color: #ffffff;
+  opacity: 0.9;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .hero-actions {
@@ -471,22 +486,24 @@ onMounted(() => {
 }
 
 .feature-card {
-  background: var(--white);
-  padding: 2rem;
+  background: #ffffff;
+  padding: 2.5rem;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 8px 24px var(--shadow);
   height: 100%;
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .feature-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(45, 52, 54, 0.12);
 }
 
 .feature-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+  background: var(--accent-orange-light);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -496,11 +513,11 @@ onMounted(() => {
 
 .feature-icon i {
   font-size: 1.5rem;
-  color: var(--white);
+  color: var(--accent-orange);
 }
 
 .feature-card h4 {
-  color: var(--primary-blue);
+  color: var(--text-dark);
   font-weight: 700;
   margin-bottom: 1rem;
 }
@@ -521,7 +538,7 @@ onMounted(() => {
   content: '✓';
   position: absolute;
   left: 0;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
   font-weight: 700;
 }
 
@@ -532,7 +549,7 @@ onMounted(() => {
 }
 
 .demo-card {
-  background: var(--white);
+  background: #ffffff;
   border: 2px solid #f0f0f0;
   border-radius: 12px;
   overflow: hidden;
@@ -541,8 +558,8 @@ onMounted(() => {
 }
 
 .demo-card:hover {
-  border-color: var(--primary-blue);
-  box-shadow: 0 12px 32px rgba(15, 76, 129, 0.1);
+  border-color: var(--accent-orange);
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.15);
 }
 
 .demo-header {
@@ -554,7 +571,7 @@ onMounted(() => {
 .demo-icon {
   width: 50px;
   height: 50px;
-  background: var(--primary-blue);
+  background: var(--accent-orange);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -564,12 +581,12 @@ onMounted(() => {
 
 .demo-icon i {
   font-size: 1.25rem;
-  color: var(--white);
+  color: #ffffff;
 }
 
 .demo-description {
-  color: var(--text-blue);
-  opacity: 0.8;
+  color: var(--text-medium);
+  opacity: 0.9;
   margin-bottom: 1rem;
 }
 
@@ -585,7 +602,7 @@ onMounted(() => {
 }
 
 .demo-feature i {
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
   margin-right: 0.75rem;
 }
 
@@ -604,8 +621,8 @@ onMounted(() => {
 }
 
 .pricing-badge {
-  background: var(--accent-yellow);
-  color: var(--text-blue);
+  background: var(--accent-orange);
+  color: #ffffff;
   padding: 0.5rem 1rem;
   position: absolute;
   top: 0;
@@ -618,8 +635,9 @@ onMounted(() => {
 .pricing-header {
   padding: 2.5rem 2rem 2rem;
   text-align: center;
-  background: linear-gradient(135deg, var(--primary-blue), #1a5b8c);
-  color: var(--white);
+  background: var(--bg-light);
+  color: var(--text-dark);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .pricing-header h3 {
@@ -634,7 +652,7 @@ onMounted(() => {
 .pricing-number {
   font-size: 4rem;
   font-weight: 800;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
 }
 
 .pricing-unit {
@@ -659,7 +677,7 @@ onMounted(() => {
 }
 
 .pricing-feature i {
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
   margin-right: 1rem;
   font-size: 1.1rem;
 }
@@ -678,8 +696,8 @@ onMounted(() => {
 /* CTA Section */
 .cta-section {
   padding: 5rem 0;
-  background: linear-gradient(135deg, var(--primary-blue) 0%, #1a5b8c 100%);
-  color: var(--white);
+  background: var(--bg-light);
+  color: var(--text-dark);
   text-align: center;
 }
 
@@ -687,13 +705,14 @@ onMounted(() => {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: var(--white);
+  color: var(--text-dark);
 }
 
 .cta-subtitle {
   font-size: 1.25rem;
   margin-bottom: 2rem;
-  opacity: 0.9;
+  color: var(--text-medium);
+  opacity: 1;
 }
 
 .cta-actions {
@@ -705,19 +724,19 @@ onMounted(() => {
 
 /* Footer */
 .footer-section {
-  background: var(--text-blue);
-  color: var(--white);
+  background: var(--text-dark);
+  color: #ffffff;
   padding: 3rem 0 1rem;
 }
 
 .footer-brand h5 {
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
   margin-bottom: 1rem;
 }
 
 .footer-links h6 {
   margin-bottom: 1rem;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
 }
 
 .footer-links ul {
@@ -730,7 +749,7 @@ onMounted(() => {
 }
 
 .footer-links a {
-  color: var(--white);
+  color: #ffffff;
   text-decoration: none;
   opacity: 0.8;
   transition: opacity 0.3s ease;
@@ -738,12 +757,12 @@ onMounted(() => {
 
 .footer-links a:hover {
   opacity: 1;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
 }
 
 .footer-contact h6 {
   margin-bottom: 1rem;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
 }
 
 .contact-item {
@@ -755,7 +774,7 @@ onMounted(() => {
 .contact-item i {
   width: 20px;
   margin-right: 0.75rem;
-  color: var(--accent-yellow);
+  color: var(--accent-orange);
 }
 
 .footer-divider {
