@@ -62,8 +62,8 @@
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              <!-- <span class="language-flag">{{ currentLanguageInfo.flag }}</span> -->
-              <span class="language-name d-none d-md-inline">{{ currentLanguageInfo.name }}</span>
+              <span class="language-flag">{{ currentLanguageInfo.flag }}</span>
+              <span class="language-name d-none d-lg-inline">{{ currentLanguageInfo.name }}</span>
             </a>
             <ul
               class="dropdown-menu dropdown-menu-end language-menu"
@@ -266,6 +266,11 @@ onMounted(async () => {
   .language-switcher {
     justify-content: flex-start;
     min-width: auto;
+  }
+
+  .language-switcher .language-flag {
+    font-size: 1.5rem;
+    margin-right: 0.25rem;
   }
 
   .language-menu {
