@@ -29,6 +29,7 @@
         <div class="container px-3 py-2">
           <div class="btn-group w-100" role="group">
             <button
+              v-if="menuData.food?.categories?.length > 0"
               type="button"
               class="btn menu-type-btn"
               :class="currentMenuType === 'food' ? 'btn-primary' : 'btn-outline-primary'"
@@ -38,6 +39,7 @@
               餐點菜單
             </button>
             <button
+              v-if="menuData.cash_coupon?.categories?.length > 0"
               type="button"
               class="btn menu-type-btn"
               :class="currentMenuType === 'cash_coupon' ? 'btn-primary' : 'btn-outline-primary'"
@@ -47,6 +49,7 @@
               預購券
             </button>
             <button
+              v-if="menuData.point_exchange?.categories?.length > 0"
               type="button"
               class="btn menu-type-btn"
               :class="currentMenuType === 'point_exchange' ? 'btn-primary' : 'btn-outline-primary'"
@@ -94,7 +97,9 @@
         <div class="alert alert-danger mx-3">
           <i class="bi bi-exclamation-triangle me-2"></i>
           {{ menuError }}
-          <button class="btn btn-outline-danger btn-sm ms-3" @click="loadMenuData">重新載入</button>
+          <button class="btn btn-outline-danger btn-sm ms-3" @click="loadAllMenuData">
+            重新載入
+          </button>
         </div>
       </div>
 
@@ -149,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, onActivated, onDeactivated, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 import MenuHeader from '@/components/customer/menu/MenuHeader.vue'
@@ -165,11 +170,11 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 const menuStore = useMenuStore()
 
-// 路由參數
+// ===== 路由參數 =====
 const brandId = computed(() => route.params.brandId)
 const storeId = computed(() => route.params.storeId)
 
-// 響應式資料
+// ===== 響應式資料 =====
 const store = ref({
   name: '',
   image: null,
@@ -183,17 +188,25 @@ const currentMenuType = computed({
   set: (value) => menuStore.setMenuType(value),
 })
 
-const currentMenu = ref({ categories: [] })
 const isLoadingStore = ref(true)
 const isLoadingMenu = ref(false)
 const menuError = ref(null)
 const hasInitialized = ref(false)
 
-// === 移除所有手動滾動相關的代碼 ===
-// const lastScrollPosition = ref(0) // 刪除
-// 不再需要 lastScrollPosition
+// 存儲各個菜單類型的資料
+const menuData = ref({
+  food: { categories: [] },
+  cash_coupon: { categories: [] },
+  point_exchange: { categories: [] },
+})
 
-// 計算屬性保持不變
+// ===== 計算屬性 =====
+
+// 當前顯示的菜單（根據 currentMenuType 自動切換）
+const currentMenu = computed(() => {
+  return menuData.value[currentMenuType.value] || { categories: [] }
+})
+
 const hasMenuCategories = computed(() => {
   return currentMenu.value.categories && currentMenu.value.categories.length > 0
 })
@@ -214,7 +227,66 @@ const hasCartItems = computed(() => cartStore.itemCount > 0)
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartTotal = computed(() => cartStore.total)
 
-// 方法保持不變
+// ===== SEO Meta 更新函數 =====
+/**
+ * 更新頁面 SEO meta 標籤
+ * @param {Object} storeData - 店鋪資料
+ */
+const updateSEOMeta = (storeData) => {
+  if (!storeData?.name) return
+
+  // 更新頁面標題
+  document.title = `${storeData.name}`
+
+  /**
+   * 輔助函數：更新或創建 meta 標籤
+   * @param {string} selector - CSS 選擇器
+   * @param {string} attribute - 屬性名稱 (name 或 property)
+   * @param {string} content - meta 內容
+   */
+  const updateOrCreateMeta = (selector, attribute, content) => {
+    let meta = document.querySelector(selector)
+    if (!meta) {
+      meta = document.createElement('meta')
+      // 判斷是 property (如 og:title) 還是 name (如 description)
+      if (attribute.includes(':')) {
+        meta.setAttribute('property', attribute)
+      } else {
+        meta.name = attribute
+      }
+      document.head.appendChild(meta)
+    }
+    meta.content = content
+  }
+
+  // 更新 description
+  const description = storeData.description || `歡迎光臨 ${storeData.name}，立即線上點餐！`
+  updateOrCreateMeta('meta[name="description"]', 'description', description)
+
+  // 更新 Open Graph meta tags
+  updateOrCreateMeta('meta[property="og:title"]', 'og:title', `${storeData.name}`)
+  updateOrCreateMeta('meta[property="og:description"]', 'og:description', description)
+
+  // 更新 og:image（如果有店鋪圖片）
+  if (storeData.image) {
+    updateOrCreateMeta('meta[property="og:image"]', 'og:image', storeData.image)
+  }
+
+  // 更新 og:type 和 og:locale
+  updateOrCreateMeta('meta[property="og:type"]', 'og:type', 'website')
+  updateOrCreateMeta('meta[property="og:locale"]', 'og:locale', 'zh_TW')
+
+  // 更新 Twitter Card meta tags
+  updateOrCreateMeta('meta[name="twitter:card"]', 'twitter:card', 'summary_large_image')
+  updateOrCreateMeta('meta[name="twitter:title"]', 'twitter:title', `${storeData.name}`)
+  updateOrCreateMeta('meta[name="twitter:description"]', 'twitter:description', description)
+
+  if (storeData.image) {
+    updateOrCreateMeta('meta[name="twitter:image"]', 'twitter:image', storeData.image)
+  }
+}
+
+// ===== 輔助方法 =====
 const getMenuTypeText = (type) => {
   const typeMap = {
     food: '餐點菜單',
@@ -224,13 +296,34 @@ const getMenuTypeText = (type) => {
   return typeMap[type] || type
 }
 
-const switchMenuType = async (type) => {
-  if (currentMenuType.value === type || isLoadingMenu.value) return
-  currentMenuType.value = type
-  await loadMenuData()
+// 排序分類和項目
+const sortMenuData = (menuObj) => {
+  if (!menuObj || !menuObj.categories) return menuObj
+
+  // 排序分類
+  menuObj.categories.sort((a, b) => (a.order || 0) - (b.order || 0))
+
+  // 排序每個分類中的項目
+  menuObj.categories.forEach((category) => {
+    if (category.items) {
+      category.items.sort((a, b) => (a.order || 0) - (b.order || 0))
+    }
+  })
+
+  return menuObj
 }
 
-// 其他業務邏輯方法保持不變...
+// ===== 菜單類型切換 =====
+const switchMenuType = (type) => {
+  if (currentMenuType.value === type) return
+  currentMenuType.value = type
+}
+
+// ===== 資料載入方法 =====
+
+/**
+ * 載入店鋪資料並更新 SEO meta
+ */
 const loadStoreData = async () => {
   if (store.value.name && hasInitialized.value) return
 
@@ -240,9 +333,12 @@ const loadStoreData = async () => {
       id: storeId.value,
     })
 
-    if (storeData && storeData.success) {
+    if (storeData?.success) {
       await new Promise((resolve) => setTimeout(resolve, 100))
       store.value = storeData.store
+
+      // 👇 在數據載入成功後立即更新 SEO meta
+      updateSEOMeta(storeData.store)
     } else {
       console.error('無效的店鋪數據或 API 呼叫失敗:', storeData)
     }
@@ -251,50 +347,57 @@ const loadStoreData = async () => {
   }
 }
 
-const loadMenuData = async () => {
-  if (!brandId.value || !storeId.value) {
-    menuError.value = '缺少必要的店鋪資訊'
-    return
-  }
+/**
+ * 載入所有菜單類型的資料
+ */
+const loadAllMenuData = async () => {
+  if (!brandId.value || !storeId.value) return
 
   isLoadingMenu.value = true
   menuError.value = null
 
+  const menuTypes = ['food', 'cash_coupon', 'point_exchange']
+
   try {
-    const response = await api.menu.getAllStoreMenus({
-      brandId: brandId.value,
-      storeId: storeId.value,
-      includeUnpublished: false,
-      activeOnly: true,
-      menuType: currentMenuType.value,
+    // 並行載入所有菜單類型
+    const promises = menuTypes.map(async (menuType) => {
+      try {
+        const response = await api.menu.getAllStoreMenus({
+          brandId: brandId.value,
+          storeId: storeId.value,
+          includeUnpublished: false,
+          activeOnly: true,
+          menuType: menuType,
+        })
+
+        if (response.success && response.menus && response.menus.length > 0) {
+          return { menuType, data: sortMenuData(response.menus[0]) }
+        } else {
+          return { menuType, data: { categories: [] } }
+        }
+      } catch (error) {
+        console.error(`載入${menuType}菜單失敗:`, error)
+        return { menuType, data: { categories: [] } }
+      }
     })
 
-    if (response.success && response.menus && response.menus.length > 0) {
-      currentMenu.value = response.menus[0]
+    // 等待所有請求完成
+    const results = await Promise.all(promises)
 
-      if (currentMenu.value.categories) {
-        currentMenu.value.categories.sort((a, b) => (a.order || 0) - (b.order || 0))
-        currentMenu.value.categories.forEach((category) => {
-          if (category.items) {
-            category.items.sort((a, b) => (a.order || 0) - (b.order || 0))
-          }
-        })
-      }
-    } else {
-      currentMenu.value = { categories: [] }
-      console.warn(`沒有找到啟用的${getMenuTypeText(currentMenuType.value)}`)
-    }
-  } catch (err) {
-    console.error('載入菜單資料失敗:', err)
-    menuError.value = err.response?.data?.message || err.message || '載入菜單失敗，請稍後再試'
-    currentMenu.value = { categories: [] }
+    // 更新 menuData
+    results.forEach(({ menuType, data }) => {
+      menuData.value[menuType] = data
+    })
+  } catch (error) {
+    console.error('載入菜單資料時發生錯誤:', error)
+    menuError.value = '載入菜單失敗，請稍後再試'
   } finally {
     isLoadingMenu.value = false
   }
 }
 
+// ===== 事件處理 =====
 const handleItemSelect = (item) => {
-  // 不再需要保存滾動位置，瀏覽器會自動處理
   if (item.itemType === 'dish' && item.dishTemplate) {
     router.push({
       name: 'dish-detail',
@@ -341,7 +444,50 @@ const goToCart = () => {
   router.push({ name: 'cart' })
 }
 
-// 監聽器保持不變
+// ===== 桌號處理 =====
+const handleTableNumber = () => {
+  const tableNumber = route.query.tableNumber
+  if (tableNumber) {
+    console.log('檢測到桌號參數:', tableNumber)
+    cartStore.setOrderType('dine_in')
+    cartStore.setDineInInfo({ tableNumber: String(tableNumber) })
+    console.log('已自動設置為內用模式，桌號:', tableNumber)
+  }
+}
+
+// ===== 初始化 =====
+const initialize = async () => {
+  if (hasInitialized.value) return
+
+  // 設置品牌和店鋪
+  menuStore.setBrandAndStore(brandId.value, storeId.value)
+  menuStore.restoreState()
+  cartStore.setBrandAndStore(brandId.value, storeId.value)
+
+  // 處理桌號參數
+  handleTableNumber()
+
+  // 檢查認證狀態
+  if (brandId.value) {
+    authStore.setBrandId(brandId.value)
+    try {
+      await authStore.checkAuthStatus()
+    } catch (error) {
+      console.error('檢查登入狀態失敗:', error)
+    }
+  }
+
+  // 載入店鋪資料（會自動更新 SEO meta）
+  await loadStoreData()
+  isLoadingStore.value = false
+
+  // 載入所有菜單資料
+  await loadAllMenuData()
+
+  hasInitialized.value = true
+}
+
+// ===== 監聽器 =====
 watch(
   () => brandId.value,
   (newBrandId) => {
@@ -352,7 +498,6 @@ watch(
   { immediate: true },
 )
 
-// 監聽路由查詢參數變化，處理桌號參數
 watch(
   () => route.query.tableNumber,
   (newTableNumber) => {
@@ -366,61 +511,21 @@ watch(
   { immediate: true },
 )
 
-// 檢查並處理桌號參數
-const handleTableNumber = () => {
-  const tableNumber = route.query.tableNumber
-  if (tableNumber) {
-    console.log('檢測到桌號參數:', tableNumber)
-    // 自動設置為內用模式
-    cartStore.setOrderType('dine_in')
-    cartStore.setDineInInfo({ tableNumber: String(tableNumber) })
-    console.log('已自動設置為內用模式，桌號:', tableNumber)
-  }
-}
-
-// 初始化邏輯
-const initialize = async () => {
-  if (hasInitialized.value) return
-
-  menuStore.setBrandAndStore(brandId.value, storeId.value)
-  menuStore.restoreState()
-  cartStore.setBrandAndStore(brandId.value, storeId.value)
-
-  // 處理桌號參數（在設置品牌店鋪後）
-  handleTableNumber()
-
-  if (brandId.value) {
-    authStore.setBrandId(brandId.value)
-    try {
-      await authStore.checkAuthStatus()
-    } catch (error) {
-      console.error('檢查登入狀態失敗:', error)
-    }
-  }
-
-  await loadStoreData()
-  isLoadingStore.value = false
-  await loadMenuData()
-
-  hasInitialized.value = true
-}
-
-// === 簡化的生命週期鉤子 ===
+// ===== 生命週期 =====
 onMounted(async () => {
   await initialize()
 })
 
-// KeepAlive 生命週期 - 只處理業務邏輯，不處理滾動
 onActivated(() => {
   document.documentElement.style.scrollBehavior = 'auto'
   document.body.style.scrollBehavior = 'auto'
 
-  // 只處理業務邏輯
+  // 檢查品牌店鋪是否變更
   if (cartStore.currentBrand !== brandId.value || cartStore.currentStore !== storeId.value) {
     cartStore.setBrandAndStore(brandId.value, storeId.value)
   }
 
-  // 重新檢查桌號參數（頁面重新激活時）
+  // 重新檢查桌號參數
   handleTableNumber()
 })
 </script>

@@ -17,9 +17,9 @@ const VALIDATION_PATTERNS = {
 }
 
 const VALIDATION_RULES = {
-  name: { minLength: 2, maxLength: 50 },
-  password: { minLength: 8, maxLength: 64 },
-  verificationCode: { minLength: 4, maxLength: 10 },
+  name: { minLength: 1, maxLength: 25 },
+  password: { minLength: 6, maxLength: 32 },
+  verificationCode: { minLength: 6, maxLength: 6 },
 }
 
 /**
@@ -59,9 +59,9 @@ const validateField = (fieldName, value, required = true) => {
     if (rule.minLength && value.length < rule.minLength) {
       switch (fieldName) {
         case 'name':
-          return { valid: false, message: '姓名至少需要2個字元' }
+          return { valid: false, message: '姓名至少需要1個字元' }
         case 'password':
-          return { valid: false, message: '密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)' }
+          return { valid: false, message: '密碼必須6-32個字元，只能包含英文、數字和符號(!@#$%^&*)' }
         case 'verificationCode':
           return { valid: false, message: '驗證碼格式不正確' }
         default:
@@ -72,9 +72,9 @@ const validateField = (fieldName, value, required = true) => {
     if (rule.maxLength && value.length > rule.maxLength) {
       switch (fieldName) {
         case 'name':
-          return { valid: false, message: '姓名長度不能超過50個字元' }
+          return { valid: false, message: '姓名長度不能超過25個字元' }
         case 'password':
-          return { valid: false, message: '密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)' }
+          return { valid: false, message: '密碼必須6-32個字元，只能包含英文、數字和符號(!@#$%^&*)' }
         case 'verificationCode':
           return { valid: false, message: '驗證碼格式不正確' }
         default:

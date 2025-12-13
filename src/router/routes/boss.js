@@ -51,16 +51,6 @@ export const bossRoutes = [
         component: () => import('@/components/Boss/AdminManager/Form.vue'),
         props: true,
       },
-      // 系統設置路由
-      {
-        path: 'settings',
-        name: 'system-settings',
-        component: Placeholder,
-        props: {
-          title: '系統設置功能',
-          message: '這個區塊目前尚未開發，請稍後再試。',
-        },
-      },
       // Boss 路由中的帳號設置
       {
         path: 'account',

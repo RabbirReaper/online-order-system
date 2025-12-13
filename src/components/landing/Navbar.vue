@@ -4,7 +4,7 @@
       <!-- Brand -->
       <router-link class="navbar-brand" to="/home">
         <i class="bi bi-shop me-2"></i>
-        智慧餐飲管理系統
+        光兔點餐
       </router-link>
 
       <!-- Mobile toggle button -->
@@ -62,8 +62,8 @@
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              <!-- <span class="language-flag">{{ currentLanguageInfo.flag }}</span> -->
-              <span class="language-name d-none d-md-inline">{{ currentLanguageInfo.name }}</span>
+              <span class="language-flag">{{ currentLanguageInfo.flag }}</span>
+              <span class="language-name d-none d-lg-inline">{{ currentLanguageInfo.name }}</span>
             </a>
             <ul
               class="dropdown-menu dropdown-menu-end language-menu"
@@ -126,10 +126,10 @@ onMounted(async () => {
 
 <style scoped>
 .navbar {
-  background: linear-gradient(135deg, #0f4c81 0%, #1a5b8c 100%);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border-bottom: 3px solid #f4d35e;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(45, 52, 54, 0.08);
+  backdrop-filter: none;
+  border-bottom: 1px solid #e9ecef;
   padding: 0.75rem 0;
   z-index: 1000;
 }
@@ -137,7 +137,7 @@ onMounted(async () => {
 .navbar-brand {
   font-weight: 700;
   font-size: 1.25rem;
-  color: #ffffff !important;
+  color: #2d3436 !important;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -145,17 +145,17 @@ onMounted(async () => {
 }
 
 .navbar-brand:hover {
-  color: #f4d35e !important;
+  color: #ff6b35 !important;
   transform: translateY(-1px);
 }
 
 .navbar-brand i {
-  color: #f4d35e;
+  color: #ff6b35;
   font-size: 1.5rem;
 }
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #636e72 !important;
   font-weight: 500;
   padding: 0.5rem 1rem !important;
   border-radius: 6px;
@@ -164,13 +164,13 @@ onMounted(async () => {
 }
 
 .nav-link:hover {
-  color: #f4d35e !important;
-  background-color: rgba(244, 211, 94, 0.1);
+  color: #ff6b35 !important;
+  background-color: rgba(255, 107, 53, 0.1);
 }
 
 .nav-link.active {
-  color: #f4d35e !important;
-  background-color: rgba(244, 211, 94, 0.15);
+  color: #ff6b35 !important;
+  background-color: rgba(255, 107, 53, 0.1);
 }
 
 .nav-link.active::after {
@@ -181,7 +181,7 @@ onMounted(async () => {
   transform: translateX(-50%);
   width: 20px;
   height: 2px;
-  background-color: #f4d35e;
+  background-color: #ff6b35;
   border-radius: 1px;
 }
 
@@ -196,8 +196,8 @@ onMounted(async () => {
 }
 
 .language-switcher:hover {
-  background-color: rgba(244, 211, 94, 0.1);
-  color: #f4d35e !important;
+  background-color: rgba(255, 107, 53, 0.1);
+  color: #ff6b35 !important;
 }
 
 .language-flag {
@@ -223,7 +223,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
-  color: #0d3b66;
+  color: #2d3436;
   text-decoration: none;
   transition: all 0.3s ease;
   border: none;
@@ -232,12 +232,12 @@ onMounted(async () => {
 
 .language-option:hover {
   background-color: #f8f9fa;
-  color: #0f4c81;
+  color: #ff6b35;
 }
 
 .language-option.active {
-  background-color: #f4d35e;
-  color: #0d3b66;
+  background-color: #ffe8e0;
+  color: #2d3436;
   font-weight: 600;
 }
 
@@ -268,6 +268,11 @@ onMounted(async () => {
     min-width: auto;
   }
 
+  .language-switcher .language-flag {
+    font-size: 1.5rem;
+    margin-right: 0.25rem;
+  }
+
   .language-menu {
     position: relative !important;
     transform: none !important;
@@ -278,13 +283,13 @@ onMounted(async () => {
   }
 
   .language-option {
-    color: rgba(255, 255, 255, 0.9);
+    color: #636e72;
   }
 
   .language-option:hover,
   .language-option.active {
-    background-color: rgba(244, 211, 94, 0.2);
-    color: #f4d35e;
+    background-color: rgba(255, 107, 53, 0.2);
+    color: #ff6b35;
   }
 }
 
@@ -295,16 +300,16 @@ onMounted(async () => {
 
 /* Navbar toggler 自定義樣式 */
 .navbar-toggler {
-  border: 1px solid rgba(244, 211, 94, 0.5);
+  border: 1px solid rgba(255, 107, 53, 0.5);
   padding: 0.25rem 0.5rem;
 }
 
 .navbar-toggler:focus {
-  box-shadow: 0 0 0 0.2rem rgba(244, 211, 94, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
 }
 
 .navbar-toggler-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28244, 211, 94, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 107, 53, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 /* Dropdown 箭頭動畫 */

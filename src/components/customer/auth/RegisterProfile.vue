@@ -91,7 +91,7 @@
                 {{ fieldErrors.password }}
               </div>
             </div>
-            <small class="form-text text-muted">密碼需8-64位，只能包含英文數字及!@#$%^&*</small>
+            <small class="form-text text-muted">密碼需6-32位，只能包含英文數字及!@#$%^&*</small>
           </div>
 
           <!-- 確認密碼 -->
@@ -247,8 +247,9 @@ const brandId = computed(() => {
 const validationRules = {
   name: {
     required: true,
-    minLength: 2,
-    message: '姓名至少需要2個字元',
+    minLength: 1,
+    maxLength: 25,
+    message: '姓名長度必須1-25個字元',
   },
   email: {
     required: false,
@@ -257,10 +258,10 @@ const validationRules = {
   },
   password: {
     required: true,
-    minLength: 8,
-    maxLength: 64,
+    minLength: 6,
+    maxLength: 32,
     pattern: /^[a-zA-Z0-9!@#$%^&*]+$/,
-    message: '密碼必須8-64個字元，只能包含英文、數字和符號 !@#$%^&*',
+    message: '密碼必須6-32個字元，只能包含英文、數字和符號 !@#$%^&*',
   },
   confirmPassword: {
     required: true,

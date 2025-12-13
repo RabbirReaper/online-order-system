@@ -19,15 +19,15 @@ export default {
     consultation: 'Free Consultation',
     schedule: 'Schedule Consultation',
     startTrial: 'Start Free Trial',
-    copyright: '© 2025 Smart Restaurant Management System. All rights reserved.',
+    copyright: '© 2025 Hopster Ordering. All rights reserved.',
   },
 
   // Home page
   home: {
-    title: 'Smart Restaurant Management',
-    titleHighlight: 'New Era',
+    title: 'Hopster Ordering',
+    titleHighlight: '',
     subtitle:
-      'From small restaurants to chain brands, we provide comprehensive digital solutions. Membership rewards, pre-order vouchers, multi-store management - your one-stop restaurant technology service.',
+      'Making restaurant management simpler and smarter. From small restaurants to chain brands, providing comprehensive digital solutions.',
     stats: {
       fee: '0.3%',
       feeLabel: 'Revenue Share',
@@ -53,12 +53,14 @@ export default {
       voucher: {
         title: 'Pre-order Voucher System',
         description:
-          'Innovative pre-order voucher mechanism to increase cash flow, improve customer loyalty, and create additional revenue.',
+          'Let customers purchase meal vouchers in advance and enjoy discounted prices. Help stores effectively control cash flow and inventory, while saving customers payment time on each visit, making purchases more convenient.',
         features: [
-          'Flexible voucher design',
-          'Bulk voucher management',
-          'Promotional packages',
-          'Expiry reminders',
+          'Customers purchase in advance and enjoy discounted prices',
+          'Stores gain early access to cash flow, improving capital turnover',
+          'Smart inventory control to avoid overselling or stock shortages',
+          'One-click verification, saving customers queuing and payment time',
+          'Flexible validity period and usage condition settings',
+          'Bulk issuance management for easy promotional campaigns',
         ],
       },
       management: {
@@ -221,9 +223,9 @@ export default {
       badge: 'Innovative Feature',
       title: 'Pre-order Voucher System',
       description:
-        'Revolutionary pre-order voucher mechanism allowing customers to pre-purchase meal vouchers at discounted prices, helping restaurants stabilize cash flow and improve operational efficiency.',
+        'Revolutionary pre-order voucher mechanism. Customers can pre-purchase meal vouchers and enjoy discounted prices, helping restaurants stabilize cash flow and improve operational efficiency.',
       benefits: [
-        'Pre-order discounts attract early customer spending',
+        'Pre-order discounts attract customers to spend in advance',
         'Stable cash flow improves business capital turnover',
         'Smart verification system prevents duplicate usage',
         'Flexible validity period and usage condition settings',

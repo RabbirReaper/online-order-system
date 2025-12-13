@@ -8,6 +8,7 @@ export const customerRoutes = [
       title: 'LINE 登入中...',
       requiresAuth: false,
       layout: 'minimal', // 使用最簡潔的布局
+      robots: 'noindex, nofollow', // 不允許搜尋引擎索引
     },
   },
 
@@ -19,6 +20,7 @@ export const customerRoutes = [
     meta: {
       requiresAdminAuth: true,
       title: '櫃檯點餐系統',
+      robots: 'noindex, nofollow',
     },
     props: true,
   },
@@ -28,6 +30,10 @@ export const customerRoutes = [
     path: '/stores/:brandId/:storeId',
     name: 'menu',
     component: () => import('@/views/customer/MenuView.vue'),
+    meta: {
+      title: '菜單',
+      robots: 'index, follow',
+    },
   },
 
   // 餐點詳情頁面
@@ -35,6 +41,10 @@ export const customerRoutes = [
     path: '/stores/:brandId/:storeId/dish/:dishId',
     name: 'dish-detail',
     component: () => import('@/views/customer/DishDetailView.vue'),
+    meta: {
+      title: '餐點詳情',
+      robots: 'noindex, nofollow',
+    },
   },
 
   // 套餐詳情頁面路由
@@ -45,6 +55,7 @@ export const customerRoutes = [
     meta: {
       title: '套餐詳情',
       requiresAuth: false,
+      robots: 'noindex, nofollow',
     },
   },
 
@@ -53,6 +64,10 @@ export const customerRoutes = [
     path: '/cart',
     name: 'cart',
     component: () => import('@/views/customer/CartView.vue'),
+    meta: {
+      title: '購物車',
+      robots: 'noindex, nofollow',
+    },
   },
 
   // 訂單確認頁面
@@ -60,5 +75,9 @@ export const customerRoutes = [
     path: '/stores/:brandId/:storeId/order-confirm/:orderId',
     name: 'order-confirm',
     component: () => import('@/views/customer/OrderConfirmView.vue'),
+    meta: {
+      title: '訂單確認',
+      robots: 'noindex, nofollow',
+    },
   },
 ]

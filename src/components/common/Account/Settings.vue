@@ -234,7 +234,7 @@
               <div class="invalid-feedback" v-if="passwordErrors.newPassword">
                 {{ passwordErrors.newPassword }}
               </div>
-              <div class="form-text">密碼必須8-64個字元,只能包含英文、數字和符號(!@#$%^&*)</div>
+              <div class="form-text">密碼必須6-32個字元,只能包含英文、數字和符號(!@#$%^&*)</div>
             </div>
 
             <!-- 確認新密碼 -->
@@ -437,10 +437,10 @@ const passwordValidationRules = {
   },
   newPassword: {
     required: true,
-    minLength: 8,
-    maxLength: 64,
+    minLength: 6,
+    maxLength: 32,
     pattern: /^[a-zA-Z0-9!@#$%^&*]+$/,
-    message: '密碼必須8-64個字元，只能包含英文、數字和符號(!@#$%^&*)',
+    message: '密碼必須6-32個字元，只能包含英文、數字和符號(!@#$%^&*)',
   },
   confirmPassword: {
     required: true,

@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      minlength: [1, '姓名至少需要1個字元'],
+      maxlength: [25, '姓名長度不能超過25個字元'],
+      trim: true,
     }, // 用戶名稱
     email: {
       type: String,
@@ -19,6 +22,8 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      minlength: [6, '密碼長度至少需要6個字元'],
+      maxlength: [100, '密碼長度不能超過100個字元'], // 因為會被 hash，所以存儲長度需要更長
     }, // 密碼
     phone: {
       type: String,
