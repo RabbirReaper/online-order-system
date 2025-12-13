@@ -7,6 +7,7 @@ export const adminRoutes = [
     meta: {
       title: '系統管理員登入',
       loginType: 'system', // 用於區分登入類型
+      robots: 'noindex, nofollow',
     },
   },
   // 品牌/店鋪管理員登入（需要 brandId）
@@ -18,6 +19,7 @@ export const adminRoutes = [
     meta: {
       title: '品牌管理員登入',
       loginType: 'brand', // 用於區分登入類型
+      robots: 'noindex, nofollow',
     },
   },
 ]
