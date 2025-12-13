@@ -227,6 +227,65 @@ const hasCartItems = computed(() => cartStore.itemCount > 0)
 const cartItemCount = computed(() => cartStore.itemCount)
 const cartTotal = computed(() => cartStore.total)
 
+// ===== SEO Meta 更新函數 =====
+/**
+ * 更新頁面 SEO meta 標籤
+ * @param {Object} storeData - 店鋪資料
+ */
+const updateSEOMeta = (storeData) => {
+  if (!storeData?.name) return
+
+  // 更新頁面標題
+  document.title = `${storeData.name}`
+
+  /**
+   * 輔助函數：更新或創建 meta 標籤
+   * @param {string} selector - CSS 選擇器
+   * @param {string} attribute - 屬性名稱 (name 或 property)
+   * @param {string} content - meta 內容
+   */
+  const updateOrCreateMeta = (selector, attribute, content) => {
+    let meta = document.querySelector(selector)
+    if (!meta) {
+      meta = document.createElement('meta')
+      // 判斷是 property (如 og:title) 還是 name (如 description)
+      if (attribute.includes(':')) {
+        meta.setAttribute('property', attribute)
+      } else {
+        meta.name = attribute
+      }
+      document.head.appendChild(meta)
+    }
+    meta.content = content
+  }
+
+  // 更新 description
+  const description = storeData.description || `歡迎光臨 ${storeData.name}，立即線上點餐！`
+  updateOrCreateMeta('meta[name="description"]', 'description', description)
+
+  // 更新 Open Graph meta tags
+  updateOrCreateMeta('meta[property="og:title"]', 'og:title', `${storeData.name}`)
+  updateOrCreateMeta('meta[property="og:description"]', 'og:description', description)
+
+  // 更新 og:image（如果有店鋪圖片）
+  if (storeData.image) {
+    updateOrCreateMeta('meta[property="og:image"]', 'og:image', storeData.image)
+  }
+
+  // 更新 og:type 和 og:locale
+  updateOrCreateMeta('meta[property="og:type"]', 'og:type', 'website')
+  updateOrCreateMeta('meta[property="og:locale"]', 'og:locale', 'zh_TW')
+
+  // 更新 Twitter Card meta tags
+  updateOrCreateMeta('meta[name="twitter:card"]', 'twitter:card', 'summary_large_image')
+  updateOrCreateMeta('meta[name="twitter:title"]', 'twitter:title', `${storeData.name}`)
+  updateOrCreateMeta('meta[name="twitter:description"]', 'twitter:description', description)
+
+  if (storeData.image) {
+    updateOrCreateMeta('meta[name="twitter:image"]', 'twitter:image', storeData.image)
+  }
+}
+
 // ===== 輔助方法 =====
 const getMenuTypeText = (type) => {
   const typeMap = {
@@ -258,12 +317,13 @@ const sortMenuData = (menuObj) => {
 const switchMenuType = (type) => {
   if (currentMenuType.value === type) return
   currentMenuType.value = type
-  // 不需要額外的載入邏輯，計算屬性會自動更新
 }
 
 // ===== 資料載入方法 =====
 
-// 載入店鋪資料
+/**
+ * 載入店鋪資料並更新 SEO meta
+ */
 const loadStoreData = async () => {
   if (store.value.name && hasInitialized.value) return
 
@@ -273,9 +333,12 @@ const loadStoreData = async () => {
       id: storeId.value,
     })
 
-    if (storeData && storeData.success) {
+    if (storeData?.success) {
       await new Promise((resolve) => setTimeout(resolve, 100))
       store.value = storeData.store
+
+      // 👇 在數據載入成功後立即更新 SEO meta
+      updateSEOMeta(storeData.store)
     } else {
       console.error('無效的店鋪數據或 API 呼叫失敗:', storeData)
     }
@@ -284,7 +347,9 @@ const loadStoreData = async () => {
   }
 }
 
-// 載入所有菜單類型的資料（優化後的版本）
+/**
+ * 載入所有菜單類型的資料
+ */
 const loadAllMenuData = async () => {
   if (!brandId.value || !storeId.value) return
 
@@ -306,7 +371,6 @@ const loadAllMenuData = async () => {
         })
 
         if (response.success && response.menus && response.menus.length > 0) {
-          // 直接在這裡排序並返回
           return { menuType, data: sortMenuData(response.menus[0]) }
         } else {
           return { menuType, data: { categories: [] } }
@@ -413,7 +477,7 @@ const initialize = async () => {
     }
   }
 
-  // 載入店鋪資料
+  // 載入店鋪資料（會自動更新 SEO meta）
   await loadStoreData()
   isLoadingStore.value = false
 

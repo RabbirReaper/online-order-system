@@ -32,7 +32,7 @@ export const customerRoutes = [
     component: () => import('@/views/customer/MenuView.vue'),
     meta: {
       title: '菜單',
-      robots: 'noindex, nofollow',
+      robots: 'index, follow',
     },
   },
 
