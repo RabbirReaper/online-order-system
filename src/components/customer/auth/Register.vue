@@ -132,7 +132,7 @@
                   'is-invalid': fieldErrors.password,
                   'is-valid': isFieldValid('password'),
                 }"
-                placeholder="請設置密碼 8-64位，只能包含英文數字及!@#$%^&*"
+                placeholder="請設置密碼 6-32位，只能包含英文數字及!@#$%^&*"
                 @blur="validateField('password')"
                 @input="clearFieldError('password')"
                 required
@@ -325,8 +325,9 @@ let countdownTimer = null
 const validationRules = {
   name: {
     required: true,
-    minLength: 2,
-    message: '姓名至少需要2個字元',
+    minLength: 1,
+    maxLength: 25,
+    message: '姓名長度必須1-25個字元',
   },
   email: {
     required: false, // 電子郵件為選填
@@ -340,15 +341,16 @@ const validationRules = {
   },
   verificationCode: {
     required: true,
-    minLength: 4,
-    message: '請輸入驗證碼',
+    minLength: 6,
+    maxLength: 6,
+    message: '請輸入6位數驗證碼',
   },
   password: {
     required: true,
-    minLength: 8,
-    maxLength: 64,
+    minLength: 6,
+    maxLength: 32,
     pattern: /^[a-zA-Z0-9!@#$%^&*]+$/,
-    message: '密碼必須8-64個字元，只能包含英文、數字和符號 !@#$%^&*',
+    message: '密碼必須6-32個字元，只能包含英文、數字和符號 !@#$%^&*',
   },
   confirmPassword: {
     required: true,

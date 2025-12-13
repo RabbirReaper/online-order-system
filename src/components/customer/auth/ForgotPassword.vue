@@ -82,9 +82,10 @@
                 class="form-control"
                 id="newPassword"
                 v-model="newPassword"
-                placeholder="請設置新密碼 (至少8位)"
+                placeholder="請設置新密碼 (6-32位)"
                 required
-                minlength="8"
+                minlength="6"
+                maxlength="32"
               />
               <button
                 class="btn btn-outline-secondary"
@@ -94,7 +95,7 @@
                 <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
               </button>
             </div>
-            <small class="form-text text-muted">密碼長度至少需要8個字元</small>
+            <small class="form-text text-muted">密碼長度必須6-32個字元</small>
           </div>
 
           <div v-if="codeVerified" class="mb-4">
@@ -267,7 +268,8 @@ const isPasswordFormValid = computed(() => {
     newPassword.value &&
     confirmPassword.value &&
     newPassword.value === confirmPassword.value &&
-    newPassword.value.length >= 8
+    newPassword.value.length >= 6 &&
+    newPassword.value.length <= 32
   )
 })
 
@@ -410,8 +412,8 @@ const resetPassword = async () => {
     return
   }
 
-  if (newPassword.value.length < 8) {
-    errorMessage.value = '密碼長度至少需要8個字元'
+  if (newPassword.value.length < 6 || newPassword.value.length > 32) {
+    errorMessage.value = '密碼長度必須6-32個字元'
     if (errorModal.value) {
       errorModal.value.show()
     }

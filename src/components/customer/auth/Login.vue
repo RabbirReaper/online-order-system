@@ -146,7 +146,8 @@ const validationRules = {
   password: {
     required: true,
     minLength: 6,
-    message: '密碼長度至少需要6個字元',
+    maxLength: 32,
+    message: '密碼長度必須6-32個字元',
   },
 }
 
