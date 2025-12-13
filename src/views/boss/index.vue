@@ -56,25 +56,12 @@
             </CollapsibleSection>
           </div>
 
-          <!-- 系統設置 -->
+          <!-- 帳號設置 -->
           <div class="mb-1">
-            <CollapsibleSection
-              title="系統設置"
-              :initialExpanded="isExpanded('systemSettings')"
-              @toggle="(expanded) => handleSectionToggle('systemSettings', expanded)"
-            >
-              <template #icon><i class="bi bi-gear me-2"></i></template>
-
-              <router-link class="nav-link ps-4 py-2" :to="{ name: 'system-settings' }">
-                <i class="bi bi-sliders me-2"></i>
-                系統設置
-              </router-link>
-
-              <router-link class="nav-link ps-4 py-2" :to="{ name: 'account-settings' }">
-                <i class="bi bi-person-gear me-2"></i>
-                帳號設置
-              </router-link>
-            </CollapsibleSection>
+            <router-link class="nav-link py-2 ps-3" :to="{ name: 'account-settings' }">
+              <i class="bi bi-person-gear me-2"></i>
+              帳號設置
+            </router-link>
           </div>
         </nav>
 
@@ -157,7 +144,7 @@ const currentUserRole = ref('')
 const currentUserRoleLabel = ref('載入中...')
 
 // 已展開的折疊項目ID列表
-const expandedItems = ref(['brandManagement', 'adminManagement', 'systemSettings']) // 預設全部展開
+const expandedItems = ref(['brandManagement', 'adminManagement']) // 預設全部展開
 
 // 角色標籤對應
 const getRoleLabel = (role) => {
@@ -221,8 +208,6 @@ const getPageTitle = () => {
       return '新增管理員'
     case 'boss-admin-edit':
       return '編輯管理員'
-    case 'system-settings':
-      return '系統設置'
     case 'account-settings':
       return '帳號設置'
     default:
