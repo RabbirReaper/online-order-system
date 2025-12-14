@@ -38,6 +38,17 @@ const apiClient = axios.create({
   withCredentials: true, // 確保跨域請求能攜帶cookie
 })
 
+// 請求攔截器，用於在開發環境下記錄 API 請求
+apiClient.interceptors.request.use(
+  (config) => {
+    if (import.meta.env.DEV) {
+      console.log('API Request:', config.method?.toUpperCase(), config.url)
+    }
+    return config
+  },
+  (error) => Promise.reject(error),
+)
+
 // 回應攔截器，用於統一處理回應
 apiClient.interceptors.response.use(
   (response) => {
