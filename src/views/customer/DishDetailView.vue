@@ -114,11 +114,17 @@ const loadDishData = async () => {
       return
     }
 
-    // 獲取餐點詳情
-    const dishData = await api.dish.getDishTemplateById({
-      brandId: brandId.value,
-      id: dishId.value,
-    })
+    // 並行獲取餐點詳情和選項類別,減少請求時間
+    const [dishData, optionsData] = await Promise.all([
+      api.dish.getDishTemplateById({
+        brandId: brandId.value,
+        id: dishId.value,
+      }),
+      api.dish.getTemplateOptions({
+        brandId: brandId.value,
+        id: dishId.value,
+      }),
+    ])
 
     if (dishData && dishData.success) {
       dish.value = dishData.template
@@ -128,71 +134,20 @@ const loadDishData = async () => {
         console.warn('Dish image URL is missing or invalid:', dish.value.image)
       }
 
-      // 獲取關聯的選項類別
-      if (dish.value.optionCategories && dish.value.optionCategories.length > 0) {
-        const categoryPromises = dish.value.optionCategories.map((category) =>
-          api.dish.getOptionCategoryById({
-            brandId: brandId.value,
-            id: category.categoryId,
-            includeOptions: true,
-          }),
-        )
-
-        const categories = await Promise.all(categoryPromises)
-
-        // 依照原始順序排序選項類別
-        optionCategories.value = categories
-          .filter((response) => response && response.success)
-          .map((response) => {
-            const categoryData = response.category
-
-            if (!categoryData || !categoryData._id) {
-              console.warn('Invalid category data structure:', response)
-              return null
-            }
-
-            // 獲取類別在餐點中的順序
-            const categoryConfig = dish.value.optionCategories.find(
-              (c) => c.categoryId === categoryData._id,
-            )
-
-            // 處理選項資料 - 從 refOption 中提取
-            let options = []
-            if (categoryData.options && Array.isArray(categoryData.options)) {
-              options = categoryData.options
-                .map((opt) => {
-                  // 獲取真正的選項資料 (在 refOption 中)
-                  if (opt.refOption) {
-                    return {
-                      _id: opt.refOption._id,
-                      name: opt.refOption.name,
-                      price: opt.refOption.price || 0,
-                      order: opt.order || 0,
-                      refDishTemplate: opt.refOption.refDishTemplate || null,
-                    }
-                  } else {
-                    return {
-                      _id: opt._id,
-                      name: opt.name || '未命名選項',
-                      price: opt.price || 0,
-                      order: opt.order || 0,
-                      refDishTemplate: null,
-                    }
-                  }
-                })
-                .sort((a, b) => a.order - b.order)
-            }
-
-            return {
-              _id: categoryData._id,
-              name: categoryData.name,
-              inputType: categoryData.inputType,
-              order: categoryConfig ? categoryConfig.order : 0,
-              options: options,
-            }
-          })
-          .filter(Boolean)
-          .sort((a, b) => a.order - b.order)
+      // 使用 getTemplateOptions API 返回的已排序資料
+      if (optionsData && optionsData.success && optionsData.options) {
+        optionCategories.value = optionsData.options.map((item) => ({
+          _id: item.category._id,
+          name: item.category.name,
+          inputType: item.category.inputType,
+          order: item.order,
+          options: item.options.map((option) => ({
+            _id: option._id,
+            name: option.name,
+            price: option.price || 0,
+            refDishTemplate: option.refDishTemplate || null,
+          })),
+        }))
       }
 
       // 如果是編輯模式，載入現有的餐點資料
