@@ -121,19 +121,9 @@ const itemImage = computed(() => {
     imageUrl = props.item.dishTemplate?.image?.url
   } else if (props.item.itemType === 'bundle') {
     imageUrl = props.item.bundle?.image?.url
-
-    // 如果套餐沒有圖片，嘗試使用第一個餐點的圖片
-    if (!imageUrl && props.item.bundle?.bundleItems?.length > 0) {
-      const firstDishItem = props.item.bundle.bundleItems.find(
-        (bundleItem) => bundleItem.itemType === 'dish' && bundleItem.dishTemplate?.image?.url,
-      )
-      if (firstDishItem) {
-        imageUrl = firstDishItem.dishTemplate.image.url
-      }
-    }
   }
 
-  return imageUrl || '/placeholder.jpg'
+  return imageUrl || ''
 })
 
 // 計算屬性 - 餐點價格
