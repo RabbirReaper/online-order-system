@@ -40,12 +40,19 @@
 
         <!-- Image -->
         <div class="image-container" style="height: 240px; overflow: hidden; position: relative">
-          <img
-            :src="dish.image && dish.image.url ? dish.image.url : ''"
-            :alt="dish.name"
-            class="w-100 h-100"
-            style="object-fit: cover"
-          />
+          <template v-if="dish.image && dish.image.url">
+            <img
+              :src="dish.image.url"
+              :alt="dish.name"
+              class="w-100 h-100"
+              style="object-fit: cover"
+            />
+          </template>
+          <template v-else>
+            <div class="placeholder-container w-100 h-100">
+              <i class="bi bi-question-octagon placeholder-icon"></i>
+            </div>
+          </template>
         </div>
 
         <!-- Item name and price -->
@@ -338,6 +345,18 @@ watch(
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.placeholder-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  color: #6c757d;
 }
 
 @media (max-width: 576px) {

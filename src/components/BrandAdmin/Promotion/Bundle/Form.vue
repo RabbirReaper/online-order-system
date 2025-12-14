@@ -72,7 +72,9 @@
 
                 <!-- 圖片上傳 -->
                 <div class="mb-3">
-                  <label for="imageUpload" class="form-label required">商品圖片</label>
+                  <label for="imageUpload" class="form-label">
+                    商品圖片 <span class="text-muted">(選填)</span>
+                  </label>
                   <input
                     type="file"
                     class="form-control"
@@ -82,7 +84,7 @@
                     :class="{ 'is-invalid': errors.image }"
                   />
                   <div class="invalid-feedback" v-if="errors.image">{{ errors.image }}</div>
-                  <div class="form-text">檔案大小限制為 1MB，支援 JPG、PNG 格式</div>
+                  <div class="form-text">建議上傳商品圖片，檔案大小限制為 1MB，支援 JPG、PNG 格式</div>
 
                   <!-- 圖片預覽 -->
                   <div v-if="imagePreview || formData.image" class="mt-3">
@@ -679,12 +681,7 @@ const validateForm = () => {
     isValid = false
   }
 
-  // 圖片驗證
-  if (!imageFile.value && !formData.image) {
-    errors.image = '請上傳商品圖片'
-    formErrors.value.push('請上傳商品圖片')
-    isValid = false
-  }
+  // 圖片為選填，移除必要性驗證
 
   // 驗證價格設定
   if (!hasCashPrice.value && !hasPointPrice.value) {

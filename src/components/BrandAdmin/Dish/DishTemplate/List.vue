@@ -42,11 +42,18 @@
       <div class="col" v-for="dish in dishes" :key="dish._id">
         <div class="card h-100 dish-card">
           <div class="card-img-top position-relative overflow-hidden" style="height: 180px">
-            <img
-              :src="dish.image?.url || '/placeholder.jpg'"
-              class="img-fluid w-100 h-100 object-fit-cover"
-              :alt="dish.name"
-            />
+            <template v-if="dish.image && dish.image.url">
+              <img
+                :src="dish.image.url"
+                class="img-fluid w-100 h-100 object-fit-cover"
+                :alt="dish.name"
+              />
+            </template>
+            <template v-else>
+              <div class="placeholder-icon-container">
+                <i class="bi bi-question-octagon placeholder-icon"></i>
+              </div>
+            </template>
             <div class="dish-price">${{ formatPrice(dish.basePrice) }}</div>
           </div>
 
@@ -414,6 +421,24 @@ onMounted(() => {
     box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
+}
+
+/* 圖片占位符樣式 */
+.placeholder-icon-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  color: #6c757d;
 }
 
 .dish-card .card-img-top {

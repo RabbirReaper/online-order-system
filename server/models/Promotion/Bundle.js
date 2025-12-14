@@ -20,12 +20,12 @@ const bundleSchema = new mongoose.Schema(
     image: {
       url: {
         type: String,
-        required: true,
-      }, // 圖片URL
+        required: false,
+      }, // 圖片URL（非必要）
       key: {
         type: String,
-        required: true,
-      }, // S3/雲端儲存的key，用於刪除圖片
+        required: false,
+      }, // S3/雲端儲存的key，用於刪除圖片（非必要）
     }, // Bundle 的主要顯示圖片
 
     // 綑綁內容 - 包含兌換券模板

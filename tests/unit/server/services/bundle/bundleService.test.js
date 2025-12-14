@@ -265,14 +265,18 @@ describe('BundleService', () => {
       await expect(bundleService.createBundle(invalidData)).rejects.toThrow('至少需要設定現金價格或點數價格其中一種')
     })
 
-    it('should throw error when no image provided', async () => {
-      const invalidData = {
+    it('should allow creating bundle without image', async () => {
+      const dataWithoutImage = {
         ...validBundleData,
         imageData: undefined,
-        image: undefined // 確保沒有現有圖片
+        image: undefined // 無圖片
       }
 
-      await expect(bundleService.createBundle(invalidData)).rejects.toThrow('請提供圖片')
+      const result = await bundleService.createBundle(dataWithoutImage)
+
+      expect(mockImageHelper.uploadAndProcessImage).not.toHaveBeenCalled()
+      expect(mockBundleModel).toHaveBeenCalled()
+      expect(result).toBeDefined()
     })
 
     it('should throw error when voucher template not found', async () => {

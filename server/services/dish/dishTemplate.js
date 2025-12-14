@@ -70,7 +70,7 @@ export const createTemplate = async (templateData, brandId) => {
   // 確保設置品牌ID
   templateData.brand = brandId
 
-  // 處理圖片上傳
+  // 處理圖片上傳（圖片為非必要）
   if (templateData.imageData) {
     try {
       // 上傳圖片並獲取圖片資訊
@@ -87,9 +87,8 @@ export const createTemplate = async (templateData, brandId) => {
     } catch (error) {
       throw new AppError(`圖片處理失敗: ${error.message}`, 400)
     }
-  } else if (!templateData.image || !templateData.image.url || !templateData.image.key) {
-    throw new AppError('圖片資訊不完整，請提供圖片', 400)
   }
+  // 圖片為非必要，移除圖片必要性驗證
 
   // 檢查選項類別是否存在且屬於同一品牌
   if (templateData.optionCategories && templateData.optionCategories.length > 0) {

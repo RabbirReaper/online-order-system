@@ -279,11 +279,61 @@ export class TestDataFactory {
       brand: '507f1f77bcf86cd799439013',
       category: 'main',
       basePrice: 150,
-      images: ['dish-image.jpg'],
+      image: {
+        url: 'https://example.com/dish-image.jpg',
+        key: 'dishes/test/dish-image.jpg',
+        alt: 'TestDish'
+      },
       options: [],
       isActive: true,
       createdAt: new Date(),
       ...overrides
+    };
+  }
+
+  // 創建無圖片的菜品模板資料
+  static createDishTemplateWithoutImage(overrides = {}) {
+    return {
+      ...this.createDishTemplate(overrides),
+      image: undefined
+    };
+  }
+
+  // 創建 Bundle 資料
+  static createBundle(overrides = {}) {
+    return {
+      _id: '507f1f77bcf86cd799439020',
+      brand: '507f1f77bcf86cd799439013',
+      name: 'TestBundle',
+      description: '測試包裝商品',
+      image: {
+        url: 'https://example.com/bundle-image.jpg',
+        key: 'bundles/test/bundle-image.jpg'
+      },
+      bundleItems: [
+        {
+          voucherTemplate: '507f1f77bcf86cd799439021',
+          quantity: 1,
+          voucherName: 'Test Voucher'
+        }
+      ],
+      cashPrice: {
+        original: 100,
+        selling: 90
+      },
+      voucherValidityDays: 30,
+      isActive: true,
+      totalSold: 0,
+      createdAt: new Date(),
+      ...overrides
+    };
+  }
+
+  // 創建無圖片的 Bundle 資料
+  static createBundleWithoutImage(overrides = {}) {
+    return {
+      ...this.createBundle(overrides),
+      image: undefined
     };
   }
 

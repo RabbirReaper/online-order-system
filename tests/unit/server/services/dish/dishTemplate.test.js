@@ -317,18 +317,36 @@ describe('DishTemplateService', () => {
         .rejects.toThrow('名稱和基本價格為必填欄位')
     })
 
-    it('should throw error when image info is incomplete', async () => {
+    it('should allow creating template without image', async () => {
       // Arrange
       const brandId = '507f1f77bcf86cd799439013'
       const templateData = {
         name: 'New Template',
-        basePrice: 200,
-        image: { url: 'incomplete' } // missing key
+        basePrice: 200
+        // No image provided
       }
+      const mockCreatedTemplate = TestDataFactory.createDishTemplateData({
+        name: 'New Template',
+        basePrice: 200,
+        image: undefined
+      })
 
-      // Act & Assert
-      await expect(dishTemplateService.createTemplate(templateData, brandId))
-        .rejects.toThrow('圖片資訊不完整，請提供圖片')
+      // Mock DishTemplate constructor
+      const mockTemplateInstance = {
+        ...mockCreatedTemplate,
+        save: vi.fn().mockResolvedValue(mockCreatedTemplate)
+      }
+      DishTemplate.mockImplementation(() => mockTemplateInstance)
+
+      // Act
+      const result = await dishTemplateService.createTemplate(templateData, brandId)
+
+      // Assert
+      expect(imageHelper.uploadAndProcessImage).not.toHaveBeenCalled()
+      expect(mockTemplateInstance.save).toHaveBeenCalled()
+      expect(result.name).toBe('New Template')
+      expect(result.basePrice).toBe(200)
+      expect(result.image).toBeUndefined()
     })
 
     it('should validate option categories belong to brand', async () => {

@@ -12,8 +12,8 @@ const DishTemplateSchema = new mongoose.Schema({
     },
   ],
   image: {
-    url: { type: String, required: true }, // 圖片的實際連結，例如 R2 上的公網地址
-    key: { type: String, required: true }, // 儲存在 R2 的 object key（等同於檔名，可用於刪除）
+    url: { type: String, required: false }, // 圖片的實際連結，例如 R2 上的公網地址（非必要）
+    key: { type: String, required: false }, // 儲存在 R2 的 object key（等同於檔名，可用於刪除）（非必要）
     alt: { type: String }, // 可選：給前端 img alt 屬性
   },
   description: { type: String },
