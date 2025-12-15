@@ -19,6 +19,7 @@ export default {
     consultation: '免費諮詢',
     schedule: '預約諮詢',
     startTrial: '開始免費試用',
+    loading: '載入中...',
     copyright: '© 2025 光兔點餐. All rights reserved.',
   },
 

@@ -1,5 +1,15 @@
 <template>
   <div class="landing-page">
+    <!-- Loading Screen -->
+    <transition name="fade">
+      <div v-if="isLoading" class="loading-screen">
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <p class="loading-text">{{ $t('common.loading') || '載入中...' }}</p>
+        </div>
+      </div>
+    </transition>
+
     <!-- Navbar -->
     <Navbar />
 
@@ -298,11 +308,28 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import Navbar from '@/components/landing/Navbar.vue'
 import { useLanguage } from '@/composables/useLanguage'
 
 const { initializeLanguage } = useLanguage()
+
+// Loading state
+const isLoading = ref(true)
+
+// Background image URL
+const HERO_IMAGE_URL =
+  'https://pub-e2700a21e03b4e26a8bafd4546249408.r2.dev/brands/685112874db5fec187398d19/7d9e4175-5768-4677-8d32-0e13e08278a8.png'
+
+// Preload background image
+const preloadImage = (url) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(url)
+    img.onerror = reject
+    img.src = url
+  })
+}
 
 // SEO Meta
 const setMetaTags = () => {
@@ -343,9 +370,22 @@ const setMetaTags = () => {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   initializeLanguage()
   setMetaTags()
+
+  // Preload hero background image
+  try {
+    await preloadImage(HERO_IMAGE_URL)
+    // Add a small delay for smoother transition
+    setTimeout(() => {
+      isLoading.value = false
+    }, 300)
+  } catch (error) {
+    console.error('Failed to load hero image:', error)
+    // Show content anyway even if image fails to load
+    isLoading.value = false
+  }
 })
 </script>
 
@@ -365,6 +405,62 @@ onMounted(() => {
 
   color: var(--text-medium);
   line-height: 1.6;
+}
+
+/* Loading Screen */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1.5rem;
+  border: 4px solid rgba(255, 107, 53, 0.2);
+  border-top: 4px solid var(--accent-orange);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: var(--text-dark);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .section-title {
