@@ -40,12 +40,19 @@
 
         <!-- Image -->
         <div class="image-container" style="height: 240px; overflow: hidden; position: relative">
-          <img
-            :src="dish.image && dish.image.url ? dish.image.url : ''"
-            :alt="dish.name"
-            class="w-100 h-100"
-            style="object-fit: cover"
-          />
+          <template v-if="dish.image && dish.image.url">
+            <img
+              :src="dish.image.url"
+              :alt="dish.name"
+              class="w-100 h-100"
+              style="object-fit: cover"
+            />
+          </template>
+          <template v-else>
+            <div class="placeholder-container w-100 h-100">
+              <i class="bi bi-question-octagon placeholder-icon"></i>
+            </div>
+          </template>
         </div>
 
         <!-- Item name and price -->
@@ -71,15 +78,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 import OptionSelector from '@/components/customer/dishDetail/OptionSelector.vue'
 import { useCartStore } from '@/stores/cart'
+import { useMenuStore } from '@/stores/menu'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const menuStore = useMenuStore()
 
 const brandId = computed(() => route.params.brandId)
 const storeId = computed(() => route.params.storeId)
@@ -94,9 +103,9 @@ const optionCategories = ref([])
 const isLoading = ref(true)
 const existingItem = ref(null)
 
-// 庫存相關數據
-const inventoryData = ref({})
-const isLoadingInventory = ref(false)
+// 從 store 獲取庫存資料
+const inventoryData = computed(() => menuStore.inventoryData)
+const isLoadingInventory = computed(() => menuStore.isLoadingInventory)
 
 const loadDishData = async () => {
   try {
@@ -107,11 +116,17 @@ const loadDishData = async () => {
       return
     }
 
-    // 獲取餐點詳情
-    const dishData = await api.dish.getDishTemplateById({
-      brandId: brandId.value,
-      id: dishId.value,
-    })
+    // 並行獲取餐點詳情和選項類別,減少請求時間
+    const [dishData, optionsData] = await Promise.all([
+      api.dish.getDishTemplateById({
+        brandId: brandId.value,
+        id: dishId.value,
+      }),
+      api.dish.getTemplateOptions({
+        brandId: brandId.value,
+        id: dishId.value,
+      }),
+    ])
 
     if (dishData && dishData.success) {
       dish.value = dishData.template
@@ -121,71 +136,20 @@ const loadDishData = async () => {
         console.warn('Dish image URL is missing or invalid:', dish.value.image)
       }
 
-      // 獲取關聯的選項類別
-      if (dish.value.optionCategories && dish.value.optionCategories.length > 0) {
-        const categoryPromises = dish.value.optionCategories.map((category) =>
-          api.dish.getOptionCategoryById({
-            brandId: brandId.value,
-            id: category.categoryId,
-            includeOptions: true,
-          }),
-        )
-
-        const categories = await Promise.all(categoryPromises)
-
-        // 依照原始順序排序選項類別
-        optionCategories.value = categories
-          .filter((response) => response && response.success)
-          .map((response) => {
-            const categoryData = response.category
-
-            if (!categoryData || !categoryData._id) {
-              console.warn('Invalid category data structure:', response)
-              return null
-            }
-
-            // 獲取類別在餐點中的順序
-            const categoryConfig = dish.value.optionCategories.find(
-              (c) => c.categoryId === categoryData._id,
-            )
-
-            // 處理選項資料 - 從 refOption 中提取
-            let options = []
-            if (categoryData.options && Array.isArray(categoryData.options)) {
-              options = categoryData.options
-                .map((opt) => {
-                  // 獲取真正的選項資料 (在 refOption 中)
-                  if (opt.refOption) {
-                    return {
-                      _id: opt.refOption._id,
-                      name: opt.refOption.name,
-                      price: opt.refOption.price || 0,
-                      order: opt.order || 0,
-                      refDishTemplate: opt.refOption.refDishTemplate || null,
-                    }
-                  } else {
-                    return {
-                      _id: opt._id,
-                      name: opt.name || '未命名選項',
-                      price: opt.price || 0,
-                      order: opt.order || 0,
-                      refDishTemplate: null,
-                    }
-                  }
-                })
-                .sort((a, b) => a.order - b.order)
-            }
-
-            return {
-              _id: categoryData._id,
-              name: categoryData.name,
-              inputType: categoryData.inputType,
-              order: categoryConfig ? categoryConfig.order : 0,
-              options: options,
-            }
-          })
-          .filter(Boolean)
-          .sort((a, b) => a.order - b.order)
+      // 使用 getTemplateOptions API 返回的已排序資料
+      if (optionsData && optionsData.success && optionsData.options) {
+        optionCategories.value = optionsData.options.map((item) => ({
+          _id: item.category._id,
+          name: item.category.name,
+          inputType: item.category.inputType,
+          order: item.order,
+          options: item.options.map((option) => ({
+            _id: option._id,
+            name: option.name,
+            price: option.price || 0,
+            refDishTemplate: option.refDishTemplate || null,
+          })),
+        }))
       }
 
       // 如果是編輯模式，載入現有的餐點資料
@@ -207,59 +171,7 @@ const loadExistingItem = () => {
   const cartItems = cartStore.items
   if (editIndex.value >= 0 && editIndex.value < cartItems.length) {
     existingItem.value = cartItems[editIndex.value]
-    // console.log('載入現有餐點資料:', existingItem.value);
   }
-}
-
-// 載入庫存資料
-const loadInventoryData = async () => {
-  if (!brandId.value || !storeId.value) {
-    console.warn('缺少 brandId 或 storeId，無法載入庫存資料')
-    return
-  }
-
-  isLoadingInventory.value = true
-
-  try {
-    // 獲取店鋪所有餐點庫存
-    const response = await api.inventory.getStoreInventory({
-      brandId: brandId.value,
-      storeId: storeId.value,
-      inventoryType: 'DishTemplate',
-    })
-
-    if (response.success) {
-      const inventoryMap = {}
-
-      // 將庫存資料按餐點模板 ID 建立對應關係
-      response.inventory.forEach((item) => {
-        if (item.dish && item.dish._id) {
-          inventoryMap[item.dish._id] = {
-            inventoryId: item._id,
-            enableAvailableStock: item.enableAvailableStock,
-            availableStock: item.availableStock,
-            totalStock: item.totalStock,
-            isSoldOut: item.isSoldOut,
-            isInventoryTracked: item.isInventoryTracked,
-          }
-        }
-      })
-
-      inventoryData.value = inventoryMap
-    } else {
-      console.warn('庫存資料載入失敗:', response.message)
-    }
-  } catch (error) {
-    console.error('載入庫存資料時發生錯誤:', error)
-  } finally {
-    isLoadingInventory.value = false
-  }
-}
-
-// 獲取項目的庫存資訊（用於關聯餐點的選項）
-const getInventoryInfo = (dishTemplateId) => {
-  if (!dishTemplateId) return null
-  return inventoryData.value[dishTemplateId] || null
 }
 
 const goBack = () => {
@@ -296,21 +208,11 @@ const updateCart = (dishInstance) => {
 
 onMounted(async () => {
   await loadDishData()
-  // 載入庫存資料
+  // 從 store 載入庫存資料（如果還沒有的話）
   if (brandId.value && storeId.value) {
-    await loadInventoryData()
+    await menuStore.loadInventory(brandId.value, storeId.value)
   }
 })
-
-// 監聽參數變化，重新載入庫存資料
-watch(
-  [() => brandId.value, () => storeId.value],
-  ([newBrandId, newStoreId], [oldBrandId, oldStoreId]) => {
-    if ((newBrandId !== oldBrandId || newStoreId !== oldStoreId) && newBrandId && newStoreId) {
-      loadInventoryData()
-    }
-  },
-)
 </script>
 
 <style scoped>
@@ -338,6 +240,18 @@ watch(
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.placeholder-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  color: #6c757d;
 }
 
 @media (max-width: 576px) {

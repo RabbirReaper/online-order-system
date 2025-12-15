@@ -53,9 +53,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import MenuItemCard from './MenuItemCard.vue'
-import api from '@/api'
+import { useMenuStore } from '@/stores/menu'
 
 const props = defineProps({
   categories: {
@@ -79,9 +79,12 @@ const props = defineProps({
 
 const emit = defineEmits(['select-item'])
 
-// 響應式資料
-const inventoryData = ref({})
-const isLoadingInventory = ref(false)
+// 使用 menu store
+const menuStore = useMenuStore()
+
+// 從 store 獲取庫存資料
+const inventoryData = computed(() => menuStore.inventoryData)
+const isLoadingInventory = computed(() => menuStore.isLoadingInventory)
 
 // 生成項目的唯一鍵值
 const getItemKey = (item) => {
@@ -122,50 +125,14 @@ const handleItemSelect = (item) => {
   emit('select-item', item)
 }
 
-// 載入庫存資料
+// 載入庫存資料（使用 store）
 const loadInventoryData = async () => {
   if (!props.brandId || !props.storeId) {
     console.warn('缺少 brandId 或 storeId，無法載入庫存資料')
     return
   }
 
-  isLoadingInventory.value = true
-
-  try {
-    // 獲取店鋪所有餐點庫存
-    const response = await api.inventory.getStoreInventory({
-      brandId: props.brandId,
-      storeId: props.storeId,
-      inventoryType: 'DishTemplate',
-    })
-
-    if (response.success) {
-      const inventoryMap = {}
-
-      // 將庫存資料按餐點模板 ID 建立對應關係
-      response.inventory.forEach((item) => {
-        if (item.dish && item.dish._id) {
-          inventoryMap[item.dish._id] = {
-            inventoryId: item._id,
-            enableAvailableStock: item.enableAvailableStock,
-            availableStock: item.availableStock,
-            totalStock: item.totalStock,
-            isSoldOut: item.isSoldOut,
-            isInventoryTracked: item.isInventoryTracked,
-          }
-        }
-      })
-
-      inventoryData.value = inventoryMap
-      // console.log('庫存資料載入成功');
-    } else {
-      console.warn('庫存資料載入失敗:', response.message)
-    }
-  } catch (error) {
-    console.error('載入庫存資料時發生錯誤:', error)
-  } finally {
-    isLoadingInventory.value = false
-  }
+  await menuStore.loadInventory(props.brandId, props.storeId)
 }
 
 // 生命周期
@@ -189,12 +156,7 @@ watch(
 watch(
   () => props.categories,
   (newCategories) => {
-    if (
-      newCategories.length > 0 &&
-      props.brandId &&
-      props.storeId &&
-      Object.keys(inventoryData.value).length === 0
-    ) {
+    if (newCategories.length > 0 && props.brandId && props.storeId) {
       loadInventoryData()
     }
   },

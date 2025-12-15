@@ -1,4 +1,9 @@
 export const landingRoutes = [
+  // 根路徑重定向到首頁
+  {
+    path: '/',
+    redirect: '/home',
+  },
   {
     path: '/home',
     name: 'landing-home',

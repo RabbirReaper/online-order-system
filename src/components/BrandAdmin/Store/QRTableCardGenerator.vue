@@ -6,6 +6,8 @@
     centered
     no-close-on-backdrop
     no-close-on-esc
+    @show="handleModalShow"
+    @hidden="handleModalHidden"
   >
     <div class="row">
       <!-- 設定區域 -->
@@ -94,23 +96,65 @@
               </div>
             </div>
 
-            <!-- QR Code 連結說明 -->
-            <div class="mb-4" v-if="props.store">
-              <div
-                class="alert"
-                :class="props.store.enableLineOrdering ? 'alert-info' : 'alert-warning'"
-              >
-                <div class="d-flex align-items-center">
-                  <i
-                    class="bi"
-                    :class="props.store.enableLineOrdering ? 'bi-line me-2' : 'bi-globe me-2'"
-                  ></i>
-                  <div>
-                    <strong>QR Code 連結類型:</strong><br />
-                    <span v-if="props.store.enableLineOrdering">
-                      LINE LIFF 連結 (適用於 LINE 內開啟)
-                    </span>
-                    <span v-else> 顾客菜單頁面 (適用於任何瀏覽器) </span>
+            <!-- QR Code 連結模式選擇 -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">
+                <i class="bi bi-link-45deg me-1"></i>QR Code 連結模式
+              </label>
+              <div class="btn-group w-100" role="group">
+                <input
+                  type="radio"
+                  class="btn-check"
+                  name="urlMode"
+                  id="mode-liff"
+                  value="liff"
+                  v-model="urlMode"
+                  @change="updatePreview"
+                />
+                <label class="btn btn-outline-info" for="mode-liff">
+                  <div class="text-center">
+                    <i class="bi bi-line"></i>
+                    <div class="fw-bold">LINE LIFF</div>
+                    <small class="text-muted">LINE 內開啟</small>
+                  </div>
+                </label>
+
+                <input
+                  type="radio"
+                  class="btn-check"
+                  name="urlMode"
+                  id="mode-direct"
+                  value="direct"
+                  v-model="urlMode"
+                  @change="updatePreview"
+                />
+                <label class="btn btn-outline-success" for="mode-direct">
+                  <div class="text-center">
+                    <i class="bi bi-globe"></i>
+                    <div class="fw-bold">直接連結</div>
+                    <small class="text-muted">任何瀏覽器</small>
+                  </div>
+                </label>
+              </div>
+              <BFormText class="mt-2">
+                <i class="bi bi-info-circle me-1"></i>
+                <span v-if="urlMode === 'liff'">
+                  LINE LIFF 模式：適用於從 LINE 掃描 QR Code 的客戶
+                </span>
+                <span v-else> 直接連結模式：適用於從任何瀏覽器掃描 QR Code 的客戶 </span>
+              </BFormText>
+            </div>
+
+            <!-- QR Code 連結預覽 -->
+            <div class="mb-4" v-if="tableConfig.tableNumber">
+              <div class="alert alert-light border">
+                <div class="d-flex align-items-start">
+                  <i class="bi bi-eye me-2 mt-1"></i>
+                  <div class="flex-grow-1">
+                    <strong class="d-block mb-1">預覽連結:</strong>
+                    <code class="d-block text-break small bg-white p-2 rounded border">{{
+                      previewUrl
+                    }}</code>
                   </div>
                 </div>
               </div>
@@ -393,6 +437,9 @@ const tableConfig = ref({
   textColor: '#000000',
 })
 
+// URL 模式選擇
+const urlMode = ref('direct') // 'liff' 或 'direct'
+
 // 批量生成配置
 const showBatchOptions = ref(false)
 const batchConfig = ref({
@@ -410,6 +457,21 @@ const previewCanvas = ref(null)
 const baseUrl = computed(() => window.location.origin)
 
 const currentSizeInfo = computed(() => sizeConfigs[tableConfig.value.size])
+
+// 預覽 URL
+const previewUrl = computed(() => {
+  if (!tableConfig.value.tableNumber) return ''
+
+  const tableNumber = tableConfig.value.tableNumber
+
+  if (urlMode.value === 'liff') {
+    // LINE LIFF 模式
+    return `${baseUrl.value}/line-entry?brandId=${props.brandId}&storeId=${props.storeId}&tableNumber=${tableNumber}`
+  } else {
+    // 直接連結模式
+    return `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
+  }
+})
 
 const previewSize = computed(() => {
   const config = currentSizeInfo.value
@@ -441,17 +503,11 @@ const estimatedCount = computed(() => {
 const generateQRCode = async (tableNumber) => {
   let url
 
-  // 如果有 store 資料且啟用 LINE 點餐，使用 LIFF 連結
-  if (props.store && props.store.enableLineOrdering) {
-    const liffId = props.store.liffId
-    if (liffId) {
-      url = `https://liff.line.me/${liffId}?tableNumber=${tableNumber}`
-    } else {
-      // 沒有 LIFF ID 時回退到顧客菜單頁面
-      url = `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
-    }
+  if (urlMode.value === 'liff') {
+    // LINE LIFF 模式
+    url = `${baseUrl.value}/line-entry?brandId=${props.brandId}&storeId=${props.storeId}&tableNumber=${tableNumber}`
   } else {
-    // 沒有 store 資料或沒有啟用 LINE 點餐，使用顧客菜單頁面
+    // 直接連結模式
     url = `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
   }
 
@@ -803,9 +859,58 @@ const downloadBatch = async () => {
   }
 }
 
+// 重置 Modal 狀態
+const resetModal = () => {
+  // 重置桌牌配置
+  tableConfig.value = {
+    tableNumber: '',
+    size: '2x3',
+    backgroundColor: '#FFFFFF',
+    textColor: '#000000',
+  }
+
+  // 重置 URL 模式
+  urlMode.value = 'direct'
+
+  // 重置批量配置
+  showBatchOptions.value = false
+  batchConfig.value = {
+    mode: 'range',
+    startNumber: 1,
+    endNumber: 10,
+    customNumbers: '',
+  }
+
+  // 重置狀態
+  isGenerating.value = false
+
+  // 清空預覽畫布
+  if (previewCanvas.value) {
+    const ctx = previewCanvas.value.getContext('2d')
+    ctx.clearRect(0, 0, previewCanvas.value.width, previewCanvas.value.height)
+  }
+}
+
+// Modal 顯示時的處理
+const handleModalShow = () => {
+  // Modal 被打開時，根據 store 設定初始化 URL 模式
+  if (props.store && props.store.enableLineOrdering) {
+    urlMode.value = 'liff'
+  } else {
+    urlMode.value = 'direct'
+  }
+}
+
+// Modal 完全隱藏後的處理
+const handleModalHidden = () => {
+  // Modal 完全關閉後重置所有狀態
+  resetModal()
+}
+
 // 關閉模態窗
 const closeModal = () => {
   showModal.value = false
+  // 重置邏輯由 handleModalHidden 處理
 }
 
 // 監聽變化
@@ -910,6 +1015,17 @@ onMounted(() => {
 .btn-check:checked + .btn-outline-primary {
   background-color: #0d6efd;
   border-color: #0d6efd;
+}
+
+.btn-check:checked + .btn-outline-info {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+  color: #000;
+}
+
+.btn-check:checked + .btn-outline-success {
+  background-color: #198754;
+  border-color: #198754;
 }
 
 .card {

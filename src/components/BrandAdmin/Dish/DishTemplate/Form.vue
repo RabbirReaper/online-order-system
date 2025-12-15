@@ -99,7 +99,9 @@
 
           <!-- 餐點圖片 -->
           <div class="mb-3">
-            <label for="dishImage" class="form-label required">餐點圖片</label>
+            <label for="dishImage" class="form-label">
+              餐點圖片 <span class="text-muted">(選填)</span>
+            </label>
             <div class="input-group">
               <input
                 type="file"
@@ -122,7 +124,7 @@
             <div class="text-danger" v-if="errors.image">{{ errors.image }}</div>
             <div class="form-text text-muted" v-else>
               <i class="bi bi-info-circle me-1"></i>
-              請上傳餐點圖片，檔案大小限制為 1MB，支援 JPG、PNG 格式
+              建議上傳餐點圖片以提升吸引力，檔案大小限制為 1MB，支援 JPG、PNG 格式
             </div>
 
             <!-- 圖片預覽 -->
@@ -504,19 +506,12 @@ const validateForm = () => {
     isValid = false
   }
 
-  // 驗證圖片
+  // 驗證圖片（僅檢查格式錯誤，不強制要求）
   if (errors.image) {
     formErrors.value.push(errors.image)
     isValid = false
-  } else if (!isEditMode.value && !formData.newImage && !formData.image) {
-    errors.image = '請上傳餐點圖片'
-    formErrors.value.push('請上傳餐點圖片')
-    isValid = false
-  } else if (isEditMode.value && !formData.newImage && !formData.image) {
-    errors.image = '請上傳餐點圖片'
-    formErrors.value.push('請上傳餐點圖片')
-    isValid = false
   }
+  // 圖片為選填，移除必要性驗證
 
   return isValid
 }

@@ -19,6 +19,7 @@ export default {
     consultation: 'Free Consultation',
     schedule: 'Schedule Consultation',
     startTrial: 'Start Free Trial',
+    loading: 'Loading...',
     copyright: '© 2025 Hopster Ordering. All rights reserved.',
   },
 

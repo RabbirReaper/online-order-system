@@ -142,63 +142,37 @@ export const formatDate = (dateString) => {
 /**
  * 獲取商品名稱
  * @param {Object} item - 商品物件
- * @param {Array} dishTemplates - 餐點模板陣列
- * @param {Array} bundles - 套餐陣列
  * @returns {String} 商品名稱
  */
-export const getItemName = (item, dishTemplates = [], bundles = []) => {
+export const getItemName = (item) => {
   if (!item) return '未知商品'
 
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    // 如果 dishTemplate 已經是物件，直接返回名稱
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.name
-    }
-    // 如果是 ID，從陣列中查找
-    const template = dishTemplates.find((t) => t._id === item.dishTemplate)
-    return template ? template.name : '未知餐點'
+  // 定義不同項目類型的名稱獲取器映射
+  const nameGetters = {
+    dish: () => item.dishTemplate?.name || '未知餐點',
+    bundle: () => item.bundle?.name || '未知套餐',
   }
 
-  if (item.itemType === 'bundle' && item.bundle) {
-    // 如果 bundle 已經是物件，直接返回名稱
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.name
-    }
-    // 如果是 ID，從陣列中查找
-    const bundle = bundles.find((b) => b._id === item.bundle)
-    return bundle ? bundle.name : '未知套餐'
-  }
-
-  return '未知商品'
+  // 使用映射獲取名稱，若找不到對應類型則返回未知商品
+  return nameGetters[item.itemType]?.() || '未知商品'
 }
 
 /**
  * 獲取商品描述
  * @param {Object} item - 商品物件
- * @param {Array} dishTemplates - 餐點模板陣列
- * @param {Array} bundles - 套餐陣列
  * @returns {String} 商品描述
  */
-export const getItemDescription = (item, dishTemplates = [], bundles = []) => {
+export const getItemDescription = (item) => {
   if (!item) return ''
 
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.description || ''
-    }
-    const template = dishTemplates.find((t) => t._id === item.dishTemplate)
-    return template ? template.description || '' : ''
+  // 定義不同項目類型的描述獲取器映射
+  const descriptionGetters = {
+    dish: () => item.dishTemplate?.description || '',
+    bundle: () => item.bundle?.description || '',
   }
 
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.description || ''
-    }
-    const bundle = bundles.find((b) => b._id === item.bundle)
-    return bundle ? bundle.description || '' : ''
-  }
-
-  return ''
+  // 使用映射獲取描述，若找不到對應類型則返回空字串
+  return descriptionGetters[item.itemType]?.() || ''
 }
 
 /**
@@ -208,79 +182,57 @@ export const getItemDescription = (item, dishTemplates = [], bundles = []) => {
  * @param {Array} bundles - 套餐陣列
  * @returns {String} 商品圖片URL
  */
-export const getItemImage = (item, dishTemplates = [], bundles = []) => {
-  if (!item) return '/placeholder.jpg'
+export const getItemImage = (item) => {
+  if (!item) return ''
 
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.image?.url || '/placeholder.jpg'
-    }
-    const template = dishTemplates.find((t) => t._id === item.dishTemplate)
-    return template && template.image && template.image.url
-      ? template.image.url
-      : '/placeholder.jpg'
+  // 定義不同項目類型的圖片獲取器映射
+  const imageGetters = {
+    dish: () => {
+      return item.dishTemplate.image.url
+    },
+    bundle: () => {
+      return item.bundle.image.url
+    },
   }
 
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.image?.url || '/placeholder.jpg'
-    }
-    const bundle = bundles.find((b) => b._id === item.bundle)
-    return bundle && bundle.image && bundle.image.url ? bundle.image.url : '/placeholder.jpg'
-  }
-
-  return '/placeholder.jpg'
+  // 使用映射獲取圖片，若找不到對應類型則返回空字串
+  return imageGetters[item.itemType]?.() || ''
 }
 
 /**
  * 獲取商品原始價格
  * @param {Object} item - 商品物件
- * @param {Array} dishTemplates - 餐點模板陣列
- * @param {Array} bundles - 套餐陣列
  * @returns {Number} 商品原始價格
  */
-export const getItemOriginalPrice = (item, dishTemplates = [], bundles = []) => {
+export const getItemOriginalPrice = (item) => {
   if (!item) return 0
 
-  if (item.itemType === 'dish' && item.dishTemplate) {
-    if (typeof item.dishTemplate === 'object' && item.dishTemplate !== null) {
-      return item.dishTemplate.basePrice || 0
-    }
-    const template = dishTemplates.find((t) => t._id === item.dishTemplate)
-    return template ? template.basePrice || 0 : 0
+  // 定義不同項目類型的價格獲取器映射
+  const priceGetters = {
+    dish: () => item.dishTemplate?.basePrice || 0,
+    bundle: () => item.bundle?.cashPrice?.selling || item.bundle?.cashPrice?.original || 0,
   }
 
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.cashPrice?.selling || item.bundle.cashPrice?.original || 0
-    }
-    const bundle = bundles.find((b) => b._id === item.bundle)
-    return bundle ? bundle.cashPrice?.selling || bundle.cashPrice?.original || 0 : 0
-  }
-
-  return 0
+  // 使用映射獲取價格，若找不到對應類型則返回 0
+  return priceGetters[item.itemType]?.() || 0
 }
 
 /**
  * 獲取商品原始點數
  * @param {Object} item - 商品物件
- * @param {Array} dishTemplates - 餐點模板陣列
- * @param {Array} bundles - 套餐陣列
  * @returns {Number} 商品原始點數
  */
-export const getItemOriginalPoints = (item, dishTemplates = [], bundles = []) => {
+export const getItemOriginalPoints = (item) => {
   if (!item) return 0
 
-  if (item.itemType === 'bundle' && item.bundle) {
-    if (typeof item.bundle === 'object' && item.bundle !== null) {
-      return item.bundle.pointPrice?.selling || item.bundle.pointPrice?.original || 0
-    }
-    const bundle = bundles.find((b) => b._id === item.bundle)
-    return bundle ? bundle.pointPrice?.selling || bundle.pointPrice?.original || 0 : 0
+  // 定義不同項目類型的點數獲取器映射
+  const pointsGetters = {
+    dish: () => 0, // 餐點暫時沒有點數價格
+    bundle: () => item.bundle?.pointPrice?.selling || item.bundle?.pointPrice?.original || 0,
   }
 
-  // 餐點暫時沒有點數價格
-  return 0
+  // 使用映射獲取點數，若找不到對應類型則返回 0
+  return pointsGetters[item.itemType]?.() || 0
 }
 
 /**

@@ -115,13 +115,7 @@ export const createBundle = async (bundleData) => {
     throw new AppError('至少需要設定現金價格或點數價格其中一種', 400)
   }
 
-  // 圖片驗證邏輯 - 圖片為必需
-  const hasImageData = bundleData.imageData
-  const hasExistingImage = bundleData.image && bundleData.image.url && bundleData.image.key
-
-  if (!hasImageData && !hasExistingImage) {
-    throw new AppError('請提供圖片', 400)
-  }
+  // 圖片為非必要，移除圖片必要性驗證
 
   // === 第二階段：資料庫驗證 ===
   // 檢查兌換券模板
@@ -498,20 +492,16 @@ export const autoCreateBundlesForVouchers = async (brandId) => {
           alt: `${voucher.name} bundle image`,
         }
       } else {
-        // 沒有圖片的情況下跳過這個兌換券
-        console.warn(`兌換券 ${voucher.name} 對應的餐點沒有圖片，跳過`)
-        skippedVouchers.push({
-          voucherName: voucher.name,
-          reason: '餐點沒有圖片',
-        })
-        continue
+        // 允許創建無圖片的 Bundle
+        bundleImageInfo = null
+        console.info(`兌換券 ${voucher.name} 對應的餐點沒有圖片，將創建無圖片 Bundle`)
       }
 
       const bundleData = {
         brand: brandId,
         name: voucher.name,
         description: `單個 ${voucher.name}`,
-        image: bundleImageInfo, // 確保圖片資訊存在
+        ...(bundleImageInfo && { image: bundleImageInfo }), // 條件式設置圖片
         bundleItems: [
           {
             voucherTemplate: voucher._id,
