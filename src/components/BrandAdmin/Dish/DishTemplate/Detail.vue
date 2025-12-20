@@ -63,7 +63,7 @@
 
               <div class="mb-3" v-if="dish.description">
                 <h6 class="text-muted mb-1">餐點描述</h6>
-                <p>{{ dish.description }}</p>
+                <p class="description-text">{{ dish.description }}</p>
               </div>
 
               <div class="mb-3" v-if="dish.tags && dish.tags.length > 0">
@@ -410,5 +410,12 @@ onMounted(() => {
 
 .option-category:last-child {
   margin-bottom: 0;
+}
+
+/* 描述文字樣式 */
+.description-text {
+  white-space: pre-line;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 </style>
