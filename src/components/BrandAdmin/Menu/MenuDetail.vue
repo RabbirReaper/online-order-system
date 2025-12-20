@@ -143,11 +143,18 @@
                         :class="{ 'item-disabled': !item.isShowing }"
                       >
                         <!-- 商品圖片 -->
-                        <img
-                          :src="getItemImage(item)"
-                          class="card-img-top item-image"
-                          :alt="getItemName(item)"
-                        />
+                        <template v-if="getItemImage(item)">
+                          <img
+                            :src="getItemImage(item)"
+                            class="card-img-top item-image"
+                            :alt="getItemName(item)"
+                          />
+                        </template>
+                        <template v-else>
+                          <div class="card-img-top item-image placeholder-icon-container">
+                            <i class="bi bi-question-octagon placeholder-icon"></i>
+                          </div>
+                        </template>
 
                         <!-- 商品類型標記 -->
                         <div class="item-type-badge">
@@ -504,6 +511,20 @@ onMounted(() => {
 .item-image {
   height: 160px;
   object-fit: cover;
+}
+
+.placeholder-icon-container {
+  width: 100%;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  color: #6c757d;
 }
 
 .item-type-badge {

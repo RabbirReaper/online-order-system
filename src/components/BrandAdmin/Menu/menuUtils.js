@@ -188,10 +188,10 @@ export const getItemImage = (item) => {
   // 定義不同項目類型的圖片獲取器映射
   const imageGetters = {
     dish: () => {
-      return item.dishTemplate.image.url
+      return item.dishTemplate?.image?.url || ''
     },
     bundle: () => {
-      return item.bundle.image.url
+      return item.bundle?.image?.url || ''
     },
   }
 
