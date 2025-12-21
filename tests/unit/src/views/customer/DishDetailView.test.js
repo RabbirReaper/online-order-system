@@ -6,7 +6,8 @@ import { createPinia, setActivePinia } from 'pinia'
 const mockApi = {
   dish: {
     getDishTemplateById: vi.fn(),
-    getOptionCategoryById: vi.fn()
+    getOptionCategoryById: vi.fn(),
+    getTemplateOptions: vi.fn()
   },
   inventory: {
     getStoreInventory: vi.fn()
@@ -24,6 +25,16 @@ const mockCartStore = {
 }
 vi.mock('@/stores/cart', () => ({
   useCartStore: () => mockCartStore
+}))
+
+// Mock menu store
+const mockMenuStore = {
+  inventoryData: {},
+  isLoadingInventory: false,
+  loadInventory: vi.fn()
+}
+vi.mock('@/stores/menu', () => ({
+  useMenuStore: () => mockMenuStore
 }))
 
 // Mock router
@@ -88,6 +99,11 @@ describe('DishDetailView.vue', () => {
 
     // 重置 cart store
     mockCartStore.items = []
+
+    // 重置 menu store
+    mockMenuStore.inventoryData = {}
+    mockMenuStore.isLoadingInventory = false
+    mockMenuStore.loadInventory.mockResolvedValue({})
 
     // 設置 Pinia
     pinia = createPinia()
@@ -177,29 +193,32 @@ describe('DishDetailView.vue', () => {
       }
     }
 
-    const mockCategoryData = {
+    const mockOptionsData = {
       success: true,
-      category: {
-        _id: 'category-1',
-        name: '測試類別',
-        inputType: 'single',
-        options: [
-          {
-            order: 1,
-            refOption: {
+      options: [
+        {
+          category: {
+            _id: 'category-1',
+            name: '測試類別',
+            inputType: 'single'
+          },
+          order: 1,
+          options: [
+            {
               _id: 'option-1',
               name: '測試選項',
               price: 20,
               refDishTemplate: { _id: 'ref-dish-1', name: '關聯餐點' }
             }
-          }
-        ]
-      }
+          ]
+        }
+      ]
     }
 
     beforeEach(() => {
       mockApi.dish.getDishTemplateById.mockResolvedValue(mockDishData)
-      mockApi.dish.getOptionCategoryById.mockResolvedValue(mockCategoryData)
+      mockApi.dish.getTemplateOptions.mockResolvedValue(mockOptionsData)
+      mockMenuStore.loadInventory.mockResolvedValue({})
     })
 
     it('應該成功載入餐點資料', async () => {
@@ -219,19 +238,15 @@ describe('DishDetailView.vue', () => {
     })
 
     it('應該正確處理選項類別資料', async () => {
-      // 為了避免重複類別，只 mock 一次類別調用
-      mockApi.dish.getOptionCategoryById.mockResolvedValueOnce(mockCategoryData)
-
       wrapper = createWrapper()
 
       // 等待異步操作完成
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      expect(mockApi.dish.getOptionCategoryById).toHaveBeenCalledWith({
+      expect(mockApi.dish.getTemplateOptions).toHaveBeenCalledWith({
         brandId: 'test-brand',
-        id: 'category-1',
-        includeOptions: true
+        id: 'test-dish'
       })
 
       // 檢查選項類別是否正確處理
@@ -274,69 +289,42 @@ describe('DishDetailView.vue', () => {
   })
 
   describe('庫存資料載入', () => {
-    const mockInventoryData = {
-      success: true,
-      inventory: [
-        {
-          _id: 'inventory-1',
-          dish: { _id: 'dish-1' },
-          enableAvailableStock: true,
-          availableStock: 10,
-          totalStock: 50,
-          isSoldOut: false,
-          isInventoryTracked: true
-        },
-        {
-          _id: 'inventory-2',
-          dish: { _id: 'dish-2' },
-          enableAvailableStock: false,
-          availableStock: 0,
-          totalStock: 0,
-          isSoldOut: true,
-          isInventoryTracked: false
-        }
-      ]
+    const mockInventoryMap = {
+      'dish-1': {
+        inventoryId: 'inventory-1',
+        enableAvailableStock: true,
+        availableStock: 10,
+        totalStock: 50,
+        isSoldOut: false,
+        isInventoryTracked: true
+      },
+      'dish-2': {
+        inventoryId: 'inventory-2',
+        enableAvailableStock: false,
+        availableStock: 0,
+        totalStock: 0,
+        isSoldOut: true,
+        isInventoryTracked: false
+      }
     }
 
     beforeEach(() => {
-      mockApi.inventory.getStoreInventory.mockResolvedValue(mockInventoryData)
+      mockMenuStore.loadInventory.mockResolvedValue(mockInventoryMap)
+      mockMenuStore.inventoryData = {}
+      mockMenuStore.isLoadingInventory = false
     })
 
-    it('應該成功載入庫存資料', async () => {
+    it('應該在組件掛載時調用 menuStore.loadInventory', async () => {
       wrapper = createWrapper()
 
       // 等待 onMounted 完成
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      expect(mockApi.inventory.getStoreInventory).toHaveBeenCalledWith({
-        brandId: 'test-brand',
-        storeId: 'test-store',
-        inventoryType: 'DishTemplate'
-      })
-
-      // 檢查庫存資料是否正確建立對應關係
-      expect(wrapper.vm.inventoryData).toEqual({
-        'dish-1': {
-          inventoryId: 'inventory-1',
-          enableAvailableStock: true,
-          availableStock: 10,
-          totalStock: 50,
-          isSoldOut: false,
-          isInventoryTracked: true
-        },
-        'dish-2': {
-          inventoryId: 'inventory-2',
-          enableAvailableStock: false,
-          availableStock: 0,
-          totalStock: 0,
-          isSoldOut: true,
-          isInventoryTracked: false
-        }
-      })
+      expect(mockMenuStore.loadInventory).toHaveBeenCalledWith('test-brand', 'test-store')
     })
 
-    it('應該在缺少參數時跳過庫存載入', async () => {
+    it('應該在缺少參數時不調用 loadInventory', async () => {
       // 在創建組件前設置無效參數
       mockRoute.params = {
         brandId: '',  // 空字串
@@ -344,75 +332,34 @@ describe('DishDetailView.vue', () => {
         dishId: 'test-dish'
       }
 
-      // 需要手動調用 loadInventoryData 來測試警告
       wrapper = createWrapper()
 
-      // 清除 API 調用記錄，因為 onMounted 會有其他調用
-      vi.clearAllMocks()
-
-      // 手動調用 loadInventoryData 來觸發警告
-      await wrapper.vm.loadInventoryData()
-
-      expect(console.warn).toHaveBeenCalledWith('缺少 brandId 或 storeId，無法載入庫存資料')
-      expect(mockApi.inventory.getStoreInventory).not.toHaveBeenCalled()
-    })
-
-    it('應該處理庫存 API 錯誤', async () => {
-      mockApi.inventory.getStoreInventory.mockRejectedValue(new Error('庫存 API 錯誤'))
-      wrapper = createWrapper()
-
+      // 等待組件初始化
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      expect(console.error).toHaveBeenCalledWith('載入庫存資料時發生錯誤:', expect.any(Error))
-      expect(wrapper.vm.isLoadingInventory).toBe(false)
+      // menuStore.loadInventory 不應被調用（因為 brandId 是空字串）
+      expect(mockMenuStore.loadInventory).not.toHaveBeenCalled()
     })
 
-    it('應該處理無效的庫存回應', async () => {
-      mockApi.inventory.getStoreInventory.mockResolvedValue({ success: false, message: '權限不足' })
+    it('應該通過 computed 屬性訪問 menuStore 的庫存資料', async () => {
+      mockMenuStore.inventoryData = mockInventoryMap
       wrapper = createWrapper()
 
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
 
-      expect(console.warn).toHaveBeenCalledWith('庫存資料載入失敗:', '權限不足')
+      // inventoryData 是 computed 屬性，應該返回 menuStore 的值
+      expect(wrapper.vm.inventoryData).toBe(mockMenuStore.inventoryData)
     })
-  })
 
-  describe('庫存資訊獲取', () => {
-    beforeEach(async () => {
+    it('應該通過 computed 屬性訪問 menuStore 的載入狀態', async () => {
+      mockMenuStore.isLoadingInventory = true
       wrapper = createWrapper()
 
-      // 設置庫存資料
-      wrapper.vm.inventoryData = {
-        'dish-1': {
-          inventoryId: 'inventory-1',
-          enableAvailableStock: true,
-          availableStock: 5,
-          isSoldOut: false
-        }
-      }
-    })
+      await wrapper.vm.$nextTick()
 
-    it('應該正確獲取庫存資訊', () => {
-      const inventoryInfo = wrapper.vm.getInventoryInfo('dish-1')
-
-      expect(inventoryInfo).toEqual({
-        inventoryId: 'inventory-1',
-        enableAvailableStock: true,
-        availableStock: 5,
-        isSoldOut: false
-      })
-    })
-
-    it('應該在沒有庫存資料時返回 null', () => {
-      const inventoryInfo = wrapper.vm.getInventoryInfo('non-existent-dish')
-      expect(inventoryInfo).toBe(null)
-    })
-
-    it('應該在無效參數時返回 null', () => {
-      const inventoryInfo = wrapper.vm.getInventoryInfo(null)
-      expect(inventoryInfo).toBe(null)
+      // isLoadingInventory 是 computed 屬性，應該返回 menuStore 的值
+      expect(wrapper.vm.isLoadingInventory).toBe(true)
     })
   })
 
@@ -555,25 +502,6 @@ describe('DishDetailView.vue', () => {
     })
   })
 
-  describe('參數變化監聽', () => {
-    it('應該在參數變化時重新載入庫存資料', async () => {
-      wrapper = createWrapper()
-
-      // 清除初始載入的調用記錄
-      vi.clearAllMocks()
-
-      // 模擬參數變化
-      mockRoute.params.brandId = 'new-brand'
-      mockRoute.params.storeId = 'new-store'
-
-      // 手動觸發 watch
-      await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // 由於 watch 需要實際參數變化觸發，這裡驗證函數存在即可
-      expect(typeof wrapper.vm.loadInventoryData).toBe('function')
-    })
-  })
 
   describe('UI 渲染', () => {
     it('應該在載入完成後顯示內容', async () => {

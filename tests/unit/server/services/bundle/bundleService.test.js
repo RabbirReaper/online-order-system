@@ -625,7 +625,7 @@ describe('BundleService', () => {
       expect(result.skippedVouchers[0].reason).toBe('沒有關聯的餐點模板')
     })
 
-    it('should skip vouchers with dishes without images', async () => {
+    it('should allow creating bundles for vouchers with dishes without images', async () => {
       const mockVouchers = [
         {
           _id: 'voucher1',
@@ -647,9 +647,18 @@ describe('BundleService', () => {
 
       const result = await bundleService.autoCreateBundlesForVouchers('brand123')
 
-      expect(result.statistics.createdCount).toBe(0)
-      expect(result.statistics.skippedCount).toBe(1)
-      expect(result.skippedVouchers[0].reason).toBe('餐點沒有圖片')
+      expect(result.statistics.createdCount).toBe(1)
+      expect(result.statistics.skippedCount).toBe(0)
+      // 驗證 Bundle 構造函數被調用，且創建的 Bundle 沒有 image 欄位
+      expect(mockBundleModel).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Voucher 1',
+          brand: 'brand123'
+        })
+      )
+      // 驗證創建的 Bundle 資料不包含 image 欄位（因為使用條件式設置）
+      const bundleData = mockBundleModel.mock.calls[0][0]
+      expect(bundleData.image).toBeUndefined()
     })
 
     it('should exclude existing vouchers with bundles', async () => {

@@ -28,7 +28,17 @@ vi.mock('vue-router', () => ({
     name: '',
     meta: {}
   }),
-  createRouter: vi.fn(),
+  createRouter: vi.fn(() => ({
+    beforeEach: vi.fn(),
+    afterEach: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    go: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    currentRoute: { value: { path: '/', params: {}, query: {} } },
+    options: { routes: [] }
+  })),
   createWebHistory: vi.fn()
 }));
 

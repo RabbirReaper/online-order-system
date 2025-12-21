@@ -32,7 +32,10 @@ describe('AdminAuthService', () => {
       adminRole: null,
       adminBrand: null,
       adminStore: null,
-      destroy: vi.fn()
+      destroy: vi.fn(),
+      cookie: {
+        maxAge: null
+      }
     }
   })
 
