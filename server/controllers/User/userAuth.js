@@ -29,9 +29,12 @@ export const register = asyncHandler(async (req, res) => {
  */
 export const login = asyncHandler(async (req, res) => {
   const { brandId } = req.params
+  const { rememberMe, ...restBody } = req.body
+
   const credentials = {
-    ...req.body,
+    ...restBody,
     brand: brandId,
+    rememberMe,
   }
 
   const user = await userAuthService.login(credentials, req.session)

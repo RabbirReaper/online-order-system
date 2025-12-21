@@ -77,7 +77,7 @@
                 id="rememberMe"
                 v-model="rememberMe"
               />
-              <label class="form-check-label" for="rememberMe"> 記住我 </label>
+              <label class="form-check-label" for="rememberMe"> 保持登入 </label>
             </div>
             <router-link to="/auth/forgot-password" class="text-decoration-none"
               >忘記密碼？</router-link
@@ -131,7 +131,7 @@ const credentials = reactive({
 const formErrors = ref([])
 const successMessage = ref('您已成功登入系統')
 const showPassword = ref(false)
-const rememberMe = ref(false)
+const rememberMe = ref(true)
 const wasValidated = ref(false)
 const fieldErrors = reactive({})
 const touchedFields = reactive({})
@@ -288,7 +288,10 @@ const handleLogin = async () => {
     }
 
     // 使用統一的 authStore.login 方法
-    await authStore.login(credentials)
+    await authStore.login({
+      ...credentials,
+      rememberMe: rememberMe.value,
+    })
 
     // 登入成功後的處理
     // console.log('登入成功!');
