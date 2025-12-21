@@ -182,7 +182,7 @@ export const register = async (userData, verificationCode = null) => {
  * @returns {Promise<Object>} 用戶信息
  */
 export const login = async (credentials, session) => {
-  const { phone, password, brand } = credentials
+  const { phone, password, brand, rememberMe } = credentials
 
   // 驗證必填欄位
   const phoneValidation = validateField('phone', phone, true)
@@ -211,6 +211,15 @@ export const login = async (credentials, session) => {
 
   if (!isPasswordValid) {
     throw new AppError('手機號碼或密碼錯誤', 401)
+  }
+
+  // 根據 rememberMe 動態設置 session cookie maxAge
+  if (rememberMe) {
+    // 保持登入: 60 天（配合 rolling: true 實現「有活動就永不過期」）
+    session.cookie.maxAge = 60 * 24 * 60 * 60 * 1000
+  } else {
+    // 一般登入: 1 小時
+    session.cookie.maxAge = 60 * 60 * 1000
   }
 
   // 設置會話

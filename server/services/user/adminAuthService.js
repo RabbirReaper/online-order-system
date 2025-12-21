@@ -17,7 +17,7 @@ import { AppError } from '../../middlewares/error.js'
  * @returns {Promise<Object>} 管理員信息
  */
 export const adminLogin = async (credentials, session) => {
-  const { name, password, brandId } = credentials
+  const { name, password, brandId, rememberMe } = credentials
 
   if (!name || !password) {
     throw new AppError('用戶名和密碼為必填欄位', 400)
@@ -83,6 +83,15 @@ export const adminLogin = async (credentials, session) => {
   // 更新最後登入時間
   admin.lastLogin = new Date()
   await admin.save()
+
+  // 根據 rememberMe 動態設置 session cookie maxAge
+  if (rememberMe) {
+    // 保持登入: 7 天（配合 rolling: true 實現「有活動就永不過期」）
+    session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
+  } else {
+    // 一般登入: 1 小時
+    session.cookie.maxAge = 60 * 60 * 1000
+  }
 
   // 設置會話
   session.adminId = admin._id

@@ -68,6 +68,19 @@
                   </div>
                 </div>
 
+                <!-- 保持登入選項 -->
+                <div class="mb-4">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="rememberMe"
+                      v-model="rememberMe"
+                    />
+                    <label class="form-check-label" for="rememberMe"> 保持登入 </label>
+                  </div>
+                </div>
+
                 <!-- 提交按鈕 -->
                 <div class="d-grid gap-2">
                   <button type="submit" class="btn btn-primary" :disabled="isLoading">
@@ -112,6 +125,7 @@ const formData = reactive({
 const isLoading = ref(false)
 const loginError = ref('')
 const showPassword = ref(false)
+const rememberMe = ref(true)
 
 // 切換密碼可見性
 const togglePasswordVisibility = () => {
@@ -129,6 +143,7 @@ const handleLogin = async () => {
     const loginData = {
       name: formData.username,
       password: formData.password,
+      rememberMe: rememberMe.value,
     }
 
     // 如果有 brandId，加入到登入資料中

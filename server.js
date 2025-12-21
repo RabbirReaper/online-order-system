@@ -32,7 +32,7 @@ app.use(
     saveUninitialized: false,
     rolling: true,
     cookie: {
-      maxAge: 30 * 60 * 1000,
+      maxAge: 60 * 60 * 1000, // 1 小時
       sameSite: 'strict',
       httpOnly: true,
     },

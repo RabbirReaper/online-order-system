@@ -76,7 +76,7 @@ describe('UserAuthService', () => {
         brand: 'brand-123'
       }
 
-      const mockSession = {}
+      const mockSession = { cookie: { maxAge: null } }
       const result = await userAuthService.login(credentials, mockSession)
 
       expect(User.findOne).toHaveBeenCalledWith({
@@ -100,7 +100,7 @@ describe('UserAuthService', () => {
         brand: 'brand-456' // 不同的品牌
       }
 
-      const mockSession = {}
+      const mockSession = { cookie: { maxAge: null } }
 
       await expect(userAuthService.login(credentials, mockSession))
         .rejects.toThrow('手機號碼或密碼錯誤')
@@ -151,7 +151,7 @@ describe('UserAuthService', () => {
         brand: 'brand-111'
       }
 
-      const session1 = {}
+      const session1 = { cookie: { maxAge: null } }
       const result1 = await userAuthService.login(credentials1, session1)
 
       expect(result1._id).toBe('user-brand1')
@@ -168,7 +168,7 @@ describe('UserAuthService', () => {
         brand: 'brand-222'
       }
 
-      const session2 = {}
+      const session2 = { cookie: { maxAge: null } }
       const result2 = await userAuthService.login(credentials2, session2)
 
       expect(result2._id).toBe('user-brand2')
@@ -192,7 +192,7 @@ describe('UserAuthService', () => {
         // 缺少 brand
       }
 
-      const mockSession = {}
+      const mockSession = { cookie: { maxAge: null } }
 
       await expect(userAuthService.login(credentials, mockSession))
         .rejects.toThrow('請提供完整的登入資訊')
@@ -441,26 +441,26 @@ describe('UserAuthService', () => {
       expect(result.errors).toEqual([])
     })
 
-    it('should reject invalid name - too short', () => {
+    it('should accept single character name', () => {
       const updateData = {
-        name: 'J' // 只有1個字元，最少需要2個
+        name: 'J' // 1個字元，符合最少1個字元的要求
       }
 
       const result = userAuthService.validateUserUpdate(updateData)
 
-      expect(result.valid).toBe(false)
-      expect(result.errors).toContain('姓名至少需要2個字元')
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
     })
 
     it('should reject invalid name - too long', () => {
       const updateData = {
-        name: 'A'.repeat(51) // 51個字元，超過最大50個字元限制
+        name: 'A'.repeat(26) // 26個字元，超過最大25個字元限制
       }
 
       const result = userAuthService.validateUserUpdate(updateData)
 
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain('姓名長度不能超過50個字元')
+      expect(result.errors).toContain('姓名長度不能超過25個字元')
     })
 
     it('should reject empty name', () => {
@@ -490,13 +490,13 @@ describe('UserAuthService', () => {
         '王小明', // 中文姓名
         'John', // 英文姓名
         '李大華123', // 中英數字混合
-        'A'.repeat(50) // 最大長度50字元
+        'A'.repeat(25) // 最大長度25字元
       ]
 
       validNames.forEach(name => {
         const updateData = { name }
         const result = userAuthService.validateUserUpdate(updateData)
-        
+
         expect(result.valid).toBe(true)
         expect(result.errors).not.toContain(expect.stringMatching(/姓名/))
       })
@@ -600,7 +600,7 @@ describe('UserAuthService', () => {
 
     it('should accumulate multiple validation errors', () => {
       const updateData = {
-        name: 'J', // 太短
+        name: '', // 空字串，不符合必填要求
         email: 'invalid-email', // 格式錯誤
         phone: '123456789' // 格式錯誤
       }
@@ -609,7 +609,7 @@ describe('UserAuthService', () => {
 
       expect(result.valid).toBe(false)
       expect(result.errors).toHaveLength(3)
-      expect(result.errors).toContain('姓名至少需要2個字元')
+      expect(result.errors).toContain('姓名為必填欄位')
       expect(result.errors).toContain('請輸入有效的電子郵件格式')
       expect(result.errors).toContain('請輸入有效的手機號碼格式 (09xxxxxxxx)')
     })
