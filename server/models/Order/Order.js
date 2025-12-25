@@ -261,8 +261,10 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-// 索引
-orderSchema.index({ brand: 1, store: 1 })
-orderSchema.index({ brand: 1, user: 1 })
+// 索引：優化日期範圍查詢和排序（符合 ESR 規則）
+// 店鋪訂單查詢：{ store, isFinalized, createdAt: { $gte, $lte } } + sort({ createdAt: -1 })
+orderSchema.index({ store: 1, isFinalized: 1, createdAt: -1 })
+// 用戶訂單查詢：{ user, isFinalized } + sort({ createdAt: -1 })
+orderSchema.index({ user: 1, isFinalized: 1, createdAt: -1 })
 
 export default mongoose.model('Order', orderSchema)

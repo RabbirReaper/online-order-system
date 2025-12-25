@@ -46,6 +46,8 @@ const cashFlowSchema = new mongoose.Schema({
   },
 })
 
-cashFlowSchema.index({ brand: 1, store: 1, time: -1 })
+// 索引：優化查詢性能（符合 ESR 規則：Equality-Sort-Range）
+// 查詢模式：{ store, type?, time } + sort({ time: -1 })
+cashFlowSchema.index({ store: 1, type: 1, time: -1 })
 
 export default mongoose.model('CashFlow', cashFlowSchema)
