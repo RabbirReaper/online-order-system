@@ -38,7 +38,6 @@ export const dynamicMetaTags = async (req, res, next) => {
 
     // 準備動態內容
     const storeName = store.name
-    const brandName = store.brand?.name || '光兔點餐'
     const title = `${storeName}`
     const description = `立即查看菜單並線上點餐。`
     const imageUrl = store.image?.url || ''
@@ -59,7 +58,6 @@ export const dynamicMetaTags = async (req, res, next) => {
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${description}" />
     ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ''}
-    <meta property="og:site_name" content="${brandName}" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
