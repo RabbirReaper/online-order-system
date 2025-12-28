@@ -25,9 +25,7 @@ export const dynamicMetaTags = async (req, res, next) => {
     const [, brandId, storeId] = storePathMatch
 
     // 查詢店家資料（利用 brand 索引提高效率，同時驗證 brandId）
-    const store = await Store.findOne({ _id: storeId, brand: brandId })
-      .populate('brand')
-      .lean()
+    const store = await Store.findOne({ _id: storeId, brand: brandId }).populate('brand').lean()
 
     if (!store) {
       // 店家不存在，繼續正常流程（會顯示預設標題）
@@ -41,8 +39,8 @@ export const dynamicMetaTags = async (req, res, next) => {
     // 準備動態內容
     const storeName = store.name
     const brandName = store.brand?.name || '光兔點餐'
-    const title = `${storeName} - ${brandName}`
-    const description = `歡迎光臨 ${storeName}！立即查看菜單並線上點餐。`
+    const title = `${storeName}`
+    const description = `立即查看菜單並線上點餐。`
     const imageUrl = store.image?.url || ''
 
     // 取得完整 URL (用於 Open Graph)
