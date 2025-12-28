@@ -79,4 +79,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   }
 }
 
+// 索引：優化認證查詢性能
+userSchema.index({ brand: 1, phone: 1 })
+
 export default mongoose.model('User', userSchema)

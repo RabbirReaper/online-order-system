@@ -7,6 +7,7 @@ import session from 'express-session'
 import { fileURLToPath } from 'url'
 import apiRoutes from './server/routes/index.js'
 import webhookRoutes from './server/routes/webhooks.js'
+import { dynamicMetaTags } from './server/middlewares/dynamicMetaTags.js'
 
 dotenv.config()
 const app = express()
@@ -70,7 +71,8 @@ async function startServer() {
     // MongoDB 連接成功後，才註冊路由和啟動伺服器
     app.use('/api', apiRoutes)
 
-    app.get(/^\/(?!api).*/, (req, res) => {
+    // 動態 Meta Tags 中間件（必須在靜態文件路由之前）
+    app.get(/^\/(?!api).*/, dynamicMetaTags, (req, res) => {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
     })
 
