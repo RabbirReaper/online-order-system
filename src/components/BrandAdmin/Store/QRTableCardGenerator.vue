@@ -47,16 +47,16 @@
                   type="radio"
                   class="btn-check"
                   name="size"
-                  id="size-1x1"
-                  value="1x1"
+                  id="size-square"
+                  value="square"
                   v-model="tableConfig.size"
                   @change="updatePreview"
                 />
-                <label class="btn btn-outline-primary" for="size-1x1">
+                <label class="btn btn-outline-primary" for="size-square">
                   <div class="text-center">
-                    <div class="fw-bold">1×1</div>
+                    <div class="fw-bold">■</div>
                     <small>10×10cm</small><br />
-                    <small class="text-muted">小桌面</small>
+                    <small class="text-muted">正方形</small>
                   </div>
                 </label>
 
@@ -64,16 +64,16 @@
                   type="radio"
                   class="btn-check"
                   name="size"
-                  id="size-2x3"
-                  value="2x3"
+                  id="size-triangle"
+                  value="triangle"
                   v-model="tableConfig.size"
                   @change="updatePreview"
                 />
-                <label class="btn btn-outline-primary" for="size-2x3">
+                <label class="btn btn-outline-primary" for="size-triangle">
                   <div class="text-center">
-                    <div class="fw-bold">2×3</div>
-                    <small>20×30cm</small><br />
-                    <small class="text-muted">標準餐桌</small>
+                    <div class="fw-bold">◢</div>
+                    <small>10×10cm</small><br />
+                    <small class="text-muted">直角三角形</small>
                   </div>
                 </label>
 
@@ -81,16 +81,16 @@
                   type="radio"
                   class="btn-check"
                   name="size"
-                  id="size-3x4"
-                  value="3x4"
+                  id="size-circle"
+                  value="circle"
                   v-model="tableConfig.size"
                   @change="updatePreview"
                 />
-                <label class="btn btn-outline-primary" for="size-3x4">
+                <label class="btn btn-outline-primary" for="size-circle">
                   <div class="text-center">
-                    <div class="fw-bold">3×4</div>
-                    <small>30×40cm</small><br />
-                    <small class="text-muted">大餐桌</small>
+                    <div class="fw-bold">●</div>
+                    <small>10×10cm</small><br />
+                    <small class="text-muted">圓形</small>
                   </div>
                 </label>
               </div>
@@ -400,39 +400,39 @@ const showModal = computed({
 
 // 尺寸配置
 const sizeConfigs = {
-  '1x1': {
+  square: {
     width: 1181,
     height: 1181,
     qrSize: 400,
     fontSize: 48,
     padding: 80,
-    display: '1×1',
+    display: '正方形',
     realSize: '10×10cm',
   },
-  '2x3': {
-    width: 2362,
-    height: 3543,
-    qrSize: 800,
-    fontSize: 96,
-    padding: 160,
-    display: '2×3',
-    realSize: '20×30cm',
+  triangle: {
+    width: 1181,
+    height: 1181,
+    qrSize: 400,
+    fontSize: 48,
+    padding: 80,
+    display: '直角三角形',
+    realSize: '10×10cm',
   },
-  '3x4': {
-    width: 3543,
-    height: 4724,
-    qrSize: 1200,
-    fontSize: 144,
-    padding: 240,
-    display: '3×4',
-    realSize: '30×40cm',
+  circle: {
+    width: 1181,
+    height: 1181,
+    qrSize: 400,
+    fontSize: 48,
+    padding: 80,
+    display: '圓形',
+    realSize: '10×10cm',
   },
 }
 
 // 桌牌配置
 const tableConfig = ref({
   tableNumber: '',
-  size: '2x3',
+  size: 'triangle',
   backgroundColor: '#FFFFFF',
   textColor: '#000000',
 })
@@ -537,22 +537,81 @@ const generateTableCard = async (config) => {
   canvas.width = sizeConfig.width
   canvas.height = sizeConfig.height
 
+  // 根據尺寸設定裁剪路徑
+  ctx.save()
+
+  if (config.size === 'triangle') {
+    // 直角三角形裁剪路徑（等腰直角三角形，直角在左下）
+    ctx.beginPath()
+    const leftX = sizeConfig.padding
+    const rightX = canvas.width - sizeConfig.padding
+    const topY = sizeConfig.padding
+    const bottomY = canvas.height - sizeConfig.padding
+
+    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
+    ctx.lineTo(leftX, topY) // 左上角
+    ctx.lineTo(rightX, bottomY) // 右下角
+    ctx.closePath()
+  } else if (config.size === 'circle') {
+    // 圓形裁剪路徑
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(canvas.width, canvas.height) / 2 - sizeConfig.padding * 0.5
+
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+    ctx.closePath()
+  } else {
+    // 1x1 保持矩形
+    ctx.beginPath()
+    ctx.rect(0, 0, canvas.width, canvas.height)
+    ctx.closePath()
+  }
+
+  ctx.clip()
+
   // 填充背景色
   ctx.fillStyle = config.backgroundColor
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  // 繪製裝飾邊框
-  const borderWidth = sizeConfig.padding * 0.2
+  ctx.restore()
+
+  // 繪製實心外框
+  const borderWidth = sizeConfig.padding * 0.3
   ctx.strokeStyle = config.textColor
   ctx.lineWidth = borderWidth
-  ctx.setLineDash([borderWidth * 2, borderWidth])
-  ctx.strokeRect(
-    borderWidth / 2,
-    borderWidth / 2,
-    canvas.width - borderWidth,
-    canvas.height - borderWidth,
-  )
-  ctx.setLineDash([]) // 重置虛線
+
+  if (config.size === 'triangle') {
+    // 直角三角形實心外框
+    ctx.beginPath()
+    const leftX = sizeConfig.padding
+    const rightX = canvas.width - sizeConfig.padding
+    const topY = sizeConfig.padding
+    const bottomY = canvas.height - sizeConfig.padding
+
+    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
+    ctx.lineTo(leftX, topY) // 左上角
+    ctx.lineTo(rightX, bottomY) // 右下角
+    ctx.closePath()
+    ctx.stroke()
+  } else if (config.size === 'circle') {
+    // 圓形實心外框
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(canvas.width, canvas.height) / 2 - sizeConfig.padding * 0.5
+
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+    ctx.stroke()
+  } else {
+    // 1x1 矩形實心外框
+    ctx.strokeRect(
+      borderWidth / 2,
+      borderWidth / 2,
+      canvas.width - borderWidth,
+      canvas.height - borderWidth,
+    )
+  }
 
   // 生成並繪製 QR Code
   const qrCodeDataURL = await generateQRCode(config.tableNumber)
@@ -562,46 +621,95 @@ const generateTableCard = async (config) => {
 
   return new Promise((resolve) => {
     qrImage.onload = () => {
-      // 計算佈局
-      const centerX = canvas.width / 2
-      const topPadding = sizeConfig.padding * 1.5
+      // 裁剪內容區域
+      ctx.save()
 
-      // 繪製品牌名稱（頂部）
-      ctx.font = `bold ${sizeConfig.fontSize * 0.7}px Arial, "Microsoft JhengHei", sans-serif`
-      ctx.fillStyle = config.textColor
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'top'
+      if (config.size === 'triangle') {
+        // 直角三角形裁剪
+        ctx.beginPath()
+        const leftX = sizeConfig.padding
+        const rightX = canvas.width - sizeConfig.padding
+        const topY = sizeConfig.padding
+        const bottomY = canvas.height - sizeConfig.padding
 
-      // 品牌名稱背景裝飾
-      const brandText = 'Rabbir 點餐系統'
-      const brandMetrics = ctx.measureText(brandText)
-      const brandBg = {
-        width: brandMetrics.width + sizeConfig.padding * 0.8,
-        height: sizeConfig.fontSize * 0.9,
-        x: centerX - (brandMetrics.width + sizeConfig.padding * 0.8) / 2,
-        y: topPadding * 0.6,
+        ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
+        ctx.lineTo(leftX, topY) // 左上角
+        ctx.lineTo(rightX, bottomY) // 右下角
+        ctx.closePath()
+        ctx.clip()
+      } else if (config.size === 'circle') {
+        // 圓形裁剪
+        const centerX = canvas.width / 2
+        const centerY = canvas.height / 2
+        const radius = Math.min(canvas.width, canvas.height) / 2 - sizeConfig.padding * 0.5
+
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+        ctx.clip()
       }
 
-      // 繪製品牌背景裝飾
-      ctx.fillStyle = config.textColor + '10' // 透明度10%
-      ctx.fillRect(brandBg.x, brandBg.y, brandBg.width, brandBg.height)
+      // 計算佈局
+      const centerX = canvas.width / 2
+      let centerY, topPadding, qrY
 
-      // 繪製品牌名稱
-      ctx.fillStyle = config.textColor
-      ctx.fillText(brandText, centerX, topPadding)
+      if (config.size === 'triangle') {
+        // 直角三角形：QR code 在左下角
+        topPadding = sizeConfig.padding * 2
+        // 不使用 centerY，直接計算位置
+      } else if (config.size === 'circle') {
+        // 圓形：QR code 在圓心
+        centerY = canvas.height / 2
+        topPadding = sizeConfig.padding * 1.2
+        qrY = centerY - sizeConfig.qrSize / 2 - sizeConfig.fontSize * 0.5
+      } else {
+        // 1x1 保持原樣
+        topPadding = sizeConfig.padding * 1.5
+        const lineY = topPadding + sizeConfig.fontSize * 1.2
+        qrY = lineY + sizeConfig.padding * 0.8
+      }
 
-      // 繪製裝飾線
-      const lineY = topPadding + sizeConfig.fontSize * 1.2
-      ctx.strokeStyle = config.textColor
-      ctx.lineWidth = 3
-      ctx.beginPath()
-      ctx.moveTo(centerX - sizeConfig.qrSize * 0.3, lineY)
-      ctx.lineTo(centerX + sizeConfig.qrSize * 0.3, lineY)
-      ctx.stroke()
+      // 繪製品牌名稱（頂部）- 僅限 1x1
+      if (config.size === 'square') {
+        ctx.font = `bold ${sizeConfig.fontSize * 0.7}px Arial, "Microsoft JhengHei", sans-serif`
+        ctx.fillStyle = config.textColor
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
 
-      // 計算 QR Code 位置（中間偏上）
-      const qrX = (canvas.width - sizeConfig.qrSize) / 2
-      const qrY = lineY + sizeConfig.padding * 0.8
+        const brandText = 'Rabbir 點餐系統'
+        const brandMetrics = ctx.measureText(brandText)
+        const brandBg = {
+          width: brandMetrics.width + sizeConfig.padding * 0.8,
+          height: sizeConfig.fontSize * 0.9,
+          x: centerX - (brandMetrics.width + sizeConfig.padding * 0.8) / 2,
+          y: topPadding * 0.6,
+        }
+
+        ctx.fillStyle = config.textColor + '10'
+        ctx.fillRect(brandBg.x, brandBg.y, brandBg.width, brandBg.height)
+
+        ctx.fillStyle = config.textColor
+        ctx.fillText(brandText, centerX, topPadding)
+
+        // 裝飾線
+        const lineY = topPadding + sizeConfig.fontSize * 1.2
+        ctx.strokeStyle = config.textColor
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.moveTo(centerX - sizeConfig.qrSize * 0.3, lineY)
+        ctx.lineTo(centerX + sizeConfig.qrSize * 0.3, lineY)
+        ctx.stroke()
+      }
+
+      // 計算 QR Code 位置
+      let qrX
+      if (config.size === 'triangle') {
+        // 直角三角形：QR code 在左下角
+        qrX = sizeConfig.padding * 1.5
+        qrY = canvas.height - sizeConfig.padding * 1.5 - sizeConfig.qrSize
+      } else {
+        // 其他形狀：居中
+        qrX = (canvas.width - sizeConfig.qrSize) / 2
+      }
 
       // QR Code 背景陰影
       ctx.fillStyle = 'rgba(0,0,0,0.1)'
@@ -625,11 +733,24 @@ const generateTableCard = async (config) => {
 
       const tableText = `桌號 ${config.tableNumber}`
       const tableMetrics = ctx.measureText(tableText)
-      const tableBg = {
-        width: tableMetrics.width + sizeConfig.padding * 0.6,
-        height: tableTextSize * 1.2,
-        x: centerX - (tableMetrics.width + sizeConfig.padding * 0.6) / 2,
-        y: tableNumberY - tableTextSize * 0.1,
+
+      let tableBg
+      if (config.size === 'triangle') {
+        // 直角三角形：桌號對齊 QR code 左側
+        tableBg = {
+          width: tableMetrics.width + sizeConfig.padding * 0.6,
+          height: tableTextSize * 1.2,
+          x: qrX,
+          y: tableNumberY - tableTextSize * 0.1,
+        }
+      } else {
+        // 其他形狀：桌號居中
+        tableBg = {
+          width: tableMetrics.width + sizeConfig.padding * 0.6,
+          height: tableTextSize * 1.2,
+          x: centerX - (tableMetrics.width + sizeConfig.padding * 0.6) / 2,
+          y: tableNumberY - tableTextSize * 0.1,
+        }
       }
 
       // 圓角矩形背景
@@ -637,17 +758,31 @@ const generateTableCard = async (config) => {
 
       // 桌號文字（白色）
       ctx.fillStyle = config.backgroundColor
-      ctx.fillText(tableText, centerX, tableNumberY)
-
-      // 底部裝飾圖案
-      ctx.fillStyle = config.textColor + '30' // 透明度30%
-      const decorY = tableNumberY + tableTextSize * 1.8
-      for (let i = 0; i < 5; i++) {
-        const x = centerX - 60 + i * 30
-        ctx.beginPath()
-        ctx.arc(x, decorY, 6, 0, 2 * Math.PI)
-        ctx.fill()
+      if (config.size === 'triangle') {
+        // 直角三角形：左對齊
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.fillText(tableText, qrX + sizeConfig.padding * 0.3, tableNumberY)
+      } else {
+        // 其他形狀：居中
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+        ctx.fillText(tableText, centerX, tableNumberY)
       }
+
+      // 底部裝飾圖案 - 僅限 1x1
+      if (config.size === 'square') {
+        ctx.fillStyle = config.textColor + '30'
+        const decorY = tableNumberY + tableTextSize * 1.8
+        for (let i = 0; i < 5; i++) {
+          const x = centerX - 60 + i * 30
+          ctx.beginPath()
+          ctx.arc(x, decorY, 6, 0, 2 * Math.PI)
+          ctx.fill()
+        }
+      }
+
+      ctx.restore()
 
       resolve(canvas.toDataURL('image/png'))
     }
@@ -669,22 +804,81 @@ const updatePreview = async () => {
   // 清空畫布
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+  // 根據尺寸設定裁剪路徑
+  ctx.save()
+
+  if (tableConfig.value.size === '2x3') {
+    // 直角三角形裁剪路徑
+    ctx.beginPath()
+    const leftX = config.padding * scale
+    const rightX = canvas.width - config.padding * scale
+    const topY = config.padding * scale
+    const bottomY = canvas.height - config.padding * scale
+
+    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
+    ctx.lineTo(leftX, topY) // 左上角
+    ctx.lineTo(rightX, bottomY) // 右下角
+    ctx.closePath()
+  } else if (tableConfig.value.size === '3x4') {
+    // 圓形裁剪路徑
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(canvas.width, canvas.height) / 2 - config.padding * scale * 0.5
+
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+    ctx.closePath()
+  } else {
+    // 1x1 保持矩形
+    ctx.beginPath()
+    ctx.rect(0, 0, canvas.width, canvas.height)
+    ctx.closePath()
+  }
+
+  ctx.clip()
+
   // 填充背景色
   ctx.fillStyle = tableConfig.value.backgroundColor
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  // 繪製裝飾邊框（縮放版）
-  const borderWidth = config.padding * scale * 0.2
+  ctx.restore()
+
+  // 繪製實心外框（縮放版）
+  const borderWidth = config.padding * scale * 0.3
   ctx.strokeStyle = tableConfig.value.textColor
   ctx.lineWidth = borderWidth
-  ctx.setLineDash([borderWidth * 2, borderWidth])
-  ctx.strokeRect(
-    borderWidth / 2,
-    borderWidth / 2,
-    canvas.width - borderWidth,
-    canvas.height - borderWidth,
-  )
-  ctx.setLineDash([])
+
+  if (tableConfig.value.size === '2x3') {
+    // 直角三角形實心外框
+    ctx.beginPath()
+    const leftX = config.padding * scale
+    const rightX = canvas.width - config.padding * scale
+    const topY = config.padding * scale
+    const bottomY = canvas.height - config.padding * scale
+
+    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
+    ctx.lineTo(leftX, topY) // 左上角
+    ctx.lineTo(rightX, bottomY) // 右下角
+    ctx.closePath()
+    ctx.stroke()
+  } else if (tableConfig.value.size === '3x4') {
+    // 圓形實心外框
+    const centerX = canvas.width / 2
+    const centerY = canvas.height / 2
+    const radius = Math.min(canvas.width, canvas.height) / 2 - config.padding * scale * 0.5
+
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+    ctx.stroke()
+  } else {
+    // 1x1 矩形實心外框
+    ctx.strokeRect(
+      borderWidth / 2,
+      borderWidth / 2,
+      canvas.width - borderWidth,
+      canvas.height - borderWidth,
+    )
+  }
 
   try {
     const qrSize = config.qrSize * scale
@@ -696,44 +890,95 @@ const updatePreview = async () => {
 
     const qrImage = new Image()
     qrImage.onload = () => {
-      const centerX = canvas.width / 2
-      const topPadding = padding * 1.5
+      // 裁剪內容區域
+      ctx.save()
 
-      // 繪製品牌名稱（頂部）
-      ctx.font = `bold ${fontSize * 0.7}px Arial, "Microsoft JhengHei", sans-serif`
-      ctx.fillStyle = tableConfig.value.textColor
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'top'
+      if (tableConfig.value.size === 'triangle') {
+        // 直角三角形裁剪
+        ctx.beginPath()
+        const leftX = config.padding * scale
+        const rightX = canvas.width - config.padding * scale
+        const topY = config.padding * scale
+        const bottomY = canvas.height - config.padding * scale
 
-      const brandText = 'Rabbir 點餐系統'
-      const brandMetrics = ctx.measureText(brandText)
+        ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
+        ctx.lineTo(leftX, topY) // 左上角
+        ctx.lineTo(rightX, bottomY) // 右下角
+        ctx.closePath()
+        ctx.clip()
+      } else if (tableConfig.value.size === 'circle') {
+        // 圓形裁剪
+        const centerX = canvas.width / 2
+        const centerY = canvas.height / 2
+        const radius = Math.min(canvas.width, canvas.height) / 2 - config.padding * scale * 0.5
 
-      // 品牌名稱背景裝飾
-      const brandBg = {
-        width: brandMetrics.width + padding * 0.8,
-        height: fontSize * 0.9,
-        x: centerX - (brandMetrics.width + padding * 0.8) / 2,
-        y: topPadding * 0.6,
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+        ctx.clip()
       }
 
-      ctx.fillStyle = tableConfig.value.textColor + '10'
-      ctx.fillRect(brandBg.x, brandBg.y, brandBg.width, brandBg.height)
+      const centerX = canvas.width / 2
+      let centerY, topPadding, qrY
 
-      ctx.fillStyle = tableConfig.value.textColor
-      ctx.fillText(brandText, centerX, topPadding)
+      if (tableConfig.value.size === 'triangle') {
+        // 直角三角形：QR code 在左下角
+        topPadding = padding * 2
+        // 不使用 centerY，直接計算位置
+      } else if (tableConfig.value.size === 'circle') {
+        // 圓形：QR code 在圓心
+        centerY = canvas.height / 2
+        topPadding = padding * 1.2
+        qrY = centerY - qrSize / 2 - fontSize * 0.5
+      } else {
+        // 1x1 保持原樣
+        topPadding = padding * 1.5
+        const lineY = topPadding + fontSize * 1.2
+        qrY = lineY + padding * 0.8
+      }
 
-      // 裝飾線
-      const lineY = topPadding + fontSize * 1.2
-      ctx.strokeStyle = tableConfig.value.textColor
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(centerX - qrSize * 0.3, lineY)
-      ctx.lineTo(centerX + qrSize * 0.3, lineY)
-      ctx.stroke()
+      // 繪製品牌名稱（頂部）- 僅限 1x1
+      if (tableConfig.value.size === 'square') {
+        ctx.font = `bold ${fontSize * 0.7}px Arial, "Microsoft JhengHei", sans-serif`
+        ctx.fillStyle = tableConfig.value.textColor
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+
+        const brandText = 'Rabbir 點餐系統'
+        const brandMetrics = ctx.measureText(brandText)
+
+        const brandBg = {
+          width: brandMetrics.width + padding * 0.8,
+          height: fontSize * 0.9,
+          x: centerX - (brandMetrics.width + padding * 0.8) / 2,
+          y: topPadding * 0.6,
+        }
+
+        ctx.fillStyle = tableConfig.value.textColor + '10'
+        ctx.fillRect(brandBg.x, brandBg.y, brandBg.width, brandBg.height)
+
+        ctx.fillStyle = tableConfig.value.textColor
+        ctx.fillText(brandText, centerX, topPadding)
+
+        // 裝飾線
+        const lineY = topPadding + fontSize * 1.2
+        ctx.strokeStyle = tableConfig.value.textColor
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(centerX - qrSize * 0.3, lineY)
+        ctx.lineTo(centerX + qrSize * 0.3, lineY)
+        ctx.stroke()
+      }
 
       // QR Code 位置
-      const qrX = (canvas.width - qrSize) / 2
-      const qrY = lineY + padding * 0.8
+      let qrX
+      if (tableConfig.value.size === 'triangle') {
+        // 直角三角形：QR code 在左下角
+        qrX = padding * 1.5
+        qrY = canvas.height - padding * 1.5 - qrSize
+      } else {
+        // 其他形狀：居中
+        qrX = (canvas.width - qrSize) / 2
+      }
 
       // QR Code 背景陰影（縮放）
       ctx.fillStyle = 'rgba(0,0,0,0.1)'
@@ -756,28 +1001,54 @@ const updatePreview = async () => {
       const tableMetrics = ctx.measureText(tableText)
 
       // 桌號背景
-      const tableBg = {
-        width: tableMetrics.width + padding * 0.6,
-        height: tableTextSize * 1.2,
-        x: centerX - (tableMetrics.width + padding * 0.6) / 2,
-        y: tableNumberY - tableTextSize * 0.1,
+      let tableBg
+      if (tableConfig.value.size === 'triangle') {
+        // 直角三角形：桌號對齊 QR code 左側
+        tableBg = {
+          width: tableMetrics.width + padding * 0.6,
+          height: tableTextSize * 1.2,
+          x: qrX,
+          y: tableNumberY - tableTextSize * 0.1,
+        }
+      } else {
+        // 其他形狀：桌號居中
+        tableBg = {
+          width: tableMetrics.width + padding * 0.6,
+          height: tableTextSize * 1.2,
+          x: centerX - (tableMetrics.width + padding * 0.6) / 2,
+          y: tableNumberY - tableTextSize * 0.1,
+        }
       }
 
       ctx.fillStyle = tableConfig.value.textColor
       ctx.fillRect(tableBg.x, tableBg.y, tableBg.width, tableBg.height)
 
       ctx.fillStyle = tableConfig.value.backgroundColor
-      ctx.fillText(tableText, centerX, tableNumberY)
-
-      // 底部裝飾圖案
-      ctx.fillStyle = tableConfig.value.textColor + '30'
-      const decorY = tableNumberY + tableTextSize * 1.8
-      for (let i = 0; i < 5; i++) {
-        const x = centerX - 12 + i * 6
-        ctx.beginPath()
-        ctx.arc(x, decorY, 1, 0, 2 * Math.PI)
-        ctx.fill()
+      if (tableConfig.value.size === 'triangle') {
+        // 直角三角形：左對齊
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.fillText(tableText, qrX + padding * 0.3, tableNumberY)
+      } else {
+        // 其他形狀：居中
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+        ctx.fillText(tableText, centerX, tableNumberY)
       }
+
+      // 底部裝飾圖案 - 僅限 1x1
+      if (tableConfig.value.size === 'square') {
+        ctx.fillStyle = tableConfig.value.textColor + '30'
+        const decorY = tableNumberY + tableTextSize * 1.8
+        for (let i = 0; i < 5; i++) {
+          const x = centerX - 12 + i * 6
+          ctx.beginPath()
+          ctx.arc(x, decorY, 1, 0, 2 * Math.PI)
+          ctx.fill()
+        }
+      }
+
+      ctx.restore()
     }
     qrImage.src = qrCodeDataURL
   } catch (error) {
@@ -864,7 +1135,7 @@ const resetModal = () => {
   // 重置桌牌配置
   tableConfig.value = {
     tableNumber: '',
-    size: '2x3',
+    size: 'triangle',
     backgroundColor: '#FFFFFF',
     textColor: '#000000',
   }
@@ -992,19 +1263,19 @@ onMounted(() => {
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.preview-1x1 .preview-canvas {
+.preview-square .preview-canvas {
   width: 240px;
   height: 240px;
 }
 
-.preview-2x3 .preview-canvas {
-  width: 220px;
-  height: 330px;
+.preview-triangle .preview-canvas {
+  width: 240px;
+  height: 240px;
 }
 
-.preview-3x4 .preview-canvas {
+.preview-circle .preview-canvas {
   width: 240px;
-  height: 320px;
+  height: 240px;
 }
 
 .form-control-color {
