@@ -37,112 +37,201 @@
               <BFormText class="mt-1">支援中英文混合，最多 10 個字符</BFormText>
             </div>
 
-            <!-- 尺寸選擇 -->
+            <!-- 背景圖片上傳 -->
             <div class="mb-4">
               <label class="form-label fw-bold">
-                <i class="bi bi-aspect-ratio me-1"></i>桌牌尺寸
+                <i class="bi bi-image me-1"></i>背景圖片
+                <span class="badge bg-secondary ms-2">選填</span>
               </label>
-              <div class="btn-group w-100" role="group">
-                <input
-                  type="radio"
-                  class="btn-check"
-                  name="size"
-                  id="size-square"
-                  value="square"
-                  v-model="tableConfig.size"
-                  @change="updatePreview"
+              <BInputGroup>
+                <BFormFile
+                  ref="backgroundFileInput"
+                  @change="handleBackgroundImageChange"
+                  accept="image/png,image/jpeg,image/jpg"
+                  :state="errors.backgroundImage ? false : null"
                 />
-                <label class="btn btn-outline-primary" for="size-square">
-                  <div class="text-center">
-                    <div class="fw-bold">■</div>
-                    <small>10×10cm</small><br />
-                    <small class="text-muted">正方形</small>
-                  </div>
-                </label>
+                <BButton
+                  variant="outline-secondary"
+                  @click="clearBackgroundImage"
+                  v-if="backgroundConfig.imageData"
+                >
+                  清除
+                </BButton>
+              </BInputGroup>
+              <BFormInvalidFeedback v-if="errors.backgroundImage">
+                {{ errors.backgroundImage }}
+              </BFormInvalidFeedback>
+              <BFormText class="mt-1">
+                <i class="bi bi-info-circle me-1"></i>
+                支援 PNG、JPG 格式，建議尺寸 1181×1181px (10×10cm @ 300 DPI)。若不上傳，將生成純 QR
+                Code（不含桌號文字）。
+              </BFormText>
 
-                <input
-                  type="radio"
-                  class="btn-check"
-                  name="size"
-                  id="size-triangle"
-                  value="triangle"
-                  v-model="tableConfig.size"
-                  @change="updatePreview"
-                />
-                <label class="btn btn-outline-primary" for="size-triangle">
-                  <div class="text-center">
-                    <div class="fw-bold">◢</div>
-                    <small>10×10cm</small><br />
-                    <small class="text-muted">直角三角形</small>
-                  </div>
-                </label>
-
-                <input
-                  type="radio"
-                  class="btn-check"
-                  name="size"
-                  id="size-circle"
-                  value="circle"
-                  v-model="tableConfig.size"
-                  @change="updatePreview"
-                />
-                <label class="btn btn-outline-primary" for="size-circle">
-                  <div class="text-center">
-                    <div class="fw-bold">●</div>
-                    <small>10×10cm</small><br />
-                    <small class="text-muted">圓形</small>
-                  </div>
-                </label>
+              <!-- 圖片資訊顯示 -->
+              <div v-if="backgroundConfig.imageData" class="alert alert-info mt-2 small mb-0">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                已上傳圖片：{{ backgroundConfig.originalWidth }} ×
+                {{ backgroundConfig.originalHeight }} px
               </div>
             </div>
 
-            <!-- QR Code 連結模式選擇 -->
+            <!-- QR Code 設定 -->
             <div class="mb-4">
               <label class="form-label fw-bold">
-                <i class="bi bi-link-45deg me-1"></i>QR Code 連結模式
+                <i class="bi bi-qr-code me-1"></i>QR Code 設定
               </label>
-              <div class="btn-group w-100" role="group">
-                <input
-                  type="radio"
-                  class="btn-check"
-                  name="urlMode"
-                  id="mode-liff"
-                  value="liff"
-                  v-model="urlMode"
-                  @change="updatePreview"
-                />
-                <label class="btn btn-outline-info" for="mode-liff">
-                  <div class="text-center">
-                    <i class="bi bi-line"></i>
-                    <div class="fw-bold">LINE LIFF</div>
-                    <small class="text-muted">LINE 內開啟</small>
-                  </div>
-                </label>
 
-                <input
-                  type="radio"
-                  class="btn-check"
-                  name="urlMode"
-                  id="mode-direct"
-                  value="direct"
-                  v-model="urlMode"
-                  @change="updatePreview"
-                />
-                <label class="btn btn-outline-success" for="mode-direct">
-                  <div class="text-center">
-                    <i class="bi bi-globe"></i>
-                    <div class="fw-bold">直接連結</div>
-                    <small class="text-muted">任何瀏覽器</small>
-                  </div>
-                </label>
-              </div>
-              <BFormText class="mt-2">
+              <div v-if="!backgroundConfig.imageData" class="alert alert-warning small mb-3">
                 <i class="bi bi-info-circle me-1"></i>
-                <span v-if="urlMode === 'liff'">
-                  LINE LIFF 模式：適用於從 LINE 掃描 QR Code 的客戶
-                </span>
-                <span v-else> 直接連結模式：適用於從任何瀏覽器掃描 QR Code 的客戶 </span>
-              </BFormText>
+                未上傳背景圖片時，QR Code 將自動置中，位置設定無效。
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label small">X 座標 (px)</label>
+                  <BFormInput
+                    type="number"
+                    v-model.number="qrConfig.x"
+                    min="0"
+                    :max="backgroundConfig.canvasWidth - qrConfig.size"
+                    @input="updatePreview"
+                  />
+                  <BFormText class="small">左邊界距離</BFormText>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label small">Y 座標 (px)</label>
+                  <BFormInput
+                    type="number"
+                    v-model.number="qrConfig.y"
+                    min="0"
+                    :max="backgroundConfig.canvasHeight - qrConfig.size"
+                    @input="updatePreview"
+                  />
+                  <BFormText class="small">上邊界距離</BFormText>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label small">大小 (px)</label>
+                  <BFormInput
+                    type="number"
+                    v-model.number="qrConfig.size"
+                    min="100"
+                    max="800"
+                    step="10"
+                    @input="updatePreview"
+                  />
+                  <BFormText class="small">QR code 尺寸</BFormText>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small">前景色（圖案顏色）</label>
+                  <div class="d-flex">
+                    <BFormInput
+                      type="color"
+                      v-model="qrConfig.darkColor"
+                      class="form-control-color"
+                      style="width: 50px; height: 38px"
+                      @input="updatePreview"
+                    />
+                    <BFormInput
+                      v-model="qrConfig.darkColor"
+                      placeholder="#000000"
+                      class="ms-2"
+                      @input="updatePreview"
+                    />
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label small">背景色</label>
+                  <div class="d-flex">
+                    <BFormInput
+                      type="color"
+                      v-model="qrConfig.lightColor"
+                      class="form-control-color"
+                      style="width: 50px; height: 38px"
+                      @input="updatePreview"
+                    />
+                    <BFormInput
+                      v-model="qrConfig.lightColor"
+                      placeholder="#FFFFFF"
+                      class="ms-2"
+                      @input="updatePreview"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 桌號文字設定 -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">
+                <i class="bi bi-fonts me-1"></i>桌號文字設定
+              </label>
+
+              <div v-if="!backgroundConfig.imageData" class="alert alert-warning small mb-3">
+                <i class="bi bi-info-circle me-1"></i>
+                未上傳背景圖片時，純 QR Code 模式不會顯示桌號文字。
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label small">X 座標 (px)</label>
+                  <BFormInput
+                    type="number"
+                    v-model.number="tableNumberConfig.x"
+                    min="0"
+                    :max="backgroundConfig.canvasWidth"
+                    @input="updatePreview"
+                  />
+                  <BFormText class="small">水平位置</BFormText>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label small">Y 座標 (px)</label>
+                  <BFormInput
+                    type="number"
+                    v-model.number="tableNumberConfig.y"
+                    min="0"
+                    :max="backgroundConfig.canvasHeight"
+                    @input="updatePreview"
+                  />
+                  <BFormText class="small">垂直位置</BFormText>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label small">字體大小 (px)</label>
+                  <BFormInput
+                    type="number"
+                    v-model.number="tableNumberConfig.fontSize"
+                    min="20"
+                    max="200"
+                    step="2"
+                    @input="updatePreview"
+                  />
+                  <BFormText class="small">文字大小</BFormText>
+                </div>
+
+                <div class="col-md-12">
+                  <label class="form-label small">文字顏色</label>
+                  <div class="d-flex">
+                    <BFormInput
+                      type="color"
+                      v-model="tableNumberConfig.color"
+                      class="form-control-color"
+                      style="width: 50px; height: 38px"
+                      @input="updatePreview"
+                    />
+                    <BFormInput
+                      v-model="tableNumberConfig.color"
+                      placeholder="#000000"
+                      class="ms-2"
+                      @input="updatePreview"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- QR Code 連結預覽 -->
@@ -155,49 +244,6 @@
                     <code class="d-block text-break small bg-white p-2 rounded border">{{
                       previewUrl
                     }}</code>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 樣式設定 -->
-            <div class="mb-4">
-              <label class="form-label fw-bold"> <i class="bi bi-palette me-1"></i>樣式設定 </label>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label small">背景顏色</label>
-                  <div class="d-flex">
-                    <BFormInput
-                      type="color"
-                      v-model="tableConfig.backgroundColor"
-                      class="form-control-color"
-                      style="width: 50px; height: 38px"
-                      @input="updatePreview"
-                    />
-                    <BFormInput
-                      v-model="tableConfig.backgroundColor"
-                      placeholder="#FFFFFF"
-                      class="ms-2"
-                      @input="updatePreview"
-                    />
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label small">文字顏色</label>
-                  <div class="d-flex">
-                    <BFormInput
-                      type="color"
-                      v-model="tableConfig.textColor"
-                      class="form-control-color"
-                      style="width: 50px; height: 38px"
-                      @input="updatePreview"
-                    />
-                    <BFormInput
-                      v-model="tableConfig.textColor"
-                      placeholder="#000000"
-                      class="ms-2"
-                      @input="updatePreview"
-                    />
                   </div>
                 </div>
               </div>
@@ -279,11 +325,11 @@
             <div class="flex-grow-1 d-flex align-items-center justify-content-center">
               <div v-if="!tableConfig.tableNumber" class="text-center text-muted">
                 <i class="bi bi-qr-code" style="font-size: 4rem; opacity: 0.3"></i>
-                <p class="mt-2">請輸入桌號以顯示預覽</p>
+                <p class="mt-2">請輸入桌號以生成 QR Code</p>
               </div>
 
               <div v-else class="text-center preview-container">
-                <div class="preview-frame" :class="`preview-${tableConfig.size}`">
+                <div class="preview-frame">
                   <canvas
                     ref="previewCanvas"
                     class="preview-canvas"
@@ -294,8 +340,13 @@
 
                 <div class="mt-3">
                   <small class="text-muted">
-                    桌號: {{ tableConfig.tableNumber }} | 尺寸: {{ currentSizeInfo.display }} |
-                    實際大小: {{ currentSizeInfo.realSize }}
+                    <span v-if="backgroundConfig.imageData">
+                      桌號: {{ tableConfig.tableNumber }} | 圖片尺寸:
+                      {{ backgroundConfig.canvasWidth }} × {{ backgroundConfig.canvasHeight }} px
+                    </span>
+                    <span v-else>
+                      桌號: {{ tableConfig.tableNumber }} | 純 QR Code 模式（不含桌號文字）
+                    </span>
                   </small>
                 </div>
               </div>
@@ -363,6 +414,9 @@ import {
   BFormCheckbox,
   BFormTextarea,
   BFormText,
+  BInputGroup,
+  BFormFile,
+  BFormInvalidFeedback,
 } from 'bootstrap-vue-next'
 import QRCode from 'qrcode'
 import JSZip from 'jszip'
@@ -398,47 +452,44 @@ const showModal = computed({
   set: (value) => emit('update:show', value),
 })
 
-// 尺寸配置
-const sizeConfigs = {
-  square: {
-    width: 1181,
-    height: 1181,
-    qrSize: 400,
-    fontSize: 48,
-    padding: 80,
-    display: '正方形',
-    realSize: '10×10cm',
-  },
-  triangle: {
-    width: 1181,
-    height: 1181,
-    qrSize: 400,
-    fontSize: 48,
-    padding: 80,
-    display: '直角三角形',
-    realSize: '10×10cm',
-  },
-  circle: {
-    width: 1181,
-    height: 1181,
-    qrSize: 400,
-    fontSize: 48,
-    padding: 80,
-    display: '圓形',
-    realSize: '10×10cm',
-  },
-}
-
-// 桌牌配置
-const tableConfig = ref({
-  tableNumber: '',
-  size: 'triangle',
-  backgroundColor: '#FFFFFF',
-  textColor: '#000000',
+// 背景圖片配置
+const backgroundConfig = ref({
+  imageData: null, // Base64 圖片數據
+  originalWidth: 0, // 原始寬度（顯示用）
+  originalHeight: 0, // 原始高度（顯示用）
+  canvasWidth: 1181, // Canvas 寬度（10cm @ 300 DPI）
+  canvasHeight: 1181, // Canvas 高度（10cm @ 300 DPI）
 })
 
-// URL 模式選擇
-const urlMode = ref('direct') // 'liff' 或 'direct'
+// QR Code 配置
+const qrConfig = ref({
+  x: 390, // X 座標（預設：左邊界 390px）
+  y: 390, // Y 座標（預設：上邊界 390px）
+  size: 400, // QR code 尺寸（預設 400px）
+  darkColor: '#000000', // QR code 前景色（預設黑色）
+  lightColor: '#FFFFFF', // QR code 背景色（預設白色）
+})
+
+// 桌號文字配置
+const tableNumberConfig = ref({
+  x: 590, // X 座標（預設：水平置中 590px）
+  y: 850, // Y 座標（預設：QR code 下方 850px）
+  fontSize: 48, // 字體大小（預設 48px）
+  color: '#000000', // 文字顏色
+})
+
+// 錯誤狀態
+const errors = ref({
+  backgroundImage: '',
+})
+
+// 文件輸入 ref
+const backgroundFileInput = ref(null)
+
+// 桌牌配置（簡化版）
+const tableConfig = ref({
+  tableNumber: '',
+})
 
 // 批量生成配置
 const showBatchOptions = ref(false)
@@ -456,30 +507,32 @@ const previewCanvas = ref(null)
 // 計算屬性
 const baseUrl = computed(() => window.location.origin)
 
-const currentSizeInfo = computed(() => sizeConfigs[tableConfig.value.size])
-
 // 預覽 URL
 const previewUrl = computed(() => {
   if (!tableConfig.value.tableNumber) return ''
 
   const tableNumber = tableConfig.value.tableNumber
-
-  if (urlMode.value === 'liff') {
-    // LINE LIFF 模式
-    return `${baseUrl.value}/line-entry?brandId=${props.brandId}&storeId=${props.storeId}&tableNumber=${tableNumber}`
-  } else {
-    // 直接連結模式
-    return `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
-  }
+  // 直接連結模式
+  return `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
 })
 
 const previewSize = computed(() => {
-  const config = currentSizeInfo.value
   // 預覽時縮放到合適的大小
-  const scale = 0.15
-  return {
-    width: config.width * scale,
-    height: config.height * scale,
+  const scale = 0.25
+  if (backgroundConfig.value.imageData) {
+    // 有背景圖片：使用背景圖片尺寸
+    return {
+      width: backgroundConfig.value.canvasWidth * scale,
+      height: backgroundConfig.value.canvasHeight * scale,
+    }
+  } else {
+    // 沒有背景圖片：使用 QR Code 尺寸（不含桌號文字）
+    const qrSize = qrConfig.value.size
+    const padding = 40
+    return {
+      width: (qrSize + padding * 2) * scale,
+      height: (qrSize + padding * 2) * scale,
+    }
   }
 })
 
@@ -501,23 +554,17 @@ const estimatedCount = computed(() => {
 
 // QR Code 生成函數
 const generateQRCode = async (tableNumber) => {
-  let url
-
-  if (urlMode.value === 'liff') {
-    // LINE LIFF 模式
-    url = `${baseUrl.value}/line-entry?brandId=${props.brandId}&storeId=${props.storeId}&tableNumber=${tableNumber}`
-  } else {
-    // 直接連結模式
-    url = `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
-  }
+  // 直接連結模式
+  const url = `${baseUrl.value}/stores/${props.brandId}/${props.storeId}?tableNumber=${tableNumber}`
 
   try {
     const qrCodeDataURL = await QRCode.toDataURL(url, {
-      width: currentSizeInfo.value.qrSize,
+      width: qrConfig.value.size,
       margin: 1,
+      errorCorrectionLevel: 'M', // 降低容錯率為 Medium
       color: {
-        dark: tableConfig.value.textColor,
-        light: tableConfig.value.backgroundColor,
+        dark: qrConfig.value.darkColor, // QR code 前景色
+        light: qrConfig.value.lightColor, // QR code 背景色
       },
     })
     return qrCodeDataURL
@@ -531,528 +578,232 @@ const generateQRCode = async (tableNumber) => {
 const generateTableCard = async (config) => {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
-  const sizeConfig = sizeConfigs[config.size]
 
-  // 設定 Canvas 尺寸
-  canvas.width = sizeConfig.width
-  canvas.height = sizeConfig.height
+  // 如果有背景圖片，使用背景圖片的尺寸；否則使用 QR Code 尺寸
+  if (backgroundConfig.value.imageData) {
+    // 有背景圖片：使用固定尺寸（1181×1181）
+    canvas.width = backgroundConfig.value.canvasWidth
+    canvas.height = backgroundConfig.value.canvasHeight
 
-  // 根據尺寸設定裁剪路徑
-  ctx.save()
+    // 1. 載入並繪製背景圖片
+    const bgImage = new Image()
+    await new Promise((resolve, reject) => {
+      bgImage.onload = resolve
+      bgImage.onerror = reject
+      bgImage.src = backgroundConfig.value.imageData
+    })
 
-  if (config.size === 'triangle') {
-    // 直角三角形裁剪路徑（等腰直角三角形，直角在左下）
-    ctx.beginPath()
-    const leftX = sizeConfig.padding
-    const rightX = canvas.width - sizeConfig.padding
-    const topY = sizeConfig.padding
-    const bottomY = canvas.height - sizeConfig.padding
+    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height)
 
-    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
-    ctx.lineTo(leftX, topY) // 左上角
-    ctx.lineTo(rightX, bottomY) // 右下角
-    ctx.closePath()
-  } else if (config.size === 'circle') {
-    // 圓形裁剪路徑
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(canvas.width, canvas.height) / 2 - sizeConfig.padding * 0.5
-
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.closePath()
-  } else {
-    // 1x1 保持矩形
-    ctx.beginPath()
-    ctx.rect(0, 0, canvas.width, canvas.height)
-    ctx.closePath()
-  }
-
-  ctx.clip()
-
-  // 填充背景色
-  ctx.fillStyle = config.backgroundColor
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  ctx.restore()
-
-  // 繪製實心外框
-  const borderWidth = sizeConfig.padding * 0.3
-  ctx.strokeStyle = config.textColor
-  ctx.lineWidth = borderWidth
-
-  if (config.size === 'triangle') {
-    // 直角三角形實心外框
-    ctx.beginPath()
-    const leftX = sizeConfig.padding
-    const rightX = canvas.width - sizeConfig.padding
-    const topY = sizeConfig.padding
-    const bottomY = canvas.height - sizeConfig.padding
-
-    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
-    ctx.lineTo(leftX, topY) // 左上角
-    ctx.lineTo(rightX, bottomY) // 右下角
-    ctx.closePath()
-    ctx.stroke()
-  } else if (config.size === 'circle') {
-    // 圓形實心外框
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(canvas.width, canvas.height) / 2 - sizeConfig.padding * 0.5
-
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.stroke()
-  } else {
-    // 1x1 矩形實心外框
-    ctx.strokeRect(
-      borderWidth / 2,
-      borderWidth / 2,
-      canvas.width - borderWidth,
-      canvas.height - borderWidth,
-    )
-  }
-
-  // 生成並繪製 QR Code
-  const qrCodeDataURL = await generateQRCode(config.tableNumber)
-  if (!qrCodeDataURL) return null
-
-  const qrImage = new Image()
-
-  return new Promise((resolve) => {
-    qrImage.onload = () => {
-      // 裁剪內容區域
-      ctx.save()
-
-      if (config.size === 'triangle') {
-        // 直角三角形裁剪
-        ctx.beginPath()
-        const leftX = sizeConfig.padding
-        const rightX = canvas.width - sizeConfig.padding
-        const topY = sizeConfig.padding
-        const bottomY = canvas.height - sizeConfig.padding
-
-        ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
-        ctx.lineTo(leftX, topY) // 左上角
-        ctx.lineTo(rightX, bottomY) // 右下角
-        ctx.closePath()
-        ctx.clip()
-      } else if (config.size === 'circle') {
-        // 圓形裁剪
-        const centerX = canvas.width / 2
-        const centerY = canvas.height / 2
-        const radius = Math.min(canvas.width, canvas.height) / 2 - sizeConfig.padding * 0.5
-
-        ctx.beginPath()
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-        ctx.clip()
-      }
-
-      // 計算佈局
-      const centerX = canvas.width / 2
-      let centerY, topPadding, qrY
-
-      if (config.size === 'triangle') {
-        // 直角三角形：QR code 在左下角
-        topPadding = sizeConfig.padding * 2
-        // 不使用 centerY，直接計算位置
-      } else if (config.size === 'circle') {
-        // 圓形：QR code 在圓心
-        centerY = canvas.height / 2
-        topPadding = sizeConfig.padding * 1.2
-        qrY = centerY - sizeConfig.qrSize / 2 - sizeConfig.fontSize * 0.5
-      } else {
-        // 1x1 保持原樣
-        topPadding = sizeConfig.padding * 1.5
-        const lineY = topPadding + sizeConfig.fontSize * 1.2
-        qrY = lineY + sizeConfig.padding * 0.8
-      }
-
-      // 繪製品牌名稱（頂部）- 僅限 1x1
-      if (config.size === 'square') {
-        ctx.font = `bold ${sizeConfig.fontSize * 0.7}px Arial, "Microsoft JhengHei", sans-serif`
-        ctx.fillStyle = config.textColor
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-
-        const brandText = 'Rabbir 點餐系統'
-        const brandMetrics = ctx.measureText(brandText)
-        const brandBg = {
-          width: brandMetrics.width + sizeConfig.padding * 0.8,
-          height: sizeConfig.fontSize * 0.9,
-          x: centerX - (brandMetrics.width + sizeConfig.padding * 0.8) / 2,
-          y: topPadding * 0.6,
-        }
-
-        ctx.fillStyle = config.textColor + '10'
-        ctx.fillRect(brandBg.x, brandBg.y, brandBg.width, brandBg.height)
-
-        ctx.fillStyle = config.textColor
-        ctx.fillText(brandText, centerX, topPadding)
-
-        // 裝飾線
-        const lineY = topPadding + sizeConfig.fontSize * 1.2
-        ctx.strokeStyle = config.textColor
-        ctx.lineWidth = 3
-        ctx.beginPath()
-        ctx.moveTo(centerX - sizeConfig.qrSize * 0.3, lineY)
-        ctx.lineTo(centerX + sizeConfig.qrSize * 0.3, lineY)
-        ctx.stroke()
-      }
-
-      // 計算 QR Code 位置
-      let qrX
-      if (config.size === 'triangle') {
-        // 直角三角形：QR code 在左下角
-        qrX = sizeConfig.padding * 1.5
-        qrY = canvas.height - sizeConfig.padding * 1.5 - sizeConfig.qrSize
-      } else {
-        // 其他形狀：居中
-        qrX = (canvas.width - sizeConfig.qrSize) / 2
-      }
-
-      // QR Code 背景陰影
-      ctx.fillStyle = 'rgba(0,0,0,0.1)'
-      ctx.fillRect(qrX + 10, qrY + 10, sizeConfig.qrSize, sizeConfig.qrSize)
-
-      // 繪製 QR Code
-      ctx.drawImage(qrImage, qrX, qrY, sizeConfig.qrSize, sizeConfig.qrSize)
-
-      // QR Code 邊框裝飾
-      ctx.strokeStyle = config.textColor
-      ctx.lineWidth = 6
-      ctx.strokeRect(qrX - 3, qrY - 3, sizeConfig.qrSize + 6, sizeConfig.qrSize + 6)
-
-      // 繪製桌號（底部）
-      const tableNumberY = qrY + sizeConfig.qrSize + sizeConfig.padding * 0.8
-
-      // 桌號背景裝飾
-      ctx.fillStyle = config.textColor
-      const tableTextSize = sizeConfig.fontSize * 1.2
-      ctx.font = `bold ${tableTextSize}px Arial, "Microsoft JhengHei", sans-serif`
-
-      const tableText = `桌號 ${config.tableNumber}`
-      const tableMetrics = ctx.measureText(tableText)
-
-      let tableBg
-      if (config.size === 'triangle') {
-        // 直角三角形：桌號對齊 QR code 左側
-        tableBg = {
-          width: tableMetrics.width + sizeConfig.padding * 0.6,
-          height: tableTextSize * 1.2,
-          x: qrX,
-          y: tableNumberY - tableTextSize * 0.1,
-        }
-      } else {
-        // 其他形狀：桌號居中
-        tableBg = {
-          width: tableMetrics.width + sizeConfig.padding * 0.6,
-          height: tableTextSize * 1.2,
-          x: centerX - (tableMetrics.width + sizeConfig.padding * 0.6) / 2,
-          y: tableNumberY - tableTextSize * 0.1,
-        }
-      }
-
-      // 圓角矩形背景
-      ctx.fillRect(tableBg.x, tableBg.y, tableBg.width, tableBg.height)
-
-      // 桌號文字（白色）
-      ctx.fillStyle = config.backgroundColor
-      if (config.size === 'triangle') {
-        // 直角三角形：左對齊
-        ctx.textAlign = 'left'
-        ctx.textBaseline = 'top'
-        ctx.fillText(tableText, qrX + sizeConfig.padding * 0.3, tableNumberY)
-      } else {
-        // 其他形狀：居中
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-        ctx.fillText(tableText, centerX, tableNumberY)
-      }
-
-      // 底部裝飾圖案 - 僅限 1x1
-      if (config.size === 'square') {
-        ctx.fillStyle = config.textColor + '30'
-        const decorY = tableNumberY + tableTextSize * 1.8
-        for (let i = 0; i < 5; i++) {
-          const x = centerX - 60 + i * 30
-          ctx.beginPath()
-          ctx.arc(x, decorY, 6, 0, 2 * Math.PI)
-          ctx.fill()
-        }
-      }
-
-      ctx.restore()
-
-      resolve(canvas.toDataURL('image/png'))
+    // 2. 生成並繪製 QR Code
+    const qrCodeDataURL = await generateQRCode(config.tableNumber)
+    if (!qrCodeDataURL) {
+      throw new Error('QR Code 生成失敗')
     }
 
-    qrImage.onerror = () => resolve(null)
-    qrImage.src = qrCodeDataURL
-  })
+    const qrImage = new Image()
+    await new Promise((resolve, reject) => {
+      qrImage.onload = resolve
+      qrImage.onerror = reject
+      qrImage.src = qrCodeDataURL
+    })
+
+    ctx.drawImage(
+      qrImage,
+      qrConfig.value.x,
+      qrConfig.value.y,
+      qrConfig.value.size,
+      qrConfig.value.size,
+    )
+
+    // 3. 繪製桌號文字
+    ctx.font = `bold ${tableNumberConfig.value.fontSize}px Arial, "Microsoft JhengHei", sans-serif`
+    ctx.fillStyle = tableNumberConfig.value.color
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(config.tableNumber, tableNumberConfig.value.x, tableNumberConfig.value.y)
+  } else {
+    // 沒有背景圖片：只生成純 QR Code（不含桌號文字）
+    const qrSize = qrConfig.value.size
+    const padding = 40 // 邊距
+
+    canvas.width = qrSize + padding * 2
+    canvas.height = qrSize + padding * 2
+
+    // 填充白色背景
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // 生成並繪製 QR Code（置中）
+    const qrCodeDataURL = await generateQRCode(config.tableNumber)
+    if (!qrCodeDataURL) {
+      throw new Error('QR Code 生成失敗')
+    }
+
+    const qrImage = new Image()
+    await new Promise((resolve, reject) => {
+      qrImage.onload = resolve
+      qrImage.onerror = reject
+      qrImage.src = qrCodeDataURL
+    })
+
+    ctx.drawImage(qrImage, padding, padding, qrSize, qrSize)
+  }
+
+  return canvas.toDataURL('image/png')
 }
 
 // 更新預覽
 const updatePreview = async () => {
-  if (!tableConfig.value.tableNumber || !previewCanvas.value) return
+  if (!tableConfig.value.tableNumber || !previewCanvas.value) {
+    return
+  }
 
   const canvas = previewCanvas.value
   const ctx = canvas.getContext('2d')
-  const config = currentSizeInfo.value
-  const scale = 0.15
 
   // 清空畫布
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  // 根據尺寸設定裁剪路徑
-  ctx.save()
-
-  if (tableConfig.value.size === '2x3') {
-    // 直角三角形裁剪路徑
-    ctx.beginPath()
-    const leftX = config.padding * scale
-    const rightX = canvas.width - config.padding * scale
-    const topY = config.padding * scale
-    const bottomY = canvas.height - config.padding * scale
-
-    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
-    ctx.lineTo(leftX, topY) // 左上角
-    ctx.lineTo(rightX, bottomY) // 右下角
-    ctx.closePath()
-  } else if (tableConfig.value.size === '3x4') {
-    // 圓形裁剪路徑
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(canvas.width, canvas.height) / 2 - config.padding * scale * 0.5
-
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.closePath()
-  } else {
-    // 1x1 保持矩形
-    ctx.beginPath()
-    ctx.rect(0, 0, canvas.width, canvas.height)
-    ctx.closePath()
-  }
-
-  ctx.clip()
-
-  // 填充背景色
-  ctx.fillStyle = tableConfig.value.backgroundColor
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  ctx.restore()
-
-  // 繪製實心外框（縮放版）
-  const borderWidth = config.padding * scale * 0.3
-  ctx.strokeStyle = tableConfig.value.textColor
-  ctx.lineWidth = borderWidth
-
-  if (tableConfig.value.size === '2x3') {
-    // 直角三角形實心外框
-    ctx.beginPath()
-    const leftX = config.padding * scale
-    const rightX = canvas.width - config.padding * scale
-    const topY = config.padding * scale
-    const bottomY = canvas.height - config.padding * scale
-
-    ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
-    ctx.lineTo(leftX, topY) // 左上角
-    ctx.lineTo(rightX, bottomY) // 右下角
-    ctx.closePath()
-    ctx.stroke()
-  } else if (tableConfig.value.size === '3x4') {
-    // 圓形實心外框
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(canvas.width, canvas.height) / 2 - config.padding * scale * 0.5
-
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.stroke()
-  } else {
-    // 1x1 矩形實心外框
-    ctx.strokeRect(
-      borderWidth / 2,
-      borderWidth / 2,
-      canvas.width - borderWidth,
-      canvas.height - borderWidth,
-    )
-  }
-
   try {
-    const qrSize = config.qrSize * scale
-    const fontSize = config.fontSize * scale
-    const padding = config.padding * scale
+    if (backgroundConfig.value.imageData) {
+      // 有背景圖片：正常預覽
+      const scale = 0.25 // 縮放比例
 
-    const qrCodeDataURL = await generateQRCode(tableConfig.value.tableNumber)
-    if (!qrCodeDataURL) return
+      // 1. 載入並繪製背景圖片
+      const bgImage = new Image()
+      await new Promise((resolve, reject) => {
+        bgImage.onload = resolve
+        bgImage.onerror = reject
+        bgImage.src = backgroundConfig.value.imageData
+      })
 
-    const qrImage = new Image()
-    qrImage.onload = () => {
-      // 裁剪內容區域
-      ctx.save()
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height)
 
-      if (tableConfig.value.size === 'triangle') {
-        // 直角三角形裁剪
-        ctx.beginPath()
-        const leftX = config.padding * scale
-        const rightX = canvas.width - config.padding * scale
-        const topY = config.padding * scale
-        const bottomY = canvas.height - config.padding * scale
+      // 2. 生成並繪製 QR Code
+      const qrCodeDataURL = await generateQRCode(tableConfig.value.tableNumber)
+      if (!qrCodeDataURL) return
 
-        ctx.moveTo(leftX, bottomY) // 左下角（直角頂點）
-        ctx.lineTo(leftX, topY) // 左上角
-        ctx.lineTo(rightX, bottomY) // 右下角
-        ctx.closePath()
-        ctx.clip()
-      } else if (tableConfig.value.size === 'circle') {
-        // 圓形裁剪
-        const centerX = canvas.width / 2
-        const centerY = canvas.height / 2
-        const radius = Math.min(canvas.width, canvas.height) / 2 - config.padding * scale * 0.5
+      const qrImage = new Image()
+      await new Promise((resolve) => {
+        qrImage.onload = resolve
+        qrImage.src = qrCodeDataURL
+      })
 
-        ctx.beginPath()
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-        ctx.clip()
-      }
+      ctx.drawImage(
+        qrImage,
+        qrConfig.value.x * scale,
+        qrConfig.value.y * scale,
+        qrConfig.value.size * scale,
+        qrConfig.value.size * scale,
+      )
 
-      const centerX = canvas.width / 2
-      let centerY, topPadding, qrY
+      // 3. 繪製桌號文字
+      ctx.font = `bold ${tableNumberConfig.value.fontSize * scale}px Arial, "Microsoft JhengHei", sans-serif`
+      ctx.fillStyle = tableNumberConfig.value.color
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(
+        tableConfig.value.tableNumber,
+        tableNumberConfig.value.x * scale,
+        tableNumberConfig.value.y * scale,
+      )
+    } else {
+      // 沒有背景圖片：預覽純 QR Code（不含桌號文字）
+      const qrSize = qrConfig.value.size
+      const padding = 40
+      const scale = 0.25
 
-      if (tableConfig.value.size === 'triangle') {
-        // 直角三角形：QR code 在左下角
-        topPadding = padding * 2
-        // 不使用 centerY，直接計算位置
-      } else if (tableConfig.value.size === 'circle') {
-        // 圓形：QR code 在圓心
-        centerY = canvas.height / 2
-        topPadding = padding * 1.2
-        qrY = centerY - qrSize / 2 - fontSize * 0.5
-      } else {
-        // 1x1 保持原樣
-        topPadding = padding * 1.5
-        const lineY = topPadding + fontSize * 1.2
-        qrY = lineY + padding * 0.8
-      }
+      // 動態調整 canvas 尺寸
+      canvas.width = (qrSize + padding * 2) * scale
+      canvas.height = (qrSize + padding * 2) * scale
 
-      // 繪製品牌名稱（頂部）- 僅限 1x1
-      if (tableConfig.value.size === 'square') {
-        ctx.font = `bold ${fontSize * 0.7}px Arial, "Microsoft JhengHei", sans-serif`
-        ctx.fillStyle = tableConfig.value.textColor
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
+      // 填充白色背景
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-        const brandText = 'Rabbir 點餐系統'
-        const brandMetrics = ctx.measureText(brandText)
+      // 生成並繪製 QR Code
+      const qrCodeDataURL = await generateQRCode(tableConfig.value.tableNumber)
+      if (!qrCodeDataURL) return
 
-        const brandBg = {
-          width: brandMetrics.width + padding * 0.8,
-          height: fontSize * 0.9,
-          x: centerX - (brandMetrics.width + padding * 0.8) / 2,
-          y: topPadding * 0.6,
-        }
+      const qrImage = new Image()
+      await new Promise((resolve) => {
+        qrImage.onload = resolve
+        qrImage.src = qrCodeDataURL
+      })
 
-        ctx.fillStyle = tableConfig.value.textColor + '10'
-        ctx.fillRect(brandBg.x, brandBg.y, brandBg.width, brandBg.height)
-
-        ctx.fillStyle = tableConfig.value.textColor
-        ctx.fillText(brandText, centerX, topPadding)
-
-        // 裝飾線
-        const lineY = topPadding + fontSize * 1.2
-        ctx.strokeStyle = tableConfig.value.textColor
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.moveTo(centerX - qrSize * 0.3, lineY)
-        ctx.lineTo(centerX + qrSize * 0.3, lineY)
-        ctx.stroke()
-      }
-
-      // QR Code 位置
-      let qrX
-      if (tableConfig.value.size === 'triangle') {
-        // 直角三角形：QR code 在左下角
-        qrX = padding * 1.5
-        qrY = canvas.height - padding * 1.5 - qrSize
-      } else {
-        // 其他形狀：居中
-        qrX = (canvas.width - qrSize) / 2
-      }
-
-      // QR Code 背景陰影（縮放）
-      ctx.fillStyle = 'rgba(0,0,0,0.1)'
-      ctx.fillRect(qrX + 2, qrY + 2, qrSize, qrSize)
-
-      // 繪製 QR Code
-      ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize)
-
-      // QR Code 邊框
-      ctx.strokeStyle = tableConfig.value.textColor
-      ctx.lineWidth = 1
-      ctx.strokeRect(qrX - 1, qrY - 1, qrSize + 2, qrSize + 2)
-
-      // 桌號文字
-      const tableNumberY = qrY + qrSize + padding * 0.8
-      const tableTextSize = fontSize * 1.2
-      ctx.font = `bold ${tableTextSize}px Arial, "Microsoft JhengHei", sans-serif`
-
-      const tableText = `桌號 ${tableConfig.value.tableNumber}`
-      const tableMetrics = ctx.measureText(tableText)
-
-      // 桌號背景
-      let tableBg
-      if (tableConfig.value.size === 'triangle') {
-        // 直角三角形：桌號對齊 QR code 左側
-        tableBg = {
-          width: tableMetrics.width + padding * 0.6,
-          height: tableTextSize * 1.2,
-          x: qrX,
-          y: tableNumberY - tableTextSize * 0.1,
-        }
-      } else {
-        // 其他形狀：桌號居中
-        tableBg = {
-          width: tableMetrics.width + padding * 0.6,
-          height: tableTextSize * 1.2,
-          x: centerX - (tableMetrics.width + padding * 0.6) / 2,
-          y: tableNumberY - tableTextSize * 0.1,
-        }
-      }
-
-      ctx.fillStyle = tableConfig.value.textColor
-      ctx.fillRect(tableBg.x, tableBg.y, tableBg.width, tableBg.height)
-
-      ctx.fillStyle = tableConfig.value.backgroundColor
-      if (tableConfig.value.size === 'triangle') {
-        // 直角三角形：左對齊
-        ctx.textAlign = 'left'
-        ctx.textBaseline = 'top'
-        ctx.fillText(tableText, qrX + padding * 0.3, tableNumberY)
-      } else {
-        // 其他形狀：居中
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'top'
-        ctx.fillText(tableText, centerX, tableNumberY)
-      }
-
-      // 底部裝飾圖案 - 僅限 1x1
-      if (tableConfig.value.size === 'square') {
-        ctx.fillStyle = tableConfig.value.textColor + '30'
-        const decorY = tableNumberY + tableTextSize * 1.8
-        for (let i = 0; i < 5; i++) {
-          const x = centerX - 12 + i * 6
-          ctx.beginPath()
-          ctx.arc(x, decorY, 1, 0, 2 * Math.PI)
-          ctx.fill()
-        }
-      }
-
-      ctx.restore()
+      ctx.drawImage(qrImage, padding * scale, padding * scale, qrSize * scale, qrSize * scale)
     }
-    qrImage.src = qrCodeDataURL
   } catch (error) {
     console.error('預覽更新失敗:', error)
+  }
+}
+
+// 處理背景圖片上傳
+const handleBackgroundImageChange = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // 驗證檔案類型
+  if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+    errors.value.backgroundImage = '請上傳 PNG 或 JPG 格式的圖片'
+    return
+  }
+
+  // 驗證檔案大小（限制 5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    errors.value.backgroundImage = '圖片大小不能超過 5MB'
+    return
+  }
+
+  errors.value.backgroundImage = ''
+
+  try {
+    // 使用 FileReader 轉換為 Base64
+    const reader = new FileReader()
+    const base64 = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+
+    // 載入圖片以獲取尺寸資訊
+    const img = new Image()
+    await new Promise((resolve, reject) => {
+      img.onload = resolve
+      img.onerror = reject
+      img.src = base64
+    })
+
+    // 儲存圖片數據和尺寸資訊
+    backgroundConfig.value.imageData = base64
+    backgroundConfig.value.originalWidth = img.width
+    backgroundConfig.value.originalHeight = img.height
+
+    // 觸發預覽更新
+    nextTick(() => updatePreview())
+  } catch (error) {
+    console.error('圖片處理失敗:', error)
+    errors.value.backgroundImage = '圖片處理失敗，請重試'
+  }
+}
+
+// 清除背景圖片
+const clearBackgroundImage = () => {
+  backgroundConfig.value.imageData = null
+  backgroundConfig.value.originalWidth = 0
+  backgroundConfig.value.originalHeight = 0
+
+  if (backgroundFileInput.value) {
+    backgroundFileInput.value.value = ''
+  }
+
+  errors.value.backgroundImage = ''
+
+  // 清空預覽
+  if (previewCanvas.value) {
+    const ctx = previewCanvas.value.getContext('2d')
+    ctx.clearRect(0, 0, previewCanvas.value.width, previewCanvas.value.height)
   }
 }
 
@@ -1066,7 +817,7 @@ const downloadSingle = async () => {
     const dataURL = await generateTableCard(tableConfig.value)
     if (dataURL) {
       const link = document.createElement('a')
-      link.download = `桌牌_${tableConfig.value.tableNumber}_${tableConfig.value.size}.png`
+      link.download = `桌牌_${tableConfig.value.tableNumber}.png`
       link.href = dataURL
       document.body.appendChild(link)
       link.click()
@@ -1113,14 +864,14 @@ const downloadBatch = async () => {
       const dataURL = await generateTableCard(config)
       if (dataURL) {
         const base64Data = dataURL.split(',')[1]
-        zip.file(`桌牌_${tableNumber}_${tableConfig.value.size}.png`, base64Data, { base64: true })
+        zip.file(`桌牌_${tableNumber}.png`, base64Data, { base64: true })
       }
 
       // 可以在這裡加入進度顯示
     }
 
     const content = await zip.generateAsync({ type: 'blob' })
-    const fileName = `店鋪桌牌_${tableConfig.value.size}_${new Date().toISOString().split('T')[0]}.zip`
+    const fileName = `店鋪桌牌_${new Date().toISOString().split('T')[0]}.zip`
     saveAs(content, fileName)
   } catch (error) {
     console.error('批量下載失敗:', error)
@@ -1135,13 +886,33 @@ const resetModal = () => {
   // 重置桌牌配置
   tableConfig.value = {
     tableNumber: '',
-    size: 'triangle',
-    backgroundColor: '#FFFFFF',
-    textColor: '#000000',
   }
 
-  // 重置 URL 模式
-  urlMode.value = 'direct'
+  // 重置背景圖片配置
+  backgroundConfig.value = {
+    imageData: null,
+    originalWidth: 0,
+    originalHeight: 0,
+    canvasWidth: 1181,
+    canvasHeight: 1181,
+  }
+
+  // 重置 QR Code 配置
+  qrConfig.value = {
+    x: 390,
+    y: 390,
+    size: 400,
+    darkColor: '#000000',
+    lightColor: '#FFFFFF',
+  }
+
+  // 重置桌號文字配置
+  tableNumberConfig.value = {
+    x: 590,
+    y: 850,
+    fontSize: 48,
+    color: '#000000',
+  }
 
   // 重置批量配置
   showBatchOptions.value = false
@@ -1150,6 +921,11 @@ const resetModal = () => {
     startNumber: 1,
     endNumber: 10,
     customNumbers: '',
+  }
+
+  // 重置錯誤
+  errors.value = {
+    backgroundImage: '',
   }
 
   // 重置狀態
@@ -1164,12 +940,7 @@ const resetModal = () => {
 
 // Modal 顯示時的處理
 const handleModalShow = () => {
-  // Modal 被打開時，根據 store 設定初始化 URL 模式
-  if (props.store && props.store.enableLineOrdering) {
-    urlMode.value = 'liff'
-  } else {
-    urlMode.value = 'direct'
-  }
+  // Modal 被打開時的處理
 }
 
 // Modal 完全隱藏後的處理
@@ -1191,13 +962,6 @@ watch(
     nextTick(() => updatePreview())
   },
   { immediate: true },
-)
-
-watch(
-  () => tableConfig.value.size,
-  () => {
-    nextTick(() => updatePreview())
-  },
 )
 
 // 組件掛載後初始化預覽
@@ -1261,21 +1025,6 @@ onMounted(() => {
     0 6px 12px rgba(0, 0, 0, 0.15),
     0 12px 30px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.preview-square .preview-canvas {
-  width: 240px;
-  height: 240px;
-}
-
-.preview-triangle .preview-canvas {
-  width: 240px;
-  height: 240px;
-}
-
-.preview-circle .preview-canvas {
-  width: 240px;
-  height: 240px;
 }
 
 .form-control-color {
