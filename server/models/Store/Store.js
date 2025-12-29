@@ -95,13 +95,8 @@ const storeSchema = new mongoose.Schema(
       },
     ],
 
-    // === 客戶端支援付款方式 ===
-    customerPayments: [
-      {
-        type: String,
-        enum: ['line_pay', 'credit_card'],
-      },
-    ], // 注意需與 order.js paymentMethod 一致
+    // === 客戶端線上付款設定 ===
+    isActiveCustomerOnlinePayment: { type: Boolean, default: false }, // 啟用客戶端線上付款（藍新金流）
 
     printer: [
       {

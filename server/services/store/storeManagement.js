@@ -204,6 +204,10 @@ export const createStore = async (storeData) => {
   // 設置預訂設定預設值
   if (storeData.advanceOrderDays === undefined) storeData.advanceOrderDays = 0
 
+  // 設置客戶端線上付款預設值
+  if (storeData.isActiveCustomerOnlinePayment === undefined)
+    storeData.isActiveCustomerOnlinePayment = false
+
   // 創建店鋪
   const newStore = new Store(storeData)
   await newStore.save()
@@ -633,6 +637,7 @@ export const updateStoreServiceSettings = async (storeId, serviceSettings) => {
     'minDeliveryQuantity',
     'maxDeliveryDistance',
     'advanceOrderDays',
+    'isActiveCustomerOnlinePayment',
   ]
 
   allowedFields.forEach((field) => {

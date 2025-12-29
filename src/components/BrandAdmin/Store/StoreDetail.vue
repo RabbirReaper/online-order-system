@@ -484,33 +484,28 @@
                       </div>
                     </div>
 
-                    <!-- 客戶端支援付款方式 -->
+                    <!-- 客戶端線上付款設定 -->
                     <div class="col-md-6">
                       <div class="p-2 border rounded">
-                        <div class="small text-muted mb-2">客戶端支援付款方式</div>
+                        <div class="small text-muted mb-2">客戶端線上付款</div>
                         <div class="d-flex flex-wrap gap-2">
                           <span
-                            v-if="
-                              store.customerPayments && store.customerPayments.includes('line_pay')
-                            "
-                            class="badge bg-success"
+                            class="badge"
+                            :class="store.isActiveCustomerOnlinePayment ? 'bg-success' : 'bg-secondary'"
                           >
-                            <i class="bi bi-line me-1"></i>LINE Pay
-                          </span>
-                          <span
-                            v-if="
-                              store.customerPayments &&
-                              store.customerPayments.includes('credit_card')
-                            "
-                            class="badge bg-success"
-                          >
-                            <i class="bi bi-credit-card me-1"></i>信用卡
-                          </span>
-                          <span
-                            v-if="!store.customerPayments || store.customerPayments.length === 0"
-                            class="text-muted small"
-                          >
-                            無
+                            <i
+                              class="bi me-1"
+                              :class="
+                                store.isActiveCustomerOnlinePayment
+                                  ? 'bi-check-circle-fill'
+                                  : 'bi-x-circle-fill'
+                              "
+                            ></i>
+                            {{
+                              store.isActiveCustomerOnlinePayment
+                                ? '已啟用 (藍新金流)'
+                                : '未啟用'
+                            }}
                           </span>
                         </div>
                       </div>

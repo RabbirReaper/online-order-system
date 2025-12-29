@@ -131,6 +131,7 @@
           v-model:customer-info="customerInfo"
           v-model:payment-method="paymentType"
           :order-type="orderType"
+          :is-online-payment-enabled="storeInfo?.isActiveCustomerOnlinePayment || false"
         />
 
         <div class="divider"></div>
@@ -412,6 +413,10 @@ const usedVouchers = ref([]) // 已選擇的兌換券
 const appliedCoupons = ref([]) // 已應用的折價券
 const isLoadingCoupons = ref(false)
 const showConfirmModal = ref(false)
+
+// 店家資訊
+const storeInfo = ref(null)
+const isLoadingStoreInfo = ref(false)
 
 // 點數相關狀態
 const activePointRules = ref([])
@@ -710,6 +715,35 @@ const fetchActivePointRules = async () => {
     console.error('獲取點數規則失敗:', error)
   } finally {
     isLoadingPointRules.value = false
+  }
+}
+
+// 獲取店家公開資訊
+const fetchStoreInfo = async () => {
+  if (!cartStore.currentBrand || !cartStore.currentStore) {
+    console.warn('缺少品牌或店鋪ID，無法獲取店家資訊')
+    return
+  }
+
+  try {
+    isLoadingStoreInfo.value = true
+
+    const response = await api.store.getStorePublicInfo({
+      brandId: cartStore.currentBrand,
+      id: cartStore.currentStore,
+    })
+
+    if (response && response.store) {
+      storeInfo.value = response.store
+      console.log('店家資訊已載入:', {
+        storeName: response.store.name,
+        isOnlinePaymentEnabled: response.store.isActiveCustomerOnlinePayment,
+      })
+    }
+  } catch (error) {
+    console.error('獲取店家資訊失敗:', error)
+  } finally {
+    isLoadingStoreInfo.value = false
   }
 }
 
@@ -1082,6 +1116,9 @@ onMounted(() => {
   if (authStore.currentBrandId) {
     fetchActivePointRules()
   }
+
+  // 獲取店家資訊
+  fetchStoreInfo()
 })
 </script>
 
