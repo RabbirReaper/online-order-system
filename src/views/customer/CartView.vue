@@ -607,11 +607,10 @@ const goBack = () => {
 }
 
 const goToLogin = () => {
+  const currentPath = router.currentRoute.value.fullPath
   router.push({
-    name: 'login',
-    query: {
-      redirect: router.currentRoute.value.fullPath,
-    },
+    path: '/auth/login',
+    query: { redirect: currentPath },
   })
 }
 

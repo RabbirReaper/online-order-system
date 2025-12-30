@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import path from 'path'
 import mongoose from 'mongoose'
 import session from 'express-session'
+import MongoStore from 'connect-mongo'
 import { fileURLToPath } from 'url'
 import apiRoutes from './server/routes/index.js'
 import webhookRoutes from './server/routes/webhooks.js'
@@ -32,6 +33,13 @@ app.use(
     resave: false,
     saveUninitialized: false,
     rolling: true,
+    store: MongoStore.create({
+      mongoUrl: process.env.MongoDB_url,
+      touchAfter: 24 * 3600, // 24 小時內不更新 session
+      crypto: {
+        secret: process.env.SESSION_SECRET || 'your-secret-key',
+      },
+    }),
     cookie: {
       maxAge: 60 * 60 * 1000, // 1 小時
       sameSite: 'strict',
