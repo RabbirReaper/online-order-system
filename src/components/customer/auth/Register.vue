@@ -38,25 +38,6 @@
             </div>
           </div>
 
-          <!-- 電子郵件 -->
-          <div class="mb-3">
-            <label for="email" class="form-label">電子郵件</label>
-            <input
-              type="email"
-              class="form-control"
-              id="email"
-              v-model="userData.email"
-              :class="{ 'is-invalid': fieldErrors.email, 'is-valid': isFieldValid('email') }"
-              placeholder="請輸入您的電子郵件"
-              @blur="validateField('email')"
-              @input="clearFieldError('email')"
-            />
-            <small class="text-muted">選填，用於接收訂單通知</small>
-            <div class="invalid-feedback">
-              {{ fieldErrors.email }}
-            </div>
-          </div>
-
           <!-- 手機號碼 -->
           <div class="mb-3">
             <label for="phone" class="form-label"
@@ -249,8 +230,243 @@
     </div>
   </BModal>
 
-  <!-- 其他模態框省略，保持原有程式碼不變 -->
-  <!-- ... -->
+  <!-- 用戶服務條款模態框 -->
+  <BModal
+    id="termsModal"
+    title="用戶服務條款"
+    ok-only
+    ok-title="我知道了"
+    ok-variant="primary"
+    size="lg"
+    scrollable
+    ref="termsModal"
+  >
+    <div class="terms-content">
+      <h6 class="fw-bold mb-3">歡迎使用本線上點餐系統</h6>
+      <p class="text-muted small">
+        在您使用本服務前，請仔細閱讀以下服務條款。使用本服務即表示您同意接受本條款的約束。
+      </p>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">一、服務說明</h6>
+        <ol class="small">
+          <li>本系統提供線上點餐、預約、會員管理等服務</li>
+          <li>您必須年滿 18 歲或在法定監護人同意下使用本服務</li>
+          <li>您需提供真實、準確的個人資料進行註冊</li>
+          <li>您有責任維護帳號及密碼的安全性</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">二、訂單與付款</h6>
+        <ol class="small">
+          <li>訂單送出後，我們會盡快為您處理，但不保證立即接受</li>
+          <li>商品價格、規格以下單時頁面顯示為準</li>
+          <li>我們保留接受或拒絕訂單的權利</li>
+          <li>付款方式包含現金、信用卡、LINE Pay 等</li>
+          <li>所有交易均受當地法律規範</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">三、取消與退款</h6>
+        <ol class="small">
+          <li>訂單確認後若需取消，請盡快聯繫店家</li>
+          <li>已製作完成的餐點恕不接受退款</li>
+          <li>若因店家原因無法提供服務，將全額退款</li>
+          <li>退款將依原付款方式退回，處理時間約 7-14 個工作天</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">四、會員權益</h6>
+        <ol class="small">
+          <li>會員可享有點數累積、優惠券等權益</li>
+          <li>點數及優惠券均有使用期限，逾期將自動失效</li>
+          <li>會員權益不得轉讓或兌換現金</li>
+          <li>我們保留修改會員權益內容的權利</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">五、用戶行為規範</h6>
+        <ol class="small">
+          <li>禁止使用本服務進行任何非法活動</li>
+          <li>禁止濫用優惠活動或進行欺詐行為</li>
+          <li>禁止干擾或破壞系統正常運作</li>
+          <li>違反規定者，我們有權暫停或終止其帳號</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">六、智慧財產權</h6>
+        <ol class="small">
+          <li>本系統所有內容（包含文字、圖片、商標等）均受著作權法保護</li>
+          <li>未經授權，不得複製、修改、散佈本系統內容</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">七、免責聲明</h6>
+        <ol class="small">
+          <li>我們盡力確保服務穩定，但不保證服務不會中斷</li>
+          <li>因不可抗力因素造成的服務中斷，我們不承擔責任</li>
+          <li>用戶應自行評估使用本服務的風險</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">八、條款修改</h6>
+        <p class="small">
+          我們保留隨時修改本條款的權利，修改後的條款將公布於本頁面。繼續使用本服務即表示您同意修改後的條款。
+        </p>
+      </div>
+
+      <div class="mb-3">
+        <h6 class="fw-bold mb-2">九、聯繫方式</h6>
+        <p class="small">
+          如對本條款有任何疑問，請透過系統內的客服功能聯繫我們。
+        </p>
+      </div>
+
+      <div class="alert alert-info small">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        最後更新日期：{{ new Date().toLocaleDateString('zh-TW') }}
+      </div>
+    </div>
+  </BModal>
+
+  <!-- 隱私政策模態框 -->
+  <BModal
+    id="privacyPolicyModal"
+    title="隱私政策"
+    ok-only
+    ok-title="我知道了"
+    ok-variant="primary"
+    size="lg"
+    scrollable
+    ref="privacyPolicyModal"
+  >
+    <div class="privacy-content">
+      <h6 class="fw-bold mb-3">個人資料保護聲明</h6>
+      <p class="text-muted small">
+        我們重視您的隱私權，本政策說明我們如何收集、使用、揭露及保護您的個人資料。
+      </p>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">一、資料收集</h6>
+        <p class="small fw-bold">我們收集的個人資料包括：</p>
+        <ol class="small">
+          <li><strong>基本資料</strong>：姓名、手機號碼</li>
+          <li><strong>訂單資料</strong>：訂購內容、配送地址、付款資訊</li>
+          <li><strong>會員資料</strong>：點數記錄、優惠券使用記錄</li>
+          <li><strong>技術資料</strong>：IP 位址、瀏覽器類型、裝置資訊、Cookie</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">二、資料使用目的</h6>
+        <p class="small">我們使用您的個人資料用於：</p>
+        <ol class="small">
+          <li>處理您的訂單及提供服務</li>
+          <li>帳戶管理及身份驗證</li>
+          <li>發送訂單確認、取餐通知等訊息</li>
+          <li>提供客戶服務及處理您的詢問</li>
+          <li>進行會員權益管理（點數、優惠券等）</li>
+          <li>改善服務品質及用戶體驗</li>
+          <li>遵守法律規定及防止詐欺</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">三、資料分享與揭露</h6>
+        <p class="small">我們不會出售您的個人資料，但在以下情況可能分享您的資料：</p>
+        <ol class="small">
+          <li><strong>服務提供商</strong>：為完成服務所需的第三方（如付款處理商、簡訊服務商）</li>
+          <li><strong>法律要求</strong>：遵守法律程序、法院命令或政府要求</li>
+          <li><strong>保護權益</strong>：保護我們或他人的權利、財產或安全</li>
+          <li><strong>企業交易</strong>：若發生合併、收購等企業交易</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">四、Cookie 使用</h6>
+        <p class="small">我們使用 Cookie 及類似技術來：</p>
+        <ol class="small">
+          <li>維持您的登入狀態</li>
+          <li>記住您的偏好設定</li>
+          <li>分析網站流量及使用情況</li>
+          <li>提供個人化的服務體驗</li>
+        </ol>
+        <p class="small">您可以透過瀏覽器設定管理 Cookie，但這可能影響某些功能的使用。</p>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">五、資料安全</h6>
+        <p class="small">我們採取以下措施保護您的資料：</p>
+        <ol class="small">
+          <li>使用加密技術傳輸敏感資料</li>
+          <li>實施存取控制，限制授權人員存取</li>
+          <li>定期進行安全性檢測與更新</li>
+          <li>員工須遵守保密義務</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">六、資料保存期限</h6>
+        <ol class="small">
+          <li><strong>會員資料</strong>：帳號存續期間及刪除後 3 年（依法律規定）</li>
+          <li><strong>訂單資料</strong>：訂單完成後 5 年（依稅務及會計法規）</li>
+          <li><strong>行銷資料</strong>：直到您撤回同意或帳號刪除為止</li>
+        </ol>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">七、您的權利</h6>
+        <p class="small">依據個人資料保護法，您享有以下權利：</p>
+        <ol class="small">
+          <li><strong>查詢權</strong>：查詢或請求閱覽您的個人資料</li>
+          <li><strong>更正權</strong>：請求更正或補充您的個人資料</li>
+          <li><strong>刪除權</strong>：請求刪除您的個人資料</li>
+          <li><strong>停止處理權</strong>：請求停止處理或利用您的個人資料</li>
+          <li><strong>資料可攜權</strong>：請求提供您的個人資料副本</li>
+        </ol>
+        <p class="small">
+          如需行使上述權利，請透過系統內的客服功能聯繫我們。我們會在合理期限內回應您的請求。
+        </p>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">八、兒童隱私</h6>
+        <p class="small">
+          本服務不針對 13 歲以下兒童。我們不會故意收集兒童的個人資料。若您發現兒童在未經同意的情況下提供了個人資料，請立即聯繫我們。
+        </p>
+      </div>
+
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">九、政策變更</h6>
+        <p class="small">
+          我們可能會不時更新本隱私政策。重大變更時，我們會透過網站公告或其他方式通知您。請定期查閱本政策以了解最新內容。
+        </p>
+      </div>
+
+      <div class="mb-3">
+        <h6 class="fw-bold mb-2">十、聯繫我們</h6>
+        <p class="small">
+          如對本隱私政策有任何疑問或需要行使您的權利，請透過以下方式聯繫我們：
+        </p>
+        <ul class="small">
+          <li>透過系統內的客服功能</li>
+          <li>或聯繫您所訂購的店家</li>
+        </ul>
+      </div>
+
+      <div class="alert alert-info small">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        最後更新日期：{{ new Date().toLocaleDateString('zh-TW') }}
+      </div>
+    </div>
+  </BModal>
 
   <!-- 註冊成功模態框 -->
   <BModal
@@ -289,6 +505,8 @@ const route = useRoute()
 // 模態框參考
 const successModal = ref(null)
 const verificationCodeModal = ref(null)
+const termsModal = ref(null)
+const privacyPolicyModal = ref(null)
 
 // 新增 brandId 計算屬性
 const brandId = computed(() => {
@@ -298,7 +516,6 @@ const brandId = computed(() => {
 // 表單資料 - 使用 reactive
 const userData = reactive({
   name: '',
-  email: '',
   phone: '',
   password: '',
 })
@@ -328,11 +545,6 @@ const validationRules = {
     minLength: 1,
     maxLength: 25,
     message: '姓名長度必須1-25個字元',
-  },
-  email: {
-    required: false, // 電子郵件為選填
-    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: '請輸入有效的電子郵件格式',
   },
   phone: {
     required: true,
@@ -443,7 +655,6 @@ const validateForm = () => {
   let isValid = true
   const fieldsToValidate = [
     'name',
-    'email',
     'phone',
     'verificationCode',
     'password',
@@ -483,13 +694,17 @@ const redirectToLogin = () => {
   })
 }
 
-// 顯示服務條款和隱私政策（保持原有邏輯）
+// 顯示服務條款和隱私政策
 const showTerms = () => {
-  // 實作顯示條款模態框
+  if (termsModal.value) {
+    termsModal.value.show()
+  }
 }
 
 const showPrivacyPolicy = () => {
-  // 實作顯示隱私政策模態框
+  if (privacyPolicyModal.value) {
+    privacyPolicyModal.value.show()
+  }
 }
 
 // 關閉驗證碼模態框
@@ -599,7 +814,6 @@ const handleSubmit = async () => {
       brandId: brandId.value,
       userData: {
         name: userData.name,
-        email: userData.email || '',
         phone: userData.phone.replace(/[\s\-\(\)]/g, ''),
         password: userData.password,
         brand: brandId.value,
