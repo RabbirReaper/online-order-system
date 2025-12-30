@@ -248,7 +248,17 @@ const goToLogin = () => {
 }
 
 const goBack = () => {
-  router.back()
+  const brandId = sessionStorage.getItem('currentBrandId')
+  const storeId = sessionStorage.getItem('currentStoreId')
+
+  if (brandId && storeId) {
+    router.push({
+      name: 'menu',
+      params: { brandId, storeId }
+    })
+  } else {
+    router.back()
+  }
 }
 
 const closeErrorModal = () => {}
