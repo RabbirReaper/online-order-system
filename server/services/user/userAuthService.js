@@ -309,7 +309,7 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
   const code = generateVerificationCode(6)
 
   // 儲存驗證碼
-  await VerificationCode.create({
+  const verificationRecord = await VerificationCode.create({
     phone,
     code,
     purpose,
@@ -324,15 +324,20 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
 
     const smsResult = await smsService.sendSMS(phone, message)
 
-    // console.log(`簡訊已發送至 ${phone}，消息ID: ${message}`)
+    // 簡訊發送成功
+    return {
+      success: true,
+      message: '驗證碼已發送到您的手機',
+      expiresIn: 300, // 5分鐘，單位秒
+    }
   } catch (smsError) {
-    console.error('簡訊發送異常:', smsError)
-  }
+    console.error('簡訊發送失敗:', smsError)
 
-  return {
-    success: true,
-    message: '驗證碼已發送到您的手機',
-    expiresIn: 300, // 5分鐘，單位秒
+    // 刪除已創建的驗證碼記錄（因為用戶無法收到）
+    await VerificationCode.deleteOne({ _id: verificationRecord._id })
+
+    // 重新拋出錯誤，讓控制器處理並返回給前端
+    throw smsError
   }
 }
 

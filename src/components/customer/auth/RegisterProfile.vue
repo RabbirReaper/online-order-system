@@ -43,25 +43,6 @@
             </div>
           </div>
 
-          <!-- 電子郵件 -->
-          <div class="mb-3">
-            <label for="email" class="form-label">電子郵件</label>
-            <input
-              type="email"
-              class="form-control"
-              id="email"
-              v-model="userData.email"
-              :class="{ 'is-invalid': fieldErrors.email, 'is-valid': isFieldValid('email') }"
-              placeholder="請輸入您的電子郵件"
-              @blur="validateField('email')"
-              @input="clearFieldError('email')"
-            />
-            <small class="text-muted">選填，用於接收訂單通知</small>
-            <div class="invalid-feedback">
-              {{ fieldErrors.email }}
-            </div>
-          </div>
-
           <!-- 密碼 -->
           <div class="mb-3">
             <label for="password" class="form-label">密碼 <span class="text-danger">*</span></label>
@@ -226,7 +207,6 @@ const phone = ref('')
 const verificationCode = ref('')
 const userData = reactive({
   name: '',
-  email: '',
   password: '',
 })
 const confirmPassword = ref('')
@@ -250,11 +230,6 @@ const validationRules = {
     minLength: 1,
     maxLength: 25,
     message: '姓名長度必須1-25個字元',
-  },
-  email: {
-    required: false,
-    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: '請輸入有效的電子郵件格式',
   },
   password: {
     required: true,
@@ -343,7 +318,7 @@ const isFieldValid = (fieldName) => {
 
 const validateForm = () => {
   let isValid = true
-  const fieldsToValidate = ['name', 'email', 'password', 'confirmPassword', 'agreeTerms']
+  const fieldsToValidate = ['name', 'password', 'confirmPassword', 'agreeTerms']
 
   fieldsToValidate.forEach((field) => {
     if (!validateField(field)) {
@@ -395,7 +370,6 @@ const handleSubmit = async () => {
       brandId: brandId.value,
       userData: {
         name: userData.name,
-        email: userData.email || '',
         phone: phone.value.replace(/[\s\-\(\)]/g, ''),
         password: userData.password,
         brand: brandId.value,

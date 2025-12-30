@@ -561,6 +561,44 @@ class SMSService {
   }
 
   /**
+   * 處理網絡錯誤
+   * @param {Error} error - 錯誤對象
+   * @returns {AppError|null} 處理後的錯誤
+   */
+  handleNetworkError(error) {
+    if (error.code === 'ETIMEDOUT') {
+      return new AppError('簡訊服務連線超時，請稍後再試', 503)
+    }
+
+    if (error.code === 'ECONNREFUSED') {
+      return new AppError('無法連接到簡訊服務，請聯繫系統管理員', 503)
+    }
+
+    if (error.code === 'ENOTFOUND') {
+      return new AppError('簡訊服務位址無效，請聯繫系統管理員', 503)
+    }
+
+    return null
+  }
+
+  /**
+   * 處理 HTTP 錯誤
+   * @param {Object} response - HTTP 響應對象
+   * @returns {AppError|null} 處理後的錯誤
+   */
+  handleHttpError(response) {
+    if (response.status === 401 || response.status === 403) {
+      return new AppError('簡訊服務認證失敗，請檢查帳號密碼', 500)
+    }
+
+    if (response.status >= 500) {
+      return new AppError('簡訊服務暫時無法使用，請稍後再試', 503)
+    }
+
+    return null
+  }
+
+  /**
    * 創建友善的錯誤訊息
    * @param {Object} result - 簡訊發送結果
    * @returns {Object} 友善的錯誤訊息
