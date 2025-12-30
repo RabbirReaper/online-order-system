@@ -63,8 +63,8 @@
               </BFormInvalidFeedback>
               <BFormText class="mt-1">
                 <i class="bi bi-info-circle me-1"></i>
-                支援 PNG、JPG 格式，建議尺寸 1181×1181px (10×10cm @ 300 DPI)。若不上傳，將生成純 QR
-                Code（不含桌號文字）。
+                支援 PNG、JPG 格式，建議尺寸 1181×1181px (10×10cm @ 300 DPI)。桌號將顯示在 QR Code
+                中心。
               </BFormText>
 
               <!-- 圖片資訊顯示 -->
@@ -164,15 +164,16 @@
               </div>
             </div>
 
-            <!-- 桌號文字設定 -->
-            <div class="mb-4">
+            <!-- 桌號文字設定（僅在有背景圖片時顯示） -->
+            <div class="mb-4" v-if="backgroundConfig.imageData">
               <label class="form-label fw-bold">
-                <i class="bi bi-fonts me-1"></i>桌號文字設定
+                <i class="bi bi-fonts me-1"></i>額外桌號文字設定
+                <span class="badge bg-secondary ms-2">選填</span>
               </label>
 
-              <div v-if="!backgroundConfig.imageData" class="alert alert-warning small mb-3">
+              <div class="alert alert-info small mb-3">
                 <i class="bi bi-info-circle me-1"></i>
-                未上傳背景圖片時，純 QR Code 模式不會顯示桌號文字。
+                桌號已自動顯示在 QR Code 中心。此設定可在背景圖片其他位置添加額外的桌號文字。
               </div>
 
               <div class="row g-3">
@@ -345,7 +346,7 @@
                       {{ backgroundConfig.canvasWidth }} × {{ backgroundConfig.canvasHeight }} px
                     </span>
                     <span v-else>
-                      桌號: {{ tableConfig.tableNumber }} | 純 QR Code 模式（不含桌號文字）
+                      桌號: {{ tableConfig.tableNumber }} | 純 QR Code 模式（桌號顯示在中心）
                     </span>
                   </small>
                 </div>
@@ -561,7 +562,7 @@ const generateQRCode = async (tableNumber) => {
     const qrCodeDataURL = await QRCode.toDataURL(url, {
       width: qrConfig.value.size,
       margin: 1,
-      errorCorrectionLevel: 'M', // 降低容錯率為 Medium
+      errorCorrectionLevel: 'H', // 提高容錯率為 High，允許中心顯示桌號
       color: {
         dark: qrConfig.value.darkColor, // QR code 前景色
         light: qrConfig.value.lightColor, // QR code 背景色
@@ -572,6 +573,42 @@ const generateQRCode = async (tableNumber) => {
     console.error('QR Code 生成失敗:', error)
     return null
   }
+}
+
+// 在 QR Code 中心繪製桌號的輔助函數
+const drawTableNumberOnQR = (ctx, tableNumber, centerX, centerY, qrSize) => {
+  // 根據 QR code 大小動態計算字體大小
+  const fontSize = Math.max(qrSize * 0.12, 20) // 字體大小為 QR code 的 12%，最小 20px
+  ctx.font = `bold ${fontSize}px Arial, "Microsoft JhengHei", sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  // 測量文字寬度
+  const textMetrics = ctx.measureText(tableNumber)
+  const textWidth = textMetrics.width
+
+  // 計算背景矩形尺寸（文字寬度 + 左右各 20% padding）
+  const paddingX = textWidth * 0.4
+  const paddingY = fontSize * 0.5
+  const rectWidth = textWidth + paddingX
+  const rectHeight = fontSize + paddingY
+
+  // 繪製白色背景矩形（帶圓角）
+  const cornerRadius = Math.min(rectWidth, rectHeight) * 0.2
+  ctx.fillStyle = '#FFFFFF'
+  ctx.beginPath()
+  ctx.roundRect(
+    centerX - rectWidth / 2,
+    centerY - rectHeight / 2,
+    rectWidth,
+    rectHeight,
+    cornerRadius,
+  )
+  ctx.fill()
+
+  // 繪製黑色文字
+  ctx.fillStyle = '#000000'
+  ctx.fillText(tableNumber, centerX, centerY)
 }
 
 // 生成桌牌圖片
@@ -616,14 +653,23 @@ const generateTableCard = async (config) => {
       qrConfig.value.size,
     )
 
-    // 3. 繪製桌號文字
+    // 3. 在 QR Code 中心繪製桌號
+    drawTableNumberOnQR(
+      ctx,
+      config.tableNumber,
+      qrConfig.value.x + qrConfig.value.size / 2,
+      qrConfig.value.y + qrConfig.value.size / 2,
+      qrConfig.value.size,
+    )
+
+    // 4. 繪製額外的桌號文字（可選，顯示在背景圖片其他位置）
     ctx.font = `bold ${tableNumberConfig.value.fontSize}px Arial, "Microsoft JhengHei", sans-serif`
     ctx.fillStyle = tableNumberConfig.value.color
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(config.tableNumber, tableNumberConfig.value.x, tableNumberConfig.value.y)
   } else {
-    // 沒有背景圖片：只生成純 QR Code（不含桌號文字）
+    // 沒有背景圖片：只生成純 QR Code（桌號顯示在中心）
     const qrSize = qrConfig.value.size
     const padding = 40 // 邊距
 
@@ -648,6 +694,15 @@ const generateTableCard = async (config) => {
     })
 
     ctx.drawImage(qrImage, padding, padding, qrSize, qrSize)
+
+    // 在 QR Code 中心繪製桌號
+    drawTableNumberOnQR(
+      ctx,
+      config.tableNumber,
+      padding + qrSize / 2,
+      padding + qrSize / 2,
+      qrSize,
+    )
   }
 
   return canvas.toDataURL('image/png')
@@ -698,7 +753,16 @@ const updatePreview = async () => {
         qrConfig.value.size * scale,
       )
 
-      // 3. 繪製桌號文字
+      // 3. 在 QR Code 中心繪製桌號
+      drawTableNumberOnQR(
+        ctx,
+        tableConfig.value.tableNumber,
+        (qrConfig.value.x + qrConfig.value.size / 2) * scale,
+        (qrConfig.value.y + qrConfig.value.size / 2) * scale,
+        qrConfig.value.size * scale,
+      )
+
+      // 4. 繪製額外的桌號文字（可選，顯示在背景圖片其他位置）
       ctx.font = `bold ${tableNumberConfig.value.fontSize * scale}px Arial, "Microsoft JhengHei", sans-serif`
       ctx.fillStyle = tableNumberConfig.value.color
       ctx.textAlign = 'center'
@@ -709,7 +773,7 @@ const updatePreview = async () => {
         tableNumberConfig.value.y * scale,
       )
     } else {
-      // 沒有背景圖片：預覽純 QR Code（不含桌號文字）
+      // 沒有背景圖片：預覽純 QR Code（桌號顯示在中心）
       const qrSize = qrConfig.value.size
       const padding = 40
       const scale = 0.25
@@ -733,6 +797,15 @@ const updatePreview = async () => {
       })
 
       ctx.drawImage(qrImage, padding * scale, padding * scale, qrSize * scale, qrSize * scale)
+
+      // 在 QR Code 中心繪製桌號
+      drawTableNumberOnQR(
+        ctx,
+        tableConfig.value.tableNumber,
+        (padding + qrSize / 2) * scale,
+        (padding + qrSize / 2) * scale,
+        qrSize * scale,
+      )
     }
   } catch (error) {
     console.error('預覽更新失敗:', error)
