@@ -74,8 +74,8 @@
         <label class="form-check-label" for="cashPayment">現場付款</label>
       </div>
 
-      <!-- 線上付款 -->
-      <div class="form-check me-4 mb-3">
+      <!-- 線上付款 - 根據店家設定顯示 -->
+      <div v-if="isOnlinePaymentEnabled" class="form-check me-4 mb-3">
         <input
           class="form-check-input"
           type="radio"
@@ -115,6 +115,10 @@ const props = defineProps({
   orderType: {
     type: String,
     default: 'takeout',
+  },
+  isOnlinePaymentEnabled: {
+    type: Boolean,
+    default: false,
   },
 })
 

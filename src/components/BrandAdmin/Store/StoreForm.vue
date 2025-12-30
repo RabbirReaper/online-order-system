@@ -379,24 +379,18 @@
               <BFormText>選擇現場櫃檯可接受的付款方式</BFormText>
             </div>
 
-            <!-- 客戶端支援付款方式 -->
+            <!-- 客戶端線上付款設定 -->
             <div class="mb-3">
-              <label class="form-label small">客戶端支援付款方式</label>
-              <div class="d-flex flex-wrap gap-2">
-                <BFormCheckbox
-                  v-model="paymentOptions.customer.line_pay"
-                  @change="updateCustomerPayments"
-                >
-                  LINE Pay
-                </BFormCheckbox>
-                <BFormCheckbox
-                  v-model="paymentOptions.customer.credit_card"
-                  @change="updateCustomerPayments"
-                >
-                  信用卡
+              <label class="form-label small">客戶端線上付款設定</label>
+              <div class="d-flex flex-column gap-2">
+                <BFormCheckbox v-model="formData.isActiveCustomerOnlinePayment" switch>
+                  啟用線上付款 (藍新金流)
+                  {{ formData.isActiveCustomerOnlinePayment ? '✓' : '✗' }}
                 </BFormCheckbox>
               </div>
-              <BFormText>選擇線上客戶端可使用的付款方式</BFormText>
+              <BFormText
+                >啟用後，客戶可以在線上訂單中選擇使用藍新金流進行線上付款</BFormText
+              >
             </div>
           </div>
         </div>
@@ -692,7 +686,7 @@ const formData = reactive({
   advanceOrderDays: 0,
   printer: '', // 出單機編號
   counterPayments: [], // 現場支援付款方式
-  customerPayments: [], // 客戶端支援付款方式
+  isActiveCustomerOnlinePayment: false, // 客戶端線上付款啟用狀態
 })
 
 // 錯誤訊息
@@ -722,23 +716,12 @@ const paymentOptions = reactive({
     line_pay: false,
     credit_card: false,
   },
-  customer: {
-    line_pay: false,
-    credit_card: false,
-  },
 })
 
 // 更新現場支援付款方式
 const updateCounterPayments = () => {
   formData.counterPayments = Object.keys(paymentOptions.counter).filter(
     (key) => paymentOptions.counter[key],
-  )
-}
-
-// 更新客戶端支援付款方式
-const updateCustomerPayments = () => {
-  formData.customerPayments = Object.keys(paymentOptions.customer).filter(
-    (key) => paymentOptions.customer[key],
   )
 }
 
@@ -938,13 +921,11 @@ const resetForm = () => {
     formData.advanceOrderDays = 0
     formData.printer = ''
     formData.counterPayments = []
-    formData.customerPayments = []
+    formData.isActiveCustomerOnlinePayment = false
     // 重置付款選項 checkbox
     paymentOptions.counter.cash = false
     paymentOptions.counter.line_pay = false
     paymentOptions.counter.credit_card = false
-    paymentOptions.customer.line_pay = false
-    paymentOptions.customer.credit_card = false
   }
   clearImage()
 
@@ -1174,14 +1155,13 @@ const fetchStoreData = async () => {
 
       // 處理付款方式欄位
       formData.counterPayments = store.counterPayments || []
-      formData.customerPayments = store.customerPayments || []
+      formData.isActiveCustomerOnlinePayment =
+        store.isActiveCustomerOnlinePayment !== undefined ? store.isActiveCustomerOnlinePayment : false
 
       // 根據付款方式陣列設定 checkbox 狀態
       paymentOptions.counter.cash = formData.counterPayments.includes('cash')
       paymentOptions.counter.line_pay = formData.counterPayments.includes('line_pay')
       paymentOptions.counter.credit_card = formData.counterPayments.includes('credit_card')
-      paymentOptions.customer.line_pay = formData.customerPayments.includes('line_pay')
-      paymentOptions.customer.credit_card = formData.customerPayments.includes('credit_card')
 
       formData._id = store._id
     } else {
@@ -1245,7 +1225,7 @@ const submitForm = async () => {
       deliveryPriceRanges: formData.deliveryPriceRanges,
       advanceOrderDays: formData.advanceOrderDays,
       counterPayments: formData.counterPayments,
-      customerPayments: formData.customerPayments,
+      isActiveCustomerOnlinePayment: formData.isActiveCustomerOnlinePayment,
     }
 
     // 處理 printer 欄位 (轉換為陣列格式，只儲存一個值)
