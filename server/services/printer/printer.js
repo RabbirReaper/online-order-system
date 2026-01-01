@@ -95,9 +95,9 @@ const getPrinterAccessToken = async () => {
 const formatOrderType = (order) => {
   const platform = order.platformInfo?.platform || 'direct'
 
-  if (platform === 'foodpanda') return 'foodpand'
-  if (platform === 'ubereats') return 'UberEat'
-  if (order.orderType === 'dine_in') return `內用 ${order.dineInInfo.tableNumber} 桌`
+  if (platform === 'foodpanda') return 'foodpanda'
+  if (platform === 'ubereats') return 'UberEats'
+  if (order.orderType === 'dine_in') return '內用'
   if (order.orderType === 'takeout') return '自取'
   if (order.orderType === 'delivery') return '外送'
 
@@ -132,37 +132,14 @@ const formatOrderNumber = (order) => {
 const buildOrderPrintMessage = (order) => {
   const printContent = []
 
-  // 1. 標題：訂單類型
-  printContent.push({
-    cont: formatOrderType(order),
-    type: 'title',
-  })
-
-  printContent.push({
-    cont: '',
-  })
-
-  // 2. 訂單編號
-  printContent.push({
-    cont: formatOrderNumber(order),
-    type: 'text',
-    align: 'center',
-    size: '22',
-  })
-
-  // 3. 訂單創建時間
+  // 1. 訂單創建時間
   const createTime = fromUTCDate(order.createdAt).toFormat('yyyy/MM/dd HH:mm:ss')
 
   printContent.push({
     cont: `點餐時間: ${createTime}`,
   })
 
-  // 4. 分隔線
-  printContent.push({
-    type: 'div_line',
-  })
-
-  // 5. 顧客資訊（如果有）
+  // 2. 顧客資訊（如果有）
   if (order.customerInfo?.name) {
     printContent.push({
       cont: `顧客姓名: ${order.customerInfo.name}`,
@@ -175,14 +152,58 @@ const buildOrderPrintMessage = (order) => {
     })
   }
 
-  // 6. 外送地址（如果是外送訂單）
+  printContent.push({
+    cont: '',
+  })
+  printContent.push({
+    cont: '',
+  })
+
+  // 3. 訂單類型
+  printContent.push({
+    cont: formatOrderType(order),
+    type: 'title',
+  })
+
+  printContent.push({
+    cont: '',
+  })
+
+  // 4. 桌號和訂單編號
+  if (order.orderType === 'dine_in' && order.dineInInfo?.tableNumber) {
+    // 標題行：桌號 和 編號
+    printContent.push({
+      cont: ` 桌號     單號`,
+      type: 'text',
+      align: 'center',
+      size: '11',
+    })
+    // 數值行：桌號數字 和 編號數字
+    printContent.push({
+      cont: ` ${String(order.dineInInfo.tableNumber).padEnd(9)}${formatOrderNumber(order)}`,
+      type: 'text',
+      align: 'center',
+      size: '11',
+    })
+  } else {
+    printContent.push({
+      cont: ` ${formatOrderNumber(order)}`,
+      type: 'title',
+    })
+  }
+
+  printContent.push({
+    cont: '',
+  })
+
+  // 5. 外送地址（如果是外送訂單）
   if (order.orderType === 'delivery' && order.deliveryInfo?.address) {
     printContent.push({
       cont: `外送地址: ${order.deliveryInfo.address}`,
     })
   }
 
-  // 7. 分隔線
+  // 6. 分隔線
   printContent.push({
     type: 'div_line',
   })
