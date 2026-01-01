@@ -137,7 +137,7 @@
               @click="goToCart"
             >
               <i class="bi bi-cart-fill me-2"></i>
-              {{ cartItemCount }} 項商品 - ${{ cartTotal }}
+              {{ cartItemCount }} 項商品   ${{ cartTotal }}
             </button>
           </div>
         </div>

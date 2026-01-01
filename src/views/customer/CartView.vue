@@ -252,7 +252,7 @@
       >
         <div class="container-button" style="max-width: 540px">
           <button class="btn w-100 py-2 checkout-btn" @click="checkout" :disabled="!isFormValid">
-            前往結帳 - ${{ calculateTotal() }}
+            前往結帳   ${{ calculateTotal() }}
           </button>
         </div>
       </div>
@@ -607,11 +607,10 @@ const goBack = () => {
 }
 
 const goToLogin = () => {
+  const currentPath = router.currentRoute.value.fullPath
   router.push({
-    name: 'login',
-    query: {
-      redirect: router.currentRoute.value.fullPath,
-    },
+    path: '/auth/login',
+    query: { redirect: currentPath },
   })
 }
 
