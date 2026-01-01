@@ -260,8 +260,11 @@ const handleCashPayment = async () => {
 }
 
 // 列印訂單
-const printOrder = async () => {
-  if (!counterStore.selectedOrder) return
+const printOrder = async (callbacks) => {
+  if (!counterStore.selectedOrder) {
+    callbacks?.reject?.(new Error('沒有選擇訂單'))
+    return
+  }
 
   try {
     const response = await api.printer.printOrder({
@@ -272,10 +275,16 @@ const printOrder = async () => {
 
     if (response.success) {
       console.log('訂單列印成功')
+      // 通知子組件列印成功
+      callbacks?.resolve?.()
+    } else {
+      callbacks?.reject?.(new Error('列印失敗'))
     }
   } catch (error) {
     console.error('列印訂單失敗:', error)
     alert(error.response?.data?.message || '列印訂單失敗')
+    // 通知子組件列印失敗
+    callbacks?.reject?.(error)
   }
 }
 
