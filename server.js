@@ -44,6 +44,7 @@ app.use(
       maxAge: 60 * 60 * 1000, // 1 小時
       sameSite: 'strict',
       httpOnly: true,
+      secure: true,
     },
   }),
 )
