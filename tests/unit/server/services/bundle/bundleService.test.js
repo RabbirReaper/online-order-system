@@ -17,6 +17,7 @@ const mockBundleModel = vi.fn().mockImplementation((data) => createMockBundleIns
 const mockBundleInstanceModel = vi.fn().mockImplementation((data) => createMockBundleInstanceModelInstance(data))
 const mockVoucherTemplateModel = vi.fn()
 const mockOrderModel = vi.fn()
+const mockMenuModel = vi.fn()
 
 // Mock static methods for Bundle
 mockBundleModel.find = vi.fn()
@@ -33,6 +34,9 @@ mockVoucherTemplateModel.findOne = vi.fn()
 
 // Mock static methods for Order
 mockOrderModel.countDocuments = vi.fn()
+
+// Mock static methods for Menu
+mockMenuModel.countDocuments = vi.fn()
 
 // Mock imageHelper
 const mockImageHelper = {
@@ -55,6 +59,10 @@ vi.mock('../../../../../server/models/Promotion/VoucherTemplate.js', () => ({
 
 vi.mock('../../../../../server/models/Order/Order.js', () => ({
   default: mockOrderModel
+}))
+
+vi.mock('../../../../../server/models/Menu/Menu.js', () => ({
+  default: mockMenuModel
 }))
 
 vi.mock('../../../../../server/middlewares/error.js', () => ({
@@ -99,6 +107,11 @@ describe('BundleService', () => {
     mockVoucherTemplateModel.findOne.mockReturnValue({
       populate: vi.fn().mockResolvedValue(null)
     })
+
+    // 重置依賴檢查 Mock（預設無依賴）
+    mockOrderModel.countDocuments.mockResolvedValue(0)
+    mockMenuModel.countDocuments.mockResolvedValue(0)
+    mockBundleInstanceModel.countDocuments.mockResolvedValue(0)
 
     // 動態導入服務，確保 mock 生效
     bundleService = await import('../../../../../server/services/bundle/bundleService.js')
@@ -449,17 +462,27 @@ describe('BundleService', () => {
         populate: vi.fn().mockResolvedValue(mockBundle)
       })
       mockOrderModel.countDocuments.mockResolvedValue(0)
+      mockMenuModel.countDocuments.mockResolvedValue(0)
+      mockBundleInstanceModel.countDocuments.mockResolvedValue(0)
     })
 
     it('should delete bundle successfully', async () => {
       const result = await bundleService.deleteBundle('bundle123', 'brand123')
 
+      // 驗證所有檢查都執行
       expect(mockBundleModel.findOne).toHaveBeenCalledWith({
         _id: 'bundle123',
         brand: 'brand123'
       })
       expect(mockOrderModel.countDocuments).toHaveBeenCalledWith({
         'items.bundle': 'bundle123'
+      })
+      expect(mockMenuModel.countDocuments).toHaveBeenCalledWith({
+        'categories.items.bundle': 'bundle123',
+        brand: 'brand123'
+      })
+      expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalledWith({
+        templateId: 'bundle123'
       })
       expect(mockImageHelper.deleteImage).toHaveBeenCalledWith('image-key-123')
       expect(mockBundle.deleteOne).toHaveBeenCalled()
@@ -499,6 +522,84 @@ describe('BundleService', () => {
       await bundleService.deleteBundle('bundle123', 'brand123')
 
       expect(mockImageHelper.deleteImage).not.toHaveBeenCalled()
+    })
+
+    // Menu 依賴檢查測試
+    it('should throw error when bundle is used by menus', async () => {
+      mockMenuModel.countDocuments.mockResolvedValue(2)
+
+      await expect(bundleService.deleteBundle('bundle123', 'brand123'))
+        .rejects.toThrow('此Bundle已被菜單使用中，無法刪除')
+
+      expect(mockBundle.deleteOne).not.toHaveBeenCalled()
+    })
+
+    it('should perform menu dependency check before deletion', async () => {
+      await bundleService.deleteBundle('bundle123', 'brand123')
+
+      expect(mockMenuModel.countDocuments).toHaveBeenCalledBefore(mockBundle.deleteOne)
+      expect(mockMenuModel.countDocuments).toHaveBeenCalledWith({
+        'categories.items.bundle': 'bundle123',
+        brand: 'brand123'
+      })
+    })
+
+    it('should check menu dependencies with correct query format', async () => {
+      await bundleService.deleteBundle('bundle123', 'brand123')
+
+      expect(mockMenuModel.countDocuments).toHaveBeenCalledWith({
+        'categories.items.bundle': 'bundle123',
+        brand: 'brand123'
+      })
+    })
+
+    // BundleInstance 依賴檢查測試
+    it('should throw error when bundle has instances', async () => {
+      mockBundleInstanceModel.countDocuments.mockResolvedValue(5)
+
+      await expect(bundleService.deleteBundle('bundle123', 'brand123'))
+        .rejects.toThrow('此Bundle已有實例記錄，無法刪除')
+
+      expect(mockBundle.deleteOne).not.toHaveBeenCalled()
+    })
+
+    it('should perform bundle instance dependency check before deletion', async () => {
+      await bundleService.deleteBundle('bundle123', 'brand123')
+
+      expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalledBefore(mockBundle.deleteOne)
+      expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalledWith({
+        templateId: 'bundle123'
+      })
+    })
+
+    it('should check bundle instance dependencies with correct query format', async () => {
+      await bundleService.deleteBundle('bundle123', 'brand123')
+
+      expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalledWith({
+        templateId: 'bundle123'
+      })
+    })
+
+    // 檢查順序測試
+    it('should check dependencies in correct order: Order -> Menu -> BundleInstance', async () => {
+      await bundleService.deleteBundle('bundle123', 'brand123')
+
+      expect(mockOrderModel.countDocuments).toHaveBeenCalledBefore(mockMenuModel.countDocuments)
+      expect(mockMenuModel.countDocuments).toHaveBeenCalledBefore(mockBundleInstanceModel.countDocuments)
+      expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalledBefore(mockBundle.deleteOne)
+    })
+
+    it('should reject for order dependency before checking other dependencies', async () => {
+      mockOrderModel.countDocuments.mockResolvedValue(1)
+      mockMenuModel.countDocuments.mockResolvedValue(1)
+      mockBundleInstanceModel.countDocuments.mockResolvedValue(1)
+
+      await expect(bundleService.deleteBundle('bundle123', 'brand123'))
+        .rejects.toThrow('此Bundle已有相關訂單，無法刪除')
+
+      // Menu 和 BundleInstance 檢查不應執行
+      expect(mockMenuModel.countDocuments).not.toHaveBeenCalled()
+      expect(mockBundleInstanceModel.countDocuments).not.toHaveBeenCalled()
     })
   })
 
