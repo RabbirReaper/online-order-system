@@ -274,7 +274,7 @@ const { initializeLanguage } = useLanguage()
 
 onMounted(async () => {
   initializeLanguage()
-  document.title = '聯絡我們 - 光兔點餐'
+  document.title = '聯絡我們 - 光速點餐'
 
   // 確保 Bootstrap JavaScript 已載入並初始化
   await nextTick()

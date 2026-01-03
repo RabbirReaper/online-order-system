@@ -333,20 +333,23 @@ const preloadImage = (url) => {
 
 // SEO Meta
 const setMetaTags = () => {
-  document.title = '光兔點餐 - 專業餐飲管理系統'
+  document.title = '光速點餐 - 專業餐飲管理系統'
 
   const metaTags = [
     {
       name: 'description',
       content:
-        '光兔點餐提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
+        '光速點餐提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
     },
-    { name: 'keywords', content: '光兔點餐,餐飲管理系統,POS系統,會員管理,預購券,點餐系統,餐廳管理' },
-    { property: 'og:title', content: '光兔點餐 - 專業餐飲管理系統' },
+    {
+      name: 'keywords',
+      content: '光速點餐,餐飲管理系統,POS系統,會員管理,預購券,點餐系統,餐廳管理',
+    },
+    { property: 'og:title', content: '光速點餐 - 專業餐飲管理系統' },
     {
       property: 'og:description',
       content:
-        '光兔點餐提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
+        '光速點餐提供完整的餐飲管理系統，包含會員積點、預購券、多店管理等功能。僅收取營業額0.3%，助您提升營運效率。',
     },
     { property: 'og:type', content: 'website' },
   ]

@@ -195,7 +195,7 @@
   <BModal id="termsModal" title="用戶服務條款" ok-title="確認" ok-only size="lg" ref="termsModal">
     <div class="modal-content-wrapper">
       <p class="text-muted mb-4">
-        光兔點餐股份有限公司（以下簡稱「本公司」）係依據 光兔點餐
+        光速點餐股份有限公司（以下簡稱「本公司」）係依據 光速點餐
         服務條款（以下簡稱「本服務條款」），提供餐廳會員資料建置及媒合餐廳與消費者間之線上點餐服務（以下簡稱「本服務」）。
       </p>
 
@@ -354,7 +354,7 @@
   <BModal id="privacyModal" title="隱私政策" ok-title="確認" ok-only size="lg" ref="privacyModal">
     <div class="modal-content-wrapper">
       <p class="text-muted mb-4">
-        本隱私權政策，適用於光兔點餐股份有限公司（下稱「本公司」）於餐廳會員及線上點餐提供之服務（下稱「本服務」）。
+        本隱私權政策，適用於光速點餐股份有限公司（下稱「本公司」）於餐廳會員及線上點餐提供之服務（下稱「本服務」）。
         依照個人資料保護法第8條規定，本隱私權政策將幫助您了解，我們如何蒐集、處理、利用及保護個人資料，請詳閱以下內容：
         您同意並接受本隱私權政策，並且您得隨時撤回您的同意。
       </p>

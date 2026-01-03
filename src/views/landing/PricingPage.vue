@@ -556,7 +556,7 @@ const setRevenue = (amount) => {
 
 onMounted(() => {
   initializeLanguage()
-  document.title = '收費方案 - 光兔點餐'
+  document.title = '收費方案 - 光速點餐'
 })
 </script>
 
