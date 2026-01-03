@@ -432,8 +432,8 @@ const handleClick = () => {
 
 .item-price-tag {
   display: inline-block;
-  background-color: #dceeda;
-  color: rgb(230, 11, 11);
+  background-color: #d3540049;
+  color: #d35400;
   font-weight: 700;
   font-size: 1.1rem;
   padding: 0.3rem 0.8rem;
