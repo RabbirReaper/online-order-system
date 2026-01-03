@@ -169,10 +169,15 @@
             ></button>
           </div>
           <div class="modal-body" v-if="dishToDelete">
+            <!-- 錯誤訊息顯示區域 -->
+            <div class="alert alert-danger" v-if="deleteError">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {{ deleteError }}
+            </div>
             <p>
               確定要刪除餐點 <strong>{{ dishToDelete.name }}</strong> 嗎？
             </p>
-            <div class="alert alert-danger">
+            <div class="alert alert-warning">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               此操作無法撤銷，刪除後將無法復原！
             </div>
@@ -215,6 +220,7 @@ const errorMessage = ref('')
 const deleteModal = ref(null)
 const dishToDelete = ref(null)
 const isDeleting = ref(false)
+const deleteError = ref('')
 const availableTags = ref([])
 
 const pagination = reactive({
@@ -353,6 +359,7 @@ const handleSearch = () => {
 // 顯示刪除確認對話框
 const confirmDelete = (dish) => {
   dishToDelete.value = dish
+  deleteError.value = ''
   deleteModal.value.show()
 }
 
@@ -361,9 +368,13 @@ const deleteDish = async () => {
   if (!dishToDelete.value) return
 
   isDeleting.value = true
+  deleteError.value = ''
 
   try {
-    await api.dish.deleteDishTemplate(dishToDelete.value._id, brandId.value)
+    await api.dish.deleteDishTemplate({
+      id: dishToDelete.value._id,
+      brandId: brandId.value
+    })
 
     // 關閉對話框
     deleteModal.value.hide()
@@ -372,7 +383,14 @@ const deleteDish = async () => {
     fetchDishes()
   } catch (error) {
     console.error('刪除餐點失敗:', error)
-    alert('刪除餐點時發生錯誤')
+    // 顯示錯誤訊息在 modal 上
+    if (error.response?.data?.message) {
+      deleteError.value = error.response.data.message
+    } else if (error.message) {
+      deleteError.value = error.message
+    } else {
+      deleteError.value = '刪除餐點時發生錯誤'
+    }
   } finally {
     isDeleting.value = false
   }
