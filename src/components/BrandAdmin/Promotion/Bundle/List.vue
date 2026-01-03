@@ -168,7 +168,7 @@
                   <span v-else class="text-muted small">未設定</span>
                 </td>
                 <td>
-                  <span class="badge bg-info">{{ bundle.totalSold || 0 }}</span>
+                  <span class="">{{ bundle.totalSold || 0 }}</span>
                 </td>
                 <td>
                   <span class="badge" :class="getStatusBadgeClass(bundle)">
