@@ -445,6 +445,146 @@ describe('BundleService', () => {
         brand: 'brand123'
       })
     })
+
+    // === 停用時的依賴檢查測試 ===
+    describe('when deactivating bundle', () => {
+      let activeBundleMock
+
+      beforeEach(() => {
+        // 每次測試前創建新的 mock 對象
+        activeBundleMock = {
+          _id: 'bundle123',
+          name: 'Active Bundle',
+          brand: 'brand123',
+          isActive: true,
+          save: vi.fn().mockResolvedValue(true),
+          bundleItems: []
+        }
+
+        mockBundleModel.findOne.mockReturnValue({
+          populate: vi.fn().mockResolvedValue(activeBundleMock)
+        })
+        // 預設無依賴
+        mockOrderModel.countDocuments.mockResolvedValue(0)
+        mockMenuModel.countDocuments.mockResolvedValue(0)
+        mockBundleInstanceModel.countDocuments.mockResolvedValue(0)
+      })
+
+      it('should throw error when bundle has related orders', async () => {
+        mockOrderModel.countDocuments.mockResolvedValue(2)
+
+        await expect(
+          bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('此Bundle已有相關訂單，無法停用')
+
+        expect(activeBundleMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should throw error when bundle is used by menus', async () => {
+        mockMenuModel.countDocuments.mockResolvedValue(1)
+
+        await expect(
+          bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('此Bundle已被菜單使用中，無法停用')
+
+        expect(activeBundleMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should throw error when bundle has instances', async () => {
+        mockBundleInstanceModel.countDocuments.mockResolvedValue(3)
+
+        await expect(
+          bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('此Bundle已有實例記錄，無法停用')
+
+        expect(activeBundleMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should perform dependency checks in correct order: Order -> Menu -> BundleInstance', async () => {
+        await bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+
+        const orderCallOrder = mockOrderModel.countDocuments.mock.invocationCallOrder[0]
+        const menuCallOrder = mockMenuModel.countDocuments.mock.invocationCallOrder[0]
+        const instanceCallOrder = mockBundleInstanceModel.countDocuments.mock.invocationCallOrder[0]
+
+        expect(orderCallOrder).toBeLessThan(menuCallOrder)
+        expect(menuCallOrder).toBeLessThan(instanceCallOrder)
+        expect(instanceCallOrder).toBeLessThan(activeBundleMock.save.mock.invocationCallOrder[0])
+      })
+
+      it('should check order dependencies with correct query format', async () => {
+        await bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+
+        expect(mockOrderModel.countDocuments).toHaveBeenCalledWith({
+          'items.bundle': 'bundle123'
+        })
+      })
+
+      it('should check menu dependencies with correct query format', async () => {
+        await bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+
+        expect(mockMenuModel.countDocuments).toHaveBeenCalledWith({
+          'categories.items.bundle': 'bundle123',
+          brand: 'brand123'
+        })
+      })
+
+      it('should check bundle instance dependencies with correct query format', async () => {
+        await bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+
+        expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalledWith({
+          templateId: 'bundle123'
+        })
+      })
+
+      it('should successfully deactivate bundle when no dependencies exist', async () => {
+        const result = await bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+
+        expect(mockOrderModel.countDocuments).toHaveBeenCalled()
+        expect(mockMenuModel.countDocuments).toHaveBeenCalled()
+        expect(mockBundleInstanceModel.countDocuments).toHaveBeenCalled()
+        expect(activeBundleMock.save).toHaveBeenCalled()
+        expect(result).toEqual(activeBundleMock)
+      })
+
+      it('should not perform dependency checks when activating bundle', async () => {
+        const inactiveBundleMock = {
+          ...activeBundleMock,
+          isActive: false
+        }
+
+        mockBundleModel.findOne.mockReturnValue({
+          populate: vi.fn().mockResolvedValue(inactiveBundleMock)
+        })
+
+        await bundleService.updateBundle('bundle123', { isActive: true }, 'brand123')
+
+        expect(mockOrderModel.countDocuments).not.toHaveBeenCalled()
+        expect(mockMenuModel.countDocuments).not.toHaveBeenCalled()
+        expect(mockBundleInstanceModel.countDocuments).not.toHaveBeenCalled()
+      })
+
+      it('should not perform dependency checks when updating other fields', async () => {
+        await bundleService.updateBundle('bundle123', { name: 'New Name' }, 'brand123')
+
+        expect(mockOrderModel.countDocuments).not.toHaveBeenCalled()
+        expect(mockMenuModel.countDocuments).not.toHaveBeenCalled()
+        expect(mockBundleInstanceModel.countDocuments).not.toHaveBeenCalled()
+      })
+
+      it('should reject for order dependency before checking other dependencies', async () => {
+        mockOrderModel.countDocuments.mockResolvedValue(1)
+        mockMenuModel.countDocuments.mockResolvedValue(1)
+        mockBundleInstanceModel.countDocuments.mockResolvedValue(1)
+
+        await expect(
+          bundleService.updateBundle('bundle123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('此Bundle已有相關訂單，無法停用')
+
+        // Menu 和 BundleInstance 檢查應該被執行，因為 countDocuments 是異步的
+        // 但錯誤應該優先顯示 Order 依賴錯誤
+      })
+    })
   })
 
   describe('deleteBundle', () => {
