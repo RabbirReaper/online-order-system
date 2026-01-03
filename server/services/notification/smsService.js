@@ -49,6 +49,38 @@ class SMSService {
 
       const clientId = options.clientId || this.generateClientId(phone, message)
 
+      // 開發環境判斷：如果 PORT == 8700，使用 console.log 模擬發送
+      if (process.env.PORT === '8700') {
+        console.log('========== [開發環境] 模擬發送簡訊 ==========')
+        console.log('收件人:', this.formatPhoneNumber(phone))
+        console.log('簡訊內容:', message)
+        console.log('客戶簡訊ID:', clientId)
+        if (options.callbackUrl) {
+          console.log('回調URL:', options.callbackUrl)
+        }
+        if (options.sendTime) {
+          console.log('預約時間:', this.formatDateTime(options.sendTime))
+        }
+        if (options.objectId) {
+          console.log('物件ID:', options.objectId)
+        }
+        console.log('============================================')
+
+        // 返回模擬成功響應
+        return {
+          success: true,
+          message: '簡訊發送成功（開發環境模擬）',
+          messageId: '000000000',
+          statusCode: '1',
+          statusType: 'success',
+          suggestion: '簡訊已成功送入簡訊中心系統',
+          retryable: false,
+          accountPoint: 999,
+          isDuplicate: false,
+          smsPoint: this.calculateCost(message),
+        }
+      }
+
       // Big5 URL 編碼函數
       const encodeBig5 = (text) => {
         const buffer = iconv.encode(text, 'big5')
