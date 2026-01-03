@@ -44,7 +44,7 @@ app.use(
       maxAge: 60 * 60 * 1000, // 1 小時
       sameSite: 'strict',
       httpOnly: true,
-      secure: true,
+      secure: process.env.PORT !== '8700', // 開發環境使用 false，生產環境使用 true
     },
   }),
 )
