@@ -38,7 +38,7 @@ export const useCounterDishTemplatesStore = defineStore('counterDishTemplates', 
       const response = await api.menu.getAllStoreMenus({
         brandId,
         storeId,
-        includeUnpublished: false,
+        includeUnpublished: true, // 包含 isShowing === false 的項目，讓 counter 可以看到所有資料
         activeOnly: true,
         menuType: 'food', // counter 主要處理餐點菜單
       })
