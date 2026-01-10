@@ -29,22 +29,19 @@ app.use(express.static('dist'))
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    rolling: true, // 每次請求重置過期時間，實現「有活動就不過期」
+    rolling: true,
     store: MongoStore.create({
       mongoUrl: process.env.MongoDB_url,
-      touchAfter: 23 * 3600, // 23 小時內不更新 session（略小於 cookie maxAge 避免衝突）
-      crypto: {
-        secret: process.env.SESSION_SECRET || 'your-secret-key',
-      },
+      touchAfter: 23 * 3600,
     }),
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 小時（有活動會自動延長）
-      sameSite: 'strict',
       httpOnly: true,
-      secure: process.env.PORT !== '8700', // 開發環境使用 false，生產環境使用 true
+      sameSite: 'lax',
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000, // 預設
     },
   }),
 )
