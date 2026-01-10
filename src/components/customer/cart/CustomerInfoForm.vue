@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/customerAuth'
 import { useCartStore } from '@/stores/cart'
@@ -100,35 +100,35 @@ const router = useRouter()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 
-const props = defineProps({
-  customerInfo: {
-    type: Object,
-    default: () => ({
-      name: '',
-      phone: '',
-    }),
-  },
-  paymentMethod: {
-    type: String,
-    default: 'On-site',
-  },
-  orderType: {
-    type: String,
-    default: 'takeout',
-  },
-  isOnlinePaymentEnabled: {
-    type: Boolean,
-    default: false,
-  },
+// 從 store 獲取所有需要的資料
+const orderType = computed(() => {
+  // 將後端格式轉換為前端格式
+  switch (cartStore.orderType) {
+    case 'dine_in':
+      return 'dineIn'
+    case 'takeout':
+      return 'selfPickup'
+    case 'delivery':
+      return 'delivery'
+    default:
+      return 'selfPickup'
+  }
 })
 
-const emit = defineEmits(['update:customerInfo', 'update:paymentMethod'])
+const isOnlinePaymentEnabled = computed(
+  () => cartStore.storeInfo?.isActiveCustomerOnlinePayment || false,
+)
 
-const localCustomerInfo = ref({
-  name: props.customerInfo.name || '',
-  phone: props.customerInfo.phone || '',
+// 直接綁定到 store
+const localCustomerInfo = computed({
+  get: () => cartStore.customerInfo,
+  set: (value) => cartStore.setCustomerInfo(value),
 })
-const localPaymentMethod = ref(props.paymentMethod)
+
+const localPaymentMethod = computed({
+  get: () => cartStore.paymentType,
+  set: (value) => cartStore.setPaymentType(value),
+})
 
 const userProfile = ref(null)
 const isLoadingProfile = ref(false)
@@ -158,12 +158,11 @@ const loadUserProfile = async () => {
 const autoFillUserInfo = () => {
   if (!userProfile.value) return
 
+  // 直接更新 store（通過 computed setter）
   localCustomerInfo.value = {
     name: userProfile.value.name || '',
     phone: userProfile.value.phone || '',
   }
-
-  emit('update:customerInfo', { ...localCustomerInfo.value })
 }
 
 const goToLogin = () => {
@@ -175,70 +174,42 @@ const goToLogin = () => {
 }
 
 const updateName = (event) => {
-  localCustomerInfo.value.name = event.target.value
-  emit('update:customerInfo', { ...localCustomerInfo.value })
+  // 直接更新 store（通過 computed setter）
+  localCustomerInfo.value = {
+    ...localCustomerInfo.value,
+    name: event.target.value,
+  }
 }
 
 const updatePhone = (event) => {
-  localCustomerInfo.value.phone = event.target.value
-  emit('update:customerInfo', { ...localCustomerInfo.value })
+  // 直接更新 store（通過 computed setter）
+  localCustomerInfo.value = {
+    ...localCustomerInfo.value,
+    phone: event.target.value,
+  }
 }
 
-watch(
-  () => props.orderType,
-  (newType) => {
-    if (newType === 'dineIn') {
-      if (authStore.isLoggedIn && userProfile.value) {
-        autoFillUserInfo()
-      } else {
-        localCustomerInfo.value = { name: '', phone: '' }
-        emit('update:customerInfo', { ...localCustomerInfo.value })
-      }
+// 監聽訂單類型變化，在內用模式下自動填入或清空客戶資訊
+watch(orderType, (newType) => {
+  if (newType === 'dineIn') {
+    if (authStore.isLoggedIn && userProfile.value) {
+      autoFillUserInfo()
     } else {
-      if (
-        authStore.isLoggedIn &&
-        userProfile.value &&
-        !localCustomerInfo.value.name &&
-        !localCustomerInfo.value.phone
-      ) {
-        autoFillUserInfo()
-      }
+      localCustomerInfo.value = { name: '', phone: '' }
     }
-  },
-)
-
-watch(
-  () => props.customerInfo,
-  (newVal) => {
+  } else {
     if (
-      newVal.name !== localCustomerInfo.value.name ||
-      newVal.phone !== localCustomerInfo.value.phone
+      authStore.isLoggedIn &&
+      userProfile.value &&
+      !localCustomerInfo.value.name &&
+      !localCustomerInfo.value.phone
     ) {
-      localCustomerInfo.value = {
-        name: newVal.name || '',
-        phone: newVal.phone || '',
-      }
+      autoFillUserInfo()
     }
-  },
-  { deep: true },
-)
-
-watch(
-  () => props.paymentMethod,
-  (newVal) => {
-    if (newVal !== localPaymentMethod.value) {
-      localPaymentMethod.value = newVal
-    }
-  },
-)
-watch(localPaymentMethod, (newVal) => {
-  emit('update:paymentMethod', newVal)
-
-  // 使用 cartStore.setPaymentType 設定付款類型
-  // 'On-site' 或 'Online'
-  cartStore.setPaymentType(newVal)
+  }
 })
 
+// 監聽登入狀態變化
 watch(
   () => authStore.isLoggedIn,
   async (newVal) => {

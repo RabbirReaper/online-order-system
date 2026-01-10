@@ -139,57 +139,85 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import api from '@/api'
+import { useCartStore } from '@/stores/cart'
 
-const props = defineProps({
-  orderType: {
-    type: String,
-    default: 'selfPickup', // 默認為自取，使用前端格式
+const cartStore = useCartStore()
+
+// 訂單類型 - 雙向綁定到 store，處理前後端格式轉換
+const localOrderType = computed({
+  get: () => {
+    // 後端格式 → 前端格式
+    switch (cartStore.orderType) {
+      case 'dine_in':
+        return 'dineIn'
+      case 'takeout':
+        return 'selfPickup'
+      case 'delivery':
+        return 'delivery'
+      default:
+        return 'selfPickup'
+    }
   },
-  tableNumber: {
-    type: String,
-    default: '',
-  },
-  deliveryAddress: {
-    type: String,
-    default: '',
-  },
-  pickupTime: {
-    type: String,
-    default: 'asap', // 'asap' 或 'scheduled'
-  },
-  scheduledTime: {
-    type: String,
-    default: '',
-  },
-  storeInfo: {
-    type: Object,
-    default: () => ({}),
+  set: (value) => {
+    // 前端格式 → 後端格式
+    const mappedType = {
+      dineIn: 'dine_in',
+      selfPickup: 'takeout',
+      delivery: 'delivery',
+    }[value]
+    cartStore.setOrderType(mappedType)
   },
 })
 
-const emit = defineEmits([
-  'update:orderType',
-  'update:tableNumber',
-  'update:deliveryAddress',
-  'update:pickupTime',
-  'update:scheduledTime',
-  'update:delivery-fee',
-])
+// 桌號 - 雙向綁定到 store
+const localTableNumber = computed({
+  get: () => cartStore.dineInInfo?.tableNumber || '',
+  set: (value) => {
+    cartStore.setDineInInfo({ tableNumber: value })
+  },
+})
 
-// 本地狀態
-const localOrderType = ref(props.orderType)
-const localTableNumber = ref(props.tableNumber)
-const localDeliveryAddress = ref(props.deliveryAddress)
-const localPickupTime = ref(props.pickupTime)
-const localScheduledTime = ref(props.scheduledTime)
+// 外送地址 - 雙向綁定到 store
+const localDeliveryAddress = computed({
+  get: () => cartStore.deliveryInfo?.address || '',
+  set: (value) => {
+    cartStore.setDeliveryInfo({
+      ...cartStore.deliveryInfo,
+      address: value
+    })
+  },
+})
+
+// 取餐時間類型 - 雙向綁定到 store
+const localPickupTime = computed({
+  get: () => cartStore.pickupInfo?.pickupTime || 'asap',
+  set: (value) => {
+    cartStore.setPickupInfo({
+      ...cartStore.pickupInfo,
+      pickupTime: value,
+    })
+  },
+})
+
+// 預約時間 - 雙向綁定到 store
+const localScheduledTime = computed({
+  get: () => cartStore.pickupInfo?.scheduledTime || '',
+  set: (value) => {
+    cartStore.setPickupInfo({
+      ...cartStore.pickupInfo,
+      scheduledTime: value,
+    })
+  },
+})
+
+// 外送費
 const deliveryFee = ref(60) // 默認外送費
 
 // 驗證狀態
 const tableNumberError = ref('')
 
-// 店鋪資訊
-const storeData = ref(props.storeInfo || {})
+// 店鋪資訊 - 從 store 讀取
+const storeData = computed(() => cartStore.storeInfo || {})
 
 // 檢查是否有可用的訂單類型
 const hasAvailableOrderType = computed(() => {
@@ -243,28 +271,7 @@ const validateTableNumber = () => {
   return true
 }
 
-// 載入店鋪資訊
-const loadStoreInfo = async () => {
-  try {
-    const brandId = sessionStorage.getItem('currentBrandId')
-    const storeId = sessionStorage.getItem('currentStoreId')
-
-    if (brandId && storeId) {
-      const response = await api.store.getStorePublicInfo({
-        brandId: brandId,
-        id: storeId,
-      })
-
-      if (response && response.success) {
-        storeData.value = response.store
-        // 檢查當前訂單類型是否可用,如果不可用則設定為第一個可用的類型
-        setDefaultOrderType()
-      }
-    }
-  } catch (error) {
-    console.error('載入店鋪資訊失敗:', error)
-  }
-}
+// 店鋪資訊由 CartView 載入到 store，這裡不需要重複載入
 
 // 設定預設訂單類型
 const setDefaultOrderType = () => {
@@ -293,66 +300,28 @@ const initializeScheduledTime = () => {
   }
 }
 
-// 監聽 props 變化
-watch(
-  () => props.orderType,
-  (newVal) => {
-    localOrderType.value = newVal
-  },
-)
+// 監聽店鋪資訊變化，設定預設訂單類型
+watch(storeData, (newVal) => {
+  if (newVal && Object.keys(newVal).length > 0) {
+    setDefaultOrderType()
+  }
+}, { deep: true })
 
-watch(
-  () => props.tableNumber,
-  (newVal) => {
-    localTableNumber.value = newVal
-    // 當外部設定桌號時清除錯誤狀態
-    if (tableNumberError.value) {
-      tableNumberError.value = ''
-    }
-  },
-)
-
-watch(
-  () => props.deliveryAddress,
-  (newVal) => {
-    localDeliveryAddress.value = newVal
-  },
-)
-
-watch(
-  () => props.pickupTime,
-  (newVal) => {
-    localPickupTime.value = newVal
-  },
-)
-
-watch(
-  () => props.scheduledTime,
-  (newVal) => {
-    localScheduledTime.value = newVal
-  },
-)
-
-watch(
-  () => props.storeInfo,
-  (newVal) => {
-    storeData.value = newVal || {}
-    if (newVal && Object.keys(newVal).length > 0) {
-      setDefaultOrderType()
-    }
-  },
-  { deep: true },
-)
-
-// 監聽本地狀態變化並向上傳遞
+// 監聽訂單類型變化
 watch(localOrderType, (newVal) => {
-  emit('update:orderType', newVal)
-
-  // 重置相關欄位
+  // 設定外送費（如果是外送則設定，否則為0）
   if (newVal === 'delivery') {
-    emit('update:delivery-fee', deliveryFee.value)
+    cartStore.setDeliveryInfo({
+      ...cartStore.deliveryInfo,
+      deliveryFee: deliveryFee.value
+    })
   } else {
-    emit('update:delivery-fee', 0)
+    if (cartStore.deliveryInfo) {
+      cartStore.setDeliveryInfo({
+        ...cartStore.deliveryInfo,
+        deliveryFee: 0
+      })
+    }
   }
 
   // 當訂單類型改變時，重新初始化預約時間
@@ -361,39 +330,22 @@ watch(localOrderType, (newVal) => {
   }
 })
 
-watch(localTableNumber, (newVal) => {
-  emit('update:tableNumber', newVal)
-  // 當桌號改變時清除錯誤狀態（用戶正在輸入時）
-  if (tableNumberError.value) {
-    tableNumberError.value = ''
-  }
-})
-
-watch(localDeliveryAddress, (newVal) => {
-  emit('update:deliveryAddress', newVal)
-})
-
-watch(localPickupTime, (newVal) => {
-  emit('update:pickupTime', newVal)
-})
-
-watch(localScheduledTime, (newVal) => {
-  emit('update:scheduledTime', newVal)
-})
-
 // 監聽預估時間變化，更新最小預約時間
 watch(estimatedMinTime, () => {
   if (localPickupTime.value === 'scheduled') {
     const newMinTime = minScheduledTime.value
     if (localScheduledTime.value < newMinTime) {
       localScheduledTime.value = newMinTime
-      emit('update:scheduledTime', newMinTime)
     }
   }
 })
 
-onMounted(async () => {
-  await loadStoreInfo()
+onMounted(() => {
+  // 店鋪資訊由 CartView 載入到 store
+  // 初始化預約時間和設定預設訂單類型
+  if (storeData.value && Object.keys(storeData.value).length > 0) {
+    setDefaultOrderType()
+  }
   initializeScheduledTime()
 })
 </script>

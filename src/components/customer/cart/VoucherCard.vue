@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="voucher"
     class="voucher-card border rounded p-3 mb-3"
     :class="{
       selected: isSelected,
@@ -14,7 +15,7 @@
             class="bi bi-ticket-perforated fs-5 me-2"
             :class="isSelected ? 'text-success' : 'text-warning'"
           ></i>
-          <h6 class="mb-0 fw-bold">{{ voucher.voucherName }}</h6>
+          <h6 class="mb-0 fw-bold">{{ voucher?.voucherName || '兌換券' }}</h6>
           <span v-if="isSelected" class="badge bg-success ms-2">
             <i class="bi bi-check-circle me-1"></i>
             已選用
@@ -24,21 +25,21 @@
         <div class="matched-dish mb-2">
           <small class="text-muted">
             <i class="bi bi-arrow-right me-1"></i>
-            可兌換：{{ matchedItem.dishName }}
+            可兌換：{{ matchedItem?.dishName || '餐點' }}
           </small>
         </div>
 
         <div class="savings mb-2">
           <span class="badge" :class="isSelected ? 'bg-success' : 'bg-warning text-dark'">
             <i class="bi bi-tag-fill me-1"></i>
-            省下 ${{ matchedItem.originalPrice }}
+            省下 ${{ matchedItem?.originalPrice || 0 }}
           </span>
         </div>
 
         <div class="expiry-info">
           <small class="text-muted" :class="{ 'text-danger fw-bold': isExpiringSoon }">
             <i class="bi bi-clock me-1"></i>
-            {{ formatExpiryDate(voucher.expiryDate) }}
+            {{ voucher?.expiryDate ? formatExpiryDate(voucher.expiryDate) : '未知' }}
           </small>
         </div>
       </div>
@@ -68,7 +69,7 @@
     </div>
 
     <!-- 如果有關聯的餐點圖片可以顯示 -->
-    <div v-if="voucher.exchangeDishTemplate?.image" class="dish-preview mt-2">
+    <div v-if="voucher?.exchangeDishTemplate?.image" class="dish-preview mt-2">
       <div class="d-flex align-items-center">
         <img
           :src="voucher.exchangeDishTemplate.image.url"
@@ -77,7 +78,9 @@
         />
         <small class="text-muted">
           {{ voucher.exchangeDishTemplate.name }}
-          <span class="text-success fw-bold">(${{ voucher.exchangeDishTemplate.basePrice }})</span>
+          <span class="text-success fw-bold"
+            >(${{ voucher.exchangeDishTemplate.basePrice }})</span
+          >
         </small>
       </div>
     </div>
@@ -86,23 +89,27 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useCartStore } from '@/stores/cart'
+
+const cartStore = useCartStore()
 
 const props = defineProps({
-  voucher: {
-    type: Object,
+  voucherId: {
+    type: String,
     required: true,
-  },
-  matchedItem: {
-    type: Object,
-    required: true,
-  },
-  isSelected: {
-    type: Boolean,
-    default: false,
   },
 })
 
-const emit = defineEmits(['use', 'cancel'])
+// 從 store 獲取兌換券資料
+const voucher = computed(() => cartStore.getVoucherById(props.voucherId))
+
+// 從 store 計算是否已選用
+const isSelected = computed(() =>
+  cartStore.usedVouchers.some((v) => v.voucherId === props.voucherId),
+)
+
+// 獲取匹配的餐點資訊
+const matchedItem = computed(() => voucher.value?.matchedItem || {})
 
 // 防止重複點擊
 const isProcessing = ref(false)
@@ -133,35 +140,37 @@ const formatExpiryDate = (dateString) => {
 }
 
 const isExpiringSoon = computed(() => {
-  const date = new Date(props.voucher.expiryDate)
+  if (!voucher.value) return false
+  const date = new Date(voucher.value.expiryDate)
   const now = new Date()
   const diffTime = date - now
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   return diffDays <= 3 && diffDays > 0
 })
 
-// 方法
+// 方法 - 直接調用 store actions
 const handleUse = async () => {
-  if (isProcessing.value || props.isSelected) {
+  if (isProcessing.value || isSelected.value || !voucher.value) {
     return
   }
 
   try {
     isProcessing.value = true
-    emit('use', props.voucher, props.matchedItem)
+    cartStore.useVoucher(props.voucherId, matchedItem.value)
 
-    // 給一點時間讓父組件處理狀態更新
+    // 給一點時間讓 UI 更新
     setTimeout(() => {
       isProcessing.value = false
     }, 500)
   } catch (error) {
     isProcessing.value = false
     console.error('選用兌換券失敗:', error)
+    alert(error.message || '選用兌換券失敗')
   }
 }
 
 const handleCancel = () => {
-  emit('cancel', props.voucher._id)
+  cartStore.cancelVoucher(props.voucherId)
 }
 </script>
 
