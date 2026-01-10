@@ -24,13 +24,9 @@
         <div class="order-items mb-4">
           <h6 class="mb-3 fw-bold">訂單內容</h6>
           <CartItem
-            v-for="(item, index) in cartItems"
+            v-for="(item, index) in cartStore.items"
             :key="index"
-            :item="item"
             :index="index"
-            @remove="removeFromCart"
-            @edit="editItem"
-            @quantity-change="updateCartItemQuantity"
           />
         </div>
 
@@ -43,47 +39,38 @@
             class="form-control"
             rows="2"
             placeholder="有特殊需求嗎？請告訴我們"
-            v-model="orderRemarks"
+            v-model="cartStore.orderRemarks"
           ></textarea>
         </div>
 
         <div class="divider"></div>
 
         <!-- 兌換券區塊 -->
-        <div class="voucher-section mb-4" v-if="availableVouchers.length > 0">
+        <div class="voucher-section mb-4" v-if="cartStore.matchedVouchers.length > 0">
           <h6 class="mb-3 fw-bold">
             <i class="bi bi-ticket-perforated me-2 text-warning"></i>
             可用兌換券
           </h6>
           <div class="voucher-cards">
             <VoucherCard
-              v-for="voucher in availableVouchers"
+              v-for="voucher in cartStore.matchedVouchers"
               :key="voucher._id"
-              :voucher="voucher"
-              :matchedItem="voucher.matchedItem"
-              :isSelected="voucher.isSelected"
-              @use="useVoucher"
-              @cancel="cancelVoucher"
+              :voucherId="voucher._id"
             />
           </div>
         </div>
 
         <!-- 折價券區塊 -->
-        <div class="coupon-section mb-4" v-if="availableCoupons.length > 0">
+        <div class="coupon-section mb-4" v-if="cartStore.usableCoupons.length > 0">
           <h6 class="mb-3 fw-bold">
             <i class="bi bi-percent me-2 text-primary"></i>
-            會用折價券
+            可用折價券
           </h6>
           <div class="coupon-cards">
             <CouponCard
-              v-for="coupon in availableCoupons"
+              v-for="coupon in cartStore.usableCoupons"
               :key="coupon._id"
-              :coupon="coupon"
-              :isApplied="appliedCoupons.some((c) => c.couponId === coupon._id)"
-              :canUse="canUseCoupon(coupon)"
-              :currentSubtotal="calculateSubtotal()"
-              @apply="applyCoupon"
-              @remove="removeCoupon"
+              :couponId="coupon._id"
             />
           </div>
         </div>
@@ -91,7 +78,7 @@
         <!-- 如果用戶已登入但沒有可用券的提示 -->
         <div
           v-if="
-            authStore.isLoggedIn && availableVouchers.length === 0 && availableCoupons.length === 0
+            authStore.isLoggedIn && cartStore.matchedVouchers.length === 0 && cartStore.usableCoupons.length === 0
           "
           class="no-coupons mb-4"
         >
@@ -114,25 +101,12 @@
         <div class="divider"></div>
 
         <!-- Order Type Selection -->
-        <OrderTypeSelector
-          v-model:order-type="orderType"
-          v-model:table-number="tableNumber"
-          v-model:delivery-address="deliveryAddress"
-          v-model:pickup-time="pickupTime"
-          v-model:scheduled-time="scheduledTime"
-          @update:delivery-fee="updateDeliveryFee"
-        />
+        <OrderTypeSelector />
 
         <div class="divider"></div>
 
         <!-- Customer Information -->
-        <CustomerInfoForm
-          ref="customerInfoFormRef"
-          v-model:customer-info="customerInfo"
-          v-model:payment-method="paymentType"
-          :order-type="orderType"
-          :is-online-payment-enabled="storeInfo?.isActiveCustomerOnlinePayment || false"
-        />
+        <CustomerInfoForm ref="customerInfoFormRef" />
 
         <div class="divider"></div>
 

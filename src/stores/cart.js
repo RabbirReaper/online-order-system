@@ -32,6 +32,20 @@ export const useCartStore = defineStore('cart', () => {
   const isSubmitting = ref(false) // 是否正在提交訂單
   const validationErrors = ref({}) // 驗證錯誤信息對象
 
+  // 券相關狀態
+  const availableVouchers = ref([]) // 可用兌換券（含匹配資訊）
+  const usedVouchers = ref([]) // 已選用的兌換券
+  const availableCoupons = ref([]) // 可用折價券
+  const userVouchers = ref([]) // 用戶所有兌換券（原始資料）
+  const userCoupons = ref([]) // 用戶所有折價券（原始資料）
+  const activePointRules = ref([]) // 啟用的點數規則
+
+  // 店鋪資訊
+  const storeInfo = ref(null) // 店鋪資訊
+
+  // 訂單備註（從 CartView 遷移）
+  const orderRemarks = ref('') // 訂單備註
+
   // 移除自動設置支付類型的 watch
   // paymentType 會由以下方式設定：
   // 1. 前端用戶選擇時：透過 setPaymentType 直接設定 'On-site' 或 'Online'
@@ -83,6 +97,167 @@ export const useCartStore = defineStore('cart', () => {
 
   const currentStoreId = computed(() => {
     return currentStore.value
+  })
+
+  // 計算可用兌換券（含匹配邏輯）- 從 CartView line 456-524 遷移
+  const matchedVouchers = computed(() => {
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn || !userVouchers.value.length) {
+      return []
+    }
+
+    // 1. 統計購物車中每種餐點的總數量
+    const dishCounts = {}
+    items.value.forEach((cartItem) => {
+      if (cartItem.dishInstance) {
+        const templateId = cartItem.dishInstance.templateId
+        const dishName = cartItem.dishInstance.name
+        const price = cartItem.dishInstance.finalPrice || cartItem.dishInstance.basePrice
+
+        if (!dishCounts[templateId]) {
+          dishCounts[templateId] = {
+            templateId,
+            dishName,
+            price,
+            totalQuantity: 0,
+            cartItems: [],
+          }
+        }
+
+        dishCounts[templateId].totalQuantity += cartItem.quantity
+        dishCounts[templateId].cartItems.push({
+          index: items.value.indexOf(cartItem),
+          quantity: cartItem.quantity,
+        })
+      }
+    })
+
+    // 2. 獲取所有兌換券（包含已選擇和未選擇的）
+    const selectedVoucherIds = new Set(usedVouchers.value.map((v) => v.voucherId))
+    const availableVoucherPool = userVouchers.value.filter(
+      (voucher) => !voucher.isUsed && new Date(voucher.expiryDate) > new Date(),
+    )
+
+    // 3. 為每種餐點匹配對應數量的券
+    const matchedVouchersList = []
+
+    Object.values(dishCounts).forEach((dishInfo) => {
+      // 找出可以用於該餐點的所有券
+      const applicableVouchers = availableVoucherPool.filter(
+        (voucher) => voucher.exchangeDishTemplate?._id === dishInfo.templateId,
+      )
+
+      // 根據餐點數量限制券的數量
+      const vouchersToShow = applicableVouchers.slice(0, dishInfo.totalQuantity)
+
+      // 為每個券添加匹配信息和選擇狀態
+      vouchersToShow.forEach((voucher, index) => {
+        const isSelected = selectedVoucherIds.has(voucher._id)
+
+        matchedVouchersList.push({
+          ...voucher,
+          isSelected, // 添加選擇狀態
+          matchedItem: {
+            templateId: dishInfo.templateId,
+            dishName: dishInfo.dishName,
+            originalPrice: dishInfo.price,
+            availableQuantity: dishInfo.totalQuantity,
+            voucherIndex: index, // 用於區分同樣餐點的不同券
+          },
+        })
+      })
+    })
+
+    return matchedVouchersList
+  })
+
+  // 計算可用折價券 - 從 CartView line 527-538 遷移
+  const usableCoupons = computed(() => {
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn || !userCoupons.value.length) {
+      return []
+    }
+
+    return userCoupons.value.filter(
+      (coupon) =>
+        !coupon.isUsed &&
+        new Date(coupon.expiryDate) > new Date() &&
+        subtotal.value >= (coupon.discountInfo?.minPurchaseAmount || 0),
+    )
+  })
+
+  // 計算兌換券折扣總額
+  const voucherSavingsAmount = computed(() => {
+    return usedVouchers.value.reduce((sum, v) => sum + (v.savedAmount || 0), 0)
+  })
+
+  // 計算折價券折扣總額
+  const couponDiscountAmount = computed(() => {
+    return appliedCoupons.value.reduce((sum, c) => sum + (c.amount || 0), 0)
+  })
+
+  // 計算預估點數 - 從 CartView line 551-585 遷移
+  const estimatedPoints = computed(() => {
+    const authStore = useAuthStore()
+    // 只有登入用戶才顯示點數預覽
+    if (!authStore.isLoggedIn || activePointRules.value.length === 0) {
+      return null
+    }
+
+    // 找到消費金額類型的規則
+    const purchaseRule = activePointRules.value.find((rule) => rule.type === 'purchase_amount')
+
+    if (!purchaseRule) {
+      return null
+    }
+
+    // 計算實際付款金額（扣除優惠後）
+    const finalAmount = total.value
+
+    // 檢查是否達到最低消費金額
+    if (finalAmount < purchaseRule.minimumAmount) {
+      return {
+        points: 0,
+        rule: purchaseRule,
+        insufficientAmount: true,
+        shortfall: purchaseRule.minimumAmount - finalAmount,
+      }
+    }
+
+    // 計算點數（向下取整）
+    const points = Math.floor(finalAmount / purchaseRule.conversionRate)
+
+    return {
+      points,
+      rule: purchaseRule,
+      insufficientAmount: false,
+    }
+  })
+
+  // 根據 voucherId 查找兌換券
+  const getVoucherById = computed(() => (voucherId) => {
+    return matchedVouchers.value.find((v) => v._id === voucherId)
+  })
+
+  // 根據 couponId 查找折價券
+  const getCouponById = computed(() => (couponId) => {
+    return usableCoupons.value.find((c) => c._id === couponId)
+  })
+
+  // 根據 index 查找購物車項目
+  const getCartItemByIndex = computed(() => (index) => {
+    return items.value[index]
+  })
+
+  // 檢查折價券是否可用
+  const canUseCoupon = computed(() => (couponId) => {
+    const coupon = usableCoupons.value.find((c) => c._id === couponId)
+    if (!coupon) return false
+
+    const minAmount = coupon.discountInfo?.minPurchaseAmount || 0
+    return (
+      subtotal.value >= minAmount && !appliedCoupons.value.some((c) => c.refId === couponId)
+    )
   })
 
   // 方法 - 完善品牌和店鋪ID管理
@@ -260,6 +435,19 @@ export const useCartStore = defineStore('cart', () => {
 
     estimatedPickupTime.value = null
     validationErrors.value = {}
+
+    // 清空券相關資料
+    clearPromotions()
+  }
+
+  // 清空券相關資料
+  function clearPromotions() {
+    usedVouchers.value = []
+    userVouchers.value = []
+    userCoupons.value = []
+    availableVouchers.value = []
+    availableCoupons.value = []
+    activePointRules.value = []
   }
 
   function resetOrderTypeSpecificInfo() {
@@ -686,6 +874,206 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  // ========== 券相關 Actions ==========
+
+  // 獲取用戶兌換券
+  async function fetchUserVouchers(brandId) {
+    if (!brandId) {
+      console.warn('fetchUserVouchers: 缺少 brandId')
+      return
+    }
+
+    try {
+      const response = await api.promotion.getUserVouchers(brandId, {
+        includeUsed: false,
+        includeExpired: false,
+      })
+
+      if (response.success) {
+        userVouchers.value = response.vouchers || []
+        console.log(`已載入 ${userVouchers.value.length} 張兌換券`)
+      }
+    } catch (error) {
+      console.error('獲取用戶兌換券失敗:', error)
+    }
+  }
+
+  // 選用兌換券 - 從 CartView line 750-786 遷移
+  function useVoucher(voucherId, matchedItem) {
+    try {
+      // 檢查是否已經選擇過這個券
+      const alreadySelected = usedVouchers.value.some((v) => v.voucherId === voucherId)
+      if (alreadySelected) {
+        throw new Error('此兌換券已被選用')
+      }
+
+      // 檢查該餐點類型還能使用幾個券
+      const sameTemplateUsed = usedVouchers.value.filter(
+        (v) => v.templateId === matchedItem.templateId,
+      ).length
+
+      if (sameTemplateUsed >= matchedItem.availableQuantity) {
+        throw new Error('該餐點的兌換券使用數量已達上限')
+      }
+
+      // 計算兌換券節省金額 - 只計算餐點基本價格，不包含加點費用
+      const baseDishPrice = getBaseDishPrice(matchedItem.templateId)
+      const savedAmount = baseDishPrice || matchedItem.originalPrice
+
+      // 添加到已選擇券列表
+      usedVouchers.value.push({
+        voucherId: voucherId,
+        voucherInstanceId: voucherId,
+        dishName: matchedItem.dishName,
+        savedAmount: savedAmount,
+        templateId: matchedItem.templateId,
+        voucherIndex: matchedItem.voucherIndex,
+      })
+
+      console.log('兌換券已選用:', { voucherId, savedAmount })
+    } catch (error) {
+      console.error('選用兌換券失敗:', error)
+      throw error // 重新拋出錯誤供 UI 處理
+    }
+  }
+
+  // 取消選擇兌換券 - 從 CartView line 803-808 遷移
+  function cancelVoucher(voucherId) {
+    const index = usedVouchers.value.findIndex((v) => v.voucherId === voucherId)
+    if (index !== -1) {
+      usedVouchers.value.splice(index, 1)
+      console.log('兌換券已取消:', voucherId)
+    }
+  }
+
+  // 獲取餐點基本價格（不含加點）- 從 CartView line 789-801 遷移
+  function getBaseDishPrice(templateId) {
+    // 從購物車中找到對應的餐點，獲取其基本價格
+    const cartItem = items.value.find(
+      (item) => item.dishInstance && item.dishInstance.templateId === templateId,
+    )
+
+    if (cartItem && cartItem.dishInstance) {
+      // 返回餐點基本價格，不包含選項加價
+      return cartItem.dishInstance.basePrice || cartItem.dishInstance.finalPrice
+    }
+
+    return 0
+  }
+
+  // 獲取用戶折價券
+  async function fetchUserCoupons(brandId) {
+    if (!brandId) {
+      console.warn('fetchUserCoupons: 缺少 brandId')
+      return
+    }
+
+    try {
+      const response = await api.promotion.getUserCoupons(brandId, {
+        includeUsed: false,
+        includeExpired: false,
+      })
+
+      if (response.success) {
+        userCoupons.value = response.coupons || []
+        console.log(`已載入 ${userCoupons.value.length} 張折價券`)
+      }
+    } catch (error) {
+      console.error('獲取用戶折價券失敗:', error)
+    }
+  }
+
+  // 應用折價券 - 從 CartView line 838-852 遷移（重命名避免衝突）
+  function applyStoreCoupon(couponId) {
+    const coupon = usableCoupons.value.find((c) => c._id === couponId)
+    if (!coupon || !canUseCoupon.value(couponId)) {
+      throw new Error('無法使用此折價券')
+    }
+
+    const discountAmount = calculateCouponDiscount(coupon)
+
+    appliedCoupons.value.push({
+      discountModel: 'CouponInstance',
+      refId: coupon._id,
+      amount: discountAmount,
+      name: coupon.name,
+      discountInfo: coupon.discountInfo,
+    })
+
+    console.log('折價券已應用:', { couponId, discountAmount })
+  }
+
+  // 移除折價券 - 從 CartView line 855-861 遷移
+  function removeStoreCoupon(couponId) {
+    const index = appliedCoupons.value.findIndex((c) => c.refId === couponId)
+    if (index !== -1) {
+      appliedCoupons.value.splice(index, 1)
+      console.log('折價券已移除:', couponId)
+    }
+  }
+
+  // 計算折價券折扣金額 - 從 CartView line 820-835 遷移
+  function calculateCouponDiscount(coupon) {
+    const currentSubtotal = subtotal.value
+    const discountInfo = coupon.discountInfo
+
+    if (discountInfo.discountType === 'percentage') {
+      let discount = Math.floor(currentSubtotal * (discountInfo.discountValue / 100))
+      if (discountInfo.maxDiscountAmount) {
+        discount = Math.min(discount, discountInfo.maxDiscountAmount)
+      }
+      return discount
+    } else if (discountInfo.discountType === 'fixed') {
+      return Math.min(discountInfo.discountValue, currentSubtotal)
+    }
+
+    return 0
+  }
+
+  // 獲取啟用的點數規則 - 從 CartView line 700-718 遷移
+  async function fetchActivePointRules(brandId) {
+    if (!brandId) {
+      console.warn('fetchActivePointRules: 缺少 brandId')
+      return
+    }
+
+    try {
+      const response = await api.promotion.getActivePointRules(brandId)
+
+      if (response.success) {
+        activePointRules.value = response.rules || []
+        console.log(`已載入 ${activePointRules.value.length} 條點數規則`)
+      }
+    } catch (error) {
+      console.error('獲取點數規則失敗:', error)
+    }
+  }
+
+  // 獲取店家公開資訊 - 從 CartView line 721-747 遷移
+  async function fetchStoreInfo(brandId, storeId) {
+    if (!brandId || !storeId) {
+      console.warn('fetchStoreInfo: 缺少 brandId 或 storeId')
+      return
+    }
+
+    try {
+      const response = await api.store.getStorePublicInfo({
+        brandId: brandId,
+        id: storeId,
+      })
+
+      if (response && response.store) {
+        storeInfo.value = response.store
+        console.log('店家資訊已載入:', {
+          storeName: response.store.name,
+          isOnlinePaymentEnabled: response.store.isActiveCustomerOnlinePayment,
+        })
+      }
+    } catch (error) {
+      console.error('獲取店家資訊失敗:', error)
+    }
+  }
+
   return {
     // 狀態
     items,
@@ -704,6 +1092,15 @@ export const useCartStore = defineStore('cart', () => {
     isSubmitting,
     validationErrors,
     serviceChargeRate,
+    // 券相關狀態
+    availableVouchers,
+    usedVouchers,
+    availableCoupons,
+    userVouchers,
+    userCoupons,
+    activePointRules,
+    storeInfo,
+    orderRemarks,
 
     // 計算屬性
     subtotal,
@@ -713,32 +1110,54 @@ export const useCartStore = defineStore('cart', () => {
     itemCount,
     isCartEmpty,
     isValid,
-    currentBrandId, // 新增
-    currentStoreId, // 新增
+    currentBrandId,
+    currentStoreId,
+    // 券相關計算屬性
+    matchedVouchers,
+    usableCoupons,
+    voucherSavingsAmount,
+    couponDiscountAmount,
+    estimatedPoints,
+    getVoucherById,
+    getCouponById,
+    getCartItemByIndex,
+    canUseCoupon,
 
     // 方法
     setBrandAndStore,
-    initializeBrandAndStore, // 新增
+    initializeBrandAndStore,
     addItem,
     removeItem,
     updateItemQuantity,
     clearCart,
+    clearPromotions,
     resetOrderTypeSpecificInfo,
     setOrderType,
     setCustomerInfo,
-    setLineUserInfo, // 新增：設定 LINE 用戶資訊
+    setLineUserInfo,
     setDeliveryInfo,
     setDineInInfo,
     setPickupTime,
     setNotes,
     applyCoupon,
     removeCoupon,
-    setPaymentType, // 新增：明確設定 paymentType
+    setPaymentType,
     toggleStaffMode,
     validateOrder,
     submitOrder,
-    restorePendingCart, // ✅ 新增：恢復暫存的購物車
-    clearPendingCart, // ✅ 新增：清除暫存的購物車
-    getPendingCartInfo, // ✅ 新增：獲取暫存購物車資訊
+    restorePendingCart,
+    clearPendingCart,
+    getPendingCartInfo,
+    // 券相關方法
+    fetchUserVouchers,
+    useVoucher,
+    cancelVoucher,
+    getBaseDishPrice,
+    fetchUserCoupons,
+    applyStoreCoupon,
+    removeStoreCoupon,
+    calculateCouponDiscount,
+    fetchActivePointRules,
+    fetchStoreInfo,
   }
 })

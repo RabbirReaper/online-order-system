@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="coupon"
     class="coupon-card border rounded p-3 mb-3"
     :class="{
       applied: isApplied,
@@ -14,14 +15,14 @@
             class="bi bi-percent text-primary fs-5 me-2"
             :class="isApplied ? 'text-success' : 'text-primary'"
           ></i>
-          <h6 class="mb-0 fw-bold">{{ coupon.couponName }}</h6>
+          <h6 class="mb-0 fw-bold">{{ coupon?.couponName || '折價券' }}</h6>
           <span v-if="isApplied" class="badge bg-success ms-2">
             <i class="bi bi-check-circle me-1"></i>
             已套用
           </span>
         </div>
 
-        <div class="description mb-2" v-if="coupon.description">
+        <div class="description mb-2" v-if="coupon?.description">
           <small class="text-muted">{{ coupon.description }}</small>
         </div>
 
@@ -32,7 +33,7 @@
           </span>
         </div>
 
-        <div class="conditions mb-2" v-if="coupon.discountInfo?.minPurchaseAmount">
+        <div class="conditions mb-2" v-if="coupon?.discountInfo?.minPurchaseAmount">
           <small class="text-muted">
             <i class="bi bi-info-circle me-1"></i>
             滿 ${{ coupon.discountInfo.minPurchaseAmount }} 可用
@@ -42,7 +43,7 @@
         <div class="expiry-info">
           <small class="text-muted" :class="{ 'text-danger fw-bold': isExpiringSoon }">
             <i class="bi bi-clock me-1"></i>
-            {{ formatExpiryDate(coupon.expiryDate) }}
+            {{ coupon?.expiryDate ? formatExpiryDate(coupon.expiryDate) : '未知' }}
           </small>
         </div>
       </div>
@@ -93,33 +94,36 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useCartStore } from '@/stores/cart'
+
+const cartStore = useCartStore()
 
 const props = defineProps({
-  coupon: {
-    type: Object,
+  couponId: {
+    type: String,
     required: true,
-  },
-  isApplied: {
-    type: Boolean,
-    default: false,
-  },
-  canUse: {
-    type: Boolean,
-    default: true,
-  },
-  currentSubtotal: {
-    type: Number,
-    default: 0,
   },
 })
 
-const emit = defineEmits(['apply', 'remove'])
+// 從 store 獲取折價券資料
+const coupon = computed(() => cartStore.getCouponById(props.couponId))
+
+// 從 store 計算是否已套用
+const isApplied = computed(() =>
+  cartStore.appliedCoupons.some((c) => c.refId === props.couponId),
+)
+
+// 從 store 計算是否可用
+const canUse = computed(() => cartStore.canUseCoupon(props.couponId))
+
+// 從 store 獲取當前小計
+const currentSubtotal = computed(() => cartStore.subtotal)
 
 // 防止重複點擊
 const isProcessing = ref(false)
 
 // 計算屬性
-const discountInfo = computed(() => props.coupon.discountInfo || {})
+const discountInfo = computed(() => coupon.value?.discountInfo || {})
 
 const discountText = computed(() => {
   if (discountInfo.value.discountType === 'percentage') {
@@ -139,9 +143,9 @@ const discountIcon = computed(() => {
 })
 
 const discountBadgeClass = computed(() => {
-  if (props.isApplied) {
+  if (isApplied.value) {
     return 'bg-success'
-  } else if (!props.canUse) {
+  } else if (!canUse.value) {
     return 'bg-secondary'
   } else {
     return 'bg-primary'
@@ -149,16 +153,16 @@ const discountBadgeClass = computed(() => {
 })
 
 const calculatedDiscount = computed(() => {
-  if (!props.isApplied || !props.currentSubtotal) return 0
+  if (!isApplied.value || !currentSubtotal.value || !coupon.value) return 0
 
   if (discountInfo.value.discountType === 'percentage') {
-    let discount = Math.floor(props.currentSubtotal * (discountInfo.value.discountValue / 100))
+    let discount = Math.floor(currentSubtotal.value * (discountInfo.value.discountValue / 100))
     if (discountInfo.value.maxDiscountAmount) {
       discount = Math.min(discount, discountInfo.value.maxDiscountAmount)
     }
     return discount
   } else if (discountInfo.value.discountType === 'fixed') {
-    return Math.min(discountInfo.value.discountValue, props.currentSubtotal)
+    return Math.min(discountInfo.value.discountValue, currentSubtotal.value)
   }
 
   return 0
@@ -189,7 +193,8 @@ const formatExpiryDate = (dateString) => {
 }
 
 const isExpiringSoon = computed(() => {
-  const date = new Date(props.coupon.expiryDate)
+  if (!coupon.value) return false
+  const date = new Date(coupon.value.expiryDate)
   const now = new Date()
   const diffTime = date - now
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -199,34 +204,36 @@ const isExpiringSoon = computed(() => {
 // 方法
 const getUnusableReason = () => {
   const minAmount = discountInfo.value.minPurchaseAmount || 0
-  if (props.currentSubtotal < minAmount) {
-    return `需滿 $${minAmount} 才能使用 (目前 $${props.currentSubtotal})`
+  if (currentSubtotal.value < minAmount) {
+    return `需滿 $${minAmount} 才能使用 (目前 $${currentSubtotal.value})`
   }
   return '暫時無法使用'
 }
 
+// 直接調用 store actions
 const handleApply = async () => {
-  if (!props.canUse || props.isApplied || isProcessing.value) {
+  if (!canUse.value || isApplied.value || isProcessing.value || !coupon.value) {
     return
   }
 
   try {
     isProcessing.value = true
-    emit('apply', props.coupon)
+    cartStore.applyStoreCoupon(props.couponId)
 
-    // 給一點時間讓父組件處理狀態更新
+    // 給一點時間讓 UI 更新
     setTimeout(() => {
       isProcessing.value = false
     }, 500)
   } catch (error) {
     isProcessing.value = false
     console.error('套用折價券失敗:', error)
+    alert(error.message || '套用折價券失敗')
   }
 }
 
 const handleRemove = () => {
-  if (props.isApplied) {
-    emit('remove', props.coupon._id)
+  if (isApplied.value) {
+    cartStore.removeStoreCoupon(props.couponId)
   }
 }
 </script>

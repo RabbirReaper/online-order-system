@@ -1,17 +1,19 @@
 <template>
   <div class="cart-item card mb-3 border-0 shadow-sm">
-    <div class="card-body">
+    <div class="card-body" v-if="item">
       <div class="d-flex justify-content-between align-items-start mb-2">
         <!-- ✅ 動態顯示名稱，支援 dish 和 bundle -->
         <h6 class="card-title mb-0 fw-bold">{{ itemName }}</h6>
-        <div class="item-price fw-bold">${{ item.subtotal }}</div>
+        <div class="item-price fw-bold">${{ item?.subtotal || 0 }}</div>
       </div>
 
       <div class="item-details mb-3">
         <!-- ✅ 條件顯示 - 只對 dish 顯示選項 -->
         <template
           v-if="
-            item.dishInstance && item.dishInstance.options && item.dishInstance.options.length > 0
+            item?.dishInstance &&
+            item.dishInstance.options &&
+            item.dishInstance.options.length > 0
           "
         >
           <p
@@ -27,7 +29,7 @@
         <!-- ✅ 新增 - Bundle 內容顯示 -->
         <template
           v-if="
-            item.bundleInstance &&
+            item?.bundleInstance &&
             item.bundleInstance.bundleItems &&
             item.bundleInstance.bundleItems.length > 0
           "
@@ -48,7 +50,7 @@
         <p class="card-text small mb-1" v-if="itemNote">備註: {{ itemNote }}</p>
 
         <!-- ✅ Bundle 類型標籤 -->
-        <div v-if="item.bundleInstance" class="mt-2">
+        <div v-if="item?.bundleInstance" class="mt-2">
           <span class="badge bg-info text-dark">
             {{ item.bundleInstance.purchaseType === 'points' ? '點數兌換' : '現金購買' }}
           </span>
@@ -57,12 +59,12 @@
 
       <div class="d-flex justify-content-between align-items-center">
         <div class="d-flex">
-          <button class="btn btn-sm btn-outline-danger me-2" @click="$emit('remove', index)">
+          <button class="btn btn-sm btn-outline-danger me-2" @click="removeItem">
             <i class="bi bi-trash"></i>
           </button>
           <!-- ✅ 條件顯示編輯按鈕 - 只有 dish 可以編輯 -->
           <button
-            v-if="item.dishInstance"
+            v-if="item?.dishInstance"
             class="btn btn-sm btn-outline-secondary"
             @click="editItem"
           >
@@ -73,16 +75,13 @@
         <div class="quantity-control d-flex align-items-center">
           <button
             class="btn btn-sm btn-outline-secondary"
-            @click="$emit('quantity-change', index, -1)"
-            :disabled="item.quantity <= 1"
+            @click="decreaseQuantity"
+            :disabled="!item || item.quantity <= 1"
           >
             -
           </button>
-          <span class="mx-2">{{ item.quantity }}</span>
-          <button
-            class="btn btn-sm btn-outline-secondary"
-            @click="$emit('quantity-change', index, 1)"
-          >
+          <span class="mx-2">{{ item?.quantity || 0 }}</span>
+          <button class="btn btn-sm btn-outline-secondary" @click="increaseQuantity">
             +
           </button>
         </div>
@@ -100,34 +99,33 @@ const router = useRouter()
 const cartStore = useCartStore()
 
 const props = defineProps({
-  item: {
-    type: Object,
-    required: true,
-  },
   index: {
     type: Number,
     required: true,
   },
 })
 
-const emit = defineEmits(['remove', 'edit', 'quantity-change'])
+// 從 store 獲取項目資料
+const item = computed(() => cartStore.getCartItemByIndex(props.index))
 
 // ✅ 計算屬性 - 動態獲取項目名稱
 const itemName = computed(() => {
-  if (props.item.dishInstance) {
-    return props.item.dishInstance.name || '未知餐點'
-  } else if (props.item.bundleInstance) {
-    return props.item.bundleInstance.name || '未知套餐'
+  if (!item.value) return '未知商品'
+  if (item.value.dishInstance) {
+    return item.value.dishInstance.name || '未知餐點'
+  } else if (item.value.bundleInstance) {
+    return item.value.bundleInstance.name || '未知套餐'
   }
   return '未知商品'
 })
 
 // ✅ 計算屬性 - 動態獲取備註
 const itemNote = computed(() => {
-  if (props.item.dishInstance && props.item.dishInstance.note) {
-    return props.item.dishInstance.note
-  } else if (props.item.note) {
-    return props.item.note
+  if (!item.value) return ''
+  if (item.value.dishInstance && item.value.dishInstance.note) {
+    return item.value.dishInstance.note
+  } else if (item.value.note) {
+    return item.value.note
   }
   return ''
 })
@@ -147,12 +145,31 @@ const formatSelections = (selections) => {
     .join(', ')
 }
 
+// 刪除項目
+const removeItem = () => {
+  cartStore.removeItem(props.index)
+}
+
+// 減少數量
+const decreaseQuantity = () => {
+  if (!item.value || item.value.quantity <= 1) return
+  const newQuantity = item.value.quantity - 1
+  cartStore.updateItemQuantity(props.index, newQuantity)
+}
+
+// 增加數量
+const increaseQuantity = () => {
+  if (!item.value) return
+  const newQuantity = item.value.quantity + 1
+  cartStore.updateItemQuantity(props.index, newQuantity)
+}
+
 // ✅ 修正後的 editItem 函數 - 只對 dish 有效
 const editItem = () => {
-  const item = props.item
+  if (!item.value) return
 
   // 只有 dishInstance 才能編輯
-  if (!item.dishInstance) {
+  if (!item.value.dishInstance) {
     alert('套餐商品無法編輯')
     return
   }
@@ -173,7 +190,7 @@ const editItem = () => {
     params: {
       brandId: cartStore.currentBrand,
       storeId: cartStore.currentStore,
-      dishId: item.dishInstance.templateId || item.dishInstance._id,
+      dishId: item.value.dishInstance.templateId || item.value.dishInstance._id,
     },
     query: {
       edit: 'true',
