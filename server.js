@@ -32,16 +32,16 @@ app.use(
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    rolling: true,
+    rolling: true, // 每次請求重置過期時間，實現「有活動就不過期」
     store: MongoStore.create({
       mongoUrl: process.env.MongoDB_url,
-      touchAfter: 24 * 3600, // 24 小時內不更新 session
+      touchAfter: 23 * 3600, // 23 小時內不更新 session（略小於 cookie maxAge 避免衝突）
       crypto: {
         secret: process.env.SESSION_SECRET || 'your-secret-key',
       },
     }),
     cookie: {
-      maxAge: 60 * 60 * 1000, // 1 小時
+      maxAge: 24 * 60 * 60 * 1000, // 24 小時（有活動會自動延長）
       sameSite: 'strict',
       httpOnly: true,
       secure: process.env.PORT !== '8700', // 開發環境使用 false，生產環境使用 true

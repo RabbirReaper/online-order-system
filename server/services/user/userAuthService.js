@@ -218,8 +218,8 @@ export const login = async (credentials, session) => {
     // 保持登入: 60 天（配合 rolling: true 實現「有活動就永不過期」）
     session.cookie.maxAge = 60 * 24 * 60 * 60 * 1000
   } else {
-    // 一般登入: 1 小時
-    session.cookie.maxAge = 60 * 60 * 1000
+    // 一般登入: 24 小時
+    session.cookie.maxAge = 24 * 60 * 60 * 1000
   }
 
   // 設置會話
