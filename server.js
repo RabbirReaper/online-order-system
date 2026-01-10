@@ -42,7 +42,7 @@ app.use(
     }),
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 小時（有活動會自動延長）
-      sameSite: 'strict',
+      sameSite: 'lax',
       httpOnly: true,
       secure: process.env.PORT !== '8700', // 開發環境使用 false，生產環境使用 true
     },
