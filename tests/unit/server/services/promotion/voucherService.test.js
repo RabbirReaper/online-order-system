@@ -291,8 +291,8 @@ describe('VoucherService', () => {
       // Arrange
       const templateId = 'template-id'
       const brandId = 'brand-id'
-      const updateData = { 
-        name: '更新後的兌換券', 
+      const updateData = {
+        name: '更新後的兌換券',
         brand: 'malicious-brand-id' // 嘗試更改品牌
       }
       const mockTemplate = {
@@ -309,6 +309,150 @@ describe('VoucherService', () => {
       // Assert
       expect(mockTemplate.brand).toBe(brandId) // 品牌應該保持不變
       expect(mockTemplate.name).toBe('更新後的兌換券') // 其他欄位正常更新
+    })
+
+    // === 停用時的依賴檢查測試 ===
+    describe('when deactivating voucher template', () => {
+      let activeTemplateMock
+
+      beforeEach(() => {
+        // 每次測試前創建新的 mock 對象
+        activeTemplateMock = {
+          _id: 'template123',
+          name: 'Active Voucher',
+          brand: 'brand123',
+          isActive: true,
+          save: vi.fn().mockResolvedValue(true)
+        }
+
+        mockVoucherTemplate.findOne.mockResolvedValue(activeTemplateMock)
+        // 預設無依賴
+        mockVoucherInstance.countDocuments.mockResolvedValue(0)
+        mockBundle.countDocuments.mockResolvedValue(0)
+      })
+
+      it('should throw error when template has active voucher instances', async () => {
+        // Arrange
+        mockVoucherInstance.countDocuments.mockResolvedValue(3)
+
+        // Act & Assert
+        await expect(
+          voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('還有未使用的兌換券實例，無法停用')
+
+        expect(activeTemplateMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should throw error when template is used by bundles', async () => {
+        // Arrange
+        mockBundle.countDocuments.mockResolvedValue(2)
+
+        // Act & Assert
+        await expect(
+          voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('此兌換券模板已被 Bundle 使用，無法停用')
+
+        expect(activeTemplateMock.save).not.toHaveBeenCalled()
+      })
+
+      it('should perform voucher instance dependency check before deactivation', async () => {
+        // Act
+        await voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+
+        // Assert
+        expect(mockVoucherInstance.countDocuments).toHaveBeenCalledWith({
+          template: 'template123',
+          isUsed: false
+        })
+      })
+
+      it('should perform bundle dependency check before deactivation', async () => {
+        // Act
+        await voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+
+        // Assert
+        expect(mockBundle.countDocuments).toHaveBeenCalledWith({
+          'bundleItems.voucherTemplate': 'template123'
+        })
+      })
+
+      it('should check voucher instances before bundles', async () => {
+        // Act
+        await voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+
+        // Assert
+        const voucherInstanceCall = mockVoucherInstance.countDocuments.mock.invocationCallOrder[0]
+        const bundleCall = mockBundle.countDocuments.mock.invocationCallOrder[0]
+
+        expect(voucherInstanceCall).toBeLessThan(bundleCall)
+      })
+
+      it('should successfully deactivate when no dependencies exist', async () => {
+        // Act
+        const result = await voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+
+        // Assert
+        expect(mockVoucherInstance.countDocuments).toHaveBeenCalledWith({
+          template: 'template123',
+          isUsed: false
+        })
+        expect(mockBundle.countDocuments).toHaveBeenCalledWith({
+          'bundleItems.voucherTemplate': 'template123'
+        })
+        expect(activeTemplateMock.save).toHaveBeenCalled()
+        expect(activeTemplateMock.isActive).toBe(false)
+      })
+
+      it('should allow activating without dependency checks', async () => {
+        // Arrange - 創建一個停用的模板
+        const inactiveTemplateMock = {
+          _id: 'template123',
+          name: 'Inactive Voucher',
+          brand: 'brand123',
+          isActive: false,
+          save: vi.fn().mockResolvedValue(true)
+        }
+
+        mockVoucherTemplate.findOne.mockResolvedValue(inactiveTemplateMock)
+
+        // Act
+        await voucherService.updateVoucherTemplate('template123', { isActive: true }, 'brand123')
+
+        // Assert - 不應該檢查依賴
+        expect(mockVoucherInstance.countDocuments).not.toHaveBeenCalled()
+        expect(mockBundle.countDocuments).not.toHaveBeenCalled()
+        expect(inactiveTemplateMock.save).toHaveBeenCalled()
+      })
+
+      it('should allow updating other fields without dependency checks', async () => {
+        // Arrange
+        const updateData = {
+          name: 'Updated Name',
+          description: 'Updated Description'
+        }
+
+        // Act
+        await voucherService.updateVoucherTemplate('template123', updateData, 'brand123')
+
+        // Assert - 不應該檢查依賴
+        expect(mockVoucherInstance.countDocuments).not.toHaveBeenCalled()
+        expect(mockBundle.countDocuments).not.toHaveBeenCalled()
+        expect(activeTemplateMock.save).toHaveBeenCalled()
+      })
+
+      it('should reject for voucher instance dependency before checking bundles', async () => {
+        // Arrange
+        mockVoucherInstance.countDocuments.mockResolvedValue(5)
+        mockBundle.countDocuments.mockResolvedValue(2)
+
+        // Act & Assert
+        await expect(
+          voucherService.updateVoucherTemplate('template123', { isActive: false }, 'brand123')
+        ).rejects.toThrow('還有未使用的兌換券實例，無法停用')
+
+        // Bundle 檢查不應該執行
+        expect(mockBundle.countDocuments).not.toHaveBeenCalled()
+      })
     })
   })
 

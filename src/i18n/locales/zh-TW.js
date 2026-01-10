@@ -20,15 +20,14 @@ export default {
     schedule: '預約諮詢',
     startTrial: '開始免費試用',
     loading: '載入中...',
-    copyright: '© 2025 光兔點餐. All rights reserved.',
+    copyright: '© 2025 光速點餐. All rights reserved.',
   },
 
   // 首頁
   home: {
-    title: '光兔點餐',
+    title: '光速點餐',
     titleHighlight: '',
-    subtitle:
-      '讓餐飲管理更簡單、更智慧。從小型餐廳到連鎖品牌，提供完整的數位化解決方案。',
+    subtitle: '讓餐飲管理更簡單、更智慧。從小型餐廳到連鎖品牌，提供完整的數位化解決方案。',
     stats: {
       fee: '0.3%',
       feeLabel: '營業額收費',
@@ -47,7 +46,8 @@ export default {
       },
       voucher: {
         title: '預購券系統',
-        description: '讓顧客提前購買餐點券，享受優惠價格。幫助店家有效控制金流與庫存，同時節省顧客每次付款時間，購買更方便。',
+        description:
+          '讓顧客提前購買餐點券，享受優惠價格。幫助店家有效控制金流與庫存，同時節省顧客每次付款時間，購買更方便。',
         features: [
           '顧客提前購買，享受優惠折扣',
           '店家提前掌握金流，改善資金週轉',

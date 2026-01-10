@@ -180,6 +180,32 @@ export const updateVoucherTemplate = async (templateId, updateData, brandId) => 
     throw new AppError('兌換券模板不存在或無權訪問', 404)
   }
 
+  // 如果要停用兌換券模板，檢查是否有依賴
+  if (
+    updateData.hasOwnProperty('isActive') &&
+    updateData.isActive === false &&
+    template.isActive === true
+  ) {
+    // 檢查是否有未使用的兌換券實例
+    const activeInstances = await VoucherInstance.countDocuments({
+      template: templateId,
+      isUsed: false,
+    })
+
+    if (activeInstances > 0) {
+      throw new AppError('還有未使用的兌換券實例，無法停用', 400)
+    }
+
+    // 檢查是否有 Bundle 使用此兌換券模板
+    const relatedBundles = await Bundle.countDocuments({
+      'bundleItems.voucherTemplate': templateId,
+    })
+
+    if (relatedBundles > 0) {
+      throw new AppError('此兌換券模板已被 Bundle 使用，無法停用', 400)
+    }
+  }
+
   // 防止更改品牌
   delete updateData.brand
 

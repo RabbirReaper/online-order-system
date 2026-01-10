@@ -65,7 +65,7 @@ router.afterEach((to) => {
   if (title) {
     document.title = title
   } else {
-    document.title = '光兔點餐'
+    document.title = '光速點餐'
   }
 
   // 更新或移除 description meta

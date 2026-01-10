@@ -5,6 +5,9 @@
 
 import DishTemplate from '../../models/Dish/DishTemplate.js'
 import OptionCategory from '../../models/Dish/OptionCategory.js'
+import Menu from '../../models/Menu/Menu.js'
+import Option from '../../models/Dish/Option.js'
+import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js'
 import { AppError } from '../../middlewares/error.js'
 import * as imageHelper from '../imageHelper.js'
 
@@ -198,7 +201,35 @@ export const deleteTemplate = async (templateId, brandId) => {
     throw new AppError('餐點模板不存在或無權訪問', 404)
   }
 
-  // TODO: 檢查是否有關聯的菜單項目、餐點實例等，如果有則拒絕刪除
+  // 檢查是否有菜單引用此餐點模板
+  const relatedMenus = await Menu.countDocuments({
+    'categories.items.dishTemplate': templateId,
+    brand: brandId,
+  })
+
+  if (relatedMenus > 0) {
+    throw new AppError('此餐點已被菜單使用中，無法刪除', 400)
+  }
+
+  // 檢查是否有選項引用此餐點模板
+  const relatedOptions = await Option.countDocuments({
+    refDishTemplate: templateId,
+    brand: brandId,
+  })
+
+  if (relatedOptions > 0) {
+    throw new AppError('此餐點已被選項引用，無法刪除', 400)
+  }
+
+  // 檢查是否有兌換券模板引用此餐點
+  const relatedVouchers = await VoucherTemplate.countDocuments({
+    exchangeDishTemplate: templateId,
+    brand: brandId,
+  })
+
+  if (relatedVouchers > 0) {
+    throw new AppError('此餐點已被兌換券模板使用，無法刪除', 400)
+  }
 
   // 刪除關聯圖片
   if (template.image && template.image.key) {

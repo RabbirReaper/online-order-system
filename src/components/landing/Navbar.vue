@@ -4,7 +4,7 @@
       <!-- Brand -->
       <router-link class="navbar-brand" to="/home">
         <i class="bi bi-shop me-2"></i>
-        光兔點餐
+        光速點餐
       </router-link>
 
       <!-- Mobile toggle button -->

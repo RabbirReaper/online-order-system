@@ -9,6 +9,9 @@ import { TestDataFactory } from '../../../../setup.js'
 // Mock 所有外部依賴
 vi.mock('@server/models/Dish/DishTemplate.js', () => ({ default: vi.fn() }))
 vi.mock('@server/models/Dish/OptionCategory.js', () => ({ default: vi.fn() }))
+vi.mock('@server/models/Menu/Menu.js', () => ({ default: vi.fn() }))
+vi.mock('@server/models/Dish/Option.js', () => ({ default: vi.fn() }))
+vi.mock('@server/models/Promotion/VoucherTemplate.js', () => ({ default: vi.fn() }))
 vi.mock('@server/services/imageHelper.js', () => ({
   uploadAndProcessImage: vi.fn(),
   updateImage: vi.fn(),
@@ -29,6 +32,9 @@ vi.mock('@server/middlewares/error.js', () => ({
 const dishTemplateService = await import('@server/services/dish/dishTemplate.js')
 const DishTemplate = (await import('@server/models/Dish/DishTemplate.js')).default
 const OptionCategory = (await import('@server/models/Dish/OptionCategory.js')).default
+const Menu = (await import('@server/models/Menu/Menu.js')).default
+const Option = (await import('@server/models/Dish/Option.js')).default
+const VoucherTemplate = (await import('@server/models/Promotion/VoucherTemplate.js')).default
 const imageHelper = await import('@server/services/imageHelper.js')
 const { AppError } = await import('@server/middlewares/error.js')
 
@@ -630,6 +636,9 @@ describe('DishTemplateService', () => {
       const existingTemplate = TestDataFactory.createDishTemplateData({ _id: templateId })
 
       DishTemplate.findOne = vi.fn().mockResolvedValue(existingTemplate)
+      Menu.countDocuments = vi.fn().mockResolvedValue(0)
+      Option.countDocuments = vi.fn().mockResolvedValue(0)
+      VoucherTemplate.countDocuments = vi.fn().mockResolvedValue(0)
       imageHelper.deleteImage = vi.fn().mockResolvedValue(true)
       existingTemplate.deleteOne = vi.fn().mockResolvedValue()
 
@@ -668,6 +677,9 @@ describe('DishTemplateService', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       DishTemplate.findOne = vi.fn().mockResolvedValue(existingTemplate)
+      Menu.countDocuments = vi.fn().mockResolvedValue(0)
+      Option.countDocuments = vi.fn().mockResolvedValue(0)
+      VoucherTemplate.countDocuments = vi.fn().mockResolvedValue(0)
       imageHelper.deleteImage = vi.fn().mockRejectedValue(new Error('Image deletion failed'))
       existingTemplate.deleteOne = vi.fn().mockResolvedValue()
 
@@ -687,12 +699,15 @@ describe('DishTemplateService', () => {
       // Arrange
       const templateId = '507f1f77bcf86cd799439016'
       const brandId = '507f1f77bcf86cd799439013'
-      const existingTemplate = TestDataFactory.createDishTemplateData({ 
+      const existingTemplate = TestDataFactory.createDishTemplateData({
         _id: templateId,
         image: null
       })
 
       DishTemplate.findOne = vi.fn().mockResolvedValue(existingTemplate)
+      Menu.countDocuments = vi.fn().mockResolvedValue(0)
+      Option.countDocuments = vi.fn().mockResolvedValue(0)
+      VoucherTemplate.countDocuments = vi.fn().mockResolvedValue(0)
       existingTemplate.deleteOne = vi.fn().mockResolvedValue()
 
       // Act
@@ -702,6 +717,69 @@ describe('DishTemplateService', () => {
       expect(imageHelper.deleteImage).not.toHaveBeenCalled()
       expect(existingTemplate.deleteOne).toHaveBeenCalled()
       expect(result).toEqual({ success: true, message: '餐點模板已刪除' })
+    })
+
+    it('should throw error when dish template is used in menu', async () => {
+      // Arrange
+      const templateId = '507f1f77bcf86cd799439016'
+      const brandId = '507f1f77bcf86cd799439013'
+      const existingTemplate = TestDataFactory.createDishTemplateData({ _id: templateId })
+
+      DishTemplate.findOne = vi.fn().mockResolvedValue(existingTemplate)
+      Menu.countDocuments = vi.fn().mockResolvedValue(1) // Menu uses this dish
+
+      // Act & Assert
+      await expect(dishTemplateService.deleteTemplate(templateId, brandId))
+        .rejects.toThrow('此餐點已被菜單使用中，無法刪除')
+
+      expect(Menu.countDocuments).toHaveBeenCalledWith({
+        'categories.items.dishTemplate': templateId,
+        brand: brandId
+      })
+      expect(existingTemplate.deleteOne).not.toHaveBeenCalled()
+    })
+
+    it('should throw error when dish template is used in options', async () => {
+      // Arrange
+      const templateId = '507f1f77bcf86cd799439016'
+      const brandId = '507f1f77bcf86cd799439013'
+      const existingTemplate = TestDataFactory.createDishTemplateData({ _id: templateId })
+
+      DishTemplate.findOne = vi.fn().mockResolvedValue(existingTemplate)
+      Menu.countDocuments = vi.fn().mockResolvedValue(0)
+      Option.countDocuments = vi.fn().mockResolvedValue(1) // Option references this dish
+
+      // Act & Assert
+      await expect(dishTemplateService.deleteTemplate(templateId, brandId))
+        .rejects.toThrow('此餐點已被選項引用，無法刪除')
+
+      expect(Option.countDocuments).toHaveBeenCalledWith({
+        refDishTemplate: templateId,
+        brand: brandId
+      })
+      expect(existingTemplate.deleteOne).not.toHaveBeenCalled()
+    })
+
+    it('should throw error when dish template is used in voucher templates', async () => {
+      // Arrange
+      const templateId = '507f1f77bcf86cd799439016'
+      const brandId = '507f1f77bcf86cd799439013'
+      const existingTemplate = TestDataFactory.createDishTemplateData({ _id: templateId })
+
+      DishTemplate.findOne = vi.fn().mockResolvedValue(existingTemplate)
+      Menu.countDocuments = vi.fn().mockResolvedValue(0)
+      Option.countDocuments = vi.fn().mockResolvedValue(0)
+      VoucherTemplate.countDocuments = vi.fn().mockResolvedValue(1) // Voucher uses this dish
+
+      // Act & Assert
+      await expect(dishTemplateService.deleteTemplate(templateId, brandId))
+        .rejects.toThrow('此餐點已被兌換券模板使用，無法刪除')
+
+      expect(VoucherTemplate.countDocuments).toHaveBeenCalledWith({
+        exchangeDishTemplate: templateId,
+        brand: brandId
+      })
+      expect(existingTemplate.deleteOne).not.toHaveBeenCalled()
     })
   })
 

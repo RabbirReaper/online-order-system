@@ -7,6 +7,7 @@ import Bundle from '../../models/Promotion/Bundle.js'
 import BundleInstance from '../../models/Promotion/BundleInstance.js'
 import VoucherTemplate from '../../models/Promotion/VoucherTemplate.js'
 import Order from '../../models/Order/Order.js'
+import Menu from '../../models/Menu/Menu.js'
 import { AppError } from '../../middlewares/error.js'
 import * as imageHelper from '../imageHelper.js'
 
@@ -320,6 +321,37 @@ export const updateBundle = async (bundleId, updateData, brandId) => {
     }
   }
 
+  // 如果要停用 Bundle，檢查是否有依賴
+  if (updateData.hasOwnProperty('isActive') && updateData.isActive === false && bundle.isActive === true) {
+    // 檢查是否有關聯的訂單
+    const relatedOrders = await Order.countDocuments({
+      'items.bundle': bundleId,
+    })
+
+    if (relatedOrders > 0) {
+      throw new AppError('此Bundle已有相關訂單，無法停用', 400)
+    }
+
+    // 檢查是否有菜單引用此 Bundle
+    const relatedMenus = await Menu.countDocuments({
+      'categories.items.bundle': bundleId,
+      brand: brandId,
+    })
+
+    if (relatedMenus > 0) {
+      throw new AppError('此Bundle已被菜單使用中，無法停用', 400)
+    }
+
+    // 檢查是否有 BundleInstance 引用此 Bundle
+    const relatedInstances = await BundleInstance.countDocuments({
+      templateId: bundleId,
+    })
+
+    if (relatedInstances > 0) {
+      throw new AppError('此Bundle已有實例記錄，無法停用', 400)
+    }
+  }
+
   // 更新 Bundle
   Object.keys(updateData).forEach((key) => {
     bundle[key] = updateData[key]
@@ -360,6 +392,25 @@ export const deleteBundle = async (bundleId, brandId) => {
 
   if (relatedOrders > 0) {
     throw new AppError('此Bundle已有相關訂單，無法刪除', 400)
+  }
+
+  // 檢查是否有菜單引用此 Bundle
+  const relatedMenus = await Menu.countDocuments({
+    'categories.items.bundle': bundleId,
+    brand: brandId,
+  })
+
+  if (relatedMenus > 0) {
+    throw new AppError('此Bundle已被菜單使用中，無法刪除', 400)
+  }
+
+  // 檢查是否有 BundleInstance 引用此 Bundle
+  const relatedInstances = await BundleInstance.countDocuments({
+    templateId: bundleId,
+  })
+
+  if (relatedInstances > 0) {
+    throw new AppError('此Bundle已有實例記錄，無法刪除', 400)
   }
 
   // 智慧圖片刪除邏輯

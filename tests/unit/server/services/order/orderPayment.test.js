@@ -556,7 +556,7 @@ describe('OrderPayment Service - Promotion Marking Logic', () => {
         isUsed: true,
         usedAt: new Date('2025-01-15'),
         orderId: orderId,
-        expiryDate: new Date('2025-12-31'), // 未過期
+        expiryDate: new Date('2026-12-31'), // 未過期
         save: vi.fn().mockResolvedValue(),
       }
 
@@ -685,7 +685,7 @@ describe('OrderPayment Service - Promotion Marking Logic', () => {
         isUsed: true,
         usedAt: new Date('2025-01-15'),
         order: orderId,
-        expiryDate: new Date('2025-12-31'), // 未過期
+        expiryDate: new Date('2026-12-31'), // 未過期
         save: vi.fn().mockResolvedValue(),
       }
 

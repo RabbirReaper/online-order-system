@@ -155,6 +155,11 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
+            <!-- 錯誤訊息顯示區域 -->
+            <div class="alert alert-danger" v-if="toggleError">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {{ toggleError }}
+            </div>
             <p v-if="templateToToggle">
               您確定要{{ templateToToggle.isActive ? '停用' : '啟用' }}「{{
                 templateToToggle.name
@@ -163,8 +168,9 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary" @click="confirmToggleStatus">
-              確認{{ templateToToggle?.isActive ? '停用' : '啟用' }}
+            <button type="button" class="btn btn-primary" @click="confirmToggleStatus" :disabled="isTogglingStatus">
+              <span v-if="isTogglingStatus" class="spinner-border spinner-border-sm me-1"></span>
+              {{ isTogglingStatus ? '處理中...' : `確認${templateToToggle?.isActive ? '停用' : '啟用'}` }}
             </button>
           </div>
         </div>
@@ -180,6 +186,11 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
+            <!-- 錯誤訊息顯示區域 -->
+            <div class="alert alert-danger" v-if="deleteError">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {{ deleteError }}
+            </div>
             <div class="alert alert-warning">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               <strong>警告：</strong>此操作無法復原
@@ -220,8 +231,11 @@ const brandId = computed(() => route.params.brandId)
 const isLoading = ref(false)
 const isDeleting = ref(false)
 const isAutoCreating = ref(false)
+const isTogglingStatus = ref(false)
 const errorMessage = ref('')
 const autoCreateResult = ref(null)
+const toggleError = ref('')
+const deleteError = ref('')
 
 // 搜尋和篩選
 const searchQuery = ref('')
@@ -327,12 +341,16 @@ const fetchTemplates = async () => {
 // 顯示狀態切換確認對話框
 const toggleStatus = (template) => {
   templateToToggle.value = template
+  toggleError.value = ''
   statusModal.value.show()
 }
 
 // 確認切換狀態
 const confirmToggleStatus = async () => {
   if (!templateToToggle.value) return
+
+  isTogglingStatus.value = true
+  toggleError.value = ''
 
   try {
     const newStatus = !templateToToggle.value.isActive
@@ -349,13 +367,23 @@ const confirmToggleStatus = async () => {
     statusModal.value.hide()
   } catch (error) {
     console.error('切換狀態失敗:', error)
-    alert('切換狀態失敗，請稍後再試')
+    // 顯示錯誤訊息在 modal 上
+    if (error.response?.data?.message) {
+      toggleError.value = error.response.data.message
+    } else if (error.message) {
+      toggleError.value = error.message
+    } else {
+      toggleError.value = '切換狀態失敗，請稍後再試'
+    }
+  } finally {
+    isTogglingStatus.value = false
   }
 }
 
 // 顯示刪除確認對話框
 const confirmDelete = (template) => {
   templateToDelete.value = template
+  deleteError.value = ''
   deleteModal.value.show()
 }
 
@@ -364,6 +392,7 @@ const deleteTemplate = async () => {
   if (!templateToDelete.value) return
 
   isDeleting.value = true
+  deleteError.value = ''
 
   try {
     await api.promotion.deleteVoucherTemplate({
@@ -380,7 +409,14 @@ const deleteTemplate = async () => {
     )
   } catch (error) {
     console.error('刪除兌換券模板失敗:', error)
-    alert('刪除兌換券模板時發生錯誤')
+    // 顯示錯誤訊息在 modal 上
+    if (error.response?.data?.message) {
+      deleteError.value = error.response.data.message
+    } else if (error.message) {
+      deleteError.value = error.message
+    } else {
+      deleteError.value = '刪除兌換券模板時發生錯誤'
+    }
   } finally {
     isDeleting.value = false
   }

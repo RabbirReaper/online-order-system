@@ -218,8 +218,8 @@ export const login = async (credentials, session) => {
     // 保持登入: 60 天（配合 rolling: true 實現「有活動就永不過期」）
     session.cookie.maxAge = 60 * 24 * 60 * 60 * 1000
   } else {
-    // 一般登入: 1 小時
-    session.cookie.maxAge = 60 * 60 * 1000
+    // 一般登入: 24 小時
+    session.cookie.maxAge = 24 * 60 * 60 * 1000
   }
 
   // 設置會話
@@ -320,7 +320,7 @@ export const sendPhoneVerification = async (phone, brandId, purpose = 'register'
   // 發送簡訊驗證碼
   try {
     const newline = String.fromCharCode(6)
-    const message = `【光兔點餐】您的驗證碼是：${code}。${newline}此驗證碼僅用於本次身份驗證，5分鐘內有效。${newline}請勿將驗證碼透露給任何人，我們的工作人員不會向您索取驗證碼。`
+    const message = `【光速點餐】您的驗證碼是：${code}。${newline}此驗證碼僅用於本次身份驗證，5分鐘內有效。${newline}請勿將驗證碼透露給任何人，我們的工作人員不會向您索取驗證碼。`
 
     const smsResult = await smsService.sendSMS(phone, message)
 
