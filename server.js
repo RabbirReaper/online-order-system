@@ -29,18 +29,14 @@ app.use(express.static('dist'))
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    rolling: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MongoDB_url,
-    }),
+    rolling: true,
     cookie: {
+      maxAge: 60 * 60 * 1000, // 1 小時
+      sameSite: 'strict',
       httpOnly: true,
-      sameSite: 'lax',
-      secure: true,
-      maxAge: 24 * 60 * 60 * 1000, // 預設
     },
   }),
 )
