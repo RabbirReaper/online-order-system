@@ -12,7 +12,7 @@
       <div class="divider"></div>
 
       <!-- Empty Cart Message -->
-      <div v-if="cartItems.length === 0" class="text-center p-5 text-muted">
+      <div v-if="cartStore.items.length === 0" class="text-center p-5 text-muted">
         <i class="bi bi-cart-x fs-1"></i>
         <p class="mt-3">購物車是空的</p>
         <button class="btn btn-primary mt-3" @click="goBack">返回菜單</button>
@@ -114,12 +114,12 @@
         <div class="order-total mb-4">
           <div class="d-flex justify-content-between mb-2">
             <span>小計</span>
-            <span>${{ calculateSubtotal() }}</span>
+            <span>${{ cartStore.subtotal }}</span>
           </div>
 
           <!-- 逐行顯示兌換券折扣 -->
           <div
-            v-for="(voucher, voucherIndex) in usedVouchers"
+            v-for="(voucher, voucherIndex) in cartStore.usedVouchers"
             :key="`voucher-${voucher.voucherId}-${voucherIndex}`"
             class="d-flex justify-content-between mb-2 text-success"
           >
@@ -132,8 +132,8 @@
 
           <!-- 逐行顯示折價券折扣 -->
           <div
-            v-for="(coupon, couponIndex) in appliedCoupons"
-            :key="`coupon-${coupon.couponId}-${couponIndex}`"
+            v-for="(coupon, couponIndex) in cartStore.appliedCoupons"
+            :key="`coupon-${coupon.refId}-${couponIndex}`"
             class="d-flex justify-content-between mb-2 text-primary"
           >
             <span>
@@ -143,14 +143,14 @@
             <span>-${{ coupon.amount }}</span>
           </div>
 
-          <div class="d-flex justify-content-between mb-2" v-if="deliveryFee > 0">
+          <div class="d-flex justify-content-between mb-2" v-if="(cartStore.deliveryInfo?.deliveryFee || 0) > 0">
             <span>外送費</span>
-            <span>${{ deliveryFee }}</span>
+            <span>${{ cartStore.deliveryInfo?.deliveryFee || 0 }}</span>
           </div>
 
           <div class="d-flex justify-content-between fw-bold fs-5">
             <span>總計</span>
-            <span>${{ calculateTotal() }}</span>
+            <span>${{ cartStore.total }}</span>
           </div>
 
           <!-- 點數預覽 -->
@@ -169,7 +169,7 @@
 
           <!-- 未登入用戶的點數提示 -->
           <div
-            v-if="!authStore.isLoggedIn && activePointRules.length > 0 && calculateTotal() > 0"
+            v-if="!authStore.isLoggedIn && cartStore.activePointRules.length > 0 && cartStore.total > 0"
             class="points-login-hint border-top"
           >
             <div class="d-flex align-items-center">
@@ -220,13 +220,13 @@
 
       <!-- Fixed Bottom Button -->
       <div
-        v-if="cartItems.length > 0"
+        v-if="cartStore.items.length > 0"
         class="checkout-button position-fixed bottom-0 start-50 translate-middle-x w-100 bg-white p-3 shadow-lg d-flex justify-content-center"
         style="max-width: 540px"
       >
         <div class="container-button" style="max-width: 540px">
           <button class="btn w-100 py-2 checkout-btn" @click="checkout" :disabled="!isFormValid">
-            前往結帳   ${{ calculateTotal() }}
+            前往結帳   ${{ cartStore.total }}
           </button>
         </div>
       </div>
@@ -260,25 +260,25 @@
           <div class="order-summary">
             <h6>訂單項目：</h6>
             <ul class="list-unstyled">
-              <li v-for="item in cartItems" :key="item.key" class="mb-1">
+              <li v-for="item in cartStore.items" :key="item.key" class="mb-1">
                 {{ item.dishInstance?.name || item.bundleInstance?.name }} x{{ item.quantity }}
               </li>
             </ul>
 
-            <div v-if="usedVouchers.length > 0">
+            <div v-if="cartStore.usedVouchers.length > 0">
               <h6 class="text-success">使用的兌換券：</h6>
               <ul class="list-unstyled text-success">
-                <li v-for="voucher in usedVouchers" :key="voucher.voucherId">
+                <li v-for="voucher in cartStore.usedVouchers" :key="voucher.voucherId">
                   {{ voucher.dishName }} (省下 ${{ voucher.savedAmount }})
                 </li>
               </ul>
             </div>
 
-            <div v-if="appliedCoupons.length > 0">
+            <div v-if="cartStore.appliedCoupons.length > 0">
               <h6 class="text-primary">使用的折價券：</h6>
               <ul class="list-unstyled text-primary">
-                <li v-for="coupon in appliedCoupons" :key="coupon.couponId">
-                  {{ coupon.name }} (折抵 ${{ coupon.amount }})
+                <li v-for="coupon in cartStore.appliedCoupons" :key="coupon.refId">
+                  折價券優惠 (折抵 ${{ coupon.amount }})
                 </li>
               </ul>
             </div>
@@ -286,7 +286,7 @@
             <hr />
             <div class="d-flex justify-content-between fw-bold">
               <span>總計：</span>
-              <span>${{ calculateTotal() }}</span>
+              <span>${{ cartStore.total }}</span>
             </div>
           </div>
         </div>
@@ -337,206 +337,69 @@ import OrderTypeSelector from '@/components/customer/cart/OrderTypeSelector.vue'
 import CustomerInfoForm from '@/components/customer/cart/CustomerInfoForm.vue'
 import VoucherCard from '@/components/customer/cart/VoucherCard.vue'
 import CouponCard from '@/components/customer/cart/CouponCard.vue'
-import api from '@/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 
-// 購物車內容
-const cartItems = computed(() => cartStore.items)
-
 // 訊息狀態
 const errorMsg = ref('')
 const successMsg = ref('')
 
-// 表單資料
-const orderRemarks = ref('')
-const customerInfoFormRef = ref(null)
-// 從 cartStore 初始化訂單類型和相關資訊
-const getInitialOrderType = () => {
-  // 將後端格式轉換為前端格式
-  const storeOrderType = cartStore.orderType
-  switch (storeOrderType) {
-    case 'dine_in':
-      return 'dineIn'
-    case 'takeout':
-      return 'selfPickup'
-    case 'delivery':
-      return 'delivery'
-    default:
-      return 'selfPickup'
-  }
-}
-const orderType = ref(getInitialOrderType())
-const tableNumber = ref(cartStore.dineInInfo?.tableNumber || '')
-const deliveryAddress = ref(cartStore.deliveryInfo?.address || '')
-const pickupTime = ref('asap')
-const scheduledTime = ref('')
-const deliveryFee = ref(cartStore.deliveryInfo?.deliveryFee || 0)
-const customerInfo = ref({
-  name: cartStore.customerInfo?.name || '',
-  phone: cartStore.customerInfo?.phone || '',
-})
-const paymentType = ref(cartStore.paymentType || 'On-site')
-
-// 券相關狀態
-const userVouchers = ref([])
-const userCoupons = ref([])
-const usedVouchers = ref([]) // 已選擇的兌換券
-const appliedCoupons = ref([]) // 已應用的折價券
-const isLoadingCoupons = ref(false)
+// Modal 狀態
 const showConfirmModal = ref(false)
-
-// 店家資訊
-const storeInfo = ref(null)
-const isLoadingStoreInfo = ref(false)
-
-// 點數相關狀態
-const activePointRules = ref([])
-const isLoadingPointRules = ref(false)
 
 // 提交狀態
 const isSubmitting = ref(false)
-const isRedirectingToPayment = ref(false) // 是否正在跳轉到付款頁面
+const isRedirectingToPayment = ref(false)
 
 // 計算屬性
 const isFormValid = computed(() => {
-  if (orderType.value === 'dineIn') {
-    return tableNumber.value && tableNumber.value.trim() !== ''
+  // 根據訂單類型從 store 檢查驗證
+  if (cartStore.orderType === 'dine_in') {
+    return cartStore.dineInInfo?.tableNumber && cartStore.dineInInfo.tableNumber.trim() !== ''
   }
 
-  const name = customerInfo.value?.name || ''
-  const phone = customerInfo.value?.phone || ''
+  const name = cartStore.customerInfo?.name || ''
+  const phone = cartStore.customerInfo?.phone || ''
 
   if (!name.trim() || !phone.trim()) {
     return false
   }
 
-  if (orderType.value === 'delivery' && (!deliveryAddress.value || !deliveryAddress.value.trim())) {
-    return false
+  if (cartStore.orderType === 'delivery') {
+    if (!cartStore.deliveryInfo?.address || !cartStore.deliveryInfo.address.trim()) {
+      return false
+    }
   }
 
-  if (pickupTime.value === 'scheduled' && (!scheduledTime.value || !scheduledTime.value.trim())) {
-    return false
+  if (cartStore.pickupInfo?.pickupTime === 'scheduled') {
+    if (!cartStore.pickupInfo?.scheduledTime || !cartStore.pickupInfo.scheduledTime.trim()) {
+      return false
+    }
   }
 
-  if (paymentType.value === '') return false
+  if (!cartStore.paymentType || cartStore.paymentType === '') return false
 
   return true
-})
-
-// 計算可用兌換券 - 重新設計的簡潔邏輯
-const availableVouchers = computed(() => {
-  if (!authStore.isLoggedIn || !userVouchers.value.length) {
-    return []
-  }
-
-  // 1. 統計購物車中每種餐點的總數量
-  const dishCounts = {}
-  cartItems.value.forEach((cartItem) => {
-    if (cartItem.dishInstance) {
-      const templateId = cartItem.dishInstance.templateId
-      const dishName = cartItem.dishInstance.name
-      const price = cartItem.dishInstance.finalPrice || cartItem.dishInstance.basePrice
-
-      if (!dishCounts[templateId]) {
-        dishCounts[templateId] = {
-          templateId,
-          dishName,
-          price,
-          totalQuantity: 0,
-          cartItems: [],
-        }
-      }
-
-      dishCounts[templateId].totalQuantity += cartItem.quantity
-      dishCounts[templateId].cartItems.push({
-        index: cartItems.value.indexOf(cartItem),
-        quantity: cartItem.quantity,
-      })
-    }
-  })
-
-  // 2. 獲取所有兌換券（包含已選擇和未選擇的）
-  const selectedVoucherIds = new Set(usedVouchers.value.map((v) => v.voucherId))
-  const availableVoucherPool = userVouchers.value.filter(
-    (voucher) => !voucher.isUsed && new Date(voucher.expiryDate) > new Date(),
-  )
-
-  // 3. 為每種餐點匹配對應數量的券
-  const matchedVouchers = []
-
-  Object.values(dishCounts).forEach((dishInfo) => {
-    // 找出可以用於該餐點的所有券
-    const applicableVouchers = availableVoucherPool.filter(
-      (voucher) => voucher.exchangeDishTemplate?._id === dishInfo.templateId,
-    )
-
-    // 根據餐點數量限制券的數量
-    const vouchersToShow = applicableVouchers.slice(0, dishInfo.totalQuantity)
-
-    // 為每個券添加匹配信息和選擇狀態
-    vouchersToShow.forEach((voucher, index) => {
-      const isSelected = selectedVoucherIds.has(voucher._id)
-
-      matchedVouchers.push({
-        ...voucher,
-        isSelected, // 添加選擇狀態
-        matchedItem: {
-          templateId: dishInfo.templateId,
-          dishName: dishInfo.dishName,
-          originalPrice: dishInfo.price,
-          availableQuantity: dishInfo.totalQuantity,
-          voucherIndex: index, // 用於區分同樣餐點的不同券
-        },
-      })
-    })
-  })
-
-  return matchedVouchers
-})
-
-// 可用折價券
-const availableCoupons = computed(() => {
-  if (!authStore.isLoggedIn || !userCoupons.value.length) {
-    return []
-  }
-
-  return userCoupons.value.filter(
-    (coupon) =>
-      !coupon.isUsed &&
-      new Date(coupon.expiryDate) > new Date() &&
-      calculateSubtotal() >= (coupon.discountInfo?.minPurchaseAmount || 0),
-  )
-})
-
-// 計算兌換券節省金額
-const voucherSavings = computed(() => {
-  return usedVouchers.value.reduce((total, voucher) => total + voucher.savedAmount, 0)
-})
-
-// 計算折價券折扣
-const couponDiscount = computed(() => {
-  return appliedCoupons.value.reduce((total, coupon) => total + coupon.amount, 0)
 })
 
 // 計算預估獲得的點數
 const estimatedPoints = computed(() => {
   // 只有登入用戶才顯示點數預覽
-  if (!authStore.isLoggedIn || activePointRules.value.length === 0) {
+  if (!authStore.isLoggedIn || cartStore.activePointRules.length === 0) {
     return null
   }
 
   // 找到消費金額類型的規則
-  const purchaseRule = activePointRules.value.find((rule) => rule.type === 'purchase_amount')
+  const purchaseRule = cartStore.activePointRules.find((rule) => rule.type === 'purchase_amount')
 
   if (!purchaseRule) {
     return null
   }
 
   // 計算實際付款金額（扣除優惠後）
-  const finalAmount = calculateTotal()
+  const finalAmount = cartStore.total
 
   // 檢查是否達到最低消費金額
   if (finalAmount < purchaseRule.minimumAmount) {
@@ -588,252 +451,6 @@ const goToLogin = () => {
   })
 }
 
-const removeFromCart = (index) => {
-  cartStore.removeItem(index)
-}
-
-const editItem = (index) => {
-  const item = cartItems.value[index]
-
-  if (!cartStore.currentBrand || !cartStore.currentStore) {
-    console.error('缺少品牌或店鋪ID:', {
-      brandId: cartStore.currentBrand,
-      storeId: cartStore.currentStore,
-    })
-    showError('無法編輯商品：缺少必要資訊')
-    return
-  }
-
-  router.push({
-    name: 'dish-detail',
-    params: {
-      brandId: cartStore.currentBrand,
-      storeId: cartStore.currentStore,
-      dishId: item.dishInstance.templateId || item.dishInstance._id,
-    },
-  })
-}
-
-const updateCartItemQuantity = (index, change) => {
-  const item = cartItems.value[index]
-  const newQuantity = item.quantity + change
-  cartStore.updateItemQuantity(index, newQuantity)
-}
-
-const updateDeliveryFee = (fee) => {
-  deliveryFee.value = fee
-}
-
-const calculateSubtotal = () => {
-  return cartStore.subtotal
-}
-
-const calculateTotal = () => {
-  return Math.max(
-    0,
-    calculateSubtotal() - voucherSavings.value - couponDiscount.value + deliveryFee.value,
-  )
-}
-
-// 獲取用戶券資料
-const fetchUserCoupons = async () => {
-  if (!authStore.isLoggedIn || !authStore.currentBrandId) {
-    return
-  }
-
-  try {
-    isLoadingCoupons.value = true
-
-    // 並行獲取兌換券和折價券
-    const [vouchersResponse, couponsResponse] = await Promise.all([
-      api.promotion.getUserVouchers(authStore.currentBrandId, {
-        includeUsed: false,
-        includeExpired: false,
-      }),
-      api.promotion.getUserCoupons(authStore.currentBrandId, {
-        includeUsed: false,
-        includeExpired: false,
-      }),
-    ])
-
-    if (vouchersResponse.success) {
-      userVouchers.value = vouchersResponse.vouchers || []
-    }
-
-    if (couponsResponse.success) {
-      userCoupons.value = couponsResponse.coupons || []
-    }
-  } catch (error) {
-    console.error('獲取用戶券資料失敗:', error)
-  } finally {
-    isLoadingCoupons.value = false
-  }
-}
-
-// 獲取啟用的點數規則
-const fetchActivePointRules = async () => {
-  if (!authStore.currentBrandId) {
-    return
-  }
-
-  try {
-    isLoadingPointRules.value = true
-
-    const response = await api.promotion.getActivePointRules(authStore.currentBrandId)
-
-    if (response.success) {
-      activePointRules.value = response.rules || []
-    }
-  } catch (error) {
-    console.error('獲取點數規則失敗:', error)
-  } finally {
-    isLoadingPointRules.value = false
-  }
-}
-
-// 獲取店家公開資訊
-const fetchStoreInfo = async () => {
-  if (!cartStore.currentBrand || !cartStore.currentStore) {
-    console.warn('缺少品牌或店鋪ID，無法獲取店家資訊')
-    return
-  }
-
-  try {
-    isLoadingStoreInfo.value = true
-
-    const response = await api.store.getStorePublicInfo({
-      brandId: cartStore.currentBrand,
-      id: cartStore.currentStore,
-    })
-
-    if (response && response.store) {
-      storeInfo.value = response.store
-      console.log('店家資訊已載入:', {
-        storeName: response.store.name,
-        isOnlinePaymentEnabled: response.store.isActiveCustomerOnlinePayment,
-      })
-    }
-  } catch (error) {
-    console.error('獲取店家資訊失敗:', error)
-  } finally {
-    isLoadingStoreInfo.value = false
-  }
-}
-
-// 使用兌換券的簡化邏輯 - 修改版
-const useVoucher = async (voucher, matchedItem) => {
-  try {
-    // 檢查是否已經選擇過這個券
-    const alreadySelected = usedVouchers.value.some((v) => v.voucherId === voucher._id)
-    if (alreadySelected) {
-      showError('此兌換券已被選用')
-      return
-    }
-
-    // 檢查該餐點類型還能使用幾個券
-    const sameTemplateUsed = usedVouchers.value.filter(
-      (v) => v.templateId === matchedItem.templateId,
-    ).length
-
-    if (sameTemplateUsed >= matchedItem.availableQuantity) {
-      showError('該餐點的兌換券使用數量已達上限')
-      return
-    }
-
-    // 🆕 計算兌換券節省金額 - 只計算餐點基本價格，不包含加點費用
-    const baseDishPrice = getBaseDishPrice(matchedItem.templateId)
-    const savedAmount = baseDishPrice || matchedItem.originalPrice
-
-    // 添加到已選擇券列表
-    usedVouchers.value.push({
-      voucherId: voucher._id,
-      voucherInstanceId: voucher._id,
-      dishName: matchedItem.dishName,
-      savedAmount: savedAmount, // 使用計算後的基本價格
-      templateId: matchedItem.templateId,
-      voucherIndex: matchedItem.voucherIndex,
-    })
-  } catch (error) {
-    console.error('選用兌換券失敗:', error)
-    showError('選用兌換券失敗：' + error.message)
-  }
-}
-
-// 🆕 新增方法：獲取餐點基本價格（不含加點）
-const getBaseDishPrice = (templateId) => {
-  // 從購物車中找到對應的餐點，獲取其基本價格
-  const cartItem = cartItems.value.find(
-    (item) => item.dishInstance && item.dishInstance.templateId === templateId,
-  )
-
-  if (cartItem && cartItem.dishInstance) {
-    // 返回餐點基本價格，不包含選項加價
-    return cartItem.dishInstance.basePrice || cartItem.dishInstance.finalPrice
-  }
-
-  return 0
-}
-// 取消選擇兌換券
-const cancelVoucher = (voucherId) => {
-  const index = usedVouchers.value.findIndex((v) => v.voucherId === voucherId)
-  if (index !== -1) {
-    usedVouchers.value.splice(index, 1)
-  }
-}
-
-// 檢查是否可以使用折價券
-const canUseCoupon = (coupon) => {
-  const currentSubtotal = calculateSubtotal()
-  const minAmount = coupon.discountInfo?.minPurchaseAmount || 0
-  return (
-    currentSubtotal >= minAmount && !appliedCoupons.value.some((c) => c.couponId === coupon._id)
-  )
-}
-
-// 計算折價券折扣金額
-const calculateCouponDiscount = (coupon) => {
-  const subtotal = calculateSubtotal()
-  const discountInfo = coupon.discountInfo
-
-  if (discountInfo.discountType === 'percentage') {
-    let discount = Math.floor(subtotal * (discountInfo.discountValue / 100))
-    if (discountInfo.maxDiscountAmount) {
-      discount = Math.min(discount, discountInfo.maxDiscountAmount)
-    }
-    return discount
-  } else if (discountInfo.discountType === 'fixed') {
-    return Math.min(discountInfo.discountValue, subtotal)
-  }
-
-  return 0
-}
-
-// 應用折價券
-const applyCoupon = (coupon) => {
-  if (!canUseCoupon(coupon)) {
-    showError('無法使用此折價券')
-    return
-  }
-
-  const discountAmount = calculateCouponDiscount(coupon)
-
-  appliedCoupons.value.push({
-    couponId: coupon._id,
-    name: coupon.name,
-    amount: discountAmount,
-    discountInfo: coupon.discountInfo,
-  })
-}
-
-// 移除折價券
-const removeCoupon = (couponId) => {
-  const index = appliedCoupons.value.findIndex((c) => c.couponId === couponId)
-  if (index !== -1) {
-    const coupon = appliedCoupons.value[index]
-    appliedCoupons.value.splice(index, 1)
-  }
-}
-
 const checkout = () => {
   if (!isFormValid.value) {
     showError('請填寫所有必要資訊')
@@ -855,68 +472,7 @@ const submitOrder = async () => {
     isSubmitting.value = true
     clearError()
 
-    const mappedOrderType = (() => {
-      switch (orderType.value) {
-        case 'dineIn':
-          return 'dine_in'
-        case 'selfPickup':
-          return 'takeout'
-        case 'delivery':
-          return 'delivery'
-        default:
-          return 'takeout'
-      }
-    })()
-
-    cartStore.setOrderType(mappedOrderType)
-    cartStore.setNotes(orderRemarks.value)
-
-    // 根據訂單類型設置相應數據
-    if (orderType.value === 'dineIn') {
-      cartStore.setDineInInfo({
-        tableNumber: tableNumber.value,
-      })
-      cartStore.setCustomerInfo({ name: '', phone: '' })
-    } else if (orderType.value === 'selfPickup') {
-      cartStore.setCustomerInfo(customerInfo.value)
-      if (pickupTime.value === 'scheduled') {
-        cartStore.setPickupTime(new Date(scheduledTime.value))
-      }
-    } else if (orderType.value === 'delivery') {
-      cartStore.setCustomerInfo(customerInfo.value)
-      cartStore.setDeliveryInfo({
-        address: deliveryAddress.value,
-        deliveryFee: deliveryFee.value,
-        estimatedTime: pickupTime.value === 'scheduled' ? new Date(scheduledTime.value) : null,
-      })
-    }
-
-    // 構建折扣結構
-    const discounts = []
-
-    if (usedVouchers.value.length > 0) {
-      usedVouchers.value.forEach((voucher) => {
-        discounts.push({
-          discountModel: 'VoucherInstance',
-          refId: voucher.voucherId,
-          amount: voucher.savedAmount,
-        })
-      })
-    }
-
-    if (appliedCoupons.value.length > 0) {
-      appliedCoupons.value.forEach((coupon) => {
-        discounts.push({
-          discountModel: 'CouponInstance',
-          refId: coupon.couponId,
-          amount: coupon.amount,
-        })
-      })
-    }
-
-    cartStore.appliedCoupons = discounts
-
-    // 提交訂單（使用 NewebPay）
+    // 所有資料都已經在 store 中，直接提交訂單
     const result = await cartStore.submitOrder()
 
     if (result.success) {
@@ -994,30 +550,31 @@ const submitOrder = async () => {
 // 監聽用戶登入狀態變化
 watch(
   () => authStore.isLoggedIn,
-  (newValue) => {
+  async (newValue) => {
     if (newValue) {
-      fetchUserCoupons()
+      // 登入後從 store 獲取券和點數資料
+      await cartStore.fetchUserVouchers(authStore.currentBrandId)
+      await cartStore.fetchUserCoupons(authStore.currentBrandId)
     } else {
-      userVouchers.value = []
-      userCoupons.value = []
-      appliedCoupons.value = []
-      usedVouchers.value = []
+      // 登出時清空 store 中的券資料
+      cartStore.clearPromotions()
     }
   },
 )
 
-// 監聽品牌變化，重新獲取點數規則
+// 監聽品牌變化，重新獲取點數規則和店鋪資訊
 watch(
   () => authStore.currentBrandId,
-  (newValue) => {
-    if (newValue) {
-      fetchActivePointRules()
+  async (newValue) => {
+    if (newValue && cartStore.currentStore) {
+      await cartStore.fetchActivePointRules(newValue)
+      await cartStore.fetchStoreInfo(newValue, cartStore.currentStore)
     }
   },
 )
 
 // 生命週期
-onMounted(() => {
+onMounted(async () => {
   window.scrollTo(0, 0)
 
   // ✅ 檢查是否從付款失敗返回，並恢復購物車
@@ -1045,53 +602,31 @@ onMounted(() => {
     }
   }
 
-  // 從 cartStore 同步訂單類型和相關資訊
-  const storeOrderType = cartStore.orderType
-  if (storeOrderType) {
-    // 將後端格式轉換為前端格式
-    switch (storeOrderType) {
-      case 'dine_in':
-        orderType.value = 'dineIn'
-        tableNumber.value = cartStore.dineInInfo?.tableNumber || ''
-        break
-      case 'takeout':
-        orderType.value = 'selfPickup'
-        break
-      case 'delivery':
-        orderType.value = 'delivery'
-        deliveryAddress.value = cartStore.deliveryInfo?.address || ''
-        deliveryFee.value = cartStore.deliveryInfo?.deliveryFee || 0
-        break
-    }
+  // 初始化預約時間（如果還沒有設定）
+  if (!cartStore.pickupInfo?.scheduledTime) {
+    const date = new Date()
+    date.setMinutes(date.getMinutes() + 30)
+    cartStore.setPickupInfo({
+      ...cartStore.pickupInfo,
+      scheduledTime: date.toISOString().slice(0, 16)
+    })
   }
-
-  // 同步客戶資訊
-  if (cartStore.customerInfo) {
-    customerInfo.value = {
-      name: cartStore.customerInfo.name || '',
-      phone: cartStore.customerInfo.phone || '',
-    }
-  }
-
-  console.log('購物車頁面初始化 - 訂單類型:', orderType.value, '桌號:', tableNumber.value)
-
-  // 設置默認預約時間
-  const date = new Date()
-  date.setMinutes(date.getMinutes() + 30)
-  scheduledTime.value = date.toISOString().slice(0, 16)
 
   // 如果用戶已登入，獲取券資料
-  if (authStore.isLoggedIn) {
-    fetchUserCoupons()
+  if (authStore.isLoggedIn && authStore.currentBrandId) {
+    await cartStore.fetchUserVouchers(authStore.currentBrandId)
+    await cartStore.fetchUserCoupons(authStore.currentBrandId)
   }
 
   // 獲取點數規則（不論是否登入都獲取，用於顯示提示）
   if (authStore.currentBrandId) {
-    fetchActivePointRules()
+    await cartStore.fetchActivePointRules(authStore.currentBrandId)
   }
 
   // 獲取店家資訊
-  fetchStoreInfo()
+  if (cartStore.currentBrand && cartStore.currentStore) {
+    await cartStore.fetchStoreInfo(cartStore.currentBrand, cartStore.currentStore)
+  }
 })
 </script>
 

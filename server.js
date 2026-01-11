@@ -27,21 +27,28 @@ app.use(express.json({ limit: '2mb' }))
 app.use(express.urlencoded({ limit: '2mb', extended: true }))
 app.use(express.static('dist'))
 
+// Trust proxy for Cloud Run
+app.set('trust proxy', 1)
+
+// Session configuration with MongoDB store
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
-    rolling: true,
+    rolling: true, // 每次請求都延長 session，只要使用者持續活動就不會過期
     store: MongoStore.create({
       mongoUrl: process.env.MongoDB_url,
-      touchAfter: 23 * 3600,
+      touchAfter: 1 * 3600, // 1 小時內不更新 MongoDB session，減少資料庫寫入（cookie 仍會延長）
+      crypto: {
+        secret: process.env.SESSION_SECRET || 'your-secret-key',
+      },
     }),
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true,
-      maxAge: 24 * 60 * 60 * 1000, // 預設
+      secure: true, // Cloud Run 必須使用 https
+      maxAge: 24 * 60 * 60 * 1000, // 預設 24 小時，會在登入時根據 rememberMe 動態調整
     },
   }),
 )

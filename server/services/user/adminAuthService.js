@@ -84,26 +84,35 @@ export const adminLogin = async (credentials, session) => {
   admin.lastLogin = new Date()
   await admin.save()
 
-  // 根據 rememberMe 動態設置 session cookie maxAge
-  if (rememberMe) {
-    // 保持登入: 14 天（配合 rolling: true 實現「有活動就永不過期」）
-    session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
-  } else {
-    // 一般登入: 24 小時
-    session.cookie.maxAge = 24 * 60 * 60 * 1000
-  }
-
   // 設置會話
   session.adminId = admin._id
   session.adminRole = admin.role
   session.adminBrand = admin.brand?._id
   session.adminStore = admin.store?._id
 
-  return {
-    role: admin.role,
-    brand: admin.brand,
-    store: admin.store,
+  // 根據 rememberMe 動態設置 session cookie maxAge
+  if (rememberMe) {
+    // 保持登入: 14 天
+    session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
+  } else {
+    // 一般登入: 2 小時
+    session.cookie.maxAge = 2 * 60 * 60 * 1000
   }
+
+  // 顯式保存 session 到 MongoDB
+  return new Promise((resolve, reject) => {
+    session.save((err) => {
+      if (err) {
+        return reject(new AppError('Session 保存失敗', 500))
+      }
+
+      resolve({
+        role: admin.role,
+        brand: admin.brand,
+        store: admin.store,
+      })
+    })
+  })
 }
 
 /**

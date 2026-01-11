@@ -183,7 +183,7 @@ const localDeliveryAddress = computed({
   set: (value) => {
     cartStore.setDeliveryInfo({
       ...cartStore.deliveryInfo,
-      address: value
+      address: value,
     })
   },
 })
@@ -301,11 +301,15 @@ const initializeScheduledTime = () => {
 }
 
 // 監聽店鋪資訊變化，設定預設訂單類型
-watch(storeData, (newVal) => {
-  if (newVal && Object.keys(newVal).length > 0) {
-    setDefaultOrderType()
-  }
-}, { deep: true })
+watch(
+  storeData,
+  (newVal) => {
+    if (newVal && Object.keys(newVal).length > 0) {
+      setDefaultOrderType()
+    }
+  },
+  { deep: true },
+)
 
 // 監聽訂單類型變化
 watch(localOrderType, (newVal) => {
@@ -313,13 +317,13 @@ watch(localOrderType, (newVal) => {
   if (newVal === 'delivery') {
     cartStore.setDeliveryInfo({
       ...cartStore.deliveryInfo,
-      deliveryFee: deliveryFee.value
+      deliveryFee: deliveryFee.value,
     })
   } else {
     if (cartStore.deliveryInfo) {
       cartStore.setDeliveryInfo({
         ...cartStore.deliveryInfo,
-        deliveryFee: 0
+        deliveryFee: 0,
       })
     }
   }
