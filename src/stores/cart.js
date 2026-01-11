@@ -20,6 +20,10 @@ export const useCartStore = defineStore('cart', () => {
   const dineInInfo = ref({
     tableNumber: '',
   }) // 內用資訊
+  const pickupInfo = ref({
+    pickupTime: 'asap', // 'asap' 或 'scheduled'
+    scheduledTime: '', // ISO datetime string
+  }) // 取餐資訊
   const estimatedPickupTime = ref(null) // Date 對象，預計取餐時間
   const notes = ref('') // 訂單備註
   const appliedCoupons = ref([]) // 已應用的折扣列表（新結構：包含voucher和coupon）
@@ -433,6 +437,11 @@ export const useCartStore = defineStore('cart', () => {
       tableNumber: '',
     }
 
+    pickupInfo.value = {
+      pickupTime: 'asap',
+      scheduledTime: '',
+    }
+
     estimatedPickupTime.value = null
     validationErrors.value = {}
 
@@ -497,6 +506,10 @@ export const useCartStore = defineStore('cart', () => {
 
   function setDineInInfo(info) {
     dineInInfo.value = { ...dineInInfo.value, ...info }
+  }
+
+  function setPickupInfo(info) {
+    pickupInfo.value = { ...pickupInfo.value, ...info }
   }
 
   function setPickupTime(time) {
@@ -695,7 +708,12 @@ export const useCartStore = defineStore('cart', () => {
       } else if (orderType.value === 'dine_in') {
         orderData.dineInInfo = dineInInfo.value
       } else if (orderType.value === 'takeout') {
-        orderData.estimatedPickupTime = estimatedPickupTime.value
+        // 處理取餐時間
+        if (pickupInfo.value.pickupTime === 'scheduled' && pickupInfo.value.scheduledTime) {
+          orderData.estimatedPickupTime = new Date(pickupInfo.value.scheduledTime)
+        } else {
+          orderData.estimatedPickupTime = estimatedPickupTime.value
+        }
       }
 
       console.log('=== Pinia 提交訂單資料 ===')
@@ -739,6 +757,7 @@ export const useCartStore = defineStore('cart', () => {
               customerInfo: customerInfo.value,
               deliveryInfo: deliveryInfo.value,
               dineInInfo: dineInInfo.value,
+              pickupInfo: pickupInfo.value,
               estimatedPickupTime: estimatedPickupTime.value,
               notes: notes.value,
               appliedCoupons: appliedCoupons.value,
@@ -822,6 +841,7 @@ export const useCartStore = defineStore('cart', () => {
       customerInfo.value = data.customerInfo || { name: '', phone: '', lineUniqueId: '' }
       deliveryInfo.value = data.deliveryInfo || { address: '', estimatedTime: null, deliveryFee: 0 }
       dineInInfo.value = data.dineInInfo || { tableNumber: '' }
+      pickupInfo.value = data.pickupInfo || { pickupTime: 'asap', scheduledTime: '' }
       estimatedPickupTime.value = data.estimatedPickupTime || null
       notes.value = data.notes || ''
       appliedCoupons.value = data.appliedCoupons || []
@@ -1081,6 +1101,7 @@ export const useCartStore = defineStore('cart', () => {
     customerInfo,
     deliveryInfo,
     dineInInfo,
+    pickupInfo,
     estimatedPickupTime,
     notes,
     appliedCoupons,
@@ -1137,6 +1158,7 @@ export const useCartStore = defineStore('cart', () => {
     setLineUserInfo,
     setDeliveryInfo,
     setDineInInfo,
+    setPickupInfo,
     setPickupTime,
     setNotes,
     applyCoupon,
