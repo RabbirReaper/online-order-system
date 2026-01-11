@@ -137,6 +137,9 @@
         <div v-if="selectedOrder.deliveryInfo?.address">
           配送地址: {{ selectedOrder.deliveryInfo.address }}
         </div>
+        <div v-if="selectedOrder.estimatedPickupTime" class="fw-bold">
+          預約取餐時間: {{ counterStore.formatDateTime(selectedOrder.estimatedPickupTime) }}
+        </div>
         <div>付款方式: {{ selectedOrder.paymentMethod || '未設定' }}</div>
         <div v-if="selectedOrder.notes">備註: {{ selectedOrder.notes }}</div>
       </small>
