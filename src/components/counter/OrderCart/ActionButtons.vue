@@ -7,7 +7,7 @@
           class="btn btn-danger btn-lg"
           style="width: 48%"
           @click="showCancelOrderModal"
-          :disabled="selectedOrder.status === 'paid' || selectedOrder.status === 'cancelled'"
+          :disabled="selectedOrder.status === 'cancelled'"
         >
           <i class="bi bi-x-circle me-1"></i> 取消訂單
         </button>
@@ -25,9 +25,7 @@
             ></span>
             列印中...
           </template>
-          <template v-else>
-            <i class="bi bi-printer me-1"></i> 列印訂單
-          </template>
+          <template v-else> <i class="bi bi-printer me-1"></i> 列印訂單 </template>
         </button>
       </div>
       <button
