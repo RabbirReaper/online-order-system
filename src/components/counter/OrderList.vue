@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid p-0">
+  <div class="container-fluid p-0 order-list-container">
     <div class="component-header bg-secondary text-white p-3">
       <div class="d-flex justify-content-between align-items-center">
         <h4 class="mb-0">訂單管理 {{ counterStore.currentDate }}</h4>
@@ -17,7 +17,7 @@
     </div>
 
     <!-- 訂單表格 -->
-    <div class="table-responsive">
+    <div class="table-responsive order-table-wrapper">
       <table class="table table-striped table-hover">
         <thead class="table-dark">
           <tr>
@@ -478,5 +478,20 @@ table {
 .stats-content .card:hover {
   transform: translateY(-3px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 訂單列表容器 - 使用 flex 佈局 */
+.order-list-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 表格容器 - 可滾動區域 */
+.order-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 </style>
