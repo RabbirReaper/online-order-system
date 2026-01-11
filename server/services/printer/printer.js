@@ -201,9 +201,6 @@ const buildOrderPrintMessage = (order) => {
     const pickupTime = fromUTCDate(order.estimatedPickupTime).toFormat('yyyy/MM/dd HH:mm')
     printContent.push({
       cont: `預約取餐時間: ${pickupTime}`,
-      type: 'text',
-      bold: true,
-      size: '11',
     })
     printContent.push({
       cont: '',

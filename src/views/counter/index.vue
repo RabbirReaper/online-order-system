@@ -349,14 +349,6 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
-/* 更新按鈕樣式 */
-.refresh-btn {
-  transition: all 0.3s ease;
-  min-height: 38px;
-  font-size: 0.8rem;
-  padding: 0.375rem 0.5rem;
-}
-
 .refresh-btn:active:not(:disabled) {
   transform: scale(0.95);
 }
@@ -442,6 +434,11 @@ onUnmounted(() => {
 .main-content-wrapper {
   flex: 1;
   min-width: 0;
+}
+
+.main-content {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* 購物車區樣式 */
