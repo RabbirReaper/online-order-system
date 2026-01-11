@@ -725,12 +725,10 @@ const autoAddDeveryPrice = () => {
 
 // 移除分類
 const removeCategory = (index) => {
-  if (confirm(`確定要刪除「${formData.categories[index].name || '未命名分類'}」嗎？`)) {
-    formData.categories.splice(index, 1)
-    formData.categories.forEach((category, idx) => {
-      category.order = idx
-    })
-  }
+  formData.categories.splice(index, 1)
+  formData.categories.forEach((category, idx) => {
+    category.order = idx
+  })
 }
 
 // 移動分類順序

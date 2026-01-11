@@ -116,7 +116,7 @@
               class="row mb-2"
               v-if="orderDetails.orderType === 'takeout' && orderDetails.estimatedPickupTime"
             >
-              <div class="col-5 text-muted">預計取餐時間：</div>
+              <div class="col-5 text-muted">取餐時間：</div>
               <div class="col-7">{{ formatPickupTime(orderDetails.estimatedPickupTime) }}</div>
             </div>
 

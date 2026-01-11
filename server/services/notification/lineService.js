@@ -70,6 +70,16 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
   const orderDate = formatDateTime(orderDateTime, 'yyyy/MM/dd')
   const orderTime = formatDateTime(orderDateTime, 'HH:mm')
 
+  // 處理預約取餐時間
+  let pickupDateTime = null
+  let pickupDate = null
+  let pickupTime = null
+  if (order.estimatedPickupTime) {
+    pickupDateTime = fromUTCDate(order.estimatedPickupTime)
+    pickupDate = formatDateTime(pickupDateTime, 'yyyy/MM/dd')
+    pickupTime = formatDateTime(pickupDateTime, 'HH:mm')
+  }
+
   return {
     type: 'flex',
     altText: `訂單確認通知 - 編號 ${orderNumber}`,
@@ -209,6 +219,39 @@ export const buildOrderConfirmationMessage = (order, confirmUrl) => {
                   },
                 ],
               },
+
+              // 預約取餐時間（如果有）
+              ...(pickupDate && pickupTime
+                ? [
+                    {
+                      type: 'box',
+                      layout: 'horizontal',
+                      contents: [
+                        {
+                          type: 'text',
+                          text: '⏰ 預約取餐',
+                          size: 'md',
+                          color: '#555555',
+                          flex: 0,
+                          gravity: 'center',
+                        },
+                        {
+                          type: 'text',
+                          text: `${pickupDate} ${pickupTime}`,
+                          size: 'md',
+                          color: '#FF6B35',
+                          align: 'end',
+                          gravity: 'center',
+                          weight: 'bold',
+                        },
+                      ],
+                      backgroundColor: '#FFF3E0',
+                      paddingAll: 'sm',
+                      cornerRadius: 'md',
+                      margin: 'md',
+                    },
+                  ]
+                : []),
             ],
           },
 
