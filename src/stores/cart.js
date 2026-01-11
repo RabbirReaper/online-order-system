@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/customerAuth'
 export const useCartStore = defineStore('cart', () => {
   // 狀態
   const items = ref([]) // 購物車內的餐點項目陣列
-  const orderType = ref('') // 'dine_in', 'takeout', 'delivery'
+  const orderType = ref('takeout') // 'dine_in', 'takeout', 'delivery' - 預設為外帶
   const customerInfo = ref({
     name: '',
     phone: '',
@@ -417,6 +417,7 @@ export const useCartStore = defineStore('cart', () => {
     items.value = []
     appliedCoupons.value = []
     notes.value = ''
+    orderType.value = 'takeout' // 重設為預設訂單類型
 
     if (!isStaffMode.value) {
       customerInfo.value = {
