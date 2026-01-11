@@ -196,6 +196,20 @@ const buildOrderPrintMessage = (order) => {
     cont: '',
   })
 
+  // 取餐時間，如果有的話
+  if (order.estimatedPickupTime) {
+    const pickupTime = fromUTCDate(order.estimatedPickupTime).toFormat('yyyy/MM/dd HH:mm')
+    printContent.push({
+      cont: `預約取餐時間: ${pickupTime}`,
+      type: 'text',
+      bold: true,
+      size: '11',
+    })
+    printContent.push({
+      cont: '',
+    })
+  }
+
   // 5. 外送地址（如果是外送訂單）
   if (order.orderType === 'delivery' && order.deliveryInfo?.address) {
     printContent.push({
