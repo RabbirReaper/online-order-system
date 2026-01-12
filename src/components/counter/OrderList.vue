@@ -80,11 +80,14 @@
             </td>
             <td class="fs-5">${{ calculateOrderTotal(order) }}</td>
             <td>
-              <span :class="counterStore.getStatusClass(order.status)">
+              <span v-if="order.status !== 'paid'" :class="counterStore.getStatusClass(order.status)">
                 {{ counterStore.formatStatus(order.status) }}
               </span>
-              <span v-if="order.status === 'paid'" class="ms-1 badge bg-secondary">
+              <span v-if="order.status === 'paid'" class="badge bg-info">
                 {{ formatPaymentType(order.paymentType) }}
+              </span>
+              <span v-if="order.status === 'paid' && order.paymentMethod" class="ms-1 badge bg-secondary">
+                {{ formatPaymentMethod(order.paymentMethod) }}
               </span>
             </td>
           </tr>
@@ -395,6 +398,16 @@ const formatPaymentType = (paymentType) => {
     other: '其他',
   }
   return typeMap[paymentType] || paymentType
+}
+
+const formatPaymentMethod = (paymentMethod) => {
+  const methodMap = {
+    cash: '現金',
+    credit_card: '信用卡',
+    line_pay: 'LINE Pay',
+    other: '其他',
+  }
+  return methodMap[paymentMethod] || paymentMethod
 }
 
 const calculateOrderTotal = (order) => {
