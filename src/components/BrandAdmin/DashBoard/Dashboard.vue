@@ -507,7 +507,7 @@ const getPlatform = (order) => {
   return null
 }
 
-// 營業額統計
+// 營業額統計 - 跳過已取消的訂單
 const revenueStats = computed(() => {
   const stats = {
     total: 0,
@@ -519,6 +519,9 @@ const revenueStats = computed(() => {
   }
 
   allOrders.value.forEach((order) => {
+    // 跳過已取消訂單
+    if (order.status === 'cancelled') return
+
     const amount = order.total || 0
     stats.total += amount
 
@@ -542,10 +545,10 @@ const revenueStats = computed(() => {
   return stats
 })
 
-// 訂單數統計
+// 訂單數統計 - 跳過已取消的訂單
 const orderStats = computed(() => {
   const stats = {
-    total: allOrders.value.length,
+    total: 0,
     dineIn: 0,
     takeout: 0,
     delivery: 0,
@@ -554,6 +557,10 @@ const orderStats = computed(() => {
   }
 
   allOrders.value.forEach((order) => {
+    // 跳過已取消訂單
+    if (order.status === 'cancelled') return
+
+    stats.total++
     const platform = getPlatform(order)
 
     if (order.orderType === 'dine_in') {
@@ -574,11 +581,14 @@ const orderStats = computed(() => {
   return stats
 })
 
-// 付款方式統計（細分平台）
+// 付款方式統計（細分平台）- 跳過已取消的訂單，包含金額資訊
 const paymentMethodsData = computed(() => {
   const methods = {}
 
   allOrders.value.forEach((order) => {
+    // 跳過已取消訂單
+    if (order.status === 'cancelled') return
+
     const platform = getPlatform(order)
     let methodKey = ''
 
@@ -596,13 +606,17 @@ const paymentMethodsData = computed(() => {
       }
     }
 
-    methods[methodKey] = (methods[methodKey] || 0) + 1
+    if (!methods[methodKey]) {
+      methods[methodKey] = { count: 0, amount: 0 }
+    }
+    methods[methodKey].count++
+    methods[methodKey].amount += order.total || 0
   })
 
   return methods
 })
 
-// 實際收入計算
+// 實際收入計算 - 跳過已取消的訂單
 const actualIncomeStats = computed(() => {
   const foodpandaRevenue = revenueStats.value.foodpanda
   const uberEatsRevenue = revenueStats.value.ubereats
@@ -613,6 +627,9 @@ const actualIncomeStats = computed(() => {
 
   let onlinePaymentRevenue = 0
   allOrders.value.forEach((order) => {
+    // 跳過已取消訂單
+    if (order.status === 'cancelled') return
+
     const platform = getPlatform(order)
 
     if (

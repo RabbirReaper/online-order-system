@@ -32,10 +32,19 @@ onMounted(() => {
 })
 
 const chartData = computed(() => {
-  // 提取數據
+  // 提取數據 - 支持兩種格式：數字或物件 {count, amount}
   const paymentData = props.paymentMethods || {}
   const labels = Object.keys(paymentData)
-  const data = Object.values(paymentData)
+
+  // 判斷數據格式，提取 count 或直接使用數字
+  const data = Object.values(paymentData).map(value => {
+    // 如果是物件格式 {count, amount}，使用 count
+    if (typeof value === 'object' && value !== null && 'count' in value) {
+      return value.count
+    }
+    // 否則直接使用數字
+    return value
+  })
 
   // 付費方式色彩配置
   const colorConfig = {
@@ -102,9 +111,31 @@ const chartData = computed(() => {
 })
 
 const chartOptions = computed(() => {
-  const data = Object.values(props.paymentMethods || {})
-  const total = data.reduce((acc, curr) => acc + (curr || 0), 0)
-  const safeTotal = total || 1 // 避免除以零
+  const paymentData = props.paymentMethods || {}
+  const dataValues = Object.values(paymentData)
+
+  // 判斷數據格式並計算總數和總金額
+  const isObjectFormat = dataValues.length > 0 &&
+    typeof dataValues[0] === 'object' &&
+    dataValues[0] !== null &&
+    'count' in dataValues[0]
+
+  let totalCount = 0
+  let totalAmount = 0
+
+  if (isObjectFormat) {
+    dataValues.forEach(item => {
+      totalCount += item.count || 0
+      totalAmount += item.amount || 0
+    })
+  } else {
+    totalCount = dataValues.reduce((acc, curr) => acc + (curr || 0), 0)
+  }
+
+  // 格式化金額
+  const formatAmount = (num) => {
+    return new Intl.NumberFormat('zh-TW').format(Math.round(num))
+  }
 
   return {
     responsive: true,
@@ -133,9 +164,16 @@ const chartOptions = computed(() => {
         callbacks: {
           label: function (context) {
             const label = context.label || ''
-            const value = context.raw || 0
-            const percentage = Math.round((value / safeTotal) * 100)
-            return `${label}: ${value} 筆 (${percentage}%)`
+            const count = context.raw || 0
+
+            // 如果有金額資訊，顯示金額
+            if (isObjectFormat) {
+              const labelKey = Object.keys(paymentData)[context.dataIndex]
+              const amount = paymentData[labelKey]?.amount || 0
+              return `${label}: ${count} 筆 / NT$ ${formatAmount(amount)}`
+            }
+
+            return `${label}: ${count} 筆`
           },
         },
       },
@@ -154,11 +192,18 @@ const chartOptions = computed(() => {
             if (data.labels.length && data.datasets.length) {
               return data.labels.map((label, i) => {
                 const dataset = data.datasets[0]
-                const value = dataset.data[i]
-                const percentage = Math.round((value / safeTotal) * 100)
+                const count = dataset.data[i]
+
+                // 如果有金額資訊，顯示金額
+                let labelText = `${label} (${count} 筆)`
+                if (isObjectFormat) {
+                  const labelKey = Object.keys(paymentData)[i]
+                  const amount = paymentData[labelKey]?.amount || 0
+                  labelText = `${label}: NT$ ${formatAmount(amount)}`
+                }
 
                 return {
-                  text: `${label} (${percentage}%)`,
+                  text: labelText,
                   fillStyle: dataset.backgroundColor[i],
                   strokeStyle: dataset.borderColor[i],
                   lineWidth: dataset.borderWidth,
@@ -174,7 +219,9 @@ const chartOptions = computed(() => {
       },
       title: {
         display: true,
-        text: ['付費方式分佈', `總交易: ${total} 筆`],
+        text: isObjectFormat
+          ? ['付費方式分佈', `總交易: ${totalCount} 筆 / NT$ ${formatAmount(totalAmount)}`]
+          : ['付費方式分佈', `總交易: ${totalCount} 筆`],
         padding: {
           top: 10,
           bottom: 25,
