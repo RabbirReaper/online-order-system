@@ -475,7 +475,7 @@ const getItemTypeLabel = (item) => {
   return '其他'
 }
 
-// 從訂單資料計算圖表資料
+// 從訂單資料計算圖表資料 - 跳過已取消的訂單
 const hourlyChartData = computed(() => {
   const hourlyStats = {}
 
@@ -484,8 +484,9 @@ const hourlyChartData = computed(() => {
     hourlyStats[hour] = 0
   }
 
-  // 統計每小時的訂單數
+  // 統計每小時的訂單數 - 跳過已取消訂單
   allOrders.value.forEach((order) => {
+    if (order.status === 'cancelled') return
     const date = new Date(order.createdAt)
     const hour = date.getHours()
     hourlyStats[hour]++
@@ -507,7 +508,9 @@ const hourlyChartData = computed(() => {
 const orderTypesData = computed(() => {
   const types = {}
 
+  // 跳過已取消訂單
   allOrders.value.forEach((order) => {
+    if (order.status === 'cancelled') return
     const displayType = formatOrderType(order.orderType)
     types[displayType] = (types[displayType] || 0) + 1
   })
@@ -515,11 +518,13 @@ const orderTypesData = computed(() => {
   return types
 })
 
-// 修正：改為通用的項目銷售數據，支援餐點和兌換券
+// 修正：改為通用的項目銷售數據，支援餐點和兌換券 - 跳過已取消的訂單
 const popularItemsData = computed(() => {
   const itemStats = {}
 
+  // 跳過已取消訂單
   allOrders.value.forEach((order) => {
+    if (order.status === 'cancelled') return
     if (order.items && order.items.length > 0) {
       order.items.forEach((item) => {
         const itemName = getItemName(item)
@@ -543,7 +548,9 @@ const popularItemsData = computed(() => {
 const paymentMethodsData = computed(() => {
   const methods = {}
 
+  // 跳過已取消訂單
   allOrders.value.forEach((order) => {
+    if (order.status === 'cancelled') return
     const displayMethod = formatPaymentMethod(order)
     methods[displayMethod] = (methods[displayMethod] || 0) + 1
   })
@@ -553,15 +560,20 @@ const paymentMethodsData = computed(() => {
 
 const summaryData = computed(() => {
   const data = {
-    totalOrders: allOrders.value.length,
+    totalOrders: 0,
     totalAmount: 0,
     paidOrders: 0,
     unpaidOrders: 0,
     averageOrderValue: 0,
   }
 
+  // 跳過已取消訂單，統計所有有效訂單
   allOrders.value.forEach((order) => {
+    if (order.status === 'cancelled') return
+
+    data.totalOrders++
     data.totalAmount += order.total || 0
+
     if (order.status === 'paid') {
       data.paidOrders++
     } else if (order.status === 'unpaid') {
@@ -569,7 +581,7 @@ const summaryData = computed(() => {
     }
   })
 
-  // 計算平均客單價
+  // 計算平均客單價 - 基於所有有效訂單（未取消）
   data.averageOrderValue = data.totalOrders > 0 ? data.totalAmount / data.totalOrders : 0
 
   return data
