@@ -135,7 +135,7 @@ const showPrintSuccessModal = ref(false)
 // 動態確認訊息
 const cancelModalMessage = computed(() => {
   if (cancelType.value === 'order') {
-    return `確定要取消訂單 #${props.selectedOrder?.orderNumber || props.selectedOrder?._id} 嗎？此操作將無法復原。`
+    return `確定要取消訂單 #${props.selectedOrder?.sequence || props.selectedOrder?._id} 嗎？此操作將無法復原。`
   } else {
     return '確定要清空購物車嗎？這將移除所有已選擇的商品。'
   }

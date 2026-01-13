@@ -256,15 +256,19 @@ const buildOrderPrintMessage = (order) => {
       printContent.push({
         cont: `  備註: ${item.note}`,
         type: 'text',
+        size: '01',
       })
     }
 
     // 項目間加空行
-    if (index < order.items.length - 1) {
-      printContent.push({
-        cont: '',
-      })
-    }
+    printContent.push({
+      cont: '',
+    })
+  })
+
+  printContent.push({
+    cont: `總共 ${order.items.length} 項`,
+    type: 'title',
   })
 
   // 9. 分隔線
