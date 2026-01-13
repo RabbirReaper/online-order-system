@@ -62,7 +62,7 @@
         class="form-control fs-5"
         v-model="note"
         rows="3"
-        placeholder="例如：不要洋蔥..."
+        placeholder="例如：不要......"
       ></textarea>
     </div>
 
@@ -84,10 +84,10 @@
         class="btn btn-primary w-100 py-3 fs-4"
         @click="addToCart"
       >
-        加入購物車   ${{ calculateItemTotal() }}
+        加入購物車 ${{ calculateItemTotal() }}
       </button>
       <button v-else type="button" class="btn btn-success w-100 py-3 fs-4" @click="updateCart">
-        確認修改   ${{ calculateItemTotal() }}
+        確認修改 ${{ calculateItemTotal() }}
       </button>
     </div>
   </div>
