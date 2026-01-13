@@ -548,11 +548,16 @@ const popularItemsData = computed(() => {
 const paymentMethodsData = computed(() => {
   const methods = {}
 
-  // 跳過已取消訂單
+  // 跳過已取消訂單，記錄筆數和金額
   allOrders.value.forEach((order) => {
     if (order.status === 'cancelled') return
     const displayMethod = formatPaymentMethod(order)
-    methods[displayMethod] = (methods[displayMethod] || 0) + 1
+
+    if (!methods[displayMethod]) {
+      methods[displayMethod] = { count: 0, amount: 0 }
+    }
+    methods[displayMethod].count++
+    methods[displayMethod].amount += order.total || 0
   })
 
   return methods
