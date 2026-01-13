@@ -80,15 +80,23 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="$emit('close')">取消</button>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary" @click="$emit('close')" :disabled="isLoading">
+            取消
+          </button>
           <button
             type="button"
             class="btn btn-primary"
-            @click="$emit('complete')"
-            :disabled="inputAmount < total"
+            @click="handleComplete"
+            :disabled="inputAmount < total || isLoading"
           >
-            完成結帳
+            <span
+              v-if="isLoading"
+              class="spinner-border spinner-border-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
+            {{ isLoading ? '處理中...' : '完成結帳' }}
           </button>
         </div>
       </div>
@@ -106,13 +114,16 @@ const props = defineProps({
   },
 })
 
-defineEmits(['close', 'complete'])
+const emit = defineEmits(['close', 'complete'])
 
 // 快速金額按鈕
 const quickAmounts = [100, 500, 1000]
 
 // 輸入金額
 const inputAmount = ref(0)
+
+// Loading 狀態
+const isLoading = ref(false)
 
 // 計算找零金額
 const changeAmount = computed(() => {
@@ -170,6 +181,12 @@ const addSmallChange = () => {
 // 設定為剛好金額
 const setExactAmount = () => {
   inputAmount.value = props.total
+}
+
+// 處理完成結帳
+const handleComplete = () => {
+  isLoading.value = true
+  emit('complete')
 }
 </script>
 
