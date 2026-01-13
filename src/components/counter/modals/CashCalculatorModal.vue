@@ -75,9 +75,7 @@
                 </button>
               </div>
               <div class="col-4">
-                <button class="btn btn-outline-primary w-100" @click="addInputAmount(total)">
-                  剛好
-                </button>
+                <button class="btn btn-outline-primary w-100" @click="setExactAmount">剛好</button>
               </div>
             </div>
           </div>
@@ -123,20 +121,20 @@ const changeAmount = computed(() => {
 
 // 計算需要補的零錢金額
 const changeToAdd = computed(() => {
-  if (inputAmount.value <= props.total) return 0
+  if (changeAmount.value <= 0) return 0
 
   // 找出應付金額的個位數
-  const unitDigit = props.total % 10
+  const unitDigit = changeAmount.value % 10
   // 找出應付金額的十位數
-  const tenthDigit = props.total % 100
+  const tenthDigit = changeAmount.value % 100
 
   // 如果個位數不是0，補到整十
   if (unitDigit !== 0) {
-    return unitDigit
+    return 10 - unitDigit
   }
   // 如果十位數不是0，補到整百
   else if (tenthDigit !== 0) {
-    return tenthDigit
+    return 100 - tenthDigit
   }
 
   // 已經是整百了，不需要補零錢
@@ -167,6 +165,11 @@ const addSmallChange = () => {
   if (changeToAdd.value > 0) {
     inputAmount.value += changeToAdd.value
   }
+}
+
+// 設定為剛好金額
+const setExactAmount = () => {
+  inputAmount.value = props.total
 }
 </script>
 
