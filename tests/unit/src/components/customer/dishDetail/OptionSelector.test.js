@@ -40,7 +40,7 @@ describe('OptionSelector.vue', () => {
         _id: 'dish-1',
         name: '測試餐點',
         basePrice: 100,
-        description: '測試描述'
+        description: '測試描述',
       },
       optionCategories: [
         {
@@ -52,28 +52,28 @@ describe('OptionSelector.vue', () => {
               _id: 'option-1',
               name: '普通選項',
               price: 20,
-              refDishTemplate: null
+              refDishTemplate: null,
             },
             {
               _id: 'option-2',
               name: '關聯選項',
               price: 30,
-              refDishTemplate: { _id: 'ref-dish-1', name: '關聯餐點' }
-            }
-          ]
-        }
+              refDishTemplate: { _id: 'ref-dish-1', name: '關聯餐點' },
+            },
+          ],
+        },
       ],
       isEditMode: false,
       existingItem: null,
       inventoryData: {},
-      isLoadingInventory: false
+      isLoadingInventory: false,
     }
 
     return mount(OptionSelector, {
       props: {
         ...defaultProps,
-        ...props
-      }
+        ...props,
+      },
     })
   }
 
@@ -101,12 +101,12 @@ describe('OptionSelector.vue', () => {
         inputType: 'multiple',
         options: [
           { _id: 'option-a', name: '選項A', price: 10 },
-          { _id: 'option-b', name: '選項B', price: 15 }
-        ]
+          { _id: 'option-b', name: '選項B', price: 15 },
+        ],
       }
 
       wrapper = createWrapper({
-        optionCategories: [multiSelectCategory]
+        optionCategories: [multiSelectCategory],
       })
 
       expect(wrapper.vm.multiSelectedOptions['category-multi']).toEqual([])
@@ -120,15 +120,15 @@ describe('OptionSelector.vue', () => {
         enableAvailableStock: true,
         availableStock: 0,
         isSoldOut: false,
-        isInventoryTracked: true
+        isInventoryTracked: true,
       },
       'ref-dish-2': {
         inventoryId: 'inventory-2',
         enableAvailableStock: false,
         availableStock: 10,
         isSoldOut: true,
-        isInventoryTracked: true
-      }
+        isInventoryTracked: true,
+      },
     }
 
     it('應該在沒有關聯餐點時不禁用選項', () => {
@@ -141,7 +141,7 @@ describe('OptionSelector.vue', () => {
     it('應該在載入庫存時暫時不禁用選項', () => {
       wrapper = createWrapper({
         isLoadingInventory: true,
-        inventoryData: mockInventoryData
+        inventoryData: mockInventoryData,
       })
 
       const linkedOption = { _id: 'option-2', refDishTemplate: { _id: 'ref-dish-1' } }
@@ -150,7 +150,7 @@ describe('OptionSelector.vue', () => {
 
     it('應該在沒有庫存資料時不禁用選項', () => {
       wrapper = createWrapper({
-        inventoryData: {} // 空的庫存資料
+        inventoryData: {}, // 空的庫存資料
       })
 
       const linkedOption = { _id: 'option-2', refDishTemplate: { _id: 'unknown-dish' } }
@@ -159,7 +159,7 @@ describe('OptionSelector.vue', () => {
 
     it('應該在商品售罄時禁用選項', () => {
       wrapper = createWrapper({
-        inventoryData: mockInventoryData
+        inventoryData: mockInventoryData,
       })
 
       const soldOutOption = { _id: 'option-3', refDishTemplate: { _id: 'ref-dish-2' } }
@@ -168,7 +168,7 @@ describe('OptionSelector.vue', () => {
 
     it('應該在啟用庫存追蹤且可用庫存為0時禁用選項', () => {
       wrapper = createWrapper({
-        inventoryData: mockInventoryData
+        inventoryData: mockInventoryData,
       })
 
       const noStockOption = { _id: 'option-2', refDishTemplate: { _id: 'ref-dish-1' } }
@@ -181,12 +181,12 @@ describe('OptionSelector.vue', () => {
           enableAvailableStock: false,
           availableStock: 0,
           isSoldOut: false,
-          isInventoryTracked: false
-        }
+          isInventoryTracked: false,
+        },
       }
 
       wrapper = createWrapper({
-        inventoryData
+        inventoryData,
       })
 
       const option = { _id: 'option-2', refDishTemplate: { _id: 'ref-dish-1' } }
@@ -199,12 +199,12 @@ describe('OptionSelector.vue', () => {
           enableAvailableStock: true,
           availableStock: 5,
           isSoldOut: false,
-          isInventoryTracked: true
-        }
+          isInventoryTracked: true,
+        },
       }
 
       wrapper = createWrapper({
-        inventoryData
+        inventoryData,
       })
 
       const option = { _id: 'option-2', refDishTemplate: { _id: 'ref-dish-1' } }
@@ -220,16 +220,16 @@ describe('OptionSelector.vue', () => {
         options: [
           {
             optionCategoryId: 'category-1',
-            selections: [{ optionId: 'option-2' }]
-          }
-        ]
-      }
+            selections: [{ optionId: 'option-2' }],
+          },
+        ],
+      },
     }
 
     it('應該在編輯模式下載入現有的選項資料', () => {
       wrapper = createWrapper({
         isEditMode: true,
-        existingItem
+        existingItem,
       })
 
       expect(wrapper.vm.quantity).toBe(2)
@@ -244,8 +244,8 @@ describe('OptionSelector.vue', () => {
         inputType: 'multiple',
         options: [
           { _id: 'option-a', name: '選項A', price: 10 },
-          { _id: 'option-b', name: '選項B', price: 15 }
-        ]
+          { _id: 'option-b', name: '選項B', price: 15 },
+        ],
       }
 
       const existingMultiItem = {
@@ -255,19 +255,16 @@ describe('OptionSelector.vue', () => {
           options: [
             {
               optionCategoryId: 'category-multi',
-              selections: [
-                { optionId: 'option-a' },
-                { optionId: 'option-b' }
-              ]
-            }
-          ]
-        }
+              selections: [{ optionId: 'option-a' }, { optionId: 'option-b' }],
+            },
+          ],
+        },
       }
 
       wrapper = createWrapper({
         optionCategories: [multiSelectCategory],
         isEditMode: true,
-        existingItem: existingMultiItem
+        existingItem: existingMultiItem,
       })
 
       expect(wrapper.vm.multiSelectedOptions['category-multi']).toEqual(['option-a', 'option-b'])
@@ -332,13 +329,13 @@ describe('OptionSelector.vue', () => {
         inputType: 'multiple',
         options: [
           { _id: 'option-a', name: '選項A', price: 10 },
-          { _id: 'option-b', name: '選項B', price: 15 }
-        ]
+          { _id: 'option-b', name: '選項B', price: 15 },
+        ],
       }
 
       wrapper.unmount()
       wrapper = createWrapper({
-        optionCategories: [multiSelectCategory]
+        optionCategories: [multiSelectCategory],
       })
 
       // 選擇兩個多選選項
@@ -365,9 +362,9 @@ describe('OptionSelector.vue', () => {
           {
             optionId: 'option-2',
             name: '關聯選項',
-            price: 30
-          }
-        ]
+            price: 30,
+          },
+        ],
       })
     })
 
@@ -378,13 +375,13 @@ describe('OptionSelector.vue', () => {
         inputType: 'multiple',
         options: [
           { _id: 'option-a', name: '選項A', price: 10 },
-          { _id: 'option-b', name: '選項B', price: 15 }
-        ]
+          { _id: 'option-b', name: '選項B', price: 15 },
+        ],
       }
 
       wrapper.unmount()
       wrapper = createWrapper({
-        optionCategories: [multiSelectCategory]
+        optionCategories: [multiSelectCategory],
       })
 
       wrapper.vm.multiSelectedOptions['category-multi'] = ['option-a', 'option-b']
@@ -417,17 +414,17 @@ describe('OptionSelector.vue', () => {
           name: '測試餐點',
           basePrice: 100,
           options: expect.any(Array),
-          finalPrice: 120
+          finalPrice: 120,
         },
         quantity: 2,
         note: '測試備註',
-        subtotal: 240
+        subtotal: 240,
       })
     })
 
     it('應該在編輯模式下點擊確認修改時發射更新事件', async () => {
       wrapper = createWrapper({
-        isEditMode: true
+        isEditMode: true,
       })
 
       const updateBtn = wrapper.find('.btn-success')
@@ -441,11 +438,11 @@ describe('OptionSelector.vue', () => {
           name: '測試餐點',
           basePrice: 100,
           options: expect.any(Array),
-          finalPrice: 120
+          finalPrice: 120,
         },
         quantity: 1,
         note: '',
-        subtotal: 120
+        subtotal: 120,
       })
     })
   })
@@ -462,7 +459,7 @@ describe('OptionSelector.vue', () => {
 
     it('應該在非編輯模式下顯示加入購物車按鈕', () => {
       wrapper = createWrapper({
-        isEditMode: false
+        isEditMode: false,
       })
 
       expect(wrapper.find('.btn-primary').text()).toContain('加入購物車')
@@ -471,7 +468,7 @@ describe('OptionSelector.vue', () => {
 
     it('應該在編輯模式下顯示確認修改按鈕', () => {
       wrapper = createWrapper({
-        isEditMode: true
+        isEditMode: true,
       })
 
       expect(wrapper.find('.btn-success').text()).toContain('確認修改')
@@ -483,7 +480,7 @@ describe('OptionSelector.vue', () => {
 
       const textarea = wrapper.find('textarea')
       expect(textarea.exists()).toBe(true)
-      expect(textarea.attributes('placeholder')).toBe('例如：不要洋蔥...')
+      expect(textarea.attributes('placeholder')).toBe('例如：不要......')
     })
 
     it('應該顯示數量控制', () => {
@@ -504,12 +501,12 @@ describe('OptionSelector.vue', () => {
           enableAvailableStock: true,
           availableStock: 0,
           isSoldOut: false,
-          isInventoryTracked: true
-        }
+          isInventoryTracked: true,
+        },
       }
 
       wrapper = createWrapper({
-        inventoryData
+        inventoryData,
       })
 
       // 第一個選項（普通選項）不應該有禁用類別
@@ -527,12 +524,12 @@ describe('OptionSelector.vue', () => {
           enableAvailableStock: true,
           availableStock: 0,
           isSoldOut: false,
-          isInventoryTracked: true
-        }
+          isInventoryTracked: true,
+        },
       }
 
       wrapper = createWrapper({
-        inventoryData
+        inventoryData,
       })
 
       const inputs = wrapper.findAll('input[type="radio"]')
@@ -558,10 +555,8 @@ describe('OptionSelector.vue', () => {
           _id: 'category-2',
           name: '新類別',
           inputType: 'single',
-          options: [
-            { _id: 'option-new', name: '新選項', price: 50 }
-          ]
-        }
+          options: [{ _id: 'option-new', name: '新選項', price: 50 }],
+        },
       ]
 
       await wrapper.setProps({ optionCategories: newCategories })
@@ -583,8 +578,8 @@ describe('OptionSelector.vue', () => {
         dish: {
           _id: 'dish-2',
           name: '新餐點',
-          basePrice: 200
-        }
+          basePrice: 200,
+        },
       })
 
       // 應該重置表單狀態
@@ -594,7 +589,7 @@ describe('OptionSelector.vue', () => {
 
     it('應該在編輯模式下不重置表單狀態', async () => {
       wrapper = createWrapper({
-        isEditMode: true
+        isEditMode: true,
       })
 
       // 修改表單狀態
@@ -606,8 +601,8 @@ describe('OptionSelector.vue', () => {
         dish: {
           _id: 'dish-2',
           name: '新餐點',
-          basePrice: 200
-        }
+          basePrice: 200,
+        },
       })
 
       // 編輯模式下不應該重置
@@ -619,7 +614,7 @@ describe('OptionSelector.vue', () => {
   describe('錯誤處理', () => {
     it('應該處理無效的選項類別資料', () => {
       wrapper = createWrapper({
-        optionCategories: null
+        optionCategories: null,
       })
 
       expect(console.warn).toHaveBeenCalledWith('optionCategories is not an array:', null)
@@ -630,11 +625,11 @@ describe('OptionSelector.vue', () => {
         _id: 'category-invalid',
         name: '無效類別',
         inputType: 'single',
-        options: []
+        options: [],
       }
 
       wrapper = createWrapper({
-        optionCategories: [invalidCategory]
+        optionCategories: [invalidCategory],
       })
 
       expect(console.warn).toHaveBeenCalledWith('No options found for category 無效類別:', [])
@@ -645,16 +640,18 @@ describe('OptionSelector.vue', () => {
       // 由於 Vue 模板會在渲染時嘗試讀取 category._id，直接測試會導致渲染錯誤
       // 我們改為測試組件能正確處理有效的類別但缺少 _id 的情況
 
-      const invalidCategories = [
-        { name: 'no-id', inputType: 'single', options: [] }
-      ]
+      const invalidCategories = [{ name: 'no-id', inputType: 'single', options: [] }]
 
       wrapper = createWrapper({
-        optionCategories: invalidCategories
+        optionCategories: invalidCategories,
       })
 
       // 測試警告訊息
-      expect(console.warn).toHaveBeenCalledWith('Invalid category object:', { name: 'no-id', inputType: 'single', options: [] })
+      expect(console.warn).toHaveBeenCalledWith('Invalid category object:', {
+        name: 'no-id',
+        inputType: 'single',
+        options: [],
+      })
     })
   })
 })
