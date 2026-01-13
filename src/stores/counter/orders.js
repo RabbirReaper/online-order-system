@@ -57,6 +57,7 @@ export const useCounterOrdersStore = defineStore('counterOrders', () => {
         storeId,
         fromDate: startDate,
         toDate: endDate,
+        limit: 100,
       })
 
       if (response.success) {
