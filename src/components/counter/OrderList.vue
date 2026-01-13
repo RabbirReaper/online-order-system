@@ -80,13 +80,19 @@
             </td>
             <td class="fs-5">${{ calculateOrderTotal(order) }}</td>
             <td>
-              <span v-if="order.status !== 'paid'" :class="counterStore.getStatusClass(order.status)">
+              <span
+                v-if="order.status !== 'paid'"
+                :class="counterStore.getStatusClass(order.status)"
+              >
                 {{ counterStore.formatStatus(order.status) }}
               </span>
               <span v-if="order.status === 'paid'" class="badge bg-info">
                 {{ formatPaymentType(order.paymentType) }}
               </span>
-              <span v-if="order.status === 'paid' && order.paymentMethod" class="ms-1 badge bg-secondary">
+              <span
+                v-if="order.status === 'paid' && order.paymentMethod"
+                class="ms-1 badge bg-secondary"
+              >
                 {{ formatPaymentMethod(order.paymentMethod) }}
               </span>
             </td>
@@ -104,7 +110,7 @@
             <div class="card border-success">
               <div class="card-body">
                 <h6 class="card-title text-success">
-                  <i class="bi bi-cash-stack me-2"></i>現今付款
+                  <i class="bi bi-cash-stack me-2"></i>現金付款
                 </h6>
                 <div class="d-flex justify-content-between align-items-center">
                   <span class="text-muted">訂單數:</span>
@@ -285,8 +291,8 @@ const orderStats = computed(() => {
   todayOrders.forEach((order) => {
     const total = order.total || 0
 
-    // 現金付款
-    if (order.status !== 'unpaid' && order.paymentMethod === 'cash') {
+    // 現金付款（只計算已付款的訂單，排除未付款和已取消）
+    if (order.status === 'paid' && order.paymentMethod === 'cash') {
       stats.cashCount++
       stats.cashTotal += total
     }
@@ -301,14 +307,14 @@ const orderStats = computed(() => {
       stats.onlineTotal += total
     }
 
-    // foodpanda
-    if (order.deliveryPlatform === 'foodpanda') {
+    // foodpanda（只計算已付款的訂單）
+    if (order.status === 'paid' && order.deliveryPlatform === 'foodpanda') {
       stats.foodpandaCount++
       stats.foodpandaTotal += total
     }
 
-    // ubereats
-    if (order.deliveryPlatform === 'ubereats') {
+    // ubereats（只計算已付款的訂單）
+    if (order.status === 'paid' && order.deliveryPlatform === 'ubereats') {
       stats.ubereatsCount++
       stats.ubereatsTotal += total
     }
