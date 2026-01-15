@@ -47,7 +47,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true, // Cloud Run 必須使用 https
+      secure: process.env.NODE_ENV === 'production' ? true : false, // Cloud Run 必須使用 https
       maxAge: 2 * 60 * 60 * 1000, // 預設 2 小時（不記住我的情況），會在登入時根據 rememberMe 動態調整
     },
   }),
