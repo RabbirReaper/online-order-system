@@ -48,7 +48,7 @@ app.use(
       httpOnly: true,
       sameSite: 'lax',
       secure: true, // Cloud Run 必須使用 https
-      maxAge: 24 * 60 * 60 * 1000, // 預設 24 小時，會在登入時根據 rememberMe 動態調整
+      maxAge: 2 * 60 * 60 * 1000, // 預設 2 小時（不記住我的情況），會在登入時根據 rememberMe 動態調整
     },
   }),
 )
