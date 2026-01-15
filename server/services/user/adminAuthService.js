@@ -90,21 +90,35 @@ export const adminLogin = async (credentials, session) => {
   session.adminBrand = admin.brand?._id
   session.adminStore = admin.store?._id
 
-  // 根據 rememberMe 動態設置 session cookie maxAge
+  // 根據 rememberMe 動態設置 session cookie
+  // 重要：必須同時設定 maxAge 和 expires
   if (rememberMe) {
     // 保持登入: 14 天
-    session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
+    const maxAge = 14 * 24 * 60 * 60 * 1000
+    session.cookie.maxAge = maxAge
+    session.cookie.expires = new Date(Date.now() + maxAge)
   } else {
     // 一般登入: 2 小時
-    session.cookie.maxAge = 2 * 60 * 60 * 1000
+    const maxAge = 2 * 60 * 60 * 1000
+    session.cookie.maxAge = maxAge
+    session.cookie.expires = new Date(Date.now() + maxAge)
   }
 
   // 顯式保存 session 到 MongoDB
   return new Promise((resolve, reject) => {
     session.save((err) => {
       if (err) {
+        console.error('❌ Session 保存失敗:', err)
         return reject(new AppError('Session 保存失敗', 500))
       }
+
+      // 輸出日誌以便調試
+      console.log('✅ Session 已保存:', {
+        adminId: session.adminId.toString(),
+        rememberMe: rememberMe || false,
+        maxAgeHours: session.cookie.maxAge / (1000 * 60 * 60),
+        expires: session.cookie.expires,
+      })
 
       resolve({
         role: admin.role,

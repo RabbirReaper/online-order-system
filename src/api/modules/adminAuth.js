@@ -11,10 +11,11 @@ export default function (apiClient) {
      * @param {string} params.name - 管理員用戶名
      * @param {string} params.password - 密碼
      * @param {string} [params.brandId] - 品牌 ID（可選）
+     * @param {boolean} [params.rememberMe] - 是否記住我（可選）
      * @returns {Promise} - API 回應
      */
-    login({ name, password, brandId }) {
-      return apiClient.post('/admin-auth/login', { name, password, brandId })
+    login({ name, password, brandId, rememberMe }) {
+      return apiClient.post('/admin-auth/login', { name, password, brandId, rememberMe })
     },
 
     /**
