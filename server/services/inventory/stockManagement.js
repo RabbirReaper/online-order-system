@@ -304,6 +304,7 @@ export const updateInventory = async (updateData, adminId) => {
 
 /**
  * 減少庫存（用於訂單消耗）
+ * 注意：此函數不會檢查庫存是否足夠，即使庫存為 0 也會記錄扣除動作，但庫存不會變成負數
  * @param {Object} reduceData - 減少數據
  * @returns {Promise<Boolean>} 操作是否成功
  */
@@ -313,16 +314,11 @@ export const reduceStock = async (reduceData) => {
   // 查找庫存項目
   const inventoryItem = await getInventoryItem(storeId, inventoryId)
 
-  // 檢查總庫存是否足夠
-  if (inventoryItem.enableAvailableStock && inventoryItem.totalStock < quantity) {
-    throw new AppError('庫存不足', 400)
-  }
-
   // 記錄先前的庫存
   const previousTotalStock = inventoryItem.totalStock
   const previousAvailableStock = inventoryItem.availableStock
 
-  // 扣減總庫存
+  // 扣減總庫存（使用 Math.max 確保不會變成負數）
   inventoryItem.totalStock = Math.max(0, inventoryItem.totalStock - quantity)
 
   // 如果啟用可用庫存，同時扣減可用庫存
@@ -334,7 +330,7 @@ export const reduceStock = async (reduceData) => {
   // 保存庫存項目
   await inventoryItem.save()
 
-  // 創建總庫存日誌
+  // 創建總庫存日誌（即使庫存為 0 也會記錄扣除動作）
   await StockLog.create({
     brand: inventoryItem.brand,
     store: storeId,
