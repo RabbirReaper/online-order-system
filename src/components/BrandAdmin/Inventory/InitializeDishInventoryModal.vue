@@ -103,6 +103,7 @@ const fetchPreviewData = async () => {
 
     // 獲取店鋪現有庫存
     const inventoryResponse = await api.inventory.getStoreInventory({
+      brandId: props.brandId,
       storeId: props.storeId,
       inventoryType: 'DishTemplate',
     })
@@ -141,6 +142,7 @@ const submitInitialization = async (evt) => {
 
   try {
     const response = await api.inventory.initializeDishInventory({
+      brandId: props.brandId,
       storeId: props.storeId,
     })
 
