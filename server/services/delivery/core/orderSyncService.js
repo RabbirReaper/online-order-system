@@ -317,6 +317,9 @@ const findPlatformStoreByUberStoreId = async (uberStoreId) => {
       platform: 'ubereats',
       platformStoreId: uberStoreId,
       isActive: true,
+      // 🔧 修復：確保只查找已授權的店鋪
+      // 這樣可以避免找到已解除授權但仍保留 platformStoreId 的舊記錄
+      'oauth.isAuthorized': true,
     })
       .populate('brand')
       .populate('store')

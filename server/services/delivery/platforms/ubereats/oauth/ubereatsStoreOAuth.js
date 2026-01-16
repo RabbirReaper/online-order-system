@@ -74,9 +74,12 @@ export const updatePlatformStoreWithOAuth = async (brandId, storeId, tokenData, 
       }
     }
 
+    // 🔧 修復：授權成功後啟用 PlatformStore
+    platformStore.isActive = true
+
     await platformStore.save()
 
-    console.log(`✅ 已更新 PlatformStore OAuth 資料: ${platformStore._id}`)
+    console.log(`✅ 已更新 PlatformStore OAuth 資料並啟用: ${platformStore._id}`)
 
     return platformStore
   } catch (error) {
@@ -169,12 +172,13 @@ export const clearOAuthData = async (brandId, storeId) => {
       discoveredStores: [],
     }
 
-    // 注意：保留 platformStoreId，因為它是 required 欄位
-    // 前端會根據 isAuthorized = false 來判斷是否需要重新授權和選擇店舖
+    // 🔧 修復：解除授權時設置 isActive = false，避免 webhook 找到錯誤的店鋪
+    // 這樣可以確保當 platformStoreId 被重複使用時，只有當前授權的店鋪會收到訂單
+    platformStore.isActive = false
 
     await platformStore.save()
 
-    console.log(`✅ 已清除 PlatformStore OAuth 資料: ${platformStore._id}`)
+    console.log(`✅ 已清除 PlatformStore OAuth 資料並停用: ${platformStore._id}`)
 
     return platformStore
   } catch (error) {
@@ -220,7 +224,13 @@ export const updateSelectedStore = async (brandId, storeId, selectedStoreId) => 
 
     // 更新 platformStoreId
     platformStore.platformStoreId = selectedStoreId
+
+    // 🔧 修復：選擇店舖後啟用 PlatformStore
+    platformStore.isActive = true
+
     await platformStore.save()
+
+    console.log(`✅ 已更新選擇的店舖並啟用: ${selectedStoreId}`)
 
     return platformStore
   } catch (error) {
