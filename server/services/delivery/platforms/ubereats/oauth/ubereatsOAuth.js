@@ -62,8 +62,6 @@ export const generateAuthorizationUrl = (state) => {
   })
 
   const authorizationUrl = `${AUTH_URL}?${params.toString()}`
-  console.log('✓ 已生成 Uber Eats 授權 URL')
-
   return authorizationUrl
 }
 
@@ -97,8 +95,6 @@ export const exchangeCodeForToken = async (code) => {
       code: code,
     })
 
-    console.log('⏳ 正在用授權碼換取 access token...')
-
     // 發送請求
     const response = await axios.post(TOKEN_URL, formData, {
       headers: {
@@ -106,7 +102,7 @@ export const exchangeCodeForToken = async (code) => {
       },
     })
 
-    console.log('✅ 成功獲取 Uber Eats user access token')
+    console.log('✅ 成功獲取 access token')
 
     // 返回格式：
     // {
@@ -157,8 +153,6 @@ export const refreshUserToken = async (refreshToken) => {
       refresh_token: refreshToken,
     })
 
-    console.log('⏳ 正在刷新 user access token...')
-
     // 發送請求
     const response = await axios.post(TOKEN_URL, formData, {
       headers: {
@@ -166,7 +160,7 @@ export const refreshUserToken = async (refreshToken) => {
       },
     })
 
-    console.log('✅ 成功刷新 user access token')
+    console.log('✅ 成功刷新 access token')
 
     return response.data
   } catch (error) {
@@ -196,8 +190,6 @@ export const refreshUserToken = async (refreshToken) => {
  */
 export const getAuthorizedStores = async (userAccessToken) => {
   try {
-    console.log('⏳ 正在取得授權帳號的店舖列表...')
-
     // 呼叫 Store Discovery API
     const response = await axios.get(STORE_DISCOVERY_URL, {
       headers: {
@@ -207,11 +199,7 @@ export const getAuthorizedStores = async (userAccessToken) => {
     })
 
     const stores = response.data.stores || []
-    console.log(`✅ 成功取得 ${stores.length} 個店舖`)
-
-    // Debug: 輸出完整的 API 回應
-    console.log('📊 Store Discovery API 原始回應:')
-    console.log(JSON.stringify(response.data, null, 2))
+    console.log(`✅ 發現 ${stores.length} 個店舖`)
 
     // 回傳簡化的店舖資訊
     return stores.map((store) => ({
@@ -251,8 +239,6 @@ export const activateStoreIntegration = async (userAccessToken, storeId, externa
   try {
     const url = `https://api.uber.com/v1/eats/stores/${storeId}/pos_data`
 
-    console.log(`⏳ 正在激活店舖整合: ${storeId}`)
-
     const response = await axios.post(
       url,
       {
@@ -267,7 +253,7 @@ export const activateStoreIntegration = async (userAccessToken, storeId, externa
       },
     )
 
-    console.log(`✅ 成功激活店舖整合: ${storeId}`)
+    console.log(`✅ 激活店舖整合: ${storeId}`)
 
     return response.data
   } catch (error) {

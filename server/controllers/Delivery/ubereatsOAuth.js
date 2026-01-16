@@ -36,13 +36,17 @@ export const initiateOAuth = asyncHandler(async (req, res) => {
     createdAt: Date.now(),
   }
 
-  console.log('📝 已生成 OAuth state:', state)
+  // 強制保存 session 後再 redirect（確保 session 寫入 MongoDB）
+  req.session.save((err) => {
+    if (err) {
+      console.error('❌ Session 保存失敗:', err)
+      throw new AppError('Session 保存失敗，請稍後再試', 500)
+    }
 
-  // 生成授權 URL
-  const authorizationUrl = ubereatsOAuth.generateAuthorizationUrl(state)
-  console.log('🔗 重新導向到 Uber 授權頁面:', authorizationUrl)
-  // 重新導向到 Uber 授權頁面
-  res.redirect(authorizationUrl)
+    // 生成授權 URL 並重新導向
+    const authorizationUrl = ubereatsOAuth.generateAuthorizationUrl(state)
+    res.redirect(authorizationUrl)
+  })
 })
 
 /**
@@ -108,24 +112,60 @@ export const handleCallback = asyncHandler(async (req, res) => {
   // ========================================
   const sessionState = req.session.uberOAuthState
 
+  // 定義錯誤頁面渲染函數（統一處理所有錯誤）
+  const renderErrorPage = (errorMessage) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>授權失敗</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          .error { color: #dc3545; font-size: 20px; margin: 20px 0; }
+          .message { color: #6c757d; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="error">✗ 授權失敗</div>
+        <div class="message">${errorMessage}</div>
+        <div class="message">此視窗將在 3 秒後自動關閉...</div>
+        <script>
+          // 通知父視窗
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'uber-oauth-error',
+              error: '${errorMessage}'
+            }, window.location.origin);
+          }
+          setTimeout(() => window.close(), 3000);
+        </script>
+      </body>
+      </html>
+    `
+  }
+
   if (!sessionState) {
-    throw new AppError('Session state 不存在，請重新授權', 400)
+    console.error('❌ Session state 不存在')
+    return res.status(400).send(
+      renderErrorPage('Session 已過期或不存在，請重新開始授權流程'),
+    )
   }
 
   if (sessionState.state !== state) {
+    console.error('❌ State 參數不匹配')
     // 清除 session
     delete req.session.uberOAuthState
-    throw new AppError('State 參數不匹配，可能的 CSRF 攻擊', 403)
+    return res.status(403).send(renderErrorPage('安全驗證失敗，請重新授權'))
   }
 
   // 檢查 state 是否過期（5 分鐘）
   const stateAge = Date.now() - sessionState.createdAt
   if (stateAge > 5 * 60 * 1000) {
+    console.error('❌ State 已過期')
     delete req.session.uberOAuthState
-    throw new AppError('State 已過期，請重新授權', 400)
+    return res.status(400).send(renderErrorPage('授權請求已過期（超過5分鐘），請重新授權'))
   }
-
-  console.log('✓ State 驗證通過')
 
   // 取得 brandId 和 storeId
   const { brandId, storeId } = sessionState
@@ -143,11 +183,6 @@ export const handleCallback = asyncHandler(async (req, res) => {
     // 4. Store Discovery（取得店舖列表）
     // ========================================
     const discoveredStores = await ubereatsOAuth.getAuthorizedStores(tokenData.access_token)
-
-    console.log(
-      `✓ 發現 ${discoveredStores.length} 個店舖:`,
-      discoveredStores.map((s) => s.name),
-    )
 
     // ========================================
     // 5. 更新 PlatformStore

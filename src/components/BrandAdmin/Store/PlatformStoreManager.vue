@@ -63,10 +63,17 @@
             <div class="card-body">
               <!-- 未授權狀態 -->
               <div v-if="!oauthStatus.isAuthorized">
-                <p class="text-muted mb-3">
-                  <i class="bi bi-info-circle me-2"></i>
-                  需要先授權您的 Uber Eats 帳號才能使用整合功能
-                </p>
+                <BAlert variant="info" :show="true" class="mb-3">
+                  <div class="mb-2">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>授權前請注意：</strong>
+                  </div>
+                  <ul class="mb-0 small">
+                    <li>請使用 <strong>Uber Eats 商家帳號</strong>登入（不是顧客帳號）</li>
+                    <li>該帳號必須有此店舖的<strong>管理權限</strong></li>
+                    <li>授權後系統將自動連接您的店舖</li>
+                  </ul>
+                </BAlert>
                 <BButton
                   @click="connectUberEats"
                   variant="primary"

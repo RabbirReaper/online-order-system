@@ -212,28 +212,15 @@ export const updateSelectedStore = async (brandId, storeId, selectedStoreId) => 
 
     // 驗證選擇的店舖是否在 discovered stores 中
     const discoveredStores = platformStore.oauth.discoveredStores || []
-
-    // Debug: 輸出詳細資訊
-    console.log('📊 Debug - 選擇店舖驗證:')
-    console.log('  前端傳入的 storeId:', selectedStoreId, '(type:', typeof selectedStoreId, ')')
-    console.log('  discoveredStores 數量:', discoveredStores.length)
-    console.log('  discoveredStores 內容:', JSON.stringify(discoveredStores, null, 2))
-
     const isValidStore = discoveredStores.some((store) => store.id === selectedStoreId)
 
     if (!isValidStore) {
-      console.log('❌ 驗證失敗: 找不到匹配的店舖')
       throw new AppError('選擇的店舖 ID 不在授權的店舖列表中', 400)
     }
 
-    console.log('✅ 驗證成功: 找到匹配的店舖')
-
     // 更新 platformStoreId
     platformStore.platformStoreId = selectedStoreId
-
     await platformStore.save()
-
-    console.log(`✅ 已更新選擇的店舖 ID: ${selectedStoreId}`)
 
     return platformStore
   } catch (error) {

@@ -50,7 +50,12 @@ router.get(
  * GET /api/delivery/ubereats/oauth/callback?code=xxx&state=xxx
  *
  * 功能：處理 Uber 的 callback，換取 tokens 並更新資料
- * 權限：需要登入（state 驗證會確保安全性）
+ * 權限：無需登入驗證（state 參數提供 CSRF 防護）
+ *
+ * 安全性說明：
+ * - state 參數在 initiate 階段已存入 session，綁定了 brandId 和 storeId
+ * - callback 會驗證 state 是否匹配，確保請求合法性
+ * - 不能使用 authenticate 中間件，因為 popup 視窗沒有主視窗的 session
  *
  * Query 參數：
  * - code: 授權碼（Uber 提供）
@@ -60,9 +65,9 @@ router.get(
  */
 router.get(
   '/callback',
-  authenticate('admin'),
-  // 注意：這個端點不需要額外的權限檢查
-  // 因為 state 已經綁定了 brandId 和 storeId
+  // 注意：不使用 authenticate 中間件
+  // OAuth callback 是從 Uber 伺服器直接重定向過來的，無法攜帶用戶 session
+  // 安全性由 state 參數驗證保證
   ubereatsOAuthController.handleCallback,
 )
 
