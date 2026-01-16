@@ -499,7 +499,8 @@ const saveConfig = async () => {
   }
 
   // Uber Eats 需要先完成 OAuth 授權（授權後會自動記錄店舖 ID）
-  if (configForm.platform === 'ubereats' && !oauthStatus.isAuthorized) {
+  // 注意：編輯模式下，如果已有 platformStoreId，則不需要重新檢查授權
+  if (configForm.platform === 'ubereats' && !editingConfig.value && !oauthStatus.isAuthorized) {
     error.value = '請先完成 Uber Eats 授權'
     return
   }
