@@ -93,6 +93,54 @@ const platformStoreSchema = new mongoose.Schema(
       // true  = 啟用
       // false = 停用（不刪除資料）
     },
+
+    // ========================================
+    // 🔐 OAuth 授權資料 (Authorization Code Flow)
+    // ========================================
+    oauth: {
+      // User-level access token（Authorization Code Flow 取得）
+      userAccessToken: {
+        type: String,
+        // 功能：用於 Store Discovery API
+        // 授權店家特定的權限，與系統級 token 不同
+      },
+
+      // User-level refresh token
+      userRefreshToken: {
+        type: String,
+        // 功能：用於更新 userAccessToken
+      },
+
+      // User token 過期時間
+      userTokenExpiresAt: {
+        type: Date,
+        // 功能：追蹤 user access token 的過期時間
+      },
+
+      // 是否已完成 OAuth 授權
+      isAuthorized: {
+        type: Boolean,
+        default: false,
+        // 功能：標記店家是否已完成 Uber Eats 帳號授權
+        // true  = 已授權，可以進行 Store Discovery
+        // false = 未授權，需要先完成 OAuth 流程
+      },
+
+      // 授權時間
+      authorizedAt: {
+        type: Date,
+        // 功能：記錄最後一次授權的時間
+      },
+
+      // Store Discovery 取得的店舖列表
+      discoveredStores: {
+        type: [mongoose.Schema.Types.Mixed],
+        default: [],
+        // 功能：儲存 Uber Eats 帳號下的所有店舖
+        // 格式：[{ id: 'store-uuid', name: 'Restaurant Name', location: {...} }]
+        // 用途：讓用戶選擇要整合的是哪一個店舖
+      },
+    },
   },
   {
     timestamps: true,
