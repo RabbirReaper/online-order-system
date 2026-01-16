@@ -179,17 +179,52 @@
         </div> -->
 
         <!-- 自動接單 -->
-        <div class="col-md-6 d-flex align-items-end">
-          <BFormCheckbox v-model="configForm.autoAccept" switch>
-            自動接單 {{ configForm.autoAccept ? '✓' : '✗' }}
+        <div class="col-md-12">
+          <label class="form-label fw-bold">自動接單設定</label>
+          <BFormCheckbox v-model="configForm.autoAccept" switch class="mb-2">
+            {{ configForm.autoAccept ? '✓ 自動接單已啟用' : '✗ 需手動接單' }}
           </BFormCheckbox>
+          <div class="alert alert-light small mb-0 py-2">
+            <i class="bi bi-info-circle me-1"></i>
+            <span v-if="configForm.autoAccept">
+              系統會自動接受訂單（需庫存充足），並自動列印訂單
+            </span>
+            <span v-else> 訂單進來後需要店員手動確認接受 </span>
+          </div>
         </div>
 
         <!-- 平台整合啟用狀態 -->
-        <div class="col-md-6 d-flex align-items-end">
-          <BFormCheckbox v-model="configForm.isActive" switch>
-            啟用平台整合 {{ configForm.isActive ? '✓' : '✗' }}
+        <div class="col-md-12">
+          <label class="form-label fw-bold">平台整合總開關</label>
+          <BFormCheckbox v-model="configForm.isActive" switch class="mb-2">
+            {{ configForm.isActive ? '✓ 已啟用' : '✗ 已停用' }}
           </BFormCheckbox>
+          <BAlert :show="true" :variant="configForm.isActive ? 'success' : 'warning'" class="mb-0">
+            <div class="small">
+              <div class="mb-1">
+                <i
+                  class="bi me-1"
+                  :class="configForm.isActive ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'"
+                ></i>
+                <strong>{{ configForm.isActive ? '整合已啟用' : '整合已停用' }}</strong>
+              </div>
+              <ul class="mb-0 ps-3">
+                <template v-if="configForm.isActive">
+                  <li>✅ 可接收來自外送平台的訂單（webhook）</li>
+                  <li>✅ 可同步菜單到外送平台</li>
+                  <li>✅ 可同步庫存狀態到外送平台</li>
+                </template>
+                <template v-else>
+                  <li>❌ 外送平台的訂單將被忽略（無法接單）</li>
+                  <li>❌ 無法同步菜單到外送平台</li>
+                  <li>❌ 無法同步庫存狀態</li>
+                  <li class="text-muted mt-1">
+                    💡 停用後不會刪除配置，隨時可重新啟用
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </BAlert>
         </div>
       </div>
     </form>
