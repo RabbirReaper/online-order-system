@@ -10,6 +10,7 @@
 
 import PlatformStore from '../../../../../models/DeliverPlatform/platformStore.js'
 import { AppError } from '../../../../../middlewares/error.js'
+import { activateStoreIntegration } from './ubereatsOAuth.js'
 
 /**
  * 計算 token 過期時間
@@ -69,6 +70,27 @@ export const updatePlatformStoreWithOAuth = async (brandId, storeId, tokenData, 
       if (firstStore.id) {
         platformStore.platformStoreId = firstStore.id
         console.log(`✅ 自動記錄店舖 ID: ${firstStore.id}`)
+
+        // 🔧 關鍵步驟：調用 POS Provisioning API 激活店舖整合
+        // 這是建立真正 POS 連接的必要步驟
+        try {
+          await activateStoreIntegration(
+            tokenData.access_token,
+            firstStore.id,
+            storeId, // 使用我們系統的 storeId 作為 external_reference_id
+          )
+          console.log(`✅ 成功激活店舖整合: ${firstStore.id}`)
+        } catch (activationError) {
+          console.error(`⚠️ 激活店舖整合失敗: ${activationError.message}`)
+          // 即使激活失敗，也保存 OAuth 資料，讓用戶可以手動重試
+          // 但將 isActive 設為 false
+          platformStore.isActive = false
+          await platformStore.save()
+          throw new AppError(
+            `OAuth 授權成功，但無法激活店舖整合: ${activationError.message}。請確認您的 Uber Eats 帳號有此店舖的管理權限。`,
+            500,
+          )
+        }
       } else {
         console.log('⚠️ 警告: Store Discovery API 未返回店舖 ID，platformStoreId 保持不變')
       }
@@ -220,6 +242,22 @@ export const updateSelectedStore = async (brandId, storeId, selectedStoreId) => 
 
     if (!isValidStore) {
       throw new AppError('選擇的店舖 ID 不在授權的店舖列表中', 400)
+    }
+
+    // 🔧 關鍵步驟：調用 POS Provisioning API 激活店舖整合
+    try {
+      await activateStoreIntegration(
+        platformStore.oauth.userAccessToken,
+        selectedStoreId,
+        storeId, // 使用我們系統的 storeId 作為 external_reference_id
+      )
+      console.log(`✅ 成功激活店舖整合: ${selectedStoreId}`)
+    } catch (activationError) {
+      console.error(`⚠️ 激活店舖整合失敗: ${activationError.message}`)
+      throw new AppError(
+        `無法激活店舖整合: ${activationError.message}。請確認您的 Uber Eats 帳號有此店舖的管理權限。`,
+        500,
+      )
     }
 
     // 更新 platformStoreId
