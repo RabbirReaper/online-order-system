@@ -114,12 +114,6 @@
                   </BAlert>
                 </div>
 
-                <!-- Token 過期警告 -->
-                <BAlert variant="warning" :show="oauthStatus.hasExpired" class="mb-2 mt-2">
-                  <i class="bi bi-clock-history me-2"></i>
-                  授權已過期，請重新授權
-                </BAlert>
-
                 <!-- 解除連接按鈕 -->
                 <div class="mt-3">
                   <BButton
