@@ -70,9 +70,10 @@ const platformStoreSchema = new mongoose.Schema(
     autoAccept: {
       type: Boolean,
       default: true,
-      // 功能：是否自動接單
-      // true  = 自動接受所有訂單
-      // false = 需要店員手動確認
+      // ⚠️ 已棄用：此欄位已不再使用，系統不會自動接單
+      // 保留此欄位是為了向後兼容，避免資料庫錯誤
+      // 實際接單由外送平台 app 的自動接單功能處理
+      // 請勿刪除此欄位，以確保系統穩定運行
     },
 
     // ========================================
