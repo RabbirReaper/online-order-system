@@ -117,7 +117,8 @@ const formatOrderNumber = (order) => {
   }
 
   if (platform === 'ubereats') {
-    return `${order.platformInfo.platformOrderId || order.platformOrderId || 'N/A'}`
+    const displayId = order.platformOrderId || 'N/A'
+    return displayId.toUpperCase()
   }
 
   // 內部訂單編號
