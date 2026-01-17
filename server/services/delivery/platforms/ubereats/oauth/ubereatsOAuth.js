@@ -27,6 +27,13 @@ const STORE_DISCOVERY_URL = 'https://api.uber.com/v1/eats/stores'
 const CLIENT_ID = process.env.UBEREATS_PRODUCTION_CLIENT_ID
 const CLIENT_SECRET = process.env.UBEREATS_PRODUCTION_CLIENT_SECRET
 const REDIRECT_URI = process.env.UBEREATS_OAUTH_REDIRECT_URI
+// 🔧 Authorization Code Flow 專用 Scope
+// eats.pos_provisioning 包含以下權限：
+// - Store Discovery: 查詢用戶授權的店舖列表
+// - POS Provisioning: 設置/移除 POS 整合
+//
+// 注意：不能混合 Authorization Code 和 Client Credentials 的 scopes！
+// Client Credentials scopes (eats.store, eats.order, etc.) 需要另外用 Client Credentials Flow 獲取
 const SCOPE = 'eats.pos_provisioning'
 
 // ========================================
