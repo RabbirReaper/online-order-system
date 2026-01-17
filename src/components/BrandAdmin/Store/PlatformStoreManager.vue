@@ -172,8 +172,11 @@
           <BFormSelect id="status" v-model="configForm.status" :options="statusOptions" />
         </div> -->
 
-        <!-- 自動接單 -->
-        <div class="col-md-12">
+        <!-- ⚠️ 已移除：自動接單設定
+             系統已不再自動接單，由外送平台 app 的自動接單功能處理
+             保留 autoAccept 欄位的資料處理，但不顯示 UI
+        -->
+        <!-- <div class="col-md-12">
           <label class="form-label fw-bold">自動接單設定</label>
           <BFormCheckbox v-model="configForm.autoAccept" switch class="mb-2">
             {{ configForm.autoAccept ? '✓ 自動接單已啟用' : '✗ 需手動接單' }}
@@ -185,7 +188,7 @@
             </span>
             <span v-else> 訂單進來後需要店員手動確認接受 </span>
           </div>
-        </div>
+        </div> -->
 
         <!-- 平台整合啟用狀態 -->
         <div class="col-md-12">
@@ -323,7 +326,7 @@ const hasFormChanged = computed(() => {
     configForm.prepTime !== initialFormState.value.prepTime ||
     configForm.busyPrepTime !== initialFormState.value.busyPrepTime ||
     configForm.status !== initialFormState.value.status ||
-    configForm.autoAccept !== initialFormState.value.autoAccept ||
+    // configForm.autoAccept !== initialFormState.value.autoAccept || // ⚠️ 已移除 UI，不再檢查此欄位變更
     configForm.isActive !== initialFormState.value.isActive
   )
 })
@@ -344,7 +347,7 @@ const configForm = reactive({
   prepTime: 30,
   busyPrepTime: 45,
   status: 'OFFLINE',
-  autoAccept: true,
+  autoAccept: true, // ⚠️ 已不再使用，但保留以確保資料庫相容性
   isActive: false,
 })
 
@@ -396,7 +399,7 @@ const loadPlatformConfig = async () => {
         prepTime: existingConfig.prepTime,
         busyPrepTime: existingConfig.busyPrepTime,
         status: existingConfig.status,
-        autoAccept: existingConfig.autoAccept,
+        autoAccept: existingConfig.autoAccept, // ⚠️ 已不再使用，但保留以確保資料庫相容性
         isActive: existingConfig.isActive !== undefined ? existingConfig.isActive : false,
       })
 
@@ -408,7 +411,7 @@ const loadPlatformConfig = async () => {
         prepTime: existingConfig.prepTime,
         busyPrepTime: existingConfig.busyPrepTime,
         status: existingConfig.status,
-        autoAccept: existingConfig.autoAccept,
+        autoAccept: existingConfig.autoAccept, // ⚠️ 已不再使用，但保留以確保資料庫相容性
         isActive: existingConfig.isActive !== undefined ? existingConfig.isActive : false,
       }
     } else {
@@ -516,7 +519,7 @@ const saveConfig = async () => {
       prepTime: configForm.prepTime || 30,
       busyPrepTime: configForm.busyPrepTime || 45,
       status: configForm.status || 'OFFLINE',
-      autoAccept: configForm.autoAccept,
+      autoAccept: configForm.autoAccept, // ⚠️ 已不再使用，但保留以確保資料庫相容性
       isActive: configForm.isActive,
     }
 
@@ -575,7 +578,7 @@ const resetForm = () => {
     prepTime: 30,
     busyPrepTime: 45,
     status: 'OFFLINE',
-    autoAccept: true,
+    autoAccept: true, // ⚠️ 已不再使用，但保留以確保資料庫相容性
     isActive: false,
   })
   editingConfig.value = null

@@ -130,7 +130,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
       )
 
       if (!inventoryReduction.success) {
-        console.warn('⚠️ 庫存扣除時發生問題，但不影響訂單接受:', {
+        console.warn('⚠️ 庫存扣除時發生問題:', {
           processed: inventoryReduction.processed,
           errors: inventoryReduction.errors.length,
         })
@@ -139,12 +139,9 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
       }
     }
 
-    // 5. 始終自動接受訂單（不管庫存狀態）
-    await ubereatsOrders.acceptOrder(orderDetails.id)
-    // console.log('✅ 已自動接受 Uber Eats 訂單:', orderDetails.id)
-
-    // 更新訂單狀態為已接受
-    await updateOrderSyncStatus(savedOrder._id, 'accepted')
+    // 5. 更新訂單同步狀態（不自動接單，由平台 app 的自動接單功能處理）
+    await updateOrderSyncStatus(savedOrder._id, 'synced')
+    // console.log('📝 訂單已同步到系統，等待平台 app 自動接單')
 
     // 6. 自動列印訂單
     try {
@@ -163,11 +160,11 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
     //   internalOrderId: savedOrder._id,
     //   platformOrderId: orderDetails.id,
     //   displayId: orderDetails.display_id,
-    //   autoAccepted: true,
+    //   synced: true,
     // })
   } catch (error) {
     console.error('❌ 處理 Uber Eats 訂單通知失敗:', error)
-    // TODO: 考慮拒絕訂單或記錄錯誤到資料庫
+    // 不自動處理訂單接受/拒絕，由平台 app 的接單功能處理
     throw error
   }
 }
@@ -243,22 +240,18 @@ const handleFoodpandaOrderDispatch = async (orderData) => {
       )
 
       if (!inventoryReduction.success) {
-        console.warn('⚠️ 庫存扣除時發生問題，但不影響訂單接受:', {
+        console.warn('⚠️ 庫存扣除時發生問題:', {
           processed: inventoryReduction.processed,
           errors: inventoryReduction.errors.length,
         })
       }
     }
 
-    // 7. 始終自動接受訂單（不管庫存狀態）
-    const estimatedReadyTime = calculateEstimatedReadyTime(20) // 預設 20 分鐘
-    await foodpandaOrders.acceptOrder(orderData.order_id, orderData.vendor_code, estimatedReadyTime)
-    console.log('✅ 已自動接受 Foodpanda 訂單:', orderData.order_id)
+    // 7. 更新訂單同步狀態（不自動接單，由平台 app 的自動接單功能處理）
+    await updateOrderSyncStatus(savedOrder._id, 'synced')
+    console.log('📝 訂單已同步到系統，等待平台 app 自動接單')
 
-    // 8. 更新訂單狀態
-    await updateOrderSyncStatus(savedOrder._id, 'accepted')
-
-    // 9. 自動列印訂單
+    // 8. 自動列印訂單
     try {
       await printOrder(
         platformStore.brand._id || platformStore.brand,
@@ -270,21 +263,14 @@ const handleFoodpandaOrderDispatch = async (orderData) => {
       console.error('❌ 外送訂單自動列印失敗，但不影響訂單處理:', printError)
     }
 
-    console.log('✅ Foodpanda 訂單處理完成:', {
+    console.log('✅ Foodpanda 訂單處理完成（已同步到系統）:', {
       internalOrderId: savedOrder._id,
       platformOrderId: orderData.order_id,
       orderCode: orderData.order_code,
     })
   } catch (error) {
     console.error('❌ 處理 Foodpanda 訂單派發失敗:', error)
-
-    // 如果處理失敗，嘗試拒絕訂單
-    try {
-      await foodpandaOrders.rejectOrder(orderData.order_id, orderData.vendor_code, 'system_error')
-    } catch (rejectError) {
-      console.error('❌ 拒絕訂單也失敗了:', rejectError)
-    }
-
+    // 不自動拒絕訂單，由平台 app 的接單功能處理
     throw error
   }
 }
@@ -377,13 +363,3 @@ const updateOrderSyncStatus = async (orderId, status) => {
   }
 }
 
-/**
- * 計算預計完成時間
- * @param {Number} minutesFromNow - 從現在開始的分鐘數
- * @returns {String} ISO 8601 格式的時間字串
- */
-const calculateEstimatedReadyTime = (minutesFromNow) => {
-  const now = new Date()
-  const estimatedTime = new Date(now.getTime() + minutesFromNow * 60000)
-  return estimatedTime.toISOString()
-}
