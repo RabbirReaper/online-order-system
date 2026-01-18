@@ -176,6 +176,7 @@ const handleUberEatsOrderNotification = async (resourceHref, meta) => {
 const handleFoodpandaOrderDispatch = async (orderData) => {
   try {
     console.log('📋 處理 Foodpanda 訂單:', {
+      orderData: orderData,
       orderId: orderData.order_id,
       orderCode: orderData.order_code,
       vendorCode: orderData.vendor_code,
@@ -186,11 +187,11 @@ const handleFoodpandaOrderDispatch = async (orderData) => {
     if (!platformStore) {
       console.error('❌ 找不到對應的平台店鋪配置:', orderData.vendor_code)
       // 嘗試拒絕訂單
-      await foodpandaOrders.rejectOrder(
-        orderData.order_id,
-        orderData.vendor_code,
-        'vendor_unavailable',
-      )
+      // await foodpandaOrders.rejectOrder(
+      //   orderData.order_id,
+      //   orderData.vendor_code,
+      //   'vendor_unavailable',
+      // )
       return
     }
 
@@ -362,4 +363,3 @@ const updateOrderSyncStatus = async (orderId, status) => {
     // 不拋出錯誤，避免影響主流程
   }
 }
-
