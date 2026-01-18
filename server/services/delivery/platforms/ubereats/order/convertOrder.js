@@ -111,8 +111,8 @@ export const convertUberOrderToInternal = async (uberOrder, platformStore) => {
       paymentType: 'Online',
       paymentMethod: 'other', // Uber Eats 處理付款
 
-      // 備註
-      notes: uberOrder.special_instructions || '',
+      // 備註（包含餐具偏好和顧客備註）
+      notes: buildSimpleNotes(uberOrder),
     }
 
     // console.log('🔄 Uber Eats 訂單轉換完成:', {
@@ -336,6 +336,42 @@ const extractItemPrice = (priceObject) => {
  */
 const isValidMongoId = (id) => {
   return /^[0-9a-fA-F]{24}$/.test(id)
+}
+
+/**
+ * 組合訂單備註（簡化版）
+ * @param {Object} uberOrder - Uber Eats 訂單資料
+ * @returns {String} 格式化的備註
+ */
+const buildSimpleNotes = (uberOrder) => {
+  const lines = []
+
+  // 餐具偏好（第一行）
+  const includeUtensils = uberOrder.carts?.[0]?.include_single_use_items
+  if (includeUtensils === true) {
+    lines.push('是否需要餐具: 是')
+  } else if (includeUtensils === false) {
+    lines.push('是否需要餐具: 否')
+  }
+
+  // 顧客備註
+  const cartInstructions = uberOrder.carts?.[0]?.special_instructions
+  if (cartInstructions) {
+    lines.push(cartInstructions)
+  }
+
+  // 店家指示
+  if (uberOrder.store_instructions) {
+    lines.push(uberOrder.store_instructions)
+  }
+
+  // 配送指示
+  const deliveryInstructions = uberOrder.deliveries?.[0]?.instructions
+  if (deliveryInstructions) {
+    lines.push(deliveryInstructions)
+  }
+
+  return lines.join('\n')
 }
 
 /**
